@@ -25,14 +25,17 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
     private readonly Control?[] _fields = new Control?[2];
     private readonly string[] _text = new string[2];
     private readonly bool[] _valid = [true, true];
-    private readonly Button?[] _periods = new Button?[2];
+    private readonly TimePeriodButton?[] _periods = new TimePeriodButton?[2];
     private ClockFace? _clock;
     private TopLevel? _window;
-    private bool _horizontal, _updating, _input, _watchingWindow;
+    private bool _horizontal, _portrait, _updating, _input, _watchingWindow;
     internal TimeOnly Value => owner.GetValue(TimePicker.SelectedTimeProperty);
     internal bool Is24Hour => owner.GetValue(TimePicker.Is24HourProperty);
     internal bool IsPm => Value.Hour >= 12;
     internal TimeSelection Selection => owner.GetValue(TimePicker.SelectionProperty);
+
+    internal bool AutoSwitchToMinute => owner is TimePicker { TouchExplorationEnabled: false }
+        && Material3Expressive.Foundation.Interaction.MaterialInputMode.For(owner)?.IsKeyboard != true;
 
     private bool Vibrant =>
         kind == TimeEntryKind.Scroll || owner.GetValue(TimePicker.VariantProperty) == TimePickerVariant.Vibrant;
@@ -64,11 +67,13 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
 
     private void WindowChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property != TopLevel.ClientSizeProperty
-         || owner.GetValue(TimePicker.LayoutProperty) != TimePickerLayout.Automatic) return;
-        if (UsesHorizontalLayout() == _horizontal) return;
-        Build();
+        if (e.Property != TopLevel.ClientSizeProperty) return;
+        if (UsesHorizontalLayout() != _horizontal
+            || kind == TimeEntryKind.Dial && Vibrant && Is24Hour && UsesPortraitWidth() != _portrait)
+            Build();
     }
+
+    private bool UsesPortraitWidth() => _window is null || _window.ClientSize.Width <= _window.ClientSize.Height;
 
     private bool UsesHorizontalLayout()
     {
@@ -125,6 +130,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             Array.Clear(_fields);
             Array.Clear(_periods);
             _horizontal = UsesHorizontalLayout();
+            _portrait = UsesPortraitWidth();
 
             var main = new StackPanel {
                 Orientation = _horizontal
@@ -141,7 +147,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     ? Orientation.Vertical
                     : Orientation.Horizontal,
 
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
             };
             var numbers = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight };
             bool hasToggle = owner.GetValue(TimePicker.ToggleProperty) is { };
@@ -158,8 +165,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 TimeEntryKind.Scroll => Comp.TimeScroll.TimeFieldContainerWidth,
                 TimeEntryKind.Input => Vibrant ? Comp.TimeInput.VibrantTimeFieldContainerWidth : Comp.TimeInput.TimeFieldContainerWidth,
                 _ => Vibrant
-                    ? Is24Hour && !_horizontal ? Comp.TimePicker.VibrantTimeSelector24HVerticalContainerWidth : Comp.TimePicker.VibrantTimeSelectorContainerWidth
-                    : Is24Hour && !_horizontal ? Comp.TimePicker.TimeSelector24HVerticalContainerWidth : Comp.TimePicker.TimeSelectorContainerWidth
+                    ? Is24Hour && _portrait ? Comp.TimePicker.VibrantTimeSelector24HVerticalContainerWidth : Comp.TimePicker.VibrantTimeSelectorContainerWidth
+                    : Comp.TimePicker.TimeSelectorContainerWidth
             };
             if (kind == TimeEntryKind.Dial)
                 BindDimension(main, StackPanel.SpacingProperty, Vibrant && _horizontal ? Comp.TimePicker.VibrantHorizontalLayoutSpacing : Comp.TimePicker.LayoutSpacing);
@@ -299,6 +306,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 {
                     var separator = new TextBlock {
                         Text = ":", TextAlignment = TextAlignment.Center,
+                        RenderTransform = new TranslateTransform(0, -4), // DisplaySeparator Modifier.offset(y = -4.dp).
                         VerticalAlignment = VerticalAlignment.Top
                     };
                     BindDimension(separator, Control.WidthProperty, kind switch {
@@ -319,6 +327,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
             {
                 var periods = new StackPanel {
                     Orientation = _horizontal ? Orientation.Horizontal : Orientation.Vertical,
+                    FlowDirection = FlowDirection.LeftToRight // HorizontalPeriodToggle uses absolute place(), including RTL.
                 };
                 MaterialTokenKey<double> periodWidth = _horizontal ? Comp.TimePicker.PeriodSelectorHorizontalContainerWidth : kind switch {
                     TimeEntryKind.Scroll => Comp.TimeScroll.PeriodSelectorContainerWidth,
@@ -331,7 +340,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 MaterialTokenKey<double> periodSpacing = kind switch {
                     TimeEntryKind.Scroll => Comp.TimeScroll.PeriodSelectorSpacing,
                     TimeEntryKind.Input => Comp.TimeInput.PeriodSelectorSpacing,
-                    _ => Comp.TimePicker.PeriodSelectorSpacing
+                    _ => Vibrant ? _horizontal ? Comp.TimePicker.VibrantPeriodSelectorHorizontalSpacing : Comp.TimePicker.VibrantPeriodSelectorVerticalSpacing : Comp.TimePicker.PeriodSelectorSpacing
                 };
                 BindDimension(periods, Control.WidthProperty, periodWidth);
                 BindDimension(periods, Control.HeightProperty, periodHeight);
@@ -339,7 +348,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 for (int i = 0; i < 2; i++)
                 {
                     int period = i;
-                    var button = new Button {
+                    var button = new TimePeriodButton {
                         Content = DateTimeStrings.Get(i == 0 ? "TimePickerAM" : "TimePickerPM"),
                         Padding = new Thickness(0), MinWidth = 0
                     };
@@ -441,7 +450,13 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 }
             }
 
-            for (int i = 0; i < 2; i++) _periods[i]?.Classes.Set("selected", IsPm == (i == 1));
+            for (int i = 0; i < 2; i++)
+                if (_periods[i] is { } period)
+                {
+                    period.SetCurrentValue(ToggleButton.IsCheckedProperty, IsPm == (i == 1));
+                    period.Classes.Set("selected", IsPm == (i == 1));
+                    period.ZIndex = IsPm == (i == 1) ? 0 : 1;
+                }
             _clock?.Update();
         }
         finally

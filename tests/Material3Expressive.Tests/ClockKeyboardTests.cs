@@ -23,7 +23,7 @@ public class ClockKeyboardTests
             Layout = TimePickerLayout.Vertical, FlowDirection = rtl ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight };
         var window = DialogTests.Show(picker);
         var dial = picker.GetVisualDescendants().OfType<ClockFace>().Single();
-        var labels = dial.GetVisualChildren().OfType<Button>().ToArray();
+        var labels = dial.Labels.ToArray();
         Assert.All(labels, b => Assert.False(b.Focusable));
         dial.Activate(); Flush(window);
         Assert.True(labels[11].IsFocused);
@@ -52,11 +52,11 @@ public class ClockKeyboardTests
         var minute = picker.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "PART_MinuteSelector");
         hour.Focus(NavigationMethod.Tab); ClickKey();
         var dial = picker.GetVisualDescendants().OfType<ClockFace>().Single();
-        Assert.True(dial.GetVisualChildren().OfType<Button>().Single(b => Equals(b.Content, clock24 ? "23" : "11")).IsFocused);
+        Assert.True(dial.Labels.Single(b => Equals(b.Content, clock24 ? "23" : "11")).IsFocused);
         Tab(false); Assert.True(minute.IsFocused);
         ClickKey();
         Assert.Equal(TimeSelection.Minute, picker.Selection);
-        Assert.True(dial.GetVisualChildren().OfType<Button>().Single(b => Equals(b.Content, "0")).IsFocused);
+        Assert.True(dial.Labels.Single(b => Equals(b.Content, "0")).IsFocused);
         Tab(true); Assert.True(minute.IsFocused);
         ClickKey(); Tab(false);
         if (clock24) Assert.True(after.IsFocused);
@@ -83,12 +83,12 @@ public class ClockKeyboardTests
             new PointerPointProperties(0, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left));
         Flush(window);
         Assert.Equal(TimeSelection.Minute, picker.Selection);
-        Assert.All(dial.GetVisualChildren().OfType<Button>(), b => Assert.False(b.IsFocused));
+        Assert.All(dial.Labels, b => Assert.False(b.IsFocused));
         minute.Focus(NavigationMethod.Tab);
         window.KeyPress(Key.Enter, 0, PhysicalKey.None, null); window.KeyRelease(Key.Enter, 0, PhysicalKey.None, null); Flush(window);
-        Assert.True(dial.GetVisualChildren().OfType<Button>().Single(b => Equals(b.Content, "55")).IsFocused);
+        Assert.True(dial.Labels.Single(b => Equals(b.Content, "55")).IsFocused);
         picker.SelectedTime = new(11, 10); Flush(window);
-        Assert.True(dial.GetVisualChildren().OfType<Button>().Single(b => Equals(b.Content, "10")).IsFocused);
+        Assert.True(dial.Labels.Single(b => Equals(b.Content, "10")).IsFocused);
         window.Close();
     }
 

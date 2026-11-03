@@ -6,7 +6,6 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
@@ -33,19 +32,25 @@ internal sealed partial class ClockFace : Control
     public IBrush? SelectorBrush {get=>GetValue(SelectorBrushProperty);set=>SetValue(SelectorBrushProperty,value);}
     public Spring Motion {get=>GetValue(MotionProperty);set=>SetValue(MotionProperty,value);}
     private readonly TimeEntryController _controller;
-    private readonly List<Button> _labels=[];
+    private List<Button> _labels = [];
+    internal IReadOnlyList<Button> Labels => _labels;
+    private readonly ClockSelectorOverlay _selectorOverlay;
     private AnimationChildScope? _scope;
     private Animatable<float>? _angle;
     private readonly MutatorMutex _angleMutex = new();
     private float _position;
-    private bool _pressed, _dragged;
-    private Point _start;
+    private float _hourAngle, _minuteAngle;
+    private TimeOnly _observedTime;
+    private TimeSelection _committedSelection;
+    private bool _selectionCommitPending;
     private TimeSelection? _lastSelection;
     private bool _last24;
     static ClockFace(){AffectsRender<ClockFace>(DialBrushProperty,SelectorBrushProperty,CenterSizeProperty,HandleSizeProperty);AffectsMeasure<ClockFace>(DialSizeProperty,LabelSizeProperty);}
     internal ClockFace(TimeEntryController controller)
     {
         _controller=controller;FlowDirection=FlowDirection.LeftToRight;
+        _selectorOverlay = new ClockSelectorOverlay(this) { IsHitTestVisible = false };
+        VisualChildren.Add(_selectorOverlay);
         TimeEntryController.BindDimension(this, DialSizeProperty, Comp.TimePicker.ClockDialContainerSize);
         TimeEntryController.BindDimension(this, LabelSizeProperty, Comp.TimePicker.ClockDialLabelContainerSize);
         TimeEntryController.BindDimension(this, CenterSizeProperty, Comp.TimePicker.ClockDialSelectorCenterContainerSize);
@@ -64,9 +69,13 @@ internal sealed partial class ClockFace : Control
                 Update();
             }
         });
+        _observedTime = _controller.Value;
+        _hourAngle = RadiansPerHour * (_observedTime.Hour % 12) - MathF.Tau / 4;
+        _minuteAngle = RadiansPerMinute * _observedTime.Minute - MathF.Tau / 4;
         _position=TargetAngle;
     }
-    private float TargetAngle => (_controller.Selection==TimeSelection.Hour?_controller.Value.Hour%12/12f:_controller.Value.Minute/60f)*MathF.Tau-MathF.PI/2;
+    private float TargetAngle => _controller.Selection == TimeSelection.Hour ? _hourAngle : _minuteAngle;
+    internal float CurrentAngle => _position;
     private int ClockValue(int index)
     {
         if (_controller.Selection == TimeSelection.Minute) return index * 5;
@@ -82,123 +91,121 @@ internal sealed partial class ClockFace : Control
         }
         return _controller.Is24Hour ? value == _controller.Value.Hour : value == (_controller.Value.Hour % 12 == 0 ? 12 : _controller.Value.Hour % 12);
     }
-    private double Radius => (_controller.Is24Hour && _controller.Selection==TimeSelection.Hour && _controller.IsPm?69:101)*Bounds.Width/256;
+    private float SelectorRadius => (float)HandleSize / 2 * (float)Bounds.Width / 256;
+    private Point SelectorPosition
+    {
+        get
+        {
+            var diameter = (float)Bounds.Width;
+            var ratio = _controller.Is24Hour && _controller.Selection == TimeSelection.Hour && _controller.IsPm ? 69f / 256 : 101f / 256;
+            var length = Math.Max(diameter * ratio - SelectorRadius, 0) + SelectorRadius;
+            return new(length * MathF.Cos(_position) + diameter / 2, length * MathF.Sin(_position) + diameter / 2);
+        }
+    }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _ = MaterialInputMode.For(this);
+        _committedSelection = _controller.Selection;
         _angle=new Animatable<float>(new FloatConverter(),TargetAngle,VisibilityThresholds.Float);
         BindScope(AnimationScope.Get(this));Update();
     }
     private void BindScope(AnimationScope scope)
     {
         _scope?.Dispose();
+        _selectionCommitPending = false;
         _scope=scope.CreateChild("Clock dial");
-        _scope.SubscribeValue(_angle!,v=>{_position=v;InvalidateVisual();});
+        if (_labelTransition is not null)
+        {
+            if (_crossfade is { } host)
+            {
+                _ = AnimationScope.Get(host);
+                // This component owns the parent loop. Reconnect its mapped child after
+                // an explicit scope end, preserving the parent transition's play time.
+                host.Source = ContentSource.From(_labelTransition, screen => screen == TimeSelection.Hour ? HourScreen : MinuteScreen);
+            }
+            StartLabelTransition(false);
+        }
+        _scope.SubscribeValue(_angle!,v=>{_position=v;UpdateLabelSelection();InvalidateVisual();_selectorOverlay.InvalidateVisual();});
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose();_scope=null;_angle=null;_pressed=false;base.OnDetachedFromVisualTree(e);
+        CancelPointer();
+        _selectionCommitPending = false;
+        _scope?.Dispose();_scope=null;_angle=null; ReleaseLabels(); base.OnDetachedFromVisualTree(e);
     }
     internal void Update()
     {
+        if (_observedTime != _controller.Value)
+        {
+            if (!_pointerUpdating)
+            {
+                if (_observedTime.Hour != _controller.Value.Hour)
+                    _hourAngle = RadiansPerHour * (_controller.Value.Hour % 12) - MathF.Tau / 4;
+                if (_observedTime.Minute != _controller.Value.Minute)
+                    _minuteAngle = RadiansPerMinute * _controller.Value.Minute - MathF.Tau / 4;
+            }
+            _observedTime = _controller.Value;
+        }
         var previousSelected = _labels.FindIndex(label => label.Classes.Contains("selected"));
         var selectionChanged = _lastSelection != _controller.Selection || _last24 != _controller.Is24Hour;
-        if(_lastSelection!=_controller.Selection || _last24!=_controller.Is24Hour)
-        {
-            foreach(var button in _labels){VisualChildren.Remove(button);LogicalChildren.Remove(button);}
-            _labels.Clear();_lastSelection=_controller.Selection;_last24=_controller.Is24Hour;
-            var count=_controller.Selection==TimeSelection.Hour&&_controller.Is24Hour?24:12;
-            for(var i=0;i<count;i++)
-            {
-                var index=i;
-                var value=ClockValue(i);
-                var button=new Button {Content=value.ToString(),Padding=new(0),Focusable=_dialFocusable};
-                MaterialInteraction.GetOrCreate(button).RippleRadius = 24; // MinimumInteractiveSize / 2.
-                TimeEntryController.BindDimension(button, WidthProperty, Comp.TimePicker.ClockDialLabelContainerSize);
-                TimeEntryController.BindDimension(button, HeightProperty, Comp.TimePicker.ClockDialLabelContainerSize);
-                button.Bind(StyledElement.ThemeProperty,new DynamicResourceExtension("MaterialClockLabelTheme"));
-                AutomationProperties.SetName(button,$"{value} {(_controller.Selection==TimeSelection.Hour?"hours":"minutes")}");
-                button.Click+=(_,_)=>
-                {
-                    if(_controller.Selection==TimeSelection.Minute)_controller.SetMinute(index*5);
-                    else _controller.SetHour(_controller.Is24Hour?index:index%12+(_controller.IsPm?12:0));
-                };
-                _labels.Add(button);LogicalChildren.Add(button);VisualChildren.Add(button);
-            }
-            InvalidateMeasure();
-        }
+        UpdateLabels();
         for(var i=0;i<_labels.Count;i++)
             _labels[i].Classes.Set("selected",IsSelected(ClockValue(i)));
         if (_dialFocusable && (selectionChanged || previousSelected != _labels.FindIndex(label => label.Classes.Contains("selected"))))
             Activate();
-        if (!_keyboardSelecting) Animate(TargetAngle,_pressed);
+        if (!_pointerUpdating)
+        {
+            if (_committedSelection != _controller.Selection && _scope is { } scope)
+            {
+                if (!_selectionCommitPending)
+                {
+                    _selectionCommitPending = true;
+                    _ = scope.Launch(async ct =>
+                    {
+                        await scope.NextFrameAsync(ct);
+                        await Task.Yield(); ct.ThrowIfCancellationRequested();
+                        _selectionCommitPending = false;
+                        if (_committedSelection == _controller.Selection) return;
+                        _committedSelection = _controller.Selection;
+                        Animate(TargetAngle);
+                    }, "Clock selection composition");
+                }
+            }
+            else Animate(TargetAngle);
+        }
+        UpdateLabelSelection();
         InvalidateVisual();
+        _selectorOverlay.InvalidateVisual();
     }
-    private void Animate(float target,bool snap)
+    private void Animate(float target, bool force = false)
     {
-        if (!snap && _angle is { } current && Normalize(current.TargetValue) == Normalize(target)
+        if (!force && _angle is { } current && Normalize(current.TargetValue) == Normalize(target)
             && (current.IsRunning || Normalize(current.Value) == Normalize(target))) return;
-        while(_position-target>MathF.PI)target+=MathF.Tau;
-        while(_position-target<=-MathF.PI)target-=MathF.Tau;
+        target = EndValueForAnimation(target);
         if(_scope is not { } scope || scope.Lifetime.IsCancellationRequested || _angle is null){_position=target;return;}
         var track=_angle;var motion=Motion;
         _= scope.Launch(ct => _angleMutex.MutateAsync(async token=>
         {
-            if(snap)await track.SnapToAsync(target,cancellationToken:token);
-            else await track.AnimateToAsync(scope,target,new SpringSpec<float>(motion.DampingRatio,motion.Stiffness,(float)motion.VisibilityThreshold),cancellationToken:token);
+            await track.AnimateToAsync(scope,target,new SpringSpec<float>(motion.DampingRatio,motion.Stiffness,(float)motion.VisibilityThreshold),cancellationToken:token);
             return true;
-        }, snap ? MutatePriority.UserInput : MutatePriority.PreventUserInput, ct),"Clock selector");
+        }, MutatePriority.PreventUserInput, ct),"Clock selector");
     }
-    private static float Normalize(float angle) { var value = angle % MathF.Tau; return value < 0 ? value + MathF.Tau : value; }
-    private void Pressed(object? sender,PointerPressedEventArgs e)
+    private static float Normalize(float angle)
     {
-        if(!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)return;
-        if (e.Pointer.Type == PointerType.Touch) SetDialFocusable(false);
-        _pressed=true;_dragged=false;_start=e.GetPosition(this);e.Pointer.Capture(this);e.Handled=true;
+        // Kotlin normalizes against Double PI, then converts the result back to Float.
+        var value = angle % (2 * Math.PI);
+        return (float)(value < 0 ? value + 2 * Math.PI : value);
     }
-    private void Moved(object? sender,PointerEventArgs e)
+    protected override Size MeasureOverride(Size available)
     {
-        if(!_pressed)return;
-        var point=e.GetPosition(this);
-        if(((Vector)(point-_start)).Length>3)_dragged=true;
-        if(_dragged)SetFromPoint(point,false);
-        e.Handled=true;
+        _crossfade?.Measure(new Size(DialSize, DialSize));
+        return new(DialSize, DialSize);
     }
-    private void Released(object? sender,PointerReleasedEventArgs e)
-    {
-        if(!_pressed)return;
-        var wasHour=_controller.Selection==TimeSelection.Hour;
-        SetFromPoint(e.GetPosition(this),!_dragged);_pressed=false;e.Pointer.Capture(null);Animate(TargetAngle,false);
-        if(wasHour && _scope is { } scope)
-            _=scope.Launch(async ct=>{await scope.DelayAsync(TimeSpan.FromMilliseconds(_dragged?0:100),ct);_controller.Select(TimeSelection.Minute);},"Clock advance to minute");
-        e.Handled=true;
-    }
-    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e){_pressed=false;base.OnPointerCaptureLost(e);}
-    private void SetFromPoint(Point point,bool tap)
-    {
-        var center=new Point(Bounds.Width/2,Bounds.Height/2);var delta=point-center;
-        var angle=MathF.Atan2((float)delta.Y,(float)delta.X)+MathF.PI/2;
-        if(angle<0)angle+=MathF.Tau;
-        if(_controller.Selection==TimeSelection.Hour)
-        {
-            var hour=(int)MathF.Floor(angle/(MathF.Tau/12)+0.5f)%12;
-            var pm=_controller.Is24Hour?((Vector)delta).Length<74*Bounds.Width/256:_controller.IsPm;
-            _controller.SetHour(hour+(pm?12:0));
-        }
-        else
-        {
-            var step=tap?5:1;
-            _controller.SetMinute(((int)MathF.Floor(angle/(MathF.Tau/60)/step+0.5f)*step)%60);
-        }
-    }
-    protected override Size MeasureOverride(Size available){foreach(var b in _labels)b.Measure(new(LabelSize,LabelSize));return new(DialSize,DialSize);}
     protected override Size ArrangeOverride(Size size)
     {
-        for(var i=0;i<_labels.Count;i++)
-        {
-            var angle=(i%12)*Math.PI/6-Math.PI/2;var radius=(i>=12?69:101)*size.Width/256;
-            _labels[i].Arrange(new(size.Width/2+Math.Cos(angle)*radius-LabelSize/2,size.Height/2+Math.Sin(angle)*radius-LabelSize/2,LabelSize,LabelSize));
-        }
+        _crossfade?.Arrange(new Rect(size));
+        _selectorOverlay.Arrange(new Rect(size));
         return size;
     }
     public override void Render(DrawingContext context)
@@ -206,10 +213,7 @@ internal sealed partial class ClockFace : Control
         base.Render(context);
         var center=new Point(Bounds.Width/2,Bounds.Height/2);
         context.DrawEllipse(DialBrush,null,center,Bounds.Width/2,Bounds.Height/2);
-        var handle=center+new Vector(Math.Cos(_position)*Radius,Math.Sin(_position)*Radius);
-        context.DrawLine(new Pen(SelectorBrush,2),center,handle);
-        context.DrawEllipse(SelectorBrush,null,center,CenterSize/2,CenterSize/2);
-        context.DrawEllipse(SelectorBrush,null,handle,HandleSize/2*Bounds.Width/256,HandleSize/2*Bounds.Width/256);
+        DrawSelector(context, beforeContent: true);
     }
 }
 

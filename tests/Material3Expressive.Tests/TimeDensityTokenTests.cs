@@ -16,6 +16,41 @@ namespace Material3Expressive.Tests;
 
 public class TimeDensityTokenTests
 {
+    [AvaloniaTheory]
+    [InlineData(TimePickerVariant.Standard, TimePickerLayout.Vertical, 96d, 96d)]
+    [InlineData(TimePickerVariant.Standard, TimePickerLayout.Horizontal, 96d, 96d)]
+    [InlineData(TimePickerVariant.Vibrant, TimePickerLayout.Vertical, 132d, 100d)]
+    [InlineData(TimePickerVariant.Vibrant, TimePickerLayout.Horizontal, 132d, 100d)]
+    public void SelectorWidthUsesVariantAndHostOrientation(TimePickerVariant variant, TimePickerLayout layout,
+        double portraitWidth, double landscapeWidth)
+    {
+        var picker = new TimePicker { Is24Hour = true, Variant = variant, Layout = layout };
+        var window = Show(picker);
+        try
+        {
+            window.Width = 600; window.Height = 800; Flush(window);
+            Assert.Equal(portraitWidth, Hour().Width);
+            if (layout == TimePickerLayout.Vertical)
+            {
+                var dial = picker.GetVisualDescendants().OfType<ClockFace>().Single();
+                var numbers = Hour().GetVisualAncestors().OfType<StackPanel>().First(panel => panel.Children.Count == 3);
+                Assert.Equal(dial.TranslatePoint(new Point(dial.Bounds.Width / 2, 0), picker)!.Value.X,
+                    numbers.TranslatePoint(new Point(numbers.Bounds.Width / 2, 0), picker)!.Value.X, 5);
+            }
+            window.Width = 900; window.Height = 600; Flush(window);
+            Assert.Equal(landscapeWidth, Hour().Width);
+            picker.Resources[Comp.TimePicker.TimeSelectorContainerWidth] = 100d;
+            picker.Resources[Comp.TimePicker.VibrantTimeSelectorContainerWidth] = 104d;
+            Flush(window);
+            Assert.Equal(variant == TimePickerVariant.Standard ? 100d : 104d, Hour().Width);
+            picker.Is24Hour = false; Flush(window);
+            window.Width = 600; window.Height = 800; Flush(window);
+            Assert.Equal(variant == TimePickerVariant.Standard ? 100d : 104d, Hour().Width);
+        }
+        finally { window.Close(); }
+        Button Hour() => picker.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "PART_HourSelector");
+    }
+
     [AvaloniaFact]
     public void InputDimensionsFollowAliasesWithoutReplacingFocusedInvalidDraft()
     {
@@ -70,7 +105,7 @@ public class TimeDensityTokenTests
         try
         {
             var face = picker.GetVisualDescendants().OfType<ClockFace>().Single();
-            var labels = face.GetVisualChildren().OfType<Button>().ToArray();
+            var labels = face.Labels.ToArray();
             Assert.Equal(320d, face.Width);
             Assert.Equal(new Size(40, 40), labels[0].Bounds.Size);
             Assert.Equal(LayoutHelper.RoundLayoutValue(160d - 101 * 320d / 256 - 20,

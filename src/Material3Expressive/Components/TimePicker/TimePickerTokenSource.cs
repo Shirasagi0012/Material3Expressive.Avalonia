@@ -26,6 +26,8 @@ public sealed class TimePickerTokenSource : ITokenSource
         [Comp.TimePicker.VibrantSeparatorWidth] = 16.0d,
         [Comp.TimePicker.VibrantPeriodSelectorHorizontalContainerHeight] = 48.0d,
         [Comp.TimePicker.VibrantPeriodSelectorVerticalContainerWidth] = 56.0d,
+        [Comp.TimePicker.VibrantPeriodSelectorHorizontalSpacing] = 16.0d,
+        [Comp.TimePicker.VibrantPeriodSelectorVerticalSpacing] = 8.0d,
         [Comp.TimePicker.PeriodSelectorSpacing] = 4.0d,
         [Comp.TimePicker.ClockDialBottomSpacing] = 24.0d,
         [Comp.TimePicker.ClockDialLabelContainerSize] = 48.0d,

@@ -2,14 +2,13 @@
 // Copyright 2023 The Android Open Source Project. Licensed under Apache-2.0 (LICENSE.txt).
 using Avalonia.Controls;
 using Avalonia.Input;
-using ComposeAnimation.Runtime;
 
 namespace Material3Expressive.Components;
 
 internal sealed partial class ClockFace
 {
     private bool _dialFocusable;
-    private bool _keyboardSelecting;
+    private bool _keyboardActivation;
 
     internal void SetDialFocusable(bool value)
     {
@@ -46,7 +45,10 @@ internal sealed partial class ClockFace
             e.Handled = true;
         }
         else if (e.Key is Key.Enter or Key.Space)
+        {
+            _keyboardActivation = true;
             e.Handled = true; // ClockText activates on KeyUp and does not start a click ripple.
+        }
     }
 
     private void DialKeyUp(object? sender, KeyEventArgs e)
@@ -54,24 +56,10 @@ internal sealed partial class ClockFace
         if (e.Key is not (Key.Enter or Key.Space)) return;
         var index = _labels.FindIndex(label => label.IsFocused);
         if (index < 0) return;
-        if (_scope is { } scope && _angle is { } angle)
-        {
-            _ = scope.Launch(ct => _angleMutex.MutateAsync(async token =>
-            {
-                _keyboardSelecting = true;
-                try
-                {
-                    if (_controller.Selection == TimeSelection.Minute) _controller.SetMinute(index * 5);
-                    else _controller.SetHour(_controller.Is24Hour ? index : index % 12 + (_controller.IsPm ? 12 : 0));
-                }
-                finally { _keyboardSelecting = false; }
-                var target = TargetAngle;
-                while (_position - target > MathF.PI) target += MathF.Tau;
-                while (_position - target <= -MathF.PI) target -= MathF.Tau;
-                await angle.SnapToAsync(target, cancellationToken: token);
-                return true;
-            }, MutatePriority.UserInput, ct), "Clock keyboard selection");
-        }
+        // The native selector activates on KeyDown. Its KeyUp reaches the newly
+        // focused label, but must not activate that label for a second time.
+        if (_keyboardActivation) ActivateLabel(_labels[index], keyboard: true);
+        _keyboardActivation = false;
         // Unlike pointer selection, keyboard activation never advances to minutes.
         e.Handled = true;
     }

@@ -14,20 +14,31 @@
       <Style Selector="^.vibrant">
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
         <Setter Property="CornerRadius" Value="16" />
-        <Style Selector="^.selected"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" /></Style>
+        <Style Selector="^.selected">
+          <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+          <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+          <Setter Property="BorderThickness" Value="2" />
+        </Style>
       </Style>
     </ControlTheme>
-    <ControlTheme x:Key="MaterialTimePeriodTheme" TargetType="Button" BasedOn="{StaticResource MaterialNativePickerButtonTheme}">
+    <ControlTheme x:Key="MaterialTimePeriodTheme" TargetType="ToggleButton" BasedOn="{StaticResource MaterialFilledToggleButtonTheme}">
+      <Setter Property="m3:ToggleButtonAppearance.CheckedCornerRadius" Value="12" />
+      <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="12" />
       <Setter Property="MinHeight" Value="0" /><Setter Property="Padding" Value="0" />
-      <Setter Property="BorderThickness" Value="0" /><Setter Property="CornerRadius" Value="8" />
+      <Setter Property="BorderThickness" Value="0" /><Setter Property="CornerRadius" Value="1000" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.PeriodSelectorLabelTextFont}}" />
       <!-- Fixed Compose baseline enables isUpdatedTimepickerToggleEnabled. -->
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurfaceVariant}}" />
-      <Style Selector="^.selected">
+      <Style Selector="^:checked">
+        <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" />
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnPrimaryContainer}}" />
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledToggleButton.DisabledContainerColor}}" />
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledToggleButton.DisabledContentColor}}" />
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialTimeInputFieldTheme" TargetType="TextBox" BasedOn="{StaticResource MaterialOutlinedTextFieldTheme}">
@@ -64,12 +75,14 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:focus-visible"><Setter Property="BorderThickness" Value="0" /></Style>
-      <Style Selector="^.selected"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectedLabelTextColor}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:ClockFace}" TargetType="m3:ClockFace">
       <Setter Property="DialBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialColor}}" />
       <Setter Property="SelectorBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectorHandleContainerColor}}" />
+      <Setter Property="SelectedTextBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectedLabelTextColor}}" />
+      <Setter Property="TrackWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectorTrackContainerWidth}}" />
       <Setter Property="Motion" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialDefault}}" />
+      <Setter Property="EffectsMotion" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsDefault}}" />
       <Style Selector="^.vibrant"><Setter Property="DialBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" /></Style>
     </ControlTheme>
     <ControlTemplate x:Key="MaterialTimeEntryTemplate" TargetType="TemplatedControl"><Grid Name="PART_Body" /></ControlTemplate>

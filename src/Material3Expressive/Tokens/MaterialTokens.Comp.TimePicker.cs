@@ -28,6 +28,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> VibrantSeparatorWidth = new("md.comp.timepicker.vibrant-separator-width");
             public static readonly MaterialTokenKey<double> VibrantPeriodSelectorHorizontalContainerHeight = new("md.comp.timepicker.vibrant-period-selector-horizontal-container-height");
             public static readonly MaterialTokenKey<double> VibrantPeriodSelectorVerticalContainerWidth = new("md.comp.timepicker.vibrant-period-selector-vertical-container-width");
+            public static readonly MaterialTokenKey<double> VibrantPeriodSelectorHorizontalSpacing = new("md.comp.timepicker.vibrant-period-selector-horizontal-spacing");
+            public static readonly MaterialTokenKey<double> VibrantPeriodSelectorVerticalSpacing = new("md.comp.timepicker.vibrant-period-selector-vertical-spacing");
             public static readonly MaterialTokenKey<double> PeriodSelectorSpacing = new("md.comp.timepicker.period-selector-spacing");
             public static readonly MaterialTokenKey<double> ClockDialBottomSpacing = new("md.comp.timepicker.clock-dial-bottom-spacing");
             public static readonly MaterialTokenKey<double> ClockDialLabelContainerSize = new("md.comp.timepicker.clock-dial-label-container-size");

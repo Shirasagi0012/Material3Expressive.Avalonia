@@ -14,6 +14,9 @@ public class TimePicker : TemplatedControl
     public static readonly StyledProperty<TimePickerLayout> LayoutProperty = AvaloniaProperty.Register<TimePicker, TimePickerLayout>(nameof(Layout), TimePickerLayout.Automatic, defaultBindingMode: BindingMode.TwoWay);
     public static readonly StyledProperty<TimePickerVariant> VariantProperty = AvaloniaProperty.Register<TimePicker, TimePickerVariant>(nameof(Variant), TimePickerVariant.Standard, defaultBindingMode: BindingMode.TwoWay);
     public static readonly StyledProperty<TimeSelection> SelectionProperty = AvaloniaProperty.Register<TimePicker, TimeSelection>(nameof(Selection), TimeSelection.Hour, defaultBindingMode: BindingMode.TwoWay);
+    /// <summary>Host-provided touch exploration state; prevents automatic advancement to minutes.</summary>
+    public static readonly StyledProperty<bool> TouchExplorationEnabledProperty = AvaloniaProperty.Register<TimePicker, bool>(nameof(TouchExplorationEnabled));
+    public bool TouchExplorationEnabled { get => GetValue(TouchExplorationEnabledProperty); set => SetValue(TouchExplorationEnabledProperty, value); }
     public static readonly StyledProperty<object?> ToggleProperty = AvaloniaProperty.Register<TimePicker, object?>(nameof(Toggle), null, defaultBindingMode: BindingMode.TwoWay);
     public static readonly StyledProperty<IDataTemplate?> ToggleTemplateProperty = AvaloniaProperty.Register<TimePicker, IDataTemplate?>(nameof(ToggleTemplate), null, defaultBindingMode: BindingMode.TwoWay);
     public static readonly DirectProperty<TimePicker, bool> IsInputValidProperty = AvaloniaProperty.RegisterDirect<TimePicker, bool>(nameof(IsInputValid), c => c.IsInputValid);

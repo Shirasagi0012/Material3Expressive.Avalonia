@@ -121,13 +121,20 @@ public class DateTimeEntryTests
         var point=dial.TranslatePoint(new Point(229,128),window)!.Value;
         window.MouseDown(point,MouseButton.Left); window.MouseUp(point,MouseButton.Left); Flush(window);
         Assert.Equal(3,picker.SelectedTime.Hour);
-        await Task.Delay(150); clock.AdvanceBy(TimeSpan.FromMilliseconds(150)); Flush(window);
+        // ClockDialNode waits for rotateTo to finish before starting the 100ms delay.
+        clock.SendFrame(clock.Now);
+        for (var i = 0; i < 40; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(TimeSelection.Hour, picker.Selection);
+        await Task.Delay(150); Flush(window);
         Assert.Equal(TimeSelection.Minute,picker.Selection);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); // Commit ClockDialNode's field change.
         dial.Activate();window.KeyPress(Key.Left,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
         Assert.Equal(0,picker.SelectedTime.Minute);
+        window.KeyPress(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null);
         window.KeyRelease(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
         Assert.Equal(0,picker.SelectedTime.Minute); // Switching fields owns PreventUserInput.
         clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromSeconds(1)); Flush(window);
+        window.KeyPress(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null);
         window.KeyRelease(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
         Assert.Equal(55,picker.SelectedTime.Minute);
         window.Content=null; clock.AdvanceBy(TimeSpan.FromSeconds(1));

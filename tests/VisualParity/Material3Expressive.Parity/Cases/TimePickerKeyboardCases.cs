@@ -35,7 +35,7 @@ public sealed class TimePickerKeyboardCases
         var dial = picker.GetVisualDescendants().OfType<ClockFace>().Single();
         void Sample(string id)
         {
-            var index = Array.FindIndex(dial.GetVisualChildren().OfType<Button>().ToArray(), b => b.IsFocused);
+            var index = Array.FindIndex(dial.Labels.ToArray(), b => b.IsFocused);
             writer.Submit(host.Snapshot(id, id, [new("picker", "time-picker", null, [
                 Measurement.Numeric("hour", picker.SelectedTime.Hour, "hour", definition: "time-picker.selected-hour"),
                 Measurement.Numeric("minute", picker.SelectedTime.Minute, "minute", definition: "time-picker.selected-minute"),
