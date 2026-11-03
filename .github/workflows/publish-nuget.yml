@@ -2,16 +2,25 @@ name: Publish NuGet Packages
 
 on:
     workflow_dispatch:
+        inputs:
+            nuget_user:
+                description: NuGet.org username for Trusted Publishing
+                default: Shirasagi0012
+                required: true
+                type: string
 
 permissions:
     contents: read
-    packages: write
+    packages: read
+    id-token: write
+
+concurrency:
+    group: nuget-publication
+    cancel-in-progress: false
 
 env:
     PACKAGE_OUTPUT_DIR: artifacts/nuget
-    NUGET_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
-    NuGetPackageSourceCredentials_shirasagi0012: >-
-        Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+    NUGET_SOURCE: https://api.nuget.org/v3/index.json
 
 jobs:
     publish:
@@ -28,6 +37,9 @@ jobs:
 
             - name: Pack all libraries with their project versions
               shell: bash
+              env:
+                  NuGetPackageSourceCredentials_shirasagi0012: >-
+                      Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
               run: |
                   set -euo pipefail
                   projects=(
@@ -52,10 +64,16 @@ jobs:
                       ${{ env.PACKAGE_OUTPUT_DIR }}/*.snupkg
                   if-no-files-found: error
 
+            - name: NuGet login
+              id: login
+              uses: NuGet/login@v1
+              with:
+                  user: ${{ inputs.nuget_user }}
+
             - name: Push packages in dependency order
               shell: bash
               env:
-                  NUGET_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+                  NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
               run: |
                   set -euo pipefail
                   packages=(
@@ -71,6 +89,6 @@ jobs:
                     for package_file in "$PACKAGE_OUTPUT_DIR/$package".[0-9]*.nupkg; do
                       dotnet nuget push "$package_file" \
                         --source "$NUGET_SOURCE" --api-key "$NUGET_API_KEY" \
-                        --skip-duplicate --no-symbols
+                        --skip-duplicate
                     done
                   done

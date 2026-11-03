@@ -53,5 +53,6 @@ VisualParity 的独立运行方式见 [测试文档](tests/VisualParity/README.m
 各可发布项目在自己的 csproj 中声明包版本；外部依赖版本由相应的中央包配置管理。
 [手动发布工作流](.github/workflows/publish-nuget.yml)构建所选 ref，按各项目版本打包
 ComposeAnimation Runtime/Avalonia/TestSupport、MaterialShapes、Shadow、Roboto 与主库，
-再按依赖顺序推送至 GitHub Packages。工作流不会从 tag 名推导或统一覆盖这些版本。
+再按依赖顺序推送至 nuget.org。发布使用 NuGet Trusted Publishing，配置见下方接入指南。
+工作流不会从 tag 名推导或统一覆盖这些版本。
 发布包的使用与版本核对见[接入指南](docs/GETTING_STARTED.md#源码接入与发布包)。

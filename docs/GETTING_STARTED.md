@@ -36,13 +36,22 @@ dotnet run --project src/Material3Expressive.Catalog --no-restore -- --text-fiel
 ### 源码接入与发布包
 
 本指南通过项目引用使用当前源码 API。主库包 ID 为 `Shirasagi0012.Material3Expressive.Avalonia`，
-目标包源与上文相同；Roboto 字体模块使用独立包 `Shirasagi0012.MaterialTypography.Roboto`。
+发布目标包源为 nuget.org；Roboto 字体模块使用独立包 `Shirasagi0012.MaterialTypography.Roboto`。
+当前外部依赖仍需上文的 GitHub Packages 源。
 安装发布包时，以包源实际可用版本及对应版本文档为准，不把项目文件中的默认 Version 当作已经发布的证明。
 
 仓库的 [发布工作流](../.github/workflows/publish-nuget.yml)通过手动运行选择 ref，
 使用各项目 csproj 声明的版本，打包 ComposeAnimation Runtime/Avalonia/TestSupport、
-MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 GitHub Packages。
+MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 nuget.org，并上传打包生成的符号包。
 工作流不会从 tag 名推导版本。
+
+发布使用 [NuGet Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)
+及 `NuGet/login@v1` 获取临时 API key。首次运行前，在拥有这些包发布权限的 nuget.org 账户中，
+为本 GitHub 仓库配置 Trusted Publishing，工作流文件名填写 `publish-nuget.yml`。
+手动运行时的 `nuget_user` 默认为 `Shirasagi0012`，应与配置 Trusted Publishing 的账户一致；
+不需要配置长期 NuGet API key secret。GitHub token 仅用于恢复 GitHub Packages 依赖，
+仓库仍须具有这些依赖包的读取权限。
+
 新增工作流、源码构建成功或[已有 Release](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/releases)
 都不单独证明某次包发布已完成。不要从配套模块的历史版本推断主库可用版本；旧版包不保证包含当前源码的 API。
 
