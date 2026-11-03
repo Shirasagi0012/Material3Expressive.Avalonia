@@ -54,8 +54,8 @@
       },
       "Avalonia.Remote.Protocol": {
         "type": "Transitive",
-        "resolved": "12.1.2",
-        "contentHash": "DdLTe9xKXxxfRcXmUw1trXZpBpz1YiZYWXx0DfMVPFAnkCszKsHLi67kaZfGJqtfQq2EySKd2qgRYX2QYkSxcg=="
+        "resolved": "12.1.5",
+        "contentHash": "yNSke7MNKxJrgcTOQJk70QhPU568dxwRMeQCSmq9N7IGbpPS4zpbr4o6e8rLF/8UfASBQN/yuTgqUfa2nwf6Iw=="
       },
       "CommunityToolkit.Mvvm": {
         "type": "Transitive",
@@ -118,18 +118,6 @@
           "Microsoft.CodeAnalysis.Common": "[4.14.0]"
         }
       },
-      "Shirasagi0012.MaterialSymbols.Avalonia": {
-        "type": "Transitive",
-        "resolved": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81",
-        "contentHash": "uUpsBo4dwNr+Ns3W/vCT+zydxHk6z0wQVK8siVvYNBxS/lrFMGlZiUBLbwiZ4jF6si8UxUCo+O2bDK0qUybcFw==",
-        "dependencies": {
-          "Avalonia": "12.1.0",
-          "Avalonia.Skia": "12.1.0",
-          "SkiaSharp": "4.150.1",
-          "SkiaSharp.NativeAssets.Linux": "4.150.1",
-          "SkiaSharp.NativeAssets.WebAssembly": "4.150.1"
-        }
-      },
       "Shirasagi0012.SmoothScroll.Avalonia.Interaction": {
         "type": "Transitive",
         "resolved": "12.0.0.1",
@@ -141,14 +129,14 @@
       "Shirasagi0012.ComposeAnimation.Avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.2, )",
+          "Avalonia": "[12.1.5, )",
           "Shirasagi0012.ComposeAnimation.Runtime": "[0.3.1-alpha, )"
         }
       },
       "Shirasagi0012.ComposeAnimation.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.2, )",
+          "Avalonia": "[12.1.5, )",
           "CommunityToolkit.Mvvm": "[8.4.2, )"
         }
       },
@@ -161,7 +149,7 @@
       "Shirasagi0012.Material3Expressive.Avalonia": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.2, )",
+          "Avalonia": "[12.1.5, )",
           "PropertyGenerator.Avalonia": "[1.3.1, )",
           "Shirasagi0012.ComposeAnimation.Avalonia": "[0.3.1-alpha, )",
           "Shirasagi0012.Material3Expressive.Avalonia.Shadow": "[0.0.2, )",
@@ -174,43 +162,43 @@
       "Shirasagi0012.Material3Expressive.Avalonia.Shadow": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.2, )",
-          "Avalonia.Skia": "[12.1.2, )",
-          "SkiaSharp": "[4.150.1, )",
-          "SkiaSharp.NativeAssets.Linux": "[4.150.1, )",
-          "SkiaSharp.NativeAssets.WebAssembly": "[4.150.1, )"
+          "Avalonia": "[12.1.5, )",
+          "Avalonia.Skia": "[12.1.5, )",
+          "SkiaSharp": "[4.154.0, )",
+          "SkiaSharp.NativeAssets.Linux": "[4.154.0, )",
+          "SkiaSharp.NativeAssets.WebAssembly": "[4.154.0, )"
         }
       },
       "Shirasagi0012.MaterialShapes": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.0, )"
+          "Avalonia": "[12.1.5, )"
         }
       },
       "Shirasagi0012.MaterialTypography.Roboto": {
         "type": "Project",
         "dependencies": {
-          "Avalonia": "[12.1.2, )"
+          "Avalonia": "[12.1.5, )"
         }
       },
       "Avalonia": {
         "type": "CentralTransitive",
-        "requested": "[12.1.2, )",
-        "resolved": "12.1.2",
-        "contentHash": "GHSe4qxjbqqxB570xuB4KtoD+Qhk3uKXJUXbelGYhGz/ti8xEoL7e5DGun8hcsXHondszPPBEdcC68szw7vUKg==",
+        "requested": "[12.1.5, )",
+        "resolved": "12.1.5",
+        "contentHash": "Vw+gNvv4RXK5hLeVI9PfalhxPai6hrQjIElfoCDQK1fXTpk+vRyfhuhprrh+EIeuJtoYCy+AsSrqR1wgU28zeQ==",
         "dependencies": {
           "Avalonia.BuildServices": "11.3.2",
-          "Avalonia.Remote.Protocol": "12.1.2",
+          "Avalonia.Remote.Protocol": "12.1.5",
           "MicroCom.Runtime": "0.11.6"
         }
       },
       "Avalonia.Skia": {
         "type": "CentralTransitive",
-        "requested": "[12.1.2, )",
-        "resolved": "12.1.2",
-        "contentHash": "x0TDDdZgNepbxRd6gSQyv3A/hHoVJk3kYqjRa1baI43XPGPuO87lArf4DRKAERgWUxUp1ad28aTvVsE3x0JM0g==",
+        "requested": "[12.1.5, )",
+        "resolved": "12.1.5",
+        "contentHash": "irfPBtb4UoAT0qfRviYsALBwo0JwXnziRNOTQLzzAQt3eoNPyKFLBsgyj5hE4+6vgunQ7hltEHlvTHPkCoreIg==",
         "dependencies": {
-          "Avalonia": "12.1.2",
+          "Avalonia": "12.1.5",
           "HarfBuzzSharp": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
           "HarfBuzzSharp.NativeAssets.WebAssembly": "8.3.1.3",
@@ -229,22 +217,6 @@
           "Microsoft.CodeAnalysis.CSharp": "4.14.0"
         }
       },
-      "Shirasagi0012.MaterialColorUtilities": {
-        "type": "CentralTransitive",
-        "requested": "[0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c, )",
-        "resolved": "0.4.0-alpha.ci.ga9a5308971ae1c4a60cd4b809ec89f97bbbfa46c",
-        "contentHash": "NHpXNB1ODI0UMlLkE/8EMYiP7ER6DGPI0YtMF1bEfukM/f1qhMGZLrhDTW3dziWiJhu7CaE2I1crhAgzxjM83Q=="
-      },
-      "Shirasagi0012.MaterialSymbols.Avalonia.Rounded": {
-        "type": "CentralTransitive",
-        "requested": "[0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81, )",
-        "resolved": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81",
-        "contentHash": "12j8chKsO8uX9grnPsUjy78HH+EYbY0vQSSHToA291VjWjcce3UxNO8jE+WzBdt6LP1vFD1sgaQEaI0HBAV6Bg==",
-        "dependencies": {
-          "Avalonia": "12.1.0",
-          "Shirasagi0012.MaterialSymbols.Avalonia": "0.1.2-alpha.ci.ge577ac071623f74411e19e28e440eaca73a33d81"
-        }
-      },
       "Shirasagi0012.SmoothScroll.Avalonia": {
         "type": "CentralTransitive",
         "requested": "[12.0.0.1, )",
@@ -257,37 +229,37 @@
       },
       "SkiaSharp": {
         "type": "CentralTransitive",
-        "requested": "[4.150.1, )",
-        "resolved": "4.150.1",
-        "contentHash": "5v3T8X1N62Dp+AkPO70GNBNS/NRBPGMOTiN+Prg33sZAcm/Ug3YOAH+3RTj/jxJV8NGTJs2idGpC2Qdae2mGLQ==",
+        "requested": "[4.154.0, )",
+        "resolved": "4.154.0",
+        "contentHash": "R3BuszJ3tUFmni37nZIRawXL0yx+XHyx7xi1716/0TybuEQFhnBx48Ig3rFpeVFQVytpGpJZZ+NLW9d9UPG7EA==",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "4.150.1",
-          "SkiaSharp.NativeAssets.macOS": "4.150.1"
+          "SkiaSharp.NativeAssets.Win32": "4.154.0",
+          "SkiaSharp.NativeAssets.macOS": "4.154.0"
         }
       },
       "SkiaSharp.NativeAssets.Linux": {
         "type": "CentralTransitive",
-        "requested": "[4.150.1, )",
-        "resolved": "4.150.1",
-        "contentHash": "7IZtljoTBp0EH7/6K3p3yey44db3W7hkV9UPdCOaQQ2TxFkmFOpXwOPiQ865DrG+szgp0aKpQs8vYrzRdF83Ng=="
+        "requested": "[4.154.0, )",
+        "resolved": "4.154.0",
+        "contentHash": "OCnXgj54PXqd0S9FXbOUIlJEuJF4SWKK/rr5R2KnixaUayLQDNu3W/g0vOeFapxarO/LxmYIvC+nx2arxNjiiQ=="
       },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "CentralTransitive",
         "requested": "[4.150.1, )",
-        "resolved": "4.150.1",
-        "contentHash": "r755HVwaHZhyf1clWjrM2/RoOZYCzkQEmE9pu/mVsebPejWu52niNPUwtfyf112qoF0PIk6OndqVOUoITj6TwQ=="
+        "resolved": "4.154.0",
+        "contentHash": "GgYL4ML3HT4CW33oXMHdp7BSRU87bPUfWBXdYgNduGlt4GAbAM/3eXcjjUdilS0H1r2R5iBhwvExCfSYGwFKlw=="
       },
       "SkiaSharp.NativeAssets.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[4.150.1, )",
-        "resolved": "4.150.1",
-        "contentHash": "Rx0pap/LE7b7k32t3Vth7ogjXNP46zyJ4ZTk9Aqy/3mKrsOBc0QhnCcHC6Tsl+3w7OtnbtzNSc6/BIa9Ut5c+A=="
+        "requested": "[4.154.0, )",
+        "resolved": "4.154.0",
+        "contentHash": "dwF/OPmJmqnWyYPlnZSrgW32eW0jwJy9F+/DjI33UFdBe0aSwAcdgaQHPgwn+L+RO/5I/bQexl8n9ubo3sqsFA=="
       },
       "SkiaSharp.NativeAssets.Win32": {
         "type": "CentralTransitive",
         "requested": "[4.150.1, )",
-        "resolved": "4.150.1",
-        "contentHash": "qrLSL8OonbkMJdSH8heK0Jl39Y2xxZGdd7Ru4cyBXk2ITdx+Fu1sCFLmvCKmnMaYs//mlN/YSpSpOurEXErcQw=="
+        "resolved": "4.154.0",
+        "contentHash": "GXgoY77GCXdPcveNAmy8o3gVit8sp6YtnI88h5camLPfihjulwJUajZXKhgVuZ8RhuwSTgfyt/00Dx8HRUSeAA=="
       }
     }
   }
