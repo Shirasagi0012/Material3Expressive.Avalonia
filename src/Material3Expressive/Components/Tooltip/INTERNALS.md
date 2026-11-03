@@ -1,16 +1,6 @@
-# Tooltip 实现说明
+# Tooltip 内部机制与维护说明
 
-使用入口见 [README](README.md)。维护时必须区分原生 ToolTip 的主题与服务适配、PlainTooltip
-的内容表面，以及 TooltipBox 的状态/Popup 路径，不能以原生静态测试证明 Box 的行为一致。
-
-Box 内部 motion 输入未就绪时，通过已有 Transition preparation reservation 保留 TooltipState 的未完成状态；撤下子通道并保留当前姿态与速度。规格恢复后重建通道、续接当前目标并释放 reservation，不完成或替换外部 State，也不提供替代曲线。
-
-## 默认配置数据流
-
-TooltipBox 的缩放/透明度规格由 Box Token 引用系统 motion，经主题绑定内部配置属性；Transition 捕获当前属性，不再自行解析 Token 或补 Expressive 默认。PlainTooltip 仍只负责静态表面。
-原生/Plain Tooltip 的 Padding、最小/最大尺寸及 Box Spacing 基线统一在 TokenSource；Plain 的软最小值绑定内部布局，不转成会抬高显式 Width/Height 的硬约束。位置工厂、互斥状态与超时职责保留。
-
-## 固定上游与本地入口
+## 1. 上游基线与职责映射
 
 固定版本以 [upstream-baseline.json](../../../../docs/upstream-baseline.json) 为准：AndroidX
 `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 `1.5.0-alpha27`）为默认逻辑依据，
@@ -19,7 +9,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 
 | 上游文件 / 关键符号 | 本地职责 |
 | --- | --- |
-| `Tooltip.kt`：`PlainTooltip`、`TooltipBox`、`TooltipState`、`TooltipDefaults` | [PlainTooltip.cs](PlainTooltip.cs)、[TooltipBox.cs](TooltipBox.cs)、[TooltipState.cs](TooltipState.cs)、[TooltipDefaults.cs](TooltipDefaults.cs) |
+| `Tooltip.kt`：`PlainTooltip`、`RichTooltip`、`TooltipBox`、`TooltipState`、`TooltipDefaults` | [PlainTooltip.cs](PlainTooltip.cs)、[TooltipBox.cs](TooltipBox.cs)、[TooltipState.cs](TooltipState.cs)、[TooltipDefaults.cs](TooltipDefaults.cs) |
 | `internal/BasicTooltip.kt`：显示互斥、鼠标/焦点/长按与 dismiss 分支 | TooltipState 的 MutatorMutex 等待与 TooltipBox 的输入生命周期 |
 | `tokens/PlainTooltipTokens.kt` | [PlainTooltipTokenSource.cs](PlainTooltipTokenSource.cs)、[Tooltip.axaml](Tooltip.axaml)：反色 Surface、BodySmall、默认尺寸 |
 | `Tooltip.kt` 的位置提供器及 Core Popup 桌面定位 | [TooltipPosition.cs](TooltipPosition.cs) 的物理像素算法、TooltipBox.PlacePopup 的锚点窗口坐标 |
@@ -28,7 +18,12 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 AndroidX 是 Material 逻辑依据，Popup 的平台行为取固定 Core，尤其不套用 AndroidX 强制 focusable 分支。
 原生 ToolTip 只共享静态 PlainTooltip Token，不是整个 Compose Tooltip 的等价入口。
 
-## 三条路径的边界
+RichTooltip 的三槽表面由 RichTooltip.cs / RichTooltipLayout.cs 承担，RichTooltipTokenSource 保留 RichTooltipTokens.kt 的系统引用。两端固定 RichTooltip 与 textVerticalPadding 实现相同。
+
+## 2. 关键机制与架构契约
+
+TooltipBox 的缩放/透明度规格由 Box Token 引用系统 motion，经主题绑定内部配置属性；Transition 捕获当前属性，不再自行解析 Token 或补 Expressive 默认。PlainTooltip 仍只负责静态表面。
+原生/Plain Tooltip 的 Padding、最小/最大尺寸及 Box Spacing 基线统一在 TokenSource；Plain 的软最小值绑定内部布局，不转成会抬高显式 Width/Height 的硬约束。位置工厂、互斥状态与超时职责保留。
 
 原生主题提供 8×4 DIP padding、40×24 最小尺寸和 200 最大宽度。
 定位默认值必须设置在锚点上，因为 ToolTip 服务从锚点读取 Top / -4 / overlay；
@@ -39,8 +34,6 @@ PlainTooltipLayout 的 `sizeIn(40×24, maxWidth)` 位于调用方尺寸内，显
 其 Surface 默认 tonal/shadow elevation 均为 0，内容通过独立 presenter 消费 BodySmall 和前景。
 Box 自身只测量锚点，提示属于独立 overlay Popup；`PART_Root` 在换模板时必须正确移除/重接 Popup。
 Popup 同时在逻辑树与可视树接入，维持模板、资源和卸载行为。
-
-## 状态、输入与动画不变量
 
 TooltipState 的直接构造默认 persistent；TooltipBox 隐式实例默认 nonpersistent。
 每个 Box 连接独立状态。默认 GlobalMutatorMutex 使同优先级/高优先级请求打断旧请求，
@@ -61,18 +54,27 @@ Automation Invoke 表达锚点的长按显示，提示提供 ToolTip / Assertive
 缩放和透明度作用于同一容器，父级开启整层透明度合成；局部解除 Popup 宿主裁剪以保留
 Core clippingEnabled=false 的阴影，不应为了匹配截图裁掉显式 shadow elevation。
 
-## 定位与采样
-
 位置提供器使用物理窗口像素：居中整数除法截断，先翻边再夹到客户区，超大提示原点夹到 0。
 Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInWindow + local size`，
 不能替换成变换四角后的包围盒。读取原点时撤销 Avalonia 自动 RTL 镜像，保留显式 RenderTransform，
 镜像可能来自锚点或父容器。
 
 动态几何读取未变换 Popup 与局部尺寸，真实动画用同时间线截图比较；Float/Double 矩阵末位
-不伪装成布局差异。锚点移动场景保留首次与同帧再次绘制采样：旧参考宿主曾未处理完 onPlaced
-触发的重测，完善 draw 完成检查后原时间点已对齐。不要在产品中人为延迟 Popup 定位规避测试问题。
+不伪装成布局差异。锚点移动场景需保留首次与同帧再次绘制采样，并等待 onPlaced 触发的重测完成。
 
-## 已确认选择
+### 富内容布局与尺寸 Token
+
+RichTooltip 按标题、正文、动作顺序分配剩余高度，三槽分别提供文字角色与颜色。内容或模板决定槽可见性，动态添加槽会重新测量。
+外层复用 PlainTooltipLayout 的软尺寸约束，控件与内部布局分别绕过自动镜像并解析逻辑 start。
+
+`Comp.RichTooltip` 的 SubheadFirstBaselineOffset、TextFirstBaselineOffset、TextBottomPadding、TextVerticalPadding、ActionMinHeight、ActionBottomPadding
+经主题绑定到 RichTooltipLayout 的可测量属性。默认值分别为 28、24、16、4、36、8 DIP，局部及祖先资源覆盖会触发重新测量。
+标题和正文保留 alignmentLineOffsetMeasure 顺序，缺失基线按零计算，before/after 依次受剩余空间限制；未指定 after 的零距离仍参与计算。
+动作的最小高度在底部留白之前应用，受限时保持 requiredHeightIn 的居中溢出。
+
+普通 TextBlock、显式原生 BaselineOffset 和 ContentPresenter 可提供基线。复杂容器应在槽根提供实际基线，自动透传任意布局需要全库 alignment-line 合约。
+
+## 3. 已确认决定与已知差异
 
 确认依据为 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Tooltip/README.md)：
 
@@ -81,61 +83,18 @@ Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInW
 - 同日选择原生 ToolTip 以静态视觉接近为目标，接受原生输入、定位、尺寸和无动画差异；不扩展到 TooltipBox
 - 同日接受 Tooltip 的动画目标提交时序差异：ComposeAnimation Transition 立即跟随 TargetState，Core 在采样旧动画后的重组帧末提交；保留现有共享 API，不加手动同步开关。仅覆盖该目标时序，不接受其他定位或布局偏离
 
-当前依赖来源见[公共接入](../../../../docs/GETTING_STARTED.md)；旧记录提及的 0.2.5/0.2.7-alpha
-是当时验证背景，不能继续当作当前安装说明。排版机制复用[共享排版决定](../../../../docs/DECISIONS.md#聚合-textstyle-与-token-层文字单位换算)。
+尚未实现 caret 的形状及背景、裁剪、阴影路径并集，任意自定义容器的基线透传也尚未实现。
+TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
 
-## 一致性边界与验证
+## 4. 验证入口
 
-尚未实现 caret 的形状及背景/裁剪/阴影路径并集。除下文 RichTooltip 点击路径外，实际 OS 桌面交互、
-物理触摸/笔、文字排版和像素、屏幕阅读器播报未经验证；合成输入测试不等于真实设备验收。
-已接受的动态截图差异仅是上节 Tooltip 目标提交时序；原生静态测试不评价定位一致性。
-
-- [NativeToolTipTests](../../../../tests/Material3Expressive.Tests/NativeToolTipTests.cs)：真实服务/overlay、内容绑定、内联样式、Token 与原生约束
-- [PlainTooltipTests](../../../../tests/Material3Expressive.Tests/PlainTooltipTests.cs)、[TooltipPositionTests](../../../../tests/Material3Expressive.Tests/TooltipPositionTests.cs)：尺寸、文字环境、像素定位
-- [TooltipStateTests](../../../../tests/Material3Expressive.Tests/TooltipStateTests.cs)、[TooltipBoxTests](../../../../tests/Material3Expressive.Tests/TooltipBoxTests.cs)：优先级、超时、鼠标/焦点/Tab/Escape、外部请求、合成长按、模板/状态替换与卸载
-- [PlainTooltipCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/PlainTooltipCases.cs) / [PlainTooltipCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/PlainTooltipCases.kt)、[TooltipBoxCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/TooltipBoxCases.cs) / [TooltipBoxCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/TooltipBoxCases.kt)、[NativeToolTipCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/NativeToolTipCases.cs) / [NativeToolTipCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/NativeToolTipCases.kt)：三个独立 suite，非文字内容
-
-旧合并记录中三个 suite 结构化事实均相等、重复稳定；Plain/native 静态图匹配，TooltipBox
-保留上述时序造成的 different。代表性共享 draw 回归涉及 AlertDialog 中断、FloatingToolbar
-反向、LoadingIndicator 稀疏帧、AppBar 中断，不等于这些族的全量复验。
-详细历史统计见固定提交；未跟踪的 artifacts 不作为当前可访问证据。以下为复现入口，实际结果需以新生成报告为准：
+- `NativeToolTipTests` 检查原生服务和静态主题。
+- `PlainTooltipTests`、`RichTooltipTests` 检查尺寸、槽位、文字角色、基线及 Token 覆盖。RichTooltip 的 density 回归覆盖动态资源、RTL、动作最小高度及槽位切换。
+- `TooltipPositionTests`、`TooltipStateTests`、`TooltipBoxTests` 检查定位、互斥、输入、动画与卸载。
+- 双端族为 `plain-tooltip`、`rich-tooltip`、`native-tooltip`、`tooltip-box`。Rich 的 show / interrupt / resize 位于 TooltipBox 族，运动截图按已确认的时序差异单独读取。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~Tooltip|FullyQualifiedName~ToolTip"
-./tests/VisualParity/parity.ps1 self-test --family plain-tooltip --require-match
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~Tooltip|FullyQualifiedName~ToolTip'
 ./tests/VisualParity/parity.ps1 self-test --family rich-tooltip --require-match
-./tests/VisualParity/parity.ps1 self-test --family native-tooltip --require-match
 ./tests/VisualParity/parity.ps1 self-test --family tooltip-box
 ```
-
-参考环境与原始 different 的读取方式见 [VisualParity](../../../../tests/VisualParity/README.md)，
-TooltipBox 不以 require-match 掩盖或重分类已保留的原始差异。
-
-## RichTooltip 的默认无 caret 分支
-
-`RichTooltip.cs` 提供标题、正文和动作及其数据模板，沿用现有组件槽位、Surface 和 Token API。
-本次剩余移植授权允许新增非破坏性组件入口；没有扩展 Shape 或公共布局框架，也没有改变上述 Box 决定。
-固定 AndroidX 与 Core 的 `Tooltip.kt.RichTooltip` / `textVerticalPadding` 实现相同。
-`RichTooltipTokenSource` 保留 `tokens/RichTooltipTokens.kt` 的 System 引用；三槽分别提供独立文字角色与颜色。
-
-`RichTooltipLayout` 按 Column 顺序分配剩余高度，并移植 Foundation `AlignmentLine.kt` 的
-`alignmentLineOffsetMeasure`：缺少基线视作零，before/after 依次夹到剩余空间；未指定 after
-也参与零距离计算，因此越过内容底部的基线仍会产生尾部留白。动作保留
-`requiredHeightIn(min=36).padding(bottom=8)` 的约束突破及居中溢出。
-内部尺寸包装复用 PlainTooltipLayout；控件与槽布局分别绕过自动镜像并解析逻辑 start，支持局部 RTL。
-标题/动作可见性由 owner 伪类更新，保证从隐藏状态添加内容/模板时也重新测量。
-
-普通 TextBlock、直接显式原生 BaselineOffset 及 ContentPresenter 可读基线；任意自定义容器的基线
-透传仍未经实现。建议需要复杂布局的调用者在槽根明确提供原生 BaselineOffset；若要自动透传任意
-布局，应先决定全库 alignment-line 合约，不能将遍历到的第一个后代文字当作真实父布局基线。
-
-`RichTooltipTests` 覆盖三槽组合、真实文字角色/基线、显式基线、Token 更新、局部覆盖、动态模板和 RTL。
-`RichTooltipCases` 的无字形双端矩阵覆盖四种槽组合 × light/dark × LTR/RTL、基线边界、尺寸约束、
-颜色与 elevation、槽位/主题/内容切换；36 例全部重复稳定、结构化事实相等，1 例像素 equal、35 例
-withinTolerance（2026-11-03）。文字栅格、真实辅助技术和实际桌面输入不由此证明。
-
-同日对 TooltipBox 全部 83 例完成 self-test，新增 rich show / interrupt / resize 三例均重复稳定、
-布局与状态相等；resize 图像 withinTolerance，show / interrupt 的运动截图仍保留上文已确认的
-目标提交时序差异，稳定终点 withinTolerance。没有更改 Box 语义或重分类原始不同结果。
-Windows Catalog 实际点击打开 RichTooltip，确认标题/正文/动作显示，点击 Got it 关闭。
-这条桌面路径已验证，仍不代表文字像素一致性或屏幕阅读器验收。

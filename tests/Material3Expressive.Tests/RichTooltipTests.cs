@@ -128,6 +128,74 @@ public class RichTooltipTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DensityTokens_UpdateBaselinesAndActionMeasurements(bool rtl)
+    {
+        var title = new Marker(32, 10);
+        var content = new Marker(64, 8);
+        var action = new Marker(24, 12);
+        TextBlock.SetBaselineOffset(title, 6);
+        TextBlock.SetBaselineOffset(content, 3);
+        var tooltip = new RichTooltip { Title = title, Content = content, Action = action,
+            FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var window = Show(tooltip);
+        try
+        {
+            window.Resources[Comp.RichTooltip.SubheadFirstBaselineOffset] = 34d;
+            window.Resources[Comp.RichTooltip.TextFirstBaselineOffset] = 30d;
+            window.Resources[Comp.RichTooltip.TextBottomPadding] = 20d;
+            window.Resources[Comp.RichTooltip.ActionMinHeight] = 48d;
+            window.Resources[Comp.RichTooltip.ActionBottomPadding] = 18d;
+            Flush(window);
+            Assert.Equal(28, title.TranslatePoint(default, tooltip)!.Value.Y);
+            Assert.Equal(65, content.TranslatePoint(default, tooltip)!.Value.Y);
+            Assert.Equal(93, action.TranslatePoint(default, tooltip)!.Value.Y);
+            Assert.Equal(141, tooltip.Bounds.Height);
+
+            // The action minimum and its bottom padding participate at different layout stages.
+            window.Resources[Comp.RichTooltip.ActionMinHeight] = 20d;
+            Flush(window);
+            Assert.Equal(123, tooltip.Bounds.Height);
+            window.Resources[Comp.RichTooltip.ActionBottomPadding] = 4d;
+            Flush(window);
+            Assert.Equal(113, tooltip.Bounds.Height);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void DensityTokens_TextOnlyPaddingTracksLocalOverrideAndSlotChanges()
+    {
+        var content = new Marker(64, 8);
+        var tooltip = new RichTooltip { Content = content };
+        var window = Show(tooltip);
+        try
+        {
+            window.Resources[Comp.RichTooltip.TextVerticalPadding] = 12d;
+            Flush(window);
+            Assert.Equal(32, tooltip.Bounds.Height);
+            Assert.Equal(12, content.TranslatePoint(default, tooltip)!.Value.Y);
+
+            tooltip.Resources[Comp.RichTooltip.TextVerticalPadding] = 16d;
+            window.Resources[Comp.RichTooltip.TextVerticalPadding] = 20d;
+            Flush(window);
+            Assert.Equal(40, tooltip.Bounds.Height);
+            Assert.Equal(16, content.TranslatePoint(default, tooltip)!.Value.Y);
+
+            tooltip.Title = new Marker(32, 10);
+            Flush(window);
+            Assert.Equal(86, tooltip.Bounds.Height);
+            Assert.Equal(62, content.TranslatePoint(default, tooltip)!.Value.Y);
+            tooltip.Title = null;
+            tooltip.Resources.Remove(Comp.RichTooltip.TextVerticalPadding);
+            Flush(window);
+            Assert.Equal(48, tooltip.Bounds.Height);
+        }
+        finally { window.Close(); }
+    }
+
     static Window Show(RichTooltip tooltip)
     {
         tooltip.HorizontalAlignment = HorizontalAlignment.Center; tooltip.VerticalAlignment = VerticalAlignment.Center;

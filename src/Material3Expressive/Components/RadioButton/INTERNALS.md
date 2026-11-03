@@ -1,23 +1,12 @@
-# RadioButton 实现说明
+# RadioButton 内部机制与维护说明
 
-使用方法见 [README](README.md)。原生控件负责选中、分组和自动化，模板部件只负责绘制与动画。
-
-## 默认配置数据流
-
-指示器画布尺寸与外留白由组件 `IndicatorSize` / `IndicatorPadding` Token 同步传入内部布局、Surface 和绘制；布局槽取画布加两侧留白，并分别与最小交互宽高比较。默认值仍为 20 DIP 与四边 2 DIP，描边、波纹和焦点配置独立保留。
-
-内部 motion 输入以 null 表示尚未绑定；挂载、重挂或资源临时失效时不构造无效弹簧，恢复后提交当前目标。已有动画保留其已捕获规格，不以 Expressive 常量补齐配置。
-
-圆点及颜色动画规格由组件 Token 引用系统 motion，经主题传入 Indicator 配置属性；状态切换捕获当前有效规格，不在内部解析 Token 或补 Expressive 默认。完整 RadioButtonColors 的整组替换语义保持不变。
-
-## 固定上游与本地入口
+## 1. 上游基线与职责映射
 
 基线身份见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX
 `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 `1.5.0-alpha27`）为默认逻辑依据，
 Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0-alpha01`）
 为桌面平台依据。组件源为 [RadioButton.kt（AndroidX）](https://github.com/androidx/androidx/blob/f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt) / [Core 固定提交](https://github.com/JetBrains/compose-multiplatform-core/blob/a9e47e8aa04c95cfe572ab4297c770f3cbfb234e/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt)，
 路径前缀为 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`。
-不要用上游 HEAD 替代固定提交，也不要把当前实现直接视为一致性或设计授权的证明。
 
 | 上游职责 / 关键符号 | 本地职责 |
 | --- | --- |
@@ -28,7 +17,13 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 
 内部 StyleableRadioButton 不属于此处公开 API 的移植范围。
 
-## 绘制、布局与生命周期
+## 2. 关键机制与架构契约
+
+指示器画布尺寸与外留白由组件 `IndicatorSize` / `IndicatorPadding` Token 同步传入内部布局、Surface 和绘制；布局槽取画布加两侧留白，并分别与最小交互宽高比较。默认值仍为 20 DIP 与四边 2 DIP，描边、波纹和焦点配置独立保留。
+
+内部 motion 输入以 null 表示尚未绑定；挂载、重挂或资源临时失效时不构造无效弹簧，恢复后提交当前目标。已有动画保留其已捕获规格，不以 Expressive 常量补齐配置。
+
+圆点及颜色动画规格由组件 Token 引用系统 motion，经主题传入 Indicator 配置属性；状态切换捕获当前有效规格，不在内部解析 Token 或补 Expressive 默认。完整 RadioButtonColors 的整组替换语义保持不变。
 
 指示器画布 20 DIP，外留白 2 DIP，默认布局槽 48 DIP；外圈中心线半径 9 DIP、描边 2 DIP。
 选中 dotRadius 动画目标为 6 DIP，实际填充半径减去半个描边即 1 DIP。
@@ -46,10 +41,16 @@ Skia 使用 Float 物理像素运算；Surface 与共享控制器提供无界、
 默认焦点使用 opacity indication；可选 inset focus-ring 已通过共享部件接入，
 FocusRingCornerRadius=12 对应 24 DIP 反馈区域上的 CircleShape，不改变原有无界 ripple。
 
-## 已确认的组件选择
+`RadioButtonAppearance.InteractionSource` 经模板交给 Indicator，挂载连接现有交互控制器、卸载断开。
+null 使用内部源；替换源重建 indication，旧 starts 不回放，按压结束按对象身份配对。
+源事件只影响反馈，原生选择、组互斥和命令次序保持不变。对应固定 RadioButtonImpl 的 selectable
+interactionSource 参数；AndroidX/Core 两份固定组件文件一致。
+焦点环使用同一 ripple 的订阅生命周期，切换 Opacity / InsetRing 更新配置并保留活动反馈。
+描边、波纹和焦点轮廓配置独立于 IndicatorSize / IndicatorPadding。共享规则见 [Interaction](../../Foundation/Interaction/README.md)。
+
+## 3. 已确认决定与已知差异
 
 确认依据与历史观测保留自[拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/RadioButton/README.md)。
-以下只保留影响维护判断的决定和边界；旧测试数量、依赖版本及临时报告路径不是当前验证结果。
 
 2026-10-03，维护者选择“采用原生模板并接受上述范围（推荐）”：保留原生状态更新、组互斥、
 Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，与 Compose 仅回调并由应用写回不同。
@@ -63,57 +64,21 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 正半径继续走相同椭圆路径，也消除了选中起始阶段小于 1 DIP 动画半径的幻影点。
 这是有意偏离固定桌面基线，不应通过截断 spring 值或删掉尾段采样实现。
 
-共享职责见[交互反馈与键盘激活](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)和
-[Core Desktop 焦点](../../../../docs/DECISIONS.md#core-desktop-原生焦点反馈)。
+共享职责见[交互反馈与键盘激活](../../../../docs/DECISIONS.md)和
+[Core Desktop 焦点](../../../../docs/DECISIONS.md)。
 
-## 一致性边界与历史观测
+尚未实现完全等价的 null 回调模式。默认焦点轮廓是 24 DIP 反馈区域的圆形。
+文字栅格、真实辅助技术、完整桌面输入和非 Windows 平台未经双端验收。selection-source 部分 Core 重复捕获出现最大单通道 1 的变化，稳定性门禁保留原始失败。
 
-可选 InsetRing 使用 24 DIP 反馈区域的圆形轮廓。固定 RadioButton.kt 使用同一个 ripple node；
-切换 Opacity / InsetRing 仅更新配置，不清空按压波纹、状态层或焦点交互。
-共享呈现部件在两种模式下均维持同一次订阅，见 [Interaction](../../Foundation/Interaction/README.md)。
+## 4. 验证入口
 
-尚未实现 null 回调完全等价模式、独立最小交互尺寸环境覆盖。
-文字视觉、实际 OS 无障碍客户端、真实桌面手工交互和非 Windows
-平台未作双端验收。
-
-双端 `dynamic.input.enter`、`dynamic.input.request-only` 保留已接受的原生差异。
-两个 deselection-tail 场景对 Expressive / Standard 以 16ms 连续采样至 800ms，参考仍使用原始 Compose。
-旧记录中闪点修正前的像素回归在 256ms 失败，正常和十倍时长均可复现；修正后的新增像素差异
-局限于中心 1 DIP 半径区域，几何、选择、启用状态和回调计数保持相等。
-这一观察不表示所有像素或所有平台相等；回归应保留尾段状态与实际像素两种读数。
-
-## 外部交互源
-
-`RadioButtonAppearance.InteractionSource` 经模板交给 Indicator，挂载连接现有交互控制器、卸载断开。
-null 使用内部源；替换源重建 indication，旧 starts 不回放，按压结束按对象身份配对。
-源事件只影响反馈，原生选择、组互斥和命令次序保持不变。对应固定 RadioButtonImpl 的 selectable
-interactionSource 参数；AndroidX/Core 两份固定组件文件一致。
-
-`SelectionInteractionSourceTests` 验证原生事件发布、外部事件不激活、配对、源替换与重挂。
-双端 `selection-source.radio.*` 的布局/选择/回调一致；按压早期采样有像素差异落入既有容差，
-不是严格像素相等。禁用场景的参考端额外截图曾出现重复性差异，本地重复和额外截图稳定，
-仍保留真实结果，不修改参考、采样或比较器来掩盖。
-2026-11-03 产物见 `artifacts/visual-parity/runs/20261103-101906-e7957986`；
-参考端 radio.disable 的不稳定像素最大通道差为 1。整族统计见 CheckBox/INTERNALS 的同批记录。
-
-## 验证入口
-
-- [SelectionControlHitTests.cs](../../../../tests/Material3Expressive.Tests/SelectionControlHitTests.cs)：
-  有内容整行的指示器留白、间隙、Padding 命中；LTR/RTL、内容模板、禁用、取消及动态增删 Content
-- [控件测试](../../../../tests/Material3Expressive.Tests/RadioButtonTests.cs)：分组、绑定/事件顺序、自动化、内容/RTL、禁用颜色独立规则、尾段 spring、正常/慢放闪点像素与 idle/模板生命周期。
-- [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/RadioButtonCases.cs) /
-  [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/RadioButtonCases.kt)
-- [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见
-  [MainWindow.axaml.cs](../../../Material3Expressive.Catalog/MainWindow.axaml.cs)
-
-从仓库根目录执行，环境与结果分类见 [VisualParity](../../../../tests/VisualParity/README.md)：
+- `RadioButtonTests` 和 `SelectionControlHitTests` 检查原生输入、状态/命令顺序、内容命中、主题及生命周期。
+- `SelectionDensityTokenTests` 检查尺寸与留白的动态资源覆盖。
+- `SelectionInteractionSourceTests` 检查配对、源替换、重挂及外部交互反馈。
+- 双端 `RadioButtonCases.cs` / `RadioButtonCases.kt` 的族名为 `radio-button`，共享源用例为 `selection-source`。精确比较保留第 3 节已接受的原生适配及已知像素差异。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter FullyQualifiedName~RadioButtonTests
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~RadioButtonTests|FullyQualifiedName~SelectionDensityTokenTests|FullyQualifiedName~SelectionInteractionSourceTests'
 ./tests/VisualParity/parity.ps1 self-test --family radio-button
+./tests/VisualParity/parity.ps1 self-test --family selection-source
 ```
-
-`self-test` 重新采集双端并检查重复捕获及额外被动截图的稳定性；执行完成、稳定、
-`withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
-不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
-分别说明执行错误、双端差异、稳定性及未覆盖项。

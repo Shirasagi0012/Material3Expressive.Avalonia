@@ -4,7 +4,7 @@ Chip 适合紧凑的操作、建议、筛选和已输入项目。库提供 `Assi
 `InputChip` 四个 Button 派生控件；先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 实现映射与适配依据见 [INTERNALS](INTERNALS.md)。
 
-## 最小示例
+## 基础用法
 
 在已加载 Material 主题的应用中：
 
@@ -25,7 +25,7 @@ Chip 适合紧凑的操作、建议、筛选和已输入项目。库提供 `Assi
 Input 没有此入口。默认容器高 32、交互布局最小高 48 DIP，标签使用 LabelLarge。
 Assist/Suggestion 使用固定 8 DIP 圆角；Filter/Input 默认具有未选中、选中、按压三种形状，见下文。
 
-## 选择、命令与事件
+## 变体与属性
 
 Assist/Suggestion 用原生 `Click` 或 `Command` 发起动作。
 Filter/Input 的 `IsSelected` 由应用管理，点击、命令或 automation Toggle 都只请求动作，不自动改选中状态：
@@ -41,7 +41,26 @@ Filter/Input 的 `IsSelected` 由应用管理，点击、命令或 automation To
 Filter/Input 提供 CheckBox/Toggle 自动化，选中值变化会通知自动化客户端。
 Enter 按下激活，`Space` 沿用原生 ClickMode；`IsEnabled="False"` 禁止输入并显示禁用状态。
 
-## 标签、图标与头像
+### 共享交互源
+
+`InteractionSource` 可注入共享 `MaterialInteractionSource`，null 使用私有流。原生鼠标/键盘向同一流
+发送 Press/Release/Cancel、Hover 和 Focus；外部事件改变反馈，不自动 Click 或修改 IsSelected。
+
+```csharp
+using Material3Expressive.Foundation.Interaction;
+
+var source = new MaterialInteractionSource();
+chip.InteractionSource = source;
+var drag = new MaterialInteractionEvent.DragStart();
+source.Emit(drag);
+// 宿主负责移动；取消时发 DragCancel(drag)。
+source.Emit(new MaterialInteractionEvent.DragStop(drag));
+```
+
+重叠事件按开始对象身份配对。更换源前应结束外部交互，旧外部交互仍可能影响高度，按压外观在新源下一事件时更新。外部 `Press.Position` 是 Chip 本地 DIP 坐标，包含最小交互布局留白。
+Catalog **Drag handle demo** 展示拖动源同时驱动 Card、Chip 和 Handle。
+
+## 内容槽与定制
 
 `Content` / `ContentTemplate` 为标签，`LeadingIcon` / `TrailingIcon` 及对应 `Template` 为图标槽。
 只设置图标模板也会占用槽位，即使对应内容为 null；模板可据此创建内容。Suggestion 不显示 trailing 槽。
@@ -65,7 +84,9 @@ Input 另有 `Avatar` / `AvatarTemplate`；Avatar 或 AvatarTemplate 存在时�
 Trailing 仍属于整个 Chip 的点击区域，没有独立移除命令或事件；删除与选择动作由应用决定。
 Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局。
 
-## 形状与局部定制
+### 形状与间距
+
+
 
 Filter/Input 的主题默认将 `UnselectedShape` / `SelectedShape` / `PressedShape` Token 组装成完整
 `ChipShapes`，分别使用 Medium/Full/Small 圆角，按压优先于选中。不需要额外 class。
@@ -107,7 +128,9 @@ Input 的 `Padding` 仍随头像/图标组合选择默认值。普通用户 Styl
 例如 `chip.ClearValue(Chip.SpacingProperty)`（`chip` 为实例，`Chip` 位于 `Material3Expressive.Components`）
 恢复实时默认间距；`filterChip.ClearValue(SelectableChip.ShapesProperty)` 恢复主题三形状配置。
 
-## 颜色与高度
+### 颜色与高度
+
+
 
 当前颜色通过原生 `Background` / `Foreground` / `BorderBrush` 定制，两个图标分别使用
 `LeadingIconColor` / `TrailingIconColor`（类型均为 `IBrush?`）。图标与标签不是同一个前景槽。
@@ -143,33 +166,11 @@ Input 的 `Padding` 仍随头像/图标组合选择默认值。普通用户 Styl
 只改默认悬停高度时也可覆盖 `Comp.Chip.FlatFilterHoverElevation`，其余高度仍跟随主题。
 透明背景下恢复 1 DIP 阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
 
-迁移旧配置时，`ChipColors` / `Colors` 已删除，改用上述原生属性、图标颜色属性及状态 Styles/Token。
-`ChipShapes` 不再是逐字段可空的默认值包装；旧的 `{m3:ChipShapes}` 写法改为主题默认或完整对象。
-旧 `Elevation=null` / `Spacing=null` 的默认值回退改为清除对应局部值。
+## 使用限制与注意事项
 
-## 使用边界
+Selectable Chip 默认最大宽度 1000 DIP，显式 Width / MinWidth 保留调用方约束。
+形状配置使用圆角矩形，布局支持前后槽间距。共享焦点环可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用。
+透明平面 Filter 恢复 1 DIP 悬浮阴影可能出现已知 GPU 灰环，自定义禁用高度也存在已记录的阴影差异。
+四族、Elevated、头像和禁用组合见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 
-`InteractionSource` 可注入共享 `MaterialInteractionSource`，null 使用私有流。原生鼠标/键盘向同一流
-发送 Press/Release/Cancel、Hover 和 Focus；外部事件改变反馈，不自动 Click 或修改 IsSelected。
-
-```csharp
-var source = new MaterialInteractionSource();
-chip.InteractionSource = source;
-var drag = new MaterialInteractionEvent.DragStart();
-source.Emit(drag);
-// 宿主负责移动；取消时发 DragCancel(drag)。
-source.Emit(new MaterialInteractionEvent.DragStop(drag));
-```
-
-重叠开始事件按对象身份结束；高度使用最后仍存活的交互。更换 source 时，上游高度 collector
-保留旧外部交互，建议先配对结束再更换。按压形变的记忆值保留到新 source 首条事件，
-新 collector 不继承旧 Press 列表；indication 自身重建。卸载会清理所有 collector。
-外部 `Press.Position` 是 Chip 本地 DIP 坐标，包含最小交互布局留白。
-Catalog **Drag handle demo** 展示拖动源同时驱动 Card、Chip 和 Handle。
-
-Selectable Chip 默认最大宽度 1000 DIP，显式 `Width`/`MinWidth` 保留调用方约束。
-当前 `Shapes` 仅支持圆角矩形；任意路径/切角 `Shape` 和通用 Compose Arrangement 尚未实现。
-共享 Surface 已接入 `MaterialInteraction.FocusFeedback="InsetRing"`，Chip 自身双端焦点环视觉矩阵尚未验证。
-精度、阴影与原生键盘的已知差异不等于完整视觉一致；真实文字/字体、系统屏幕阅读器和桌面手工体验
-未由无字形 headless 用例证明。
-四族、Elevated、形状、头像和禁用组合见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

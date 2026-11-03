@@ -1,21 +1,20 @@
 # Menu
 
-## 独立 DropdownMenu
+库提供独立 DropdownMenu / DropdownMenuPopup，以及 Avalonia 原生 MenuFlyout / Menu 的 Material 主题。
+先完成[公共接入](../../../../docs/GETTING_STARTED.md)并初始化窗口动画作用域。
 
-`DropdownMenu` 提供普通 Material 菜单的 Surface、滚动、定位和进入/退出动画。
-`DropdownMenuPopup` 只提供弹出宿主、Column 和动画，可组合多个 `DropdownMenuGroup`。
-加载主题和初始化窗口动画环境见[公共接入](../../../../docs/GETTING_STARTED.md)。
-这两个控件在可视树中声明，不占父布局空间；`PlacementTarget` 指定锚点。
+## 基础用法
 
-以下事件处理器位于宿主 code-behind，`m3` 命名空间与下方原生示例相同：
+独立菜单在视图中声明，以 PlacementTarget 指定锚点。下面的事件处理器放在所属视图代码中。
 
 ```xml
-<Grid>
+<Grid xmlns="https://github.com/avaloniaui"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Button x:Name="MenuAnchor" Content="菜单" Click="OpenMenu" />
   <m3:DropdownMenu x:Name="Actions" PlacementTarget="{Binding #MenuAnchor}"
                    DismissRequested="DismissMenu">
-    <m3:DropdownMenuItem Content="复制" LeadingIcon="{m3:Symbol ContentCopy}"
-                         TrailingContent="Ctrl+C" Click="Copy" />
+    <m3:DropdownMenuItem Content="复制" LeadingIcon="{m3:Symbol ContentCopy}" Click="Copy" />
     <Separator />
     <m3:DropdownMenuItem Content="不可用" IsEnabled="False" />
   </m3:DropdownMenu>
@@ -23,103 +22,39 @@
 ```
 
 ```csharp
-private void OpenMenu(object? sender, RoutedEventArgs e) => Actions.IsOpen = true;
-private void DismissMenu(object? sender, DismissRequestedEventArgs e) => Actions.IsOpen = false;
-private void Copy(object? sender, RoutedEventArgs e)
+private void OpenMenu(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => Actions.IsOpen = true;
+private void DismissMenu(object? sender, Material3Expressive.Foundation.Overlays.DismissRequestedEventArgs e) => Actions.IsOpen = false;
+private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 {
-    // 执行业务操作后，由调用方决定是否关闭。
+    // 完成业务操作后关闭菜单。
     Actions.IsOpen = false;
 }
 ```
 
-`IsOpen` 可以绑定 ViewModel，目标变更在下一动画帧合并。`DismissRequested` 只发出请求，不自动改写状态；
-`IsPresented` 表示当前呈现内容是否存在，正常退出会保留到动画结束；进入中断的状态顺序遵循固定上游，
-详见 [INTERNALS](INTERNALS.md)。菜单项支持 `Click`、`Command` 和 `CommandParameter`，
-但不会自动关闭、互斥或切换业务状态。尾部的快捷键文字只负责呈现，不注册快捷键。
+## 变体与属性
 
-普通 `DropdownMenuItem` 默认使用 Baseline 布局。需要 Expressive 动作项时设置
-`Theme="{StaticResource MaterialExpressiveDropdownMenuItemTheme}"`。
-`CheckableDropdownMenuItem` 和 `SelectableDropdownMenuItem` 默认使用 Expressive 布局：
+| 入口 | 用途及状态归属 |
+| --- | --- |
+| DropdownMenu | 自带表面、滚动、定位和开闭动画，IsOpen 由应用管理 |
+| DropdownMenuPopup + DropdownMenuGroup | 组合多组内容、组间距及滚动容器 |
+| DropdownMenuItem | 默认 Baseline，显式 MaterialExpressiveDropdownMenuItemTheme 可选 Expressive 外观 |
+| CheckableDropdownMenuItem / SelectableDropdownMenuItem | 默认 Expressive，由应用写回 IsChecked / IsSelected |
+| 原生 MenuFlyout / MenuItem | 原生选择、组互斥、键盘及关闭行为 |
+| 原生 Menu | 水平菜单栏，沿用原生访问键和子菜单 |
 
-```xml
-<m3:DropdownMenuPopup IsOpen="{Binding IsMenuOpen}" PlacementTarget="{Binding #MenuAnchor}"
-                      DismissRequested="DismissGroupedMenu" m3:MenuAppearance.ColorStyle="Vibrant">
-  <m3:DropdownMenuPopup.ItemsPanel>
-    <ItemsPanelTemplate><StackPanel Spacing="2" /></ItemsPanelTemplate>
-  </m3:DropdownMenuPopup.ItemsPanel>
-  <m3:DropdownMenuGroup>
-    <m3:CheckableDropdownMenuItem Content="只读" SupportingText="保留文档内容"
-        IsChecked="{Binding IsReadOnly}" SelectedLeadingIcon="{m3:Symbol Check}"
-        CheckedChangeRequested="ChangeReadOnly" />
-  </m3:DropdownMenuGroup>
-</m3:DropdownMenuPopup>
-```
+独立菜单的 DismissRequested 发出关闭请求，IsPresented 表示呈现内容是否仍存在。项目支持 Click / Command / CommandParameter。
+勾选项目通过 CheckedChangeRequested.Value 请求新值，单选通过 Click / Command 写回选择。尾部快捷键文本用于展示。
+普通菜单支持上下键导航，Popup 支持 Tab、Escape / Back 和焦点恢复，相关行为可通过 IsPopupFocusable、DismissOnBack、DismissOnPointerOutside、ConsumePointerInputOutside 配置。
 
-此片段的 `ChangeReadOnly` 将 `MenuCheckedChangeEventArgs.Value` 写回 ViewModel；
-`DismissGroupedMenu` 将 `IsMenuOpen` 设为 false。单选项由 Click/Command 写回 `IsSelected`，
-同组其他项目也由业务方更新。没有原生 MenuItem 的 `GroupName` 或自动勾选行为。
-
-独立项目的 `InteractionSource` 可观察原生输入，也可注入外部反馈；普通、Expressive、勾选、单选项目共用此 API。
-源中的事件不会触发 `Click`、更改选择或关闭菜单。`null` 使用项目自身的内部源：
-
-```csharp
-var source = new MaterialInteractionSource();
-var item = new CheckableDropdownMenuItem { Content = "只读", InteractionSource = source };
-item.CheckedChangeRequested += (_, e) => item.IsChecked = e.Value;
-var hover = new MaterialInteractionEvent.HoverEnter();
-source.Emit(hover); // 挂接后发送；新订阅不会重放挂接前的事件。
-source.Emit(new MaterialInteractionEvent.HoverExit(hover));
-```
-
-类型位于 `Material3Expressive.Foundation.Interaction`。结束事件必须携带同一个开始事件实例。
-替换源、模板或卸载时会释放旧反馈；重新挂接只接收后续事件。
-
-`DropdownMenuGroup.InteractionSource` 使用相同事件类型，只通过 hover 驱动组形状，不呈现波纹。
-例如 `group.InteractionSource = source` 后发送上面的 enter/exit，即可预览悬停形变。
-分组开始时使用正常形状，只有某一帧实际观察到 hover 后，退出才会切换到 inactive 形状。
-替换源保留当前 hover 布尔值，直到新源的下一条事件重新计算；卸载则清空该记忆。这与固定上游一致。
-
-- `Shapes` 使用 `MenuDefaults.ItemShape(index, count)` / `GroupShape(index, count)`；位置由调用方给出，
-  分隔线不会隐式成为组边界。`MenuDefaults.GroupSpacing` 为 2 DIP。
-- `LeadingIcon`、`SelectedLeadingIcon`、`TrailingContent`、`SupportingText` 都有对应模板槽；
-  正文使用 `Content` / `ContentTemplate`。只有选中图标、没有普通 leading icon 时，选中会动画展开/淡入；
-  两种图标都存在时按上游直接替换。辅助文字使用 BodyMedium，正文使用 LabelLarge。
-- `MenuAppearance.ColorStyle` 的 Standard / Vibrant 可从独立 Popup 继承到分组和菜单项。
-  颜色、Padding、CornerRadius 及 Token 仍可覆盖。`MenuItemShapes` / `MenuGroupShapes` 的 null 字段保留主题默认值。
-- `Offset` 使用 DIP，X 在 RTL 中反向。`AnchorPosition` 和 `PositionProvider` 可定制候选位置；
-  定位器使用物理像素。固定上游的 Left/Right 实际使用逻辑 Start/End 算法，本实现保留这一行为。
-- `DropdownMenu.ScrollOffset` 可双向绑定；`MaxHeight` 限制滚动视口。可组合 Popup 本身不自动滚动，
-  按上游由内容显式放置 ScrollViewer。子菜单同样组合另一个 Popup，以菜单项为锚点。
-- 普通 DropdownMenu 用上下键移动焦点；所有可聚焦 Popup 支持 Tab、Escape/Back、焦点恢复。
-  `IsPopupFocusable`、`DismissOnBack`、`DismissOnPointerOutside`、`ConsumePointerInputOutside` 控制相关行为。
-  `ClippingEnabled` 控制定位的最终窗口夹取，`UsePlatformDefaultWidth` 默认 false。
-
-宿主限定当前窗口 PopupOverlayLayer。自定义 Window 模板需提供 `PART_VisualLayerManager`。
-形状接口目前使用现有 CornerRadius 能力；任意 Compose Shape / CutCornerShape、平台系统 inset 和预测返回
-尚未实现。独立菜单已加入 Linux 双端视觉测试，覆盖范围及共享绘制差异见 [INTERNALS](INTERNALS.md)；
-真实桌面输入、屏幕阅读器和文字栅格仍需验证。
-[MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml) 同时提供原生和独立菜单示例。
-
-## 原生 MenuFlyout
-
-原生 Avalonia `MenuFlyout` 的 Material 3 模板。加载 `MaterialTheme.axaml` 后，默认使用
-Vertical / Standard；菜单项、原生生成的容器和子菜单自动使用配套外观。
-窗口的动画环境初始化遵循[应用接入](../../../../docs/ARCHITECTURE.md)。
-
-## 默认与 Vibrant
+原生 flyout 默认使用 Vertical / Standard。设置 `MenuAppearance.ColorStyle="Vibrant"` 切换配色，设置 FlyoutPresenterTheme 选择 Baseline。
 
 ```xml
-<Button Content="菜单">
+<Button Content="原生菜单">
   <Button.Flyout>
-    <MenuFlyout>
-      <MenuItem Header="复制" Icon="{m3:Symbol ContentCopy}"
-                InputGesture="Ctrl+C" Command="{Binding CopyCommand}" />
-      <MenuItem Header="只读" ToggleType="CheckBox"
-                IsChecked="{Binding IsReadOnly}" StaysOpenOnClick="True" />
-      <Separator />
+    <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
+      <MenuItem Header="只读" ToggleType="CheckBox" IsChecked="True" StaysOpenOnClick="True" />
       <MenuItem Header="排序">
-        <MenuItem Header="名称" ToggleType="Radio" GroupName="Sort"
-                  IsChecked="True" />
+        <MenuItem Header="名称" ToggleType="Radio" GroupName="Sort" IsChecked="True" />
         <MenuItem Header="日期" ToggleType="Radio" GroupName="Sort" />
       </MenuItem>
     </MenuFlyout>
@@ -127,121 +62,53 @@ Vertical / Standard；菜单项、原生生成的容器和子菜单自动使用�
 </Button>
 ```
 
-`m3` 是 `https://github.com/Shirasagi0012/Material3Expressive.Avalonia`。
-使用 Vibrant 时只需给 flyout 加一项设置：
+后续片段沿用基础示例命名空间。Baseline 的资源名为 MaterialBaselineMenuTheme，默认 Vertical 为 MaterialVerticalMenuTheme。
+原生项目的业务选择使用 IsChecked，IsSelected 表达导航位置。InputGesture、Command、StaysOpenOnClick 和 GroupName 遵循原生语义。
 
-```xml
-<MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
-  <MenuItem Header="选中的项目" ToggleType="CheckBox" IsChecked="True" />
-</MenuFlyout>
-```
+### 共享交互源
 
-Standard 的选中背景是 TertiaryContainer，Vibrant 的选中背景是 Tertiary。
-配色可在运行时更改，并传递到子菜单。单个 `MenuItem` 也可覆盖该附加属性。
-
-## 切换到 Baseline
-
-使用同一个 `MenuFlyout`，选择另一套主题即可：
-
-```xml
-<MenuFlyout FlyoutPresenterTheme="{StaticResource MaterialBaselineMenuTheme}">
-  <MenuItem Header="复制" Command="{Binding CopyCommand}" />
-  <MenuItem Header="设置" />
-</MenuFlyout>
-```
-
-| 主题资源 | 作用 |
-| --- | --- |
-| `MaterialVerticalMenuTheme` | Vertical 容器，默认主题 |
-| `MaterialBaselineMenuTheme` | Baseline 容器及其配套菜单项 |
-| `MaterialVerticalMenuItemTheme` | 需要显式指定时可用于菜单项 |
-| `MaterialBaselineMenuItemTheme` | 需要显式指定时可用于菜单项 |
-
-Baseline 不消费 `MenuAppearance.ColorStyle`。两种布局使用不同 `ControlTheme`，
-不通过 classes 把两套模板拼在一起。显式指定 `MenuItem.Theme` 或原生
-`MenuFlyout.ItemContainerTheme` 时，使用调用方提供的主题。
-
-对应的 C#：
+独立项目和 DropdownMenuGroup 可设置 InteractionSource，null 使用内部源。调用需在 UI 线程，结束事件引用同一开始对象。
 
 ```csharp
-using Avalonia.Controls;
-using Avalonia.Styling;
-using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 
-var flyout = new MenuFlyout();
-flyout.Items.Add(new MenuItem { Header = "复制", Command = viewModel.CopyCommand });
-MenuAppearance.SetColorStyle(flyout, MenuColorStyle.Vibrant);
-flyout.ShowAt(button);
-
-// 再次打开时选择 Baseline。资源从已经加载 MaterialTheme 的控件查找。
-flyout.Hide();
-flyout.FlyoutPresenterTheme =
-    (ControlTheme)button.FindResource("MaterialBaselineMenuTheme")!;
-flyout.ShowAt(button);
+var source = new MaterialInteractionSource();
+item.InteractionSource = source;
+var hover = new MaterialInteractionEvent.HoverEnter();
+source.Emit(hover);
+source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 ```
 
-## 状态、配置与边界
+源提供交互反馈，业务选择与关闭仍由应用控制。项目替换源后接收新事件，组的悬浮外观保留到新源下一事件重新求值。
 
-- Vertical 的业务选中状态使用原生 `IsChecked`。`IsSelected` 是原生菜单的导航状态，
-  不用它表示业务选中。`ToggleType` 控制复选/单选行为；原生 `GroupName` 处理单选互斥。
-- 点击、`Command` / `CommandParameter` / `CanExecute`、键盘导航、快捷键文本、
-  `StaysOpenOnClick`、关闭和定位沿用 Avalonia。`InputGesture` 的执行规则也沿用原生 API。
-- `ItemsSource`、`ItemTemplate` 和多级子菜单可继续使用。`Separator` 及
-  `MenuItem Header="-"` 都是分隔线，不表示新的 Material 菜单组。
-- 默认值来自 `MenuTokenSource` 和 `MaterialTokens.Comp.Menu`，通过现有 Token 系统覆盖。
-  调整单个项目时也可使用原生 `Background`、`Foreground`、`Padding`、`CornerRadius`。
-- 菜单项支持状态层、ripple、Vertical 选中背景和圆角动画。原生 flyout 的打开/关闭动画、
-  独立分组/组间空隙、组悬停形变、Compose 的 supportingText / trailingContent 槽及
-  选中图标展开/淡入淡出在原生主题路径中暂未提供；独立控件见上文。
-- 弹层宿主选择沿用原生 `MenuFlyout`。主菜单和子菜单均不绘制阴影：关闭 Material 自绘阴影和平台阴影提示。
-  独立 DropdownMenu 仍保留 Material 阴影。
-  此适配及验证边界见 [INTERNALS.md](INTERNALS.md)。
+## 内容槽与定制
 
-[MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml) 展示三种外观、嵌套子菜单、
-单选/复选、暗色及 RTL。源码依据、适配和验证入口见 [INTERNALS.md](INTERNALS.md)。
+独立项目支持 Content、LeadingIcon、SelectedLeadingIcon、TrailingContent、SupportingText 及对应模板。
+仅选中图标存在时使用展开和淡入效果。MenuDefaults.ItemShape / GroupShape 按调用方提供的 index、count 生成首尾形状，组间距由容器设置，默认参考 MenuDefaults.GroupSpacing。
+DropdownMenuPopup 可组合 StackPanel 和多个 DropdownMenuGroup，内容需要滚动时显式放置 ScrollViewer。
 
-## 菜单栏（Menu）
+MenuAppearance.ColorStyle 可从 Popup 传到组和项目。Padding、CornerRadius、颜色及 `Comp.Menu` Token 可局部覆盖，MenuItemShapes / MenuGroupShapes 的 null 字段继承主题。
+Offset 使用 DIP，X 随 RTL 反向，PositionProvider 使用物理像素。AnchorPosition 的 Left / Right 与逻辑 Start / End 行为一致。
+DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
-M3 没有菜单栏。`Menu` 的默认主题（[MenuBar.axaml](MenuBar.axaml)）由现有菜单部件组合而成：
+原生菜单保留 ItemsSource、ItemTemplate、显式 ItemContainerTheme 和 MenuItem.Theme。
+菜单栏可直接组合原生 MenuItem，标签中的下划线定义访问键。
 
 ```xml
 <Menu>
   <MenuItem Header="_File">
-    <MenuItem Header="_Open…" InputGesture="Ctrl+O" />
-    <MenuItem Header="Open _recent">
-      <MenuItem Header="Report.docx" />
-    </MenuItem>
+    <MenuItem Header="_Open" InputGesture="Ctrl+O" />
     <Separator />
     <MenuItem Header="E_xit" />
-  </MenuItem>
-  <MenuItem Header="_View">
-    <MenuItem Header="_Word wrap" ToggleType="CheckBox" IsChecked="True" />
   </MenuItem>
 </Menu>
 ```
 
-- 栏本身是透明的水平行，没有容器色和阴影；需要底色时设置 `Menu.Background`（见下方提议）。
-- 顶层项：`LabelLarge`、`OnSurface`，水平内边距 12（Baseline 菜单项内边距），40 DIP
-  容器（Small 按钮高度）位于 48 DIP 最小触控区内，状态层圆角为菜单项的 `ItemShape`；
-  悬停、按下和焦点经 `MaterialInteraction`。顶层不显示快捷键文字和子菜单箭头，`Icon` 可选。
-- `:open` 及没有自身状态层时的 `:selected`（键盘导航、子菜单已打开且焦点在子菜单内）
-  显示持久高亮：内容色叠加焦点状态层不透明度。没有复用 Vertical 的“选中”色
-  （TertiaryContainer），因为它在 M3 菜单里表示已勾选/选中的项，用于打开状态会与子菜单内的
-  勾选项混淆。Vertical 菜单项新增同样的 `:selected` 高亮（叠加在容器色上），MenuFlyout 同样生效。
-- 子菜单：弹层与 Vertical 菜单项的子菜单相同（`MaterialMenuBarItemTheme` 基于
-  `MaterialVerticalMenuItemTheme`），任意层级的子项使用 Vertical 项主题，包括勾选/单选、
-  分隔线、快捷键文字和禁用。显式设置 `ItemContainerTheme` 的父项仍以其为准。
-- 键盘和访问键沿用 Avalonia：Alt 激活菜单栏、Alt+字母打开对应菜单、左右箭头在顶层间移动、
-  下箭头/Enter 打开、Esc 关闭；`_File` 由 `AccessText` 渲染下划线。Avalonia 12.1.2 并未处理
-  F10（`IMainMenu` 的注释提到但没有实现），主题不额外补充。
-- RTL 下项目从右向左排列，子菜单弹层随 Avalonia 的弹层定位镜像（向左展开）。
-- 不影响 `ContextMenu`、`MenuFlyout` 路径和 `FlyoutPresenter`。
+## 使用限制与注意事项
 
-待维护者确认：
+独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。形状配置使用圆角，平台系统 inset 和预测返回尚未提供。
+原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。原生 flyout 的组级形变、专用辅助文字槽和开闭动画尚未提供。
+菜单栏沿用 Alt 访问键与方向键，当前原生版本的 F10 激活尚未实现。公开菜单栏 keyed 主题仍有待确认，维护状态见内部契约。
 
-- `MaterialMenuBarItemTheme` 是新的公开 keyed 主题名。
-- 提议（未实现）：可选的容器式菜单栏，例如 `SurfaceContainer` 底色或滚动时的
-  `on-scroll` 容器色，与 TopAppBar 一致。
-
-[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml) 展示 File/Edit/View
-菜单栏、嵌套子菜单、勾选/单选、禁用、暗色及 RTL。
+[MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml)展示独立和原生菜单，[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml)展示菜单栏。
+内部机制、已确认适配和验证范围见 [INTERNALS.md](INTERNALS.md)。

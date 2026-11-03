@@ -1,45 +1,38 @@
-# DragHandle 移植说明
+# DragHandle 内部机制与维护说明
 
-依据 `docs/upstream-baseline.json` 固定的 AndroidX `DragHandle.kt` 和 `tokens/DragHandleTokens.kt`。
-固定 Core 的 DragHandle 实现与 AndroidX 相同。新增组件与非破坏性组件 API 由本次剩余移植任务授权；
-没有引入公共共享框架，也没有使它承担上游没有的拖动识别职责。
+## 1. 上游基线与职责映射
 
-## 布局与状态
+固定基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)，AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
+两端 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DragHandle.kt` 实现相同。
 
-- `VerticalDragHandle` 保存 `collectIsDraggedAsState` 对应状态及 DragStart 列表，按对象身份配对 Stop/Cancel。
-  source 替换时清空 collector 的列表，但保留 remember 状态直到新 source 的第一条事件；
-  任何事件都会重新求值。collector 位于 owner，不因内部模板重建丢失活动拖动。
-- `DragHandleLayout` 对应外层 minimumInteractiveComponentSize，内部 measure 忽略传入约束，
-  再处理 minimum 与父约束造成的居中溢出。位置及 alignment-line 留白按 Compose 像素规则舍入。
-  绕过 Avalonia 自动 RTL 镜像，避免半像素居中时把 Compose 向正方向的舍入反转。
-- `DragHandlePresenter` 对应 hoverable / pressable / graphicsLayer / layout / drawBehind / indication。
-  Initial 对应 Tunnel，局部按下不消费、不捕获；释放、离开或失去捕获时清理。
-  宿主消费移动时清除局部按下。拖动 > 按下 > 正常；尺寸、颜色和圆角没有额外插值。
-- 共享 MaterialInteractionController 的内部 `ObservePointerPresses=false` 只用于此 presenter，
-  禁止通用输入路径生成本地 Press；默认 true 保持既有控件行为。Hover、外部 source 和动画仍复用基础能力。
-  外部 Press 只改变 indication，不改变局部 isPressed，这与上游独立 pressable 一致。
-- `indication(source, ripple())` 在 source 更换时创建新 node，故调用已有 ResetSourceIndication 清除旧动画；
-  它与 owner 的记忆状态有不同生命周期。卸载释放订阅、TopLevel 处理器和帧等待。
+| 上游符号 / 职责 | 本地类型 / 成员 |
+| --- | --- |
+| `VerticalDragHandle`、`collectIsDraggedAsState` | `VerticalDragHandle` 的交互收集与记忆状态 |
+| minimumInteractiveComponentSize、layout | `DragHandleLayout` 的外层留白与居中溢出 |
+| hoverable、pressable、indication | `DragHandlePresenter` 与共享交互控制器 |
+| `tokens/DragHandleTokens.kt` | `DragHandleTokenSource`、`Comp.DragHandle` 与主题绑定 |
 
-未使用上游未被 VerticalDragHandle 消费的 ContainerWidth Token。默认 4×48、按下/拖动 12×52，
-颜色 Outline/OnSurface/OnSurface，形状 Full/Medium/Medium，最小交互布局 48。
+## 2. 关键机制与架构契约
 
-## 边界与验证
+- owner 按对象身份收集 DragStart，Stop/Cancel 配对移除。替换 source 清空 collector 列表，记忆布尔值保持到新流的下一条事件。模板替换保留 owner 状态，卸载清空状态和订阅。
+- 内部测量按手柄目标尺寸进行，外层处理最小交互尺寸与父约束造成的居中溢出。位置和对齐留白按物理像素舍入，布局绕过自动 RTL 镜像。
+- presenter 在 Tunnel 观察局部按压，释放、移出、失去捕获或宿主消费移动时清理。状态优先级为拖动、按下、正常，尺寸、颜色和圆角直接切换。
+- presenter 设置内部 `ObservePointerPresses=false`，局部按压由自身维护。共享控制器继续处理 Hover 和外部源反馈，外部 Press 仅驱动 indication。
+- source 替换调用 `ResetSourceIndication` 重建反馈，独立于 owner 的记忆状态。卸载释放 TopLevel 处理器和动画等待。
+- 尺寸及最小交互留白均经 `Comp.DragHandle` → 主题 → 配置属性进入布局。上游未消费的 ContainerWidth Token 同样保留为未使用。
 
-当前 Shapes 使用既有 CornerRadius，只支持圆角形状；任意 Compose Shape 未实现。
-若要接受任意 Shape，需要维护者决定全库形状/裁剪合约，再接入 `DragHandleShapes`，
-不能把任意路径静默转换为圆角。触摸扩展命中及真实辅助技术尚未验证。
+## 3. 已确认决定与已知差异
 
-`DragHandleTests` 检查布局溢出、真实合成鼠标事件、无消费/Press、重叠拖动、source 替换、卸载和 Token。
-`DragHandleCases` 的 29 例覆盖 light/dark、LTR/RTL、分数尺寸、极端约束、自定义三状态配置、
-按下/移出取消、重叠拖动、source 替换、主题/配置切换、hover 和外部 Press。
-2026-11-03 双端 self-test 全部重复稳定、结构化事实相等、图像 withinTolerance；未更改容差。
-夹具明确使用 OnSurface 环境 content color，并在两端同一时刻送帧提交主题重组，再采样。
-同日 Windows Catalog 实际鼠标拖动将面板宽度从 240 改到 353 DIP，释放后恢复正常外观；
-共享示例又验证从 240 改到 313 DIP，Card 同步调整宽度，Chip 保持未选中。
-这只是桌面鼠标路径检查，不代表触控/笔或屏幕阅读器验证。
+- 新组件与共享交互源入口依据剩余组件移植任务授权，记录于引入提交 `e89f5fc8`。通用输入和最小布局环境遵循[共享决定](../../../../docs/DECISIONS.md)。
+- 尚未实现任意路径 Shape，当前配置采用圆角。扩展形状需要全库形状与裁剪契约。
+- 双端用例覆盖明暗、RTL、分数尺寸、约束、配置切换及重叠交互。Windows Catalog 已检查鼠标拖动和共享源联动，触屏、笔及真实辅助技术未经验证。
+
+## 4. 验证入口
+
+- `tests/Material3Expressive.Tests/DragHandleTests.cs` 检查布局、合成鼠标输入、配对、替换、卸载及 Token 更新。
+- 双端用例为 `DragHandleCases.cs` / `DragHandleCases.kt`，族名 `drag-handle`。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter FullyQualifiedName~DragHandle
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~DragHandleTests
 ./tests/VisualParity/parity.ps1 self-test --family drag-handle --require-match
 ```

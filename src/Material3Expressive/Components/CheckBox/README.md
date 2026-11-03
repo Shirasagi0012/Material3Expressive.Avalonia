@@ -4,7 +4,7 @@
 无需改用另一个控件。首次使用先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 内部映射、原生适配依据与验证边界见 [INTERNALS](INTERNALS.md)。
 
-## 最小示例
+## 基础用法
 
 在已加载 Material 主题的应用中：
 
@@ -23,7 +23,7 @@
 隐式主题是 `MaterialCheckBoxTheme`，也可显式引用或用 `BasedOn` 派生。
 后续片段沿用上述命名空间。
 
-## 状态、绑定与内容
+## 变体与属性
 
 ```xml
 <CheckBox Content="全选" IsThreeState="True"
@@ -38,12 +38,30 @@
 并非仅请求应用切换。`Click="OnToggleClick"` 需要视图 code-behind 提供该处理器。
 Enter 在按下时激活，`Space` 默认在松开时激活；禁用阻止输入。
 
+### 共享交互源
+
+`CheckBoxAppearance.InteractionSource` 接受已有的 `MaterialInteractionSource`，可观察原生按压、
+释放、hover 和焦点事件，也可在 UI 线程主动发送配对交互以预览反馈：
+
+```csharp
+var source = new MaterialInteractionSource(); // Material3Expressive.Foundation.Interaction
+CheckBoxAppearance.SetInteractionSource(checkBox, source);
+var hover = new MaterialInteractionEvent.HoverEnter();
+source.Emit(hover);
+source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+```
+
+交互不会设置 IsChecked 或触发 Click/Command。结束事件必须引用同一个开始事件对象。
+传 null 恢复内部交互源；替换源、模板重建或重新挂载只观察后续事件，不回放旧按压。
+XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"`，
+其中 SelectionSource 是视图模型持有的源；共享源只共享反馈，不联动选择。
+
+## 内容槽与定制
+
 `Content` / `ContentTemplate` 支持字符串、控件与数据模板，默认 BodyLarge 排版，保留 access key 和 RTL。
 标签位于 48 DIP 指示器槽旁，默认间距来自 `Padding="8,0,0,0"`；无 `Content` 时不使用这层 `Padding`。
 有内容时整行（含间隙和 `Padding`）参与命中；无内容时默认鼠标命中区域为 24×24 DIP 指示器区域。
 48×48 DIP 默认布局留白不等于扩大鼠标命中区，也不是触屏输入层的目标扩展。
-
-## 颜色与描边
 
 `Foreground` 控制内容与交互反馈，不直接替代勾号、填充或边框颜色。
 按状态调色时优先局部覆盖组件 Token，例如：
@@ -70,29 +88,11 @@ Enter 在按下时激活，`Space` 默认在松开时激活；禁用阻止输入
 其十三个槽见 [CheckBoxAppearance.cs](CheckBoxAppearance.cs)。传 `null` 恢复动态 Token。
 默认基线不消费 `DisabledCheckmarkColor`，禁用勾号仍使用 `CheckedCheckmarkColor`。
 
-## 外部交互源
+## 使用限制与注意事项
 
-`CheckBoxAppearance.InteractionSource` 接受已有的 `MaterialInteractionSource`，可观察原生按压、
-释放、hover 和焦点事件，也可在 UI 线程主动发送配对交互以预览反馈：
+需要 Avalonia.Skia。指示器尺寸与外留白可覆盖对应组件的 `IndicatorSize` / `IndicatorPadding` Token，交互布局环境使用 `MaterialInteractiveSize.Minimum`。
+`MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环。选择自动化仍由原生控件提供，关闭普通输入后也保留该语义。
+自定义描边支持 DIP 线宽、端帽、连接和 dash 参数。
+组合示例见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 
-```csharp
-var source = new MaterialInteractionSource(); // Material3Expressive.Foundation.Interaction
-CheckBoxAppearance.SetInteractionSource(checkBox, source);
-var hover = new MaterialInteractionEvent.HoverEnter();
-source.Emit(hover);
-source.Emit(new MaterialInteractionEvent.HoverExit(hover));
-```
-
-交互不会设置 IsChecked 或触发 Click/Command。结束事件必须引用同一个开始事件对象。
-传 null 恢复内部交互源；替换源、模板重建或重新挂载只观察后续事件，不回放旧按压。
-XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"`，
-其中 SelectionSource 是视图模型持有的源；共享源只共享反馈，不联动选择。
-
-## 使用边界
-
-- 需要 Avalonia.Skia 绘制；公共接入说明包含宿主配置
-- 不提供完全等价于 Compose `onClick=null` 的只显示模式。关闭命中、焦点和 Material 交互仍保留原生 Toggle 自动化语义
-- 自定义 Stroke 支持 dash 参数，不支持任意 Compose PathEffect 对象
-- 实际 OS 无障碍客户端、文字视觉和真实桌面双端体验尚未验收
-
-两态、三态、描边和全选组合见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

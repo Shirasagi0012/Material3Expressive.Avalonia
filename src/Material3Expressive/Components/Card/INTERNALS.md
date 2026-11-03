@@ -1,9 +1,6 @@
-# Card 实现说明
+# Card 内部机制与维护说明
 
-使用方法见 [README](README.md)。三个 Card 控件共享普通/可点击模式，原生 Button 负责激活，
-Material 层负责 Surface、颜色、交互反馈与高度，不应把普通卡片改成隐式按钮。
-
-## 固定上游与本地入口
+## 1. 上游基线与职责映射
 
 固定版本见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX
 `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`（Material3 `1.5.0-alpha27`）与 Core
@@ -20,7 +17,7 @@ Material 层负责 Surface、颜色、交互反馈与高度，不应把普通卡
 | `Card.kt` 内容 `Column` | [CardColumn.cs](CardColumn.cs)：按剩余高度顺序测量，不是完整 ColumnScope |
 | `tokens/FilledCardTokens.kt`、`ElevatedCardTokens.kt`、`OutlinedCardTokens.kt` | [MaterialTokens.Comp.Card](../../Tokens/MaterialTokens.Comp.Card.cs) 与 CardTokenSource |
 
-## 两种模式与模板合约
+## 2. 关键机制与架构契约
 
 普通模板直接持有 `MaterialSurface#PART_Container`，可点击模板外包 ButtonLayout，默认
 48 DIP 交互布局空间与可见容器分开；内容都由 `PART_ContentPresenter` 呈现。
@@ -35,8 +32,6 @@ IsClickable 改变会更新原生启用判断、automation 与反馈接入；进
 CardColumn 从上到下、Start 对齐、零间距。每个子项使用剩余高度，包括耗尽后的零约束；
 默认 Stretch 在此按 Start 放置，显式对齐保留。RTL 消费原生布局方向。
 直接放入原生 StackPanel 的行为仍归 StackPanel，不借文档扩大为完整 ColumnScope。
-
-## 默认值与高度不变量
 
 颜色 Token 经主题绑定提供四个独立有效属性；主题派生颜色后再以普通 Setter 选择当前状态画刷。
 Elevation 是六个非 nullable double 的完整不可变值，主题通过动态 MultiBinding 组装默认组；
@@ -54,79 +49,46 @@ Outlined 默认 press/focus/hover 跟 Default，不消费 raw hover elevation To
 Default，即使后来替换 Elevation 或默认 Token；模式切换/重挂才清空，仅换模板保留。
 这个固定基线行为有双端和控件回归，不能“修复”为每次 Refresh 都取新 Default。
 
-## 已确认选择与未决差异
+### 交互源与高度生命周期
+
+`InteractionSource` 仅在可点击模式连接，null 使用私有源。组件按开始对象身份维护独立的高度交互列表。
+替换源时先取消旧原生输入，再退订旧源并订阅新源；保留外部交互及运行中的高度动画，indication 独立重建。
+模式切换和卸载清空高度列表，模板重建保留。源事件只参与反馈。
+
+禁用等立即 snap 分支保留 Surface 当帧已提交高度，下一组合帧重新连接动画绑定。模板替换和卸载释放绑定，
+延迟提交检查 Surface 与动画对象身份。同类型新开始对象由共享状态层按身份重新启动动画。
+
+## 3. 已确认决定与已知差异
 
 以下组件选择及范围来自 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Card/README.md)：
 2026-10-04 维护者选择独立 Card 控件与显式 IsClickable，并批准复用原生 Button 键盘语义，
 Space 松开、Enter 按下激活；同日批准 CardColumn，解决原生 StackPanel 在受限高度下无限测量的差别。
 
-同日维护者接受本次 Tween/Bezier 数值精度差异。旧样本的默认 hover 约相差 10⁻⁷ DIP，
+维护者同时接受了指定范围的 Tween/Bezier 数值精度差异。旧样本的默认 hover 约相差 10⁻⁷ DIP，
 自定义高度中断最大约 0.0000022 DIP；截图在容差内，原始 motion 仍 different。
 effect 取消和首帧时序已修复，该许可不覆盖时序偏离。共享数值决定见
-[Tween / Bezier 精度](../../../../docs/DECISIONS.md#本次保留-tween--bezier-精度差异)，
-Card 本次授权依据仍以上面的组件历史记录为准，不把共享决定自动扩成所有差异许可。
+[Tween / Bezier 精度](../../../../docs/DECISIONS.md)，
+Card 的数值适配范围以组件确认记录为准。
 
 半透明 `static.custom.elevated.colors.enabled / disabled` 有可见阴影差异。
-维护者当时说明已知问题、本次不用修；这属于未解决观测，不是接受所有透明卡片差异。
+该阴影问题保留为未解决观测，维护者此前允许暂缓处理。
 已确认共享阴影坐标适配的范围仅见
-[阴影坐标决定](../../../../docs/DECISIONS.md#本次保留阴影坐标接入差异)，保留实际失败结果。
+[阴影坐标决定](../../../../docs/DECISIONS.md)，保留实际失败结果。
 
-共享职责还应核对[交互/激活](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)、
-[Core 焦点](../../../../docs/DECISIONS.md#core-desktop-原生焦点反馈)与
-[Surface 描边](../../../../docs/DECISIONS.md#surface-圆角描边)，不在组件内建立另一套规则。
+共享职责还应核对[交互/激活](../../../../docs/DECISIONS.md)、
+[Core 焦点](../../../../docs/DECISIONS.md)与
+[Surface 描边](../../../../docs/DECISIONS.md)，不在组件内建立另一套规则。
 
-## 一致性边界与验证
+尚未实现任意路径/切角 Shape 和完整 ColumnScope。共享焦点环已接入，Card 自身的双端焦点环矩阵、文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
 
-尚未实现任意路径/切角 Shape、完整 ColumnScope。
-共享 Surface 已提供可配置 inset focus ring，本次控件测试验证 Card source 下的原生 Tab 聚焦/失焦与卸载；
-Card 自身的双端焦点环视觉矩阵仍未经验证，不能由默认 opacity 或共享 Button 用例推定。
-文字 raster、完整实体桌面输入矩阵未经验证；共享拖动的桌面检查范围见下文。
+## 4. 验证入口
 
-[CardTests](../../../../tests/Material3Expressive.Tests/CardTests.cs) 检查普通/可点击尺寸、子控件输入、
-命令、动态 automation、键盘、颜色与局部优先级、Column 剩余高度、高度顺序和生命周期。
-[CardCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/CardCases.cs) 与
-[CardCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/CardCases.kt) 独立构造三种外观、
-约束/RTL、状态、主题和配置变更，测真实几何、Surface 高度、回调及截图。
-嵌套输入场景给两端真实子 Button 相同 Padding；已有 Button Expressive 默认差别不归因于 Card。
-
-旧合并记录全部用例重复稳定，但仍保留动画数值、Enter 时机与半透明阴影的 different，
-不得称为全量通过。历史统计/环境可查固定提交，未跟踪 artifacts 不作长期链接。
-以下为复现入口，实际结果需以新生成报告为准：
+- `CardTests` 覆盖普通/可点击模式、子控件输入、命令、布局、颜色、交互源和高度顺序。
+- `ElevationSourceLifetimeTests` 与 `StateLayerTests` 覆盖独立 collector 生命周期和重叠交互中断。
+- 双端 `CardCases.cs` / `CardCases.kt` 的族名为 `card`，包括三种变体的 source-drag、source-replace、source-disable 和 source-mode。
+- 已有结果仍包含精确高度、Enter 时机和半透明阴影差异，复验应分别读取状态、截图与稳定性结果。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~CardTests"
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter "FullyQualifiedName~CardTests|FullyQualifiedName~ElevationSourceLifetimeTests"
 ./tests/VisualParity/parity.ps1 self-test --family card
 ```
-
-当前依赖见[公共接入](../../../../docs/GETTING_STARTED.md)，参考环境、采样及原始差异读取见
-[VisualParity](../../../../tests/VisualParity/README.md)。
-
-## 可注入交互源
-
-2026-11-03 剩余移植任务授权新增非破坏性组件 API，增加 `InteractionSource`，沿用现有
-MaterialInteractionSource，不新建公共抽象。null 使用私有 source；仅可点击模式接入。
-原生输入由共享 controller 发射，indication 继续使用共享 ripple/状态层实现。
-
-`CardElevation.animateElevation` 的 remember interaction list 位于组件内，按开始对象身份配对，
-独立于 indication collector。更换 source 时取消旧原生输入、退订旧流，再订阅新流；
-保留已记住的外部交互和正在运行的 elevation，这与上游无 key 的 remember 相同。
-指示层则按 Core indication node 的替换语义重置。不能用 controller 的清空列表替代高度列表。
-普通/可点击分支切换及卸载会清空高度列表，模板重建保留；外部事件不触发原生激活。
-
-控件测试覆盖三个变体的重叠 DragStart、source 替换后回落到旧拖动、禁用恢复、原生 Press/Release
-发射、模式切换和重挂。双端新增 source-drag / source-replace / source-disable / source-mode
-各三种变体，保留现有精确 motion 比较及阴影/输入差异，结果须按报告区分。
-
-补充禁用当帧的 Surface 提交顺序：上游组合先读取旧 elevation，再由 LaunchedEffect snap。
-本地仍立即更新 Animatable，暂时保留当帧已提交的 Surface 高度，下一组合帧重新连接既有动画绑定。
-这不把 snap 改成 Tween；模板替换/卸载会释放绑定，后续提交检查 Surface 与动画对象身份。
-
-source-drag 暴露共享状态层遗漏的同类型交互身份：第二个 DragStart 即使 alpha 目标不变，
-上游也重新启动动画，随后 Hover 会从该动画最后一帧中断。controller 现比较开始对象身份，
-`StateLayerTests` 覆盖 64/65/66/67ms 的连续重叠/结束/中断，未修改动画时长或放宽比较。
-Catalog 的 Windows 鼠标拖动已验证 Card 宽度跟随面板从 240 改为 313 DIP。
-
-2026-11-03 最终全族 97 例 self-test：54 equal、21 withinTolerance、22 different，全部重复稳定、
-执行错误 0。新增 12 个 source 用例的 174 张捕获均 withinTolerance，布局与回调事实相等；
-高度最大数值差约 0.000000832 DIP。全族 different 仍含历史数值、Enter 时机及半透明阴影观测，
-不将它们改成通过，也不据此扩大既有差异许可。

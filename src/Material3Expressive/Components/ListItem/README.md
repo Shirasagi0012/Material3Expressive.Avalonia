@@ -1,7 +1,9 @@
 # ListItem / SegmentedListItem
 
-两个独立控件提供普通列表行和带分组圆角的列表行，移植固定 Compose Material3 的新入口，不包含已废弃的 ListItem 重载。
+两个库内控件提供普通列表行和带分组圆角的列表行。
 先按[公共接入](../../../../docs/GETTING_STARTED.md)安装 MaterialTheme、字体和 TopLevel 动画作用域。
+
+## 基础用法
 
 ```xml
 <StackPanel xmlns="https://github.com/avaloniaui"
@@ -11,7 +13,7 @@
 </StackPanel>
 ```
 
-## 交互与受控状态
+## 变体与属性
 
 默认 `InteractionMode="None"` 仅展示内容。`Click` 提供 Click / Command；`SingleSelection` 额外读取 IsSelected；
 `MultipleSelection` 读取 IsChecked，激活时发出 CheckedChangeRequested（Value 为请求的新值）并执行 Command，不发出行自己的 Click。
@@ -29,12 +31,12 @@ void OnCheckedChange(object? sender, ListItemCheckedChangeEventArgs e)
     => ViewModel.Checked = e.Value;
 ```
 
-`IsInteractionEnabled="False"` 对应 Compose enabled：禁用整行交互、切换禁用颜色和 automation 状态，槽内按钮仍可用。
+`IsInteractionEnabled="False"` 用于禁用整行交互、切换禁用颜色和 automation 状态，槽内按钮仍可用。
 `IsEnabled="False"` 则沿用 Avalonia 禁用整个子树的行为。Command.CanExecute 阻止该命令激活，不负责禁用子树或改变整行颜色。
 Space / Enter 在释放时激活；鼠标左键和键盘支持 500ms 长按，通过 LongClick / LongClickCommand 接收，长按后不再触发该次短按。
 LongClickCommandParameter 与 LongClickLabel 分别提供参数和说明。
 
-Avalonia automation 没有第二个长按动作，LongClickLabel 映射到 HelpText。需要辅助技术直接调用时，组合一个同命令按钮：
+LongClickLabel 作为辅助技术说明。需要辅助技术直接调用时，组合一个同命令按钮：
 
 ```xml
 <m3:ListItem Content="文件" InteractionMode="Click" LongClickCommand="{Binding MoreCommand}" LongClickLabel="更多操作">
@@ -42,7 +44,7 @@ Avalonia automation 没有第二个长按动作，LongClickLabel 映射到 HelpT
 </m3:ListItem>
 ```
 
-## 内容与分组
+## 内容槽与定制
 
 五个槽为 Content、LeadingContent、TrailingContent、OverlineContent、SupportingContent，各有同名前缀的 ContentTemplate（主槽为 ContentTemplate）。
 槽可使用对象、控件或 IDataTemplate；文字继承对应排版和颜色。默认一/二/三行高度为 56/72/88 DIP，过大内容可以继续撑高。
@@ -58,8 +60,6 @@ SegmentedListItem 通过 GroupIndex（从 0 起）和 GroupCount 决定默认首
   <m3:SegmentedListItem GroupIndex="1" GroupCount="2" Content="第二项" />
 </StackPanel>
 ```
-
-## 定制
 
 颜色、排版、尺寸、动画和默认圆角读取 `MaterialTokens.Comp.ListItem`。实例可覆盖 ContainerColor、ContentColor 及各槽/状态颜色、Elevation、DraggedElevation。
 六状态圆角通过 Shapes 设置；显式 Shapes 取代分组默认形状。CornerRadius 使用 Avalonia 的物理角顺序；默认分组形状左右对称。
@@ -101,4 +101,11 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 
 可用 `MaterialInteraction.FocusRingMetrics` 调整描边和内缩，详见[交互反馈](../../Foundation/Interaction/README.md)。
 切换 Opacity / InsetRing 保留正在进行的波纹和交互收集。任意路径/切角 Shape 仍不支持。
-Catalog 入口为 [ListItemDemo](../../../Material3Expressive.Catalog/ListItemDemo.axaml)；维护机制和验证范围见 [INTERNALS](INTERNALS.md)。
+
+## 使用限制与注意事项
+
+复杂 SupportingContent 模板需要自行核对多行高度。分组的索引、总数与间距由外部容器维护。
+最小交互留白仅影响布局。需要辅助技术调用长按命令时，可提供同命令的槽内按钮。
+[Catalog 示例](../../../Material3Expressive.Catalog/ListItemDemo.axaml)包含普通、分组、选择与焦点反馈。
+
+内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

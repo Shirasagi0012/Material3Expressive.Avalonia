@@ -100,7 +100,13 @@
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
                 CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}"
                 TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
-              <m3:RichTooltipLayout>
+              <m3:RichTooltipLayout
+                  SubheadFirstBaselineOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SubheadFirstBaselineOffset}}"
+                  TextFirstBaselineOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.TextFirstBaselineOffset}}"
+                  TextBottomPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.TextBottomPadding}}"
+                  TextVerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.TextVerticalPadding}}"
+                  ActionMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ActionMinHeight}}"
+                  ActionBottomPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ActionBottomPadding}}">
                 <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
                     Foreground="{TemplateBinding TitleForeground}" TextWrapping="Wrap"
                     m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SubheadFont}}" />

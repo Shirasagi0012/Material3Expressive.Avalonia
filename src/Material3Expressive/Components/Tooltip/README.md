@@ -1,122 +1,48 @@
 # ToolTip / TooltipBox / PlainTooltip / RichTooltip
 
-普通悬停说明使用 Avalonia 原生 `ToolTip.Tip`，Material 主题为它提供静态外观。
-需要锚点焦点、长按、显示状态或提示内动作时，使用库的 `TooltipBox`，并以 `PlainTooltip`
-提供提示表面。先完成[公共接入](../../../../docs/GETTING_STARTED.md)；TooltipBox 动画需要
-窗口在加载内容前初始化动画作用域。实现与已确认差异见 [INTERNALS.md](INTERNALS.md)。
+普通悬停说明使用 Avalonia 原生 `ToolTip.Tip`。库内 `TooltipBox` 提供可控状态、焦点和长按显示，提示内容可选 PlainTooltip 或带标题、动作的 RichTooltip。
 
-## 最小示例
+## 基础用法
 
-以下视图放在使用标准 Window 模板的窗口中，无需 ViewModel：
+先完成[公共接入](../../../../docs/GETTING_STARTED.md)，在窗口加载内容前初始化动画作用域。
 
 ```xml
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
-  <StackPanel Spacing="24">
-    <Button Content="保存" ToolTip.Tip="保存当前更改" />
-    <m3:TooltipBox AnchorPosition="Above">
-      <m3:TooltipBox.Tooltip>
-        <m3:PlainTooltip Content="查看帮助" />
-      </m3:TooltipBox.Tooltip>
-      <Button Content="帮助" />
-    </m3:TooltipBox>
-  </StackPanel>
-</UserControl>
+<StackPanel xmlns="https://github.com/avaloniaui"
+            xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Button Content="保存" ToolTip.Tip="保存当前更改" />
+  <m3:TooltipBox AnchorPosition="Above">
+    <m3:TooltipBox.Tooltip>
+      <m3:PlainTooltip Content="查看帮助" />
+    </m3:TooltipBox.Tooltip>
+    <Button Content="帮助" />
+  </m3:TooltipBox>
+</StackPanel>
 ```
 
-后续片段沿用相同命名空间。两种入口均在窗口内 overlay Popup 呈现，窗口模板需提供
-原生 popup layer；自定义 Window 模板的要求见 [Overlays 接入](../../Foundation/Overlays/README.md#接入)。
+## 变体与属性
 
-## 原生 ToolTip
+- 原生 ToolTip 使用原生显隐、延迟和定位属性。默认最大宽度 200 DIP，最小尺寸 40×24 DIP，锚点默认 Top、VerticalOffset=-4，并使用窗口内覆盖层。
+- PlainTooltip 提供简单提示表面，默认最大宽度 200 DIP、Padding 为 8×4 DIP，使用 BodySmall。
+- RichTooltip 提供标题、正文和动作，默认最大宽度 320 DIP、水平 Padding 16 DIP、圆角 Medium、阴影 3 DIP。显式尺寸可覆盖两类提示的软尺寸限制。
+- TooltipBox 的 `AnchorPosition` 支持 Above / Below / Start / End，Spacing 默认 4 DIP。PositionProvider 可定制定位，输入输出使用物理窗口像素。
 
-`ToolTip.Tip` 可接收字符串或任意内容，原生 `ToolTip.IsOpen`、显示延迟和定位属性继续有效：
+TooltipBox 未指定 State 时使用独立非持续状态，直接 `new TooltipState()` 则默认持续显示。每个 Box 使用独立实例。
+在所属视图中，`await box.State.ShowAsync()` 等待整次显示操作结束，`box.State.Dismiss()` 请求隐藏。
+同一互斥组内，相同或更高优先级的请求会打断旧请求，调用方应处理取消。自定义组可传入 TooltipState 构造器的 mutatorMutex 参数。
 
-```xml
-<Button Content="同步" ToolTip.Placement="Bottom" ToolTip.VerticalOffset="4">
-  <ToolTip.Tip>
-    <TextBlock TextWrapping="Wrap">
-      <Run Text="同步项目" FontWeight="SemiBold" /><LineBreak />
-      <Run Text="包含尚未上传的本地更改。" />
-    </TextBlock>
-  </ToolTip.Tip>
-</Button>
-```
+鼠标进入、焦点和长按可显示提示，鼠标离开关闭非持续提示。Escape 关闭，`EnableUserInput="False"` 可仅保留程序控制。
+外部按下默认隐藏，订阅 DismissRequested 后由应用调用 Dismiss 决定关闭。IsVisible 包含退出阶段，提示在动画结束后移除。
+非持续 Default / PreventUserInput 请求默认 1500ms 超时，非持续 UserInput 请求隐藏后仍可等待取消、抢占或卸载。
 
-默认最小尺寸 40×24 DIP、最大宽度 200 DIP，padding 为 8×4 DIP，使用 BodySmall。
-锚点默认 Top、VerticalOffset=-4、ShouldUseOverlayLayer=true；原生服务处理翻转与边界约束，
-翻转后不保证仍有 4 DIP 间距。默认 ShowDelay=400ms、BetweenShowDelay=100ms，可按原生属性覆盖。
-显隐直接完成，没有 ComposeAnimation 过渡；禁用控件、连续切换和关闭规则均沿用 Avalonia。
-原生入口不承担提示内按钮交互，任意文本内容也不代表已实现 RichTooltip。
+## 内容槽与定制
 
-## TooltipBox 的状态与输入
-
-`Content` / `ContentTemplate` 是锚点；`Tooltip` / `TooltipTemplate` 是提示槽。
-未指定 `State` 时，每个 Box 自建非持续状态；直接 `new TooltipState()` 则默认持续显示。
-需要绑定时由 ViewModel 提供 `TooltipState`，每个 Box 使用独立实例；编译绑定还需 `x:DataType`。
-
-```xml
-<m3:TooltipBox x:Name="Help" EnableUserInput="False" AnchorPosition="End">
-  <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="操作提示" /></m3:TooltipBox.Tooltip>
-  <Button Content="帮助" />
-</m3:TooltipBox>
-```
-
-在所属视图代码中可调用 `Help.State.ShowAsync()`；下面片段假设 `Help` 是上述 Box，
-`cancellationToken` 来自页面或操作的生命周期：
-
-```csharp
-using System;
-using ComposeAnimation.Runtime;
-
-try
-{
-    await Help.State.ShowAsync(MutatePriority.Default, cancellationToken);
-}
-catch (OperationCanceledException)
-{
-    // 超时、其他提示抢占或调用方取消都会结束等待。
-}
-```
-
-`ShowAsync` 等待显示操作结束，不是在首次出现时返回。`State.Dismiss()` 请求隐藏；
-非持续 UserInput 请求即使隐藏也会继续等待打断、取消或卸载。
-默认提示共享互斥组；相同或更高优先级会打断旧请求，较低优先级请求被取消。
-需要独立组时向 `new TooltipState(isPersistent: false, mutatorMutex: group)` 传入自己的
-`ComposeAnimation.Runtime.MutatorMutex`，不同组可同时显示。
-
-鼠标进入显示、离开关闭非持续提示；焦点和触摸/笔长按也可显示，Escape KeyDown 关闭并消费按键。
-`EnableUserInput="False"` 关闭这些输入入口，不影响程序调用。
-外部按下默认隐藏；订阅 `DismissRequested` 后由应用负责决定，例如：
-
-```csharp
-Help.DismissRequested += (_, _) => Help.State.Dismiss();
-```
-
-`IsVisible` 包含退出阶段；Popup 到退出动画完成才移除。非持续 Default / PreventUserInput
-请求默认在 1500ms 超时，焦点/长按流程另负责其关闭时机。
-
-## 定位、内容与外观
-
-`AnchorPosition` 支持 Above / Below / Left / Right / Start / End，`Spacing` 默认 4 DIP。
-不足时翻到另一侧并限制在客户区内；Start / End 跟随 `FlowDirection`。
-自定义 `ITooltipPositionProvider` 的输入与输出均为物理窗口像素。
-提示不增加锚点的布局尺寸；PlainTooltip 也能单独用于普通布局。
-
-PlainTooltip 用 `Background`、`Foreground`、`CornerRadius`、`Padding`、`ContentTemplate`
-覆盖外观，`TonalElevation` / `ShadowElevation` 默认均为 0。
-`TooltipMaxWidth` 默认 200；内部最小尺寸为 40×24 DIP。显式 `Width` / `Height` 及调用方约束
-位于默认限制外，可让宽度小于 40 或大于 200。文字默认 BodySmall，长内容按可用宽度换行。
-动态主题定制见[公共 Token 入口](../../../../docs/GETTING_STARTED.md#主题与定制)。
-
-## RichTooltip
-
-需要标题或动作时，在同一个 TooltipBox 中使用 RichTooltip：
+TooltipBox 的 Content / ContentTemplate 是锚点，Tooltip / TooltipTemplate 是提示内容。
+RichTooltip 的 Title / TitleTemplate、Content / ContentTemplate、Action / ActionTemplate 分别提供标题、正文和动作，单独设置模板也能创建槽。
 
 ```xml
 <m3:TooltipBox x:Name="Details" HasAction="True">
   <m3:TooltipBox.Tooltip>
-    <m3:RichTooltip Title="收藏夹" Content="把相关内容保存在一起，方便下次查找。">
+    <m3:RichTooltip Title="收藏夹" Content="把相关内容保存在一起。">
       <m3:RichTooltip.Action>
         <Button Content="知道了" Theme="{StaticResource MaterialTextButtonTheme}" />
       </m3:RichTooltip.Action>
@@ -126,36 +52,16 @@ PlainTooltip 用 `Background`、`Foreground`、`CornerRadius`、`Padding`、`Con
 </m3:TooltipBox>
 ```
 
-`Title` / `TitleTemplate` 和 `Action` / `ActionTemplate` 是可选槽，`Content` / `ContentTemplate`
-是正文。模板可在内容为 null 时单独提供槽。动作的命令或 Click 处理由应用负责；需要关闭时调用
-`Details.State.Dismiss()`。需要持续显示时显式提供 `new TooltipState(isPersistent: true)`。
+此片段沿用前述命名空间，并需声明 `xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"`。
+动作处理由应用提供，需要关闭时调用 `Details.State.Dismiss()`。
 
-默认背景为 SurfaceContainer、圆角 Medium、阴影 Level2（3 DIP）、tonal elevation 为 0；
-最大宽度 320、软最小尺寸 40×24、水平 Padding 16 DIP。显式尺寸的优先规则与 PlainTooltip 相同。
-`Foreground`、`TitleForeground`、`ActionForeground` 分别覆盖正文、标题和动作颜色，
-三个槽分别提供 BodyMedium、TitleSmall 和 LabelLarge。子控件的本地文字/颜色设置继续优先。
+Background、CornerRadius、Padding 和 elevation 可定制表面。RichTooltip 的 Foreground、TitleForeground、ActionForeground 分别控制三个槽，默认文字角色为 BodyMedium、TitleSmall、LabelLarge。
+`Comp.RichTooltip` 支持标题与正文首基线距离、正文留白及动作区最小高度和底部留白的动态 Token 覆盖。默认值为 28、24、16 / 4、36、8 DIP。
+普通 TextBlock 自动提供基线。复杂自定义槽可在根控件上调用 `TextBlock.SetBaselineOffset(control, baseline)`，由调用方随布局更新该值。
 
-标题首基线距顶部 28 DIP；有标题或动作时，正文首基线距其槽顶部 24 DIP、底部留白 16 DIP。
-仅有正文时上下留白为 4 DIP；动作区最小高度 36 DIP，底部留白 8 DIP。
-普通 TextBlock 与显式 `TextBlock.BaselineOffset` 可提供基线；复杂自定义容器的基线传播尚未实现，
-无基线内容采用上游的零基线分支。RichTooltip 也可以单独放入普通布局。
+## 使用限制与注意事项
 
-复杂槽已有确定首基线时，可显式提供，数值为槽根内容坐标内的 DIP：
-
-```csharp
-var titlePanel = new Grid { Children = { new TextBlock { Text = "收藏夹" } } };
-TextBlock.SetBaselineOffset(titlePanel, 15);
-tooltip.Title = titlePanel;
-```
-
-这里的 15 应替换为该布局实际的首基线；嵌套布局改变时由调用者同步更新。
-
-## 使用边界
-
-caret 路径尚未实现，没有会被忽略的 CaretShape 属性；PlainTooltip 和 RichTooltip 均实现默认无 caret 分支。
-TooltipBox 按固定 Core 桌面行为不抢焦点；`HasAction="True"` 且可见时消费 Tab，
-但不会将键盘焦点送到提示按钮，不宜把它当成完整键盘可操作弹窗。
-提示提供 ToolTip automation 与 Assertive live setting，实际屏幕阅读器播报、物理触摸/笔设备、
-文字像素尚未经验证；RichTooltip 的桌面点击打开/动作关闭已检查，未覆盖所有桌面输入路径。动画提交时序有已接受差异，见
-[一致性边界](INTERNALS.md#一致性边界与验证)。完整使用例子见
-[TooltipDemo](../../../Material3Expressive.Catalog/TooltipDemo.axaml)。
+窗口模板需提供原生 popup layer，相关要求见 [Overlays](../../Foundation/Overlays/README.md)。两类提示表面均可独立放入普通布局，当前外形为无尖角矩形。
+TooltipBox 显示时保持原焦点，HasAction=True 且可见时会消费 Tab，动作按钮的完整键盘导航尚未提供。需要完整键盘操作时使用合适的弹层组件。
+文字像素、物理触摸/笔和屏幕阅读器播报仍需专项验证。
+[Catalog 示例](../../../Material3Expressive.Catalog/TooltipDemo.axaml)展示原生、简单和富内容提示。内部机制与已确认差异见 [INTERNALS.md](INTERNALS.md)。

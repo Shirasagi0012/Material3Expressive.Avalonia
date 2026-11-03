@@ -4,6 +4,8 @@
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)，每个窗口需有动画作用域。
 实现及验证边界见 [INTERNALS](INTERNALS.md)。
 
+## 基础用法
+
 ```xml
 <m3:SwipeToDismissBox xmlns="https://github.com/avaloniaui"
                      xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
@@ -19,11 +21,7 @@
 </m3:SwipeToDismissBox>
 ```
 
-`Content` / `ContentTemplate` 是移动的前景，`BackgroundContent` / `BackgroundContentTemplate`
-是固定背景。自然尺寸仅由前景决定；背景匹配最终容器大小。组件不裁剪移出的内容，
-需要限制可见范围时在外层容器设置 `ClipToBounds="True"`。颜色、圆角和背景动作由应用提供。
-
-## 状态与操作
+## 变体与属性
 
 每个实例默认拥有独立 `State`，也可绑定应用持有的 `SwipeToDismissBoxState`。
 以下 C# 中 `swipe` 是已挂载的控件：
@@ -50,8 +48,19 @@ await swipe.State.ResetAsync();
 完成消除后手势暂停，调用 `ResetAsync()` 后恢复。方向开关不否决程序化写入不存在锚点的状态。
 
 `Dismissed` 在已提交状态不是 Settled 时通知；初始已消除状态也会通知，首次布局前方向可能为 Settled，
-这是固定上游的行为。处理器可更新业务集合，也可调用复位；组件没有废弃的 `confirmValueChange` 回调。
+处理器可更新业务集合，也可调用复位。
 
-不要在消除动画尚未完成时移除该目标方向的锚点：固定上游在此情形存在异常，详见 INTERNALS。
-触屏、与嵌套滚动的完整仲裁及非 Windows 平台尚未双端验收。
-可运行示例见 [Catalog](../../../Material3Expressive.Catalog/SwipeToDismissDemo.axaml)，启动参数 `--swipe-to-dismiss`。
+## 内容槽与定制
+
+`Content` / `ContentTemplate` 是移动的前景，`BackgroundContent` / `BackgroundContentTemplate`
+是固定背景。自然尺寸仅由前景决定；背景匹配最终容器大小。组件不裁剪移出的内容，
+需要限制可见范围时在外层容器设置 `ClipToBounds="True"`。颜色、圆角和背景动作由应用提供。
+
+## 使用限制与注意事项
+
+动画操作应在控件挂载和布局后调用。首次布局前 CurrentOffset 为 NaN，RequireOffset 会报告未初始化。
+消除动画进行中移除目标方向会触发已知异常，应等操作结束后再修改方向配置。
+触屏、完整嵌套滚动仲裁及非 Windows 平台尚未双端验收。
+[Catalog 示例](../../../Material3Expressive.Catalog/SwipeToDismissDemo.axaml)可用 `--swipe-to-dismiss` 启动。
+
+内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

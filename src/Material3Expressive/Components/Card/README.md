@@ -4,7 +4,7 @@
 三者默认只是内容容器；显式设置 `IsClickable="True"` 才让卡片自身成为按钮。
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)；实现与移植边界见 [INTERNALS.md](INTERNALS.md)。
 
-## 最小示例
+## 基础用法
 
 下面不需要 ViewModel。卡片默认无 padding，用 `CardColumn.Margin` 为内容留白：
 
@@ -23,7 +23,7 @@
 
 后续片段沿用相同命名空间。替换为 `ElevatedCard` 或 `OutlinedCard` 即可选择另外两种外观。
 
-## 可点击、禁用与命令
+## 变体与属性
 
 卡片可复用原生 Button 的 `Click`、`Command` 和 `CommandParameter`：
 
@@ -47,12 +47,33 @@
 默认 Space 松开、Enter 按下时激活，使用原生 Button 键盘行为。
 切到普通模式会取消卡片自身的按压与焦点，不应将模式切换当成一次点击。
 
-## 内容与定制
+### 共享交互源
+
+可点击模式的 `InteractionSource` 接收已有共享事件流；null 使用私有 source。普通模式忽略此属性。
+外部拖动可驱动阴影与状态层，不会触发 Click、移动卡片或改变选中状态：
+
+```csharp
+using Material3Expressive.Foundation.Interaction;
+
+var source = new MaterialInteractionSource();
+card.IsClickable = true;
+card.InteractionSource = source;
+var drag = new MaterialInteractionEvent.DragStart();
+source.Emit(drag);
+// 宿主完成拖动；取消时使用 DragCancel(drag)。
+source.Emit(new MaterialInteractionEvent.DragStop(drag));
+```
+
+原生指针/键盘也发到同一个流。高度使用最后存活的交互，重叠事件按开始对象身份配对。
+更换源前应配对结束外部交互；尚未结束的外部交互会继续影响高度。切成普通模式或卸载时清理这些状态。
+Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard。
+
+## 内容槽与定制
 
 `Content` / `ContentTemplate` 接收任意内容。`CardColumn` 从上到下、Start 对齐、零间距，
 按顺序把剩余高度交给子项；高度耗尽后后续子项收到零高度约束。
 默认 Stretch 在此按 Start 放置，显式 HorizontalAlignment 可指定其他对齐，RTL 跟随布局方向。
-它不提供完整 ColumnScope 的 weight / alignBy；直接用 StackPanel 也可以，但保留其原生测量语义。
+需要权重或复杂对齐时，可在内容槽组合其他布局容器。
 卡片 `Padding` 或内容 `Margin` 都可用于留白。
 
 正常态与禁用态分别使用 `ContainerColor` / `ContentColor`、`DisabledContainerColor` /
@@ -81,28 +102,11 @@
 切换模式或重新挂载才重建，单独替换模板不重置。可点击卡片跟随最后一个活动交互更新高度，
 禁用时直接切到目标值。这里控制的是阴影高度，不是 tonal elevation。
 
-## 使用边界
+## 使用限制与注意事项
 
-可点击模式的 `InteractionSource` 接收已有共享事件流；null 使用私有 source。普通模式忽略此属性。
-外部拖动可驱动阴影与状态层，不会触发 Click、移动卡片或改变选中状态：
+形状配置使用四角 CornerRadius。可在条目或祖先设置 `MaterialInteraction.FocusFeedback="InsetRing"`。
+普通卡片记住首次挂载的默认阴影高度，模式切换或重挂后重新读取。
+半透明 ElevatedCard 的阴影仍有已知视觉差异。
+[Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)展示三种外观，Drag handle demo 展示共享拖动反馈。
 
-```csharp
-var source = new MaterialInteractionSource();
-card.IsClickable = true;
-card.InteractionSource = source;
-var drag = new MaterialInteractionEvent.DragStart();
-source.Emit(drag);
-// 宿主完成拖动；取消时使用 DragCancel(drag)。
-source.Emit(new MaterialInteractionEvent.DragStop(drag));
-```
-
-原生指针/键盘也发到同一个流。高度使用最后存活的交互，重叠事件按开始对象身份配对。
-按固定上游语义，更换 source 不清空高度 collector 已记住的外部交互；先结束旧交互再替换，
-或由新 source 发对应结束事件。切成普通模式或卸载会清空 collector；单独换模板保留。
-Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard。
-
-可通过继承的 `MaterialInteraction.FocusFeedback="InsetRing"` 使用共享焦点环；组件级双端视觉矩阵尚未验证。
-任意路径/切角 Shape 及完整 ColumnScope 尚未实现；当前形状用四角 CornerRadius。
-半透明 ElevatedCard 仍存在已观察到的共享阴影差异，动画也有已记录数值精度差异，不能视作完整视觉一致。
-共享拖动示例已检查实际桌面鼠标路径；其他桌面输入及文字像素一致性尚未经验证。
-Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示三种普通、可点击及禁用外观。
+内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

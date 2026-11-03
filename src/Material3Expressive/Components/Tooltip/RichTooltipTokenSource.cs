@@ -22,6 +22,12 @@ public sealed class RichTooltipTokenSource : ITokenSource
         [Comp.RichTooltip.ActionLabelTextFont] = new TokenRef(Sys.TypeScale.LabelLarge.Style),
         [Comp.RichTooltip.ContentPadding] = new Thickness(16, 0),
         [Comp.RichTooltip.MaxWidth] = 320d,
+        [Comp.RichTooltip.SubheadFirstBaselineOffset] = 28d,
+        [Comp.RichTooltip.TextFirstBaselineOffset] = 24d,
+        [Comp.RichTooltip.TextBottomPadding] = 16d,
+        [Comp.RichTooltip.TextVerticalPadding] = 4d,
+        [Comp.RichTooltip.ActionMinHeight] = 36d,
+        [Comp.RichTooltip.ActionBottomPadding] = 8d,
     }.ToFrozenDictionary();
 
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) => Values.TryGetValue(key, out value!);

@@ -1,6 +1,6 @@
-# ListItem 维护与移植
+# ListItem 内部机制与维护说明
 
-## 源码依据
+## 1. 上游基线与职责映射
 
 基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)：AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`，
 Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
@@ -16,7 +16,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
 | ListItemDefaults、ListTokens、ReorderListTokens | ListItemTokenSource.cs / MaterialTokens.Comp.ListItem.cs |
 | CollectInteractionsAsState、ripple | Foundation/Interaction 的配对源及共享 controller |
 
-## 布局与环境
+## 2. 关键机制与架构契约
 
 测量顺序为 leading、trailing、overline、main、supporting；侧槽各预留 12 DIP 间隔。
 有限宽度填满约束，无限宽度按侧槽与正文最大宽度求和；正文高度求和，再与侧槽最大高度、默认行高比较。
@@ -27,8 +27,6 @@ Avalonia Measure 的无限约束承担常见内容固有尺寸需求，不另建
 Side presenter 的最小交互环境为 `max(0, inheritedMinimum - start/endPadding - spacing)`，默认 20；
 该值从呈现位置向槽内容传播，支持动态祖先环境和 Padding 更新。
 RTL 由模板布局镜像；CornerRadius 是物理角，默认六状态及分组只使用左右对称值。
-
-## 状态、动画与释放
 
 颜色优先级：disabled > dragged > selected > default，六个颜色轨道属于同一个 Transition。
 形状优先级：pressed > dragged > selected > focused > hovered > base。
@@ -46,20 +44,6 @@ MaterialInteractionSource 以开始事件对象身份配对，状态层读取最
 Core CombinedClickable 不在鼠标按下时请求行焦点，故仅取消行本身的 Pointer focus 请求，保留键盘和子控件焦点。
 动画使用 child scope；模板替换释放旧 presenter lease，脱离视觉树释放 motion、源订阅和长按，重新挂载建立新连接。
 
-## 已确认适配（2026-10-17）
-
-维护者对本任务具体 API 与 XAML/C# 示例确认了：
-
-- 两控件和显式 InteractionMode；受控 IsSelected / IsChecked；多选以 CheckedChangeRequested 回传，外部容器提供分组间距。
-- IsInteractionEnabled 对应上游 enabled，IsEnabled 保留 Avalonia 子树禁用语义。
-- CornerRadius 六状态形变；任意路径/切角 Shape、可配置 inset focus ring 明确暂缺。
-- LongClickLabel 映射 HelpText；辅助技术直接动作使用槽内同命令按钮。Avalonia 12.1.2 没有第二个 Invoke 动作入口。
-- supporting 多行只自动识别普通文本；复杂模板合并首末基线的限制保留，本轮不新增显式行数属性。
-
-配对交互源、继承最小交互尺寸和内部关闭 tonal 着色的共享决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
-
-## 内缩焦点环
-
 固定两端 ListItem.kt 都在 combinedClickable 上使用单一 `ripple(focusRingShape = shape)`。
 共享控制器按 ListItem（含 SegmentedListItem）识别这一生命周期：切换 Opacity / InsetRing
 仅更新配置，不按 Surface 的双 indication 路径清空 ripple 或重建焦点订阅。
@@ -70,28 +54,28 @@ AnimatedShape 在重定向时将 progress 重设为 0，轮廓可能暂时不动
 让焦点环在相同帧重新读取主题色；只比较最终 CornerRadius 会让主题切换后的失焦首帧仍绘制旧颜色。
 纯主题色变更仍保留静止环的缓存，未改变已确认的共享缓存语义。
 
-`InsetFocusRingTests` 覆盖普通/分组项的模式切换、波纹保留、跟随形状、卸载重挂和主题首帧像素。
-双端 `focus-ring.dynamic.list-item.*` / `segmented-list-item.*` 覆盖进入/退出、反向、hover交错、禁用、
-模式、主题和自定义描边。切换期间的 ripple 场景严格一致；圆角环边缘仍有既有栅格差异，
-部分场景为 withinTolerance，不能称全部像素严格相等。具体结果由 self-test 重新产生。
-2026-11-03 Windows 本批 18 项最终结果为 4 equal、14 withinTolerance，零执行错误且重复与
-额外被动截图均稳定。原始产物见 `20261103-102232-92ea10b7`；模式切换修正后的四项见
-`20261103-102654-3fc7c2d0`、`20261103-102700-4915a61a`、`20261103-102803-4b485601`、
-`20261103-102810-b1cb0a2c`，主题首帧修正后的两项见 `20261103-102933-db59028e`、
-`20261103-102941-ae88c994`（均位于 `artifacts/visual-parity/runs/`）。
+## 3. 已确认决定与已知差异
 
-## 验证与边界
+维护者对本任务具体 API 与 XAML/C# 示例确认了：
 
-单元/headless 测试位于 `tests/Material3Expressive.Tests/ListItemTests.cs` 和 `Fixtures/ListItem.axaml`，
-涵盖普通文本多行、五槽模板、受控选择、长按及取消、嵌套按钮、组形状、尺寸环境、automation 和生命周期。
-VisualParity 的独立双端用例为 `Cases/ListItemCases.cs` 与 `reference/src/main/kotlin/cases/ListItemCases.kt`，suite 为 `list-item`。
-覆盖模式/行数、明暗/禁用/选择色、分组位置、RTL、宽高约束、Padding、输入、拖拽、主题及形状替换。
-按仓库规则使用非文字内容检查几何和颜色，不能据此宣称字体栅格一致。
+- 两控件和显式 InteractionMode；受控 IsSelected / IsChecked；多选以 CheckedChangeRequested 回传，外部容器提供分组间距。
+- IsInteractionEnabled 对应上游 enabled，IsEnabled 保留 Avalonia 子树禁用语义。
+- CornerRadius 六状态形变；任意路径/切角 Shape 尚未实现。可配置内缩焦点环按共享机制接入，详见第 2 节。
+- LongClickLabel 映射 HelpText；辅助技术直接动作使用槽内同命令按钮。Avalonia 12.1.2 没有第二个 Invoke 动作入口。
+- supporting 多行只自动识别普通文本；复杂模板合并首末基线的限制保留，本轮不新增显式行数属性。
+
+配对交互源、继承最小交互尺寸和内部关闭 tonal 着色的共享决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
+
+未经验证的范围包括真实桌面辅助技术与字体栅格。焦点环边缘保留已观测到的栅格差异，精确像素及容差内结果分别报告。
+
+## 4. 验证入口
+
+- `ListItemTests` 和 `Fixtures/ListItem.axaml` 覆盖五槽、受控选择、长按、嵌套按钮、分组、尺寸环境及生命周期。
+- `InsetFocusRingTests` 覆盖普通和分段项的模式切换、波纹保留、形变、重挂和主题首帧。
+- 双端 `ListItemCases` 的族名为 `list-item`，`FocusRingCases` 包含 `focus-ring.dynamic.list-item.*` 与 `segmented-list-item.*`。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~ListItemTests
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~ListItemTests|FullyQualifiedName~InsetFocusRingTests'
 ./tests/VisualParity/parity.ps1 self-test --family list-item
+./tests/VisualParity/parity.ps1 self-test --family focus-ring
 ```
-
-尚未实现：上述任意 Shape。已接受适配：显式模式、受控事件、行启用语义、HelpText 长按替代和复杂模板基线限制。
-未经验证：真实桌面辅助技术操作与字体栅格；headless automation provider 检查不替代屏幕阅读器验收。

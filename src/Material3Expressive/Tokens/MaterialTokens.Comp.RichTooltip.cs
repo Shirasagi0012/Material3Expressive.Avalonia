@@ -22,6 +22,12 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<TextStyle> ActionLabelTextFont = new("md.comp.rich-tooltip.action-label-text-font");
             public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.rich-tooltip.content-padding");
             public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.rich-tooltip.max-width");
+            public static readonly MaterialTokenKey<double> SubheadFirstBaselineOffset = new("md.comp.rich-tooltip.subhead-first-baseline-offset");
+            public static readonly MaterialTokenKey<double> TextFirstBaselineOffset = new("md.comp.rich-tooltip.text-first-baseline-offset");
+            public static readonly MaterialTokenKey<double> TextBottomPadding = new("md.comp.rich-tooltip.text-bottom-padding");
+            public static readonly MaterialTokenKey<double> TextVerticalPadding = new("md.comp.rich-tooltip.text-vertical-padding");
+            public static readonly MaterialTokenKey<double> ActionMinHeight = new("md.comp.rich-tooltip.action-min-height");
+            public static readonly MaterialTokenKey<double> ActionBottomPadding = new("md.comp.rich-tooltip.action-bottom-padding");
         }
     }
 }

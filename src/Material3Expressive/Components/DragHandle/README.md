@@ -1,37 +1,47 @@
 # VerticalDragHandle
 
-指示横向拖动的竖向把手。控件显示正常、按下、拖动状态；宿主负责识别拖动、移动内容和指针捕获。
-默认外观宽 4、高 48；按下和拖动为 12 × 52，外围保留最小交互布局空间。
+库内竖向手柄，用于提示面板可横向调整。控件呈现正常、按下和拖动外观，宿主负责拖动识别、指针捕获及内容移动。
+
+## 基础用法
+
+完成[公共接入](../../../../docs/GETTING_STARTED.md)后，可在拖动区域中放置手柄。
 
 ```xml
-<m3:VerticalDragHandle x:Name="Handle" />
+<m3:VerticalDragHandle xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+                      x:Name="Handle" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" />
 ```
 
-将宿主的拖动交互传给同一个 source。结束事件必须引用对应的 start；取消时发 `DragCancel`。
+## 变体与属性
+
+`Sizes`、`Colors`、`Shapes` 分别配置正常、按下和拖动三种状态，拖动优先于按下。它们是完整值对象，显式设置时需提供所有成员。
+
+`InteractionSource` 可连接宿主共享的交互源。结束或取消事件应引用同一个开始对象。
 
 ```csharp
+using Material3Expressive.Foundation.Interaction;
+
 var source = new MaterialInteractionSource();
 Handle.InteractionSource = source;
 var drag = new MaterialInteractionEvent.DragStart();
-source.Emit(drag); // 宿主开始拖动
-// 更新宿主的布局或位置……
+source.Emit(drag);
+// 宿主更新内容位置，结束时发送配对事件。
 source.Emit(new MaterialInteractionEvent.DragStop(drag));
 ```
 
-三个配置值保留上游同名数据关系，分别为正常、按下、拖动；拖动优先于按下。
-配置是完整值对象，也支持 XAML 属性元素；未指定成员为其类型零值，不逐字段回退主题。
+## 内容槽与定制
+
+手柄通过三组配置定制外观，默认值来自 `Comp.DragHandle` Token。默认正常尺寸为 4×48 DIP，按下和拖动为 12×52 DIP。
 
 ```csharp
-Handle.Sizes = new(new Size(4, 48), new Size(8, 50), new Size(16, 60));
-Handle.Colors = new(Colors.SlateBlue, Colors.DarkSlateBlue, Colors.MediumPurple);
-Handle.Shapes = new(new CornerRadius(4), new CornerRadius(8), new CornerRadius(12));
+Handle.Sizes = new(new Avalonia.Size(4, 48), new Avalonia.Size(8, 50), new Avalonia.Size(16, 60));
+Handle.Shapes = new(new Avalonia.CornerRadius(4), new Avalonia.CornerRadius(8), new Avalonia.CornerRadius(12));
 ```
 
-默认值通过 `Comp.DragHandle` Token 引用系统颜色/形状，跟随主题更新。
-`Foreground` 对应环境 content color，用于共享状态层和 ripple；容器颜色由 `Colors` 控制。
-控件自己的按下不产生 `Press` 交互；外部 source 的 `Press` 仍能产生 ripple。
-`MaterialInteractiveSize.Minimum` 只控制布局留白，不会自动扩大鼠标命中或提供拖动逻辑。
-调用者需要更大的拖动区时，可像 Catalog 那样把它放入透明背景的宿主区域。
+`Foreground` 控制交互反馈颜色，`Colors` 控制手柄本体颜色。`MaterialInteractiveSize.Minimum` 设置外层最小布局留白。
 
-Catalog 的 **Drag handle demo**（命令行 `--drag-handles`）展示两个面板的真实拖动、取消和共享 source。
-任意路径 Shape 尚未支持，当前形状 API 使用仓内既有 `CornerRadius`；实现和验证范围见 [INTERNALS](INTERNALS.md)。
+## 使用限制与注意事项
+
+宿主可用透明背景提供较大的拖动区域。最小布局留白本身仅影响布局，形状配置使用 `CornerRadius`。
+本地按压改变手柄外观，外部源的 Press 可产生波纹反馈。
+
+[Catalog 示例](../../../Material3Expressive.Catalog/DragHandleDemo.axaml)可用 `--drag-handles` 启动，包含拖动、取消与共享交互源。实现和验证范围见 [INTERNALS.md](INTERNALS.md)。
