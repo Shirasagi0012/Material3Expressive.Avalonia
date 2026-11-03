@@ -19,7 +19,7 @@ namespace Material3Expressive.Parity;
 public sealed record TooltipBoxConfig(string Position = "Above", int X = 112, int Y = 80, bool Rtl = false,
     bool Dark = false, double Spacing = 4, double ContentWidth = 64, double ContentHeight = 8,
     string Action = "none", bool Persistent = false, bool Enabled = true, bool HasAction = false, double Elevation = 0,
-    double AnchorScale = 1);
+    double AnchorScale = 1, bool Rich = false);
 
 [ParitySuite("tooltip-box")]
 public sealed class TooltipBoxCases
@@ -47,6 +47,8 @@ public sealed class TooltipBoxCases
         yield return Data("dynamic.tab.action", new(Action: "focus", HasAction: true));
         yield return Data("dynamic.show.rtl", new(Action: "show", Rtl: true));
         yield return Data("dynamic.show.dark", new(Action: "show", Dark: true));
+        foreach (var action in new[] { "show", "interrupt", "resize" })
+            yield return Data($"dynamic.rich.{action}", new(Action: action, Rich: true, HasAction: true, Elevation: 3));
     }
     static CaseData<TooltipBoxConfig> Data(string id, TooltipBoxConfig config) => new(id, id.Replace('.', ' '), config);
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
@@ -70,11 +72,15 @@ public sealed class TooltipBoxCases
         host.Window.Resources[Sys.Color.InverseSurface] = Color.Parse(config.Dark ? "#E6E0E9" : "#322F35");
         host.Window.Resources[Sys.Color.InverseOnSurface] = Color.Parse(config.Dark ? "#322F35" : "#F5EFF7");
         host.Window.Resources[Sys.Color.Shadow] = Colors.Black;
+        host.Window.Resources[Sys.Color.SurfaceContainer] = Color.Parse(config.Dark ? "#211F26" : "#F3EDF7");
         var initiallyVisible = !dynamic || config.Action is "outside" or "request" or "resize";
         using var state = new TooltipState(initiallyVisible, config.Persistent, new MutatorMutex());
         var anchor = new Border { Width = 24, Height = 24, Background = Brushes.Blue, Focusable = true };
         var content = new Marker { PreferredWidth = config.ContentWidth, PreferredHeight = config.ContentHeight };
-        var tooltip = new PlainTooltip { Content = content, ShadowElevation = config.Elevation };
+        ContentControl tooltip = config.Rich
+            ? new RichTooltip { Content = content, ShadowElevation = config.Elevation,
+                Title = new Marker { PreferredWidth = 32, PreferredHeight = 10 }, Action = new Marker { PreferredWidth = 24, PreferredHeight = 12 } }
+            : new PlainTooltip { Content = content, ShadowElevation = config.Elevation };
         var box = new TooltipBox { Content = anchor, Tooltip = tooltip, State = state,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
             AnchorPosition = Enum.Parse<TooltipAnchorPosition>(config.Position), Spacing = config.Spacing,

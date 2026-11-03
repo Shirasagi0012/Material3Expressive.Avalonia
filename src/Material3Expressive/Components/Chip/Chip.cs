@@ -32,6 +32,8 @@ public abstract class Chip : Button
     public static readonly StyledProperty<ChipElevation> ElevationProperty = AvaloniaProperty.Register<Chip, ChipElevation>(nameof(Elevation), new ChipElevation(), validate: value => value is not null);
     /// <summary>Complete interaction shadow configuration supplied by the theme; all-zero values remove the shadow.</summary>
     public ChipElevation Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty = AvaloniaProperty.Register<Chip, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<ChipSpacing> SpacingProperty = AvaloniaProperty.Register<Chip, ChipSpacing>(nameof(Spacing), new ChipSpacing(), validate: value => value is not null);
     public ChipSpacing Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
 
@@ -68,6 +70,23 @@ public abstract class Chip : Button
     private bool _pending;
     private CancellationTokenSource? _shapeEffect;
     private Task? _shapeTask;
+    private CancellationTokenSource? _elevationEffect;
+    private Task? _elevationTask;
+    private IDisposable? _elevationBinding;
+    private CancellationTokenSource? _elevationCommit;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+    private readonly List<MaterialInteractionEvent> _elevationInteractions = [];
+    private readonly List<MaterialInteractionEvent.Press> _presses = [];
+    private bool _sourcePressed;
+    private InteractionState ElevationInteraction => _elevationInteractions.LastOrDefault() switch
+    {
+        MaterialInteractionEvent.Press => InteractionState.Pressed,
+        MaterialInteractionEvent.HoverEnter => InteractionState.Hovered,
+        MaterialInteractionEvent.Focus => InteractionState.Focused,
+        MaterialInteractionEvent.DragStart => InteractionState.Dragged,
+        _ => InteractionState.None,
+    };
 
     protected Chip()
     {
@@ -91,13 +110,19 @@ public abstract class Chip : Button
     {
         base.OnAttachedToVisualTree(e);
         _attachScope = AnimationScope.Get(this).CreateChild("Chip");
+        ConnectSource();
         InitializeMotion();
         Refresh();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = null;
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        _elevationInteractions.Clear(); _presses.Clear(); _sourcePressed = false;
         DisposeMotion();
+        _lastElevationInteraction = InteractionState.None;
         _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -106,7 +131,7 @@ public abstract class Chip : Button
     {
         if (_surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
         _elevation = new Animatable<double>(new DoubleConverter(), ElevationTarget(), VisibilityThresholds.Double);
-        motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        _elevationBinding = motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
         var surface = _surface;
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
         {
@@ -124,15 +149,18 @@ public abstract class Chip : Button
     {
         _leading?.Stop(); _trailing?.Stop();
         _shapeEffect?.Cancel(); _shapeEffect = null; _shapeTask = null;
+        _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
+        _elevationBinding?.Dispose(); _elevationBinding = null;
+        _elevationCommit?.Cancel(); _elevationCommit = null;
         _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
         _surface?.SetAnimatedCorners(null);
         _elevation = null; _pending = false;
-        _lastElevationInteraction = InteractionState.None;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == LeadingIconProperty || change.Property == TrailingIconProperty
             || change.Property == LeadingIconTemplateProperty || change.Property == TrailingIconTemplateProperty
             || change.Property == LeadingIconColorProperty || change.Property == TrailingIconColorProperty
@@ -147,6 +175,44 @@ public abstract class Chip : Button
             UpdateContentFacts();
             Refresh();
         }
+    }
+
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        var replacing = _source is not null;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = source;
+        // collectIsPressedAsState's collector list resets, its remembered bool does not.
+        // ChipElevation's remembered interaction list survives source replacement.
+        _presses.Clear();
+        _source.Interaction += ReceiveInteraction;
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication();
+    }
+
+    private void ReceiveInteraction(MaterialInteractionEvent interaction)
+    {
+        MaterialInteractionEvent? start = interaction switch
+        {
+            MaterialInteractionEvent.Release e => e.Start,
+            MaterialInteractionEvent.CancelPress e => e.Start,
+            MaterialInteractionEvent.HoverExit e => e.Start,
+            MaterialInteractionEvent.Unfocus e => e.Start,
+            MaterialInteractionEvent.DragStop e => e.Start,
+            MaterialInteractionEvent.DragCancel e => e.Start,
+            _ => null,
+        };
+        if (start is null) _elevationInteractions.Add(interaction);
+        else _elevationInteractions.Remove(start);
+        if (interaction is MaterialInteractionEvent.Press press) _presses.Add(press);
+        else if (start is MaterialInteractionEvent.Press released) _presses.Remove(released);
+        _sourcePressed = _presses.Count > 0;
+        QueueTargets();
     }
 
     private void UpdateContentFacts()
@@ -185,7 +251,7 @@ public abstract class Chip : Button
     private double ElevationTarget()
     {
         var values = Elevation;
-        return !IsEffectivelyEnabled ? values.Disabled : MaterialInteraction.GetOrCreate(this).LastInteraction switch
+        return !IsEffectivelyEnabled ? values.Disabled : ElevationInteraction switch
         {
             InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
             InteractionState.Focused => values.Focused, InteractionState.Dragged => values.Dragged, _ => values.Default
@@ -199,19 +265,61 @@ public abstract class Chip : Button
         _ = motion.Launch(async ct =>
         {
             await motion.NextFrameAsync(ct);
+            // Commit replacement effects after the old animations have sampled this frame.
+            await Task.Yield();
+            ct.ThrowIfCancellationRequested();
             _pending = false;
             var target = ElevationTarget();
             if (_elevation is { } elevation && elevation.TargetValue != target)
             {
-                var interaction = MaterialInteraction.GetOrCreate(this).LastInteraction;
+                var interaction = ElevationInteraction;
                 var from = _lastElevationInteraction;
-                _lastElevationInteraction = interaction;
-                _ = motion.Launch(token => !IsEffectivelyEnabled || (interaction == InteractionState.None && from == InteractionState.None)
-                    ? elevation.SnapToAsync(target, token)
-                    : elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
-                        interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
-                        easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
-                        cancellationToken: token), "Chip elevation");
+                var enabled = IsEffectivelyEnabled;
+                _elevationEffect?.Cancel();
+                var previous = _elevationTask;
+                _elevationTask = motion.Launch(async token =>
+                {
+                    if (previous is not null) { try { await previous; } catch (OperationCanceledException) { } }
+                    using var effect = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    _elevationEffect = effect;
+                    try
+                    {
+                        if (!enabled || (interaction == InteractionState.None && from == InteractionState.None))
+                        {
+                            // Surface's composition has already read the current State before
+                            // this LaunchedEffect snap; publish the new value next composition.
+                            var surface = _surface!;
+                            var composedElevation = surface.ShadowElevation;
+                            _elevationBinding?.Dispose(); _elevationBinding = null;
+                            surface.ShadowElevation = composedElevation;
+                            await elevation.SnapToAsync(target, effect.Token);
+                            _elevationCommit?.Cancel();
+                            _ = motion.Launch(async commitToken =>
+                            {
+                                using var commit = CancellationTokenSource.CreateLinkedTokenSource(commitToken);
+                                _elevationCommit = commit;
+                                try
+                                {
+                                    await motion.NextFrameAsync(commit.Token);
+                                    if (ReferenceEquals(_surface, surface) && ReferenceEquals(_elevation, elevation))
+                                    {
+                                        _elevationBinding?.Dispose();
+                                        _elevationBinding = motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, elevation);
+                                    }
+                                }
+                                finally { if (ReferenceEquals(_elevationCommit, commit)) _elevationCommit = null; }
+                            }, "Chip elevation composition");
+                        }
+                        else
+                            await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                                interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
+                                easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
+                                cancellationToken: effect.Token);
+                        // ChipElevation updates this only after a successful animation/snap.
+                        _lastElevationInteraction = interaction;
+                    }
+                    finally { if (ReferenceEquals(_elevationEffect, effect)) _elevationEffect = null; }
+                }, "Chip elevation");
             }
             RefreshShape(initial: false);
         }, "Chip composition");
@@ -230,7 +338,7 @@ public abstract class Chip : Button
             _surface.CornerRadius = CornerRadius;
             return;
         }
-        var pressed = MaterialInteraction.GetOrCreate(this).Interaction.HasFlag(InteractionState.Pressed);
+        var pressed = _sourcePressed;
         // key(shapes) uses ChipShapes' structural equality, including resolved theme defaults.
         var configuration = (Shape: shapes.Shape, Selected: shapes.SelectedShape, Pressed: shapes.PressedShape);
         var target = pressed ? configuration.Pressed : Selected ? configuration.Selected : configuration.Shape;

@@ -149,9 +149,27 @@ Input 的 `Padding` 仍随头像/图标组合选择默认值。普通用户 Styl
 
 ## 使用边界
 
+`InteractionSource` 可注入共享 `MaterialInteractionSource`，null 使用私有流。原生鼠标/键盘向同一流
+发送 Press/Release/Cancel、Hover 和 Focus；外部事件改变反馈，不自动 Click 或修改 IsSelected。
+
+```csharp
+var source = new MaterialInteractionSource();
+chip.InteractionSource = source;
+var drag = new MaterialInteractionEvent.DragStart();
+source.Emit(drag);
+// 宿主负责移动；取消时发 DragCancel(drag)。
+source.Emit(new MaterialInteractionEvent.DragStop(drag));
+```
+
+重叠开始事件按对象身份结束；高度使用最后仍存活的交互。更换 source 时，上游高度 collector
+保留旧外部交互，建议先配对结束再更换。按压形变的记忆值保留到新 source 首条事件，
+新 collector 不继承旧 Press 列表；indication 自身重建。卸载会清理所有 collector。
+外部 `Press.Position` 是 Chip 本地 DIP 坐标，包含最小交互布局留白。
+Catalog **Drag handle demo** 展示拖动源同时驱动 Card、Chip 和 Handle。
+
 Selectable Chip 默认最大宽度 1000 DIP，显式 `Width`/`MinWidth` 保留调用方约束。
-当前 `Shapes` 仅支持圆角矩形；任意路径/切角 `Shape`、通用 Compose Arrangement、外部
-MutableInteractionSource 和可配置 inset focus ring 尚未实现。
+当前 `Shapes` 仅支持圆角矩形；任意路径/切角 `Shape` 和通用 Compose Arrangement 尚未实现。
+共享 Surface 已接入 `MaterialInteraction.FocusFeedback="InsetRing"`，Chip 自身双端焦点环视觉矩阵尚未验证。
 精度、阴影与原生键盘的已知差异不等于完整视觉一致；真实文字/字体、系统屏幕阅读器和桌面手工体验
 未由无字形 headless 用例证明。
 四族、Elevated、形状、头像和禁用组合见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

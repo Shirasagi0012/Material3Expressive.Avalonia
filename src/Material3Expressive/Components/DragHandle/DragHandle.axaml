@@ -1,0 +1,49 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:DragHandlePresenter}" TargetType="m3:DragHandlePresenter">
+      <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+              CornerRadius="{TemplateBinding CornerRadius}" StateLayerBrush="{TemplateBinding Foreground}" />
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:VerticalDragHandle}" TargetType="m3:VerticalDragHandle">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Sizes">
+        <MultiBinding Converter="{x:Static m3:DragHandleThemeConverters.Instance}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.Size}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.PressedSize}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.DraggedSize}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Colors">
+        <MultiBinding Converter="{x:Static m3:DragHandleThemeConverters.Instance}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.Color}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.PressedColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.DraggedColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Shapes">
+        <MultiBinding Converter="{x:Static m3:DragHandleThemeConverters.Instance}">
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.Shape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.PressedShape}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+DragHandle.DraggedShape}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:DragHandleLayout MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+DragHandle.MinimumInteractiveSize}}">
+            <m3:DragHandlePresenter x:Name="PART_Handle" Sizes="{TemplateBinding Sizes}" Colors="{TemplateBinding Colors}"
+                Shapes="{TemplateBinding Shapes}" InteractionSource="{TemplateBinding InteractionSource}" Foreground="{TemplateBinding Foreground}" />
+          </m3:DragHandleLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

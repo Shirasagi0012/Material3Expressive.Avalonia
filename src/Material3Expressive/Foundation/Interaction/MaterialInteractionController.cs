@@ -50,6 +50,7 @@ internal sealed partial class MaterialInteractionController
     private MaterialSurface? _presenter;
     private InteractionState _interaction;
     private InteractionState _shownInteraction;
+    private MaterialInteractionEvent? _shownSourceInteraction;
     private Point? _keyboardPressCenter;
     private IPointer? _pressedPointer;
     private bool _hoverNeedsMove;
@@ -162,6 +163,10 @@ internal sealed partial class MaterialInteractionController
     // retaining this controller's input, ripple and lifecycle implementation.
     internal Func<Point, Point>? PressPositionMapper { get; set; }
 
+    // DragHandle's pressable observes a local press without emitting PressInteraction.
+    // Its external source must still be able to drive the ordinary ripple indication.
+    internal bool ObservePointerPresses { get; set; } = true;
+
     /// <summary>
     /// Attaches the template's MaterialSurface as the render front-end, returning the lease that
     /// detaches it. A second attach replaces the first; a disposed lease stops its surface from
@@ -209,6 +214,7 @@ internal sealed partial class MaterialInteractionController
         _stateLayerAlpha = null;
         _stateLayerSubscription = null;
         _shownInteraction = InteractionState.None;
+        _shownSourceInteraction = null;
         foreach (var ripple in _ripples.ToArray())
             ripple.Dispose();
         _ripples.Clear();
@@ -363,6 +369,7 @@ internal sealed partial class MaterialInteractionController
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (!ObservePointerPresses) return;
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         // A descendant button can consume the press. Observe the owner's native class
         // handler above, rather than giving its clickable ancestor a second ripple.
@@ -405,6 +412,7 @@ internal sealed partial class MaterialInteractionController
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        if (!ObservePointerPresses) return;
         _keyboardPressCenter = new Rect(_owner.Bounds.Size).Center;
         if (e.InitialPressMouseButton == MouseButton.Left)
         {
@@ -617,15 +625,18 @@ internal sealed partial class MaterialInteractionController
         // AndroidX stores entry interactions in arrival order and shows lastOrNull(). A fixed
         // focus-over-hover priority is observably wrong when a pointer enters an already focused
         // control.
-        var indicationInteractions = _source is null ? _interactions.Where(state => !_previousNativeIndicationStates.Contains(state))
-            : _sourceInteractions.Where(e => !_previousIndicationStarts.Contains(e)).Select(StateOf);
-        var topmost = indicationInteractions.LastOrDefault(state => state != InteractionState.Pressed
-            && (state != InteractionState.Focused || _indicationFocused));
+        var sourceInteraction = _sourceInteractions.LastOrDefault(e => !_previousIndicationStarts.Contains(e)
+            && StateOf(e) != InteractionState.Pressed && (StateOf(e) != InteractionState.Focused || _indicationFocused));
+        var topmost = _source is null
+            ? _interactions.LastOrDefault(state => !_previousNativeIndicationStates.Contains(state)
+                && state != InteractionState.Pressed && (state != InteractionState.Focused || _indicationFocused))
+            : sourceInteraction is null ? InteractionState.None : StateOf(sourceInteraction);
 
         // Ripple.StateLayer stores and animates alpha as Float, including token values.
         var targetOpacity = (float)OpacityFor(topmost);
 
         if (topmost == _shownInteraction
+            && ReferenceEquals(sourceInteraction, _shownSourceInteraction)
             && (_stateLayerAlpha is null || _stateLayerAlpha.TargetValue == targetOpacity))
             return;
 
@@ -639,6 +650,9 @@ internal sealed partial class MaterialInteractionController
             : StateLayer.FadeInDuration(topmost);
 
         _shownInteraction = topmost;
+        // Ripple.StateLayer keys its transition by the start object's identity. A second
+        // drag restarts even an equal-alpha animation, affecting the next interruption.
+        _shownSourceInteraction = sourceInteraction;
         if (Motion is not { } motion || motion.Lifetime.IsCancellationRequested)
             return;
         var surface = _presenter;

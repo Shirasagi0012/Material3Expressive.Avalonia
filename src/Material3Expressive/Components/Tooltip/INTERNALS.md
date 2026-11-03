@@ -86,8 +86,8 @@ Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInW
 
 ## 一致性边界与验证
 
-尚未实现 caret 的形状及背景/裁剪/阴影路径并集、RichTooltip。实际 OS 桌面交互、物理触摸/笔、
-文字排版和像素、屏幕阅读器播报未经验证；合成输入测试不等于真实设备验收。
+尚未实现 caret 的形状及背景/裁剪/阴影路径并集。除下文 RichTooltip 点击路径外，实际 OS 桌面交互、
+物理触摸/笔、文字排版和像素、屏幕阅读器播报未经验证；合成输入测试不等于真实设备验收。
 已接受的动态截图差异仅是上节 Tooltip 目标提交时序；原生静态测试不评价定位一致性。
 
 - [NativeToolTipTests](../../../../tests/Material3Expressive.Tests/NativeToolTipTests.cs)：真实服务/overlay、内容绑定、内联样式、Token 与原生约束
@@ -103,9 +103,39 @@ Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInW
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter "FullyQualifiedName~Tooltip|FullyQualifiedName~ToolTip"
 ./tests/VisualParity/parity.ps1 self-test --family plain-tooltip --require-match
+./tests/VisualParity/parity.ps1 self-test --family rich-tooltip --require-match
 ./tests/VisualParity/parity.ps1 self-test --family native-tooltip --require-match
 ./tests/VisualParity/parity.ps1 self-test --family tooltip-box
 ```
 
 参考环境与原始 different 的读取方式见 [VisualParity](../../../../tests/VisualParity/README.md)，
 TooltipBox 不以 require-match 掩盖或重分类已保留的原始差异。
+
+## RichTooltip 的默认无 caret 分支
+
+`RichTooltip.cs` 提供标题、正文和动作及其数据模板，沿用现有组件槽位、Surface 和 Token API。
+本次剩余移植授权允许新增非破坏性组件入口；没有扩展 Shape 或公共布局框架，也没有改变上述 Box 决定。
+固定 AndroidX 与 Core 的 `Tooltip.kt.RichTooltip` / `textVerticalPadding` 实现相同。
+`RichTooltipTokenSource` 保留 `tokens/RichTooltipTokens.kt` 的 System 引用；三槽分别提供独立文字角色与颜色。
+
+`RichTooltipLayout` 按 Column 顺序分配剩余高度，并移植 Foundation `AlignmentLine.kt` 的
+`alignmentLineOffsetMeasure`：缺少基线视作零，before/after 依次夹到剩余空间；未指定 after
+也参与零距离计算，因此越过内容底部的基线仍会产生尾部留白。动作保留
+`requiredHeightIn(min=36).padding(bottom=8)` 的约束突破及居中溢出。
+内部尺寸包装复用 PlainTooltipLayout；控件与槽布局分别绕过自动镜像并解析逻辑 start，支持局部 RTL。
+标题/动作可见性由 owner 伪类更新，保证从隐藏状态添加内容/模板时也重新测量。
+
+普通 TextBlock、直接显式原生 BaselineOffset 及 ContentPresenter 可读基线；任意自定义容器的基线
+透传仍未经实现。建议需要复杂布局的调用者在槽根明确提供原生 BaselineOffset；若要自动透传任意
+布局，应先决定全库 alignment-line 合约，不能将遍历到的第一个后代文字当作真实父布局基线。
+
+`RichTooltipTests` 覆盖三槽组合、真实文字角色/基线、显式基线、Token 更新、局部覆盖、动态模板和 RTL。
+`RichTooltipCases` 的无字形双端矩阵覆盖四种槽组合 × light/dark × LTR/RTL、基线边界、尺寸约束、
+颜色与 elevation、槽位/主题/内容切换；36 例全部重复稳定、结构化事实相等，1 例像素 equal、35 例
+withinTolerance（2026-11-03）。文字栅格、真实辅助技术和实际桌面输入不由此证明。
+
+同日对 TooltipBox 全部 83 例完成 self-test，新增 rich show / interrupt / resize 三例均重复稳定、
+布局与状态相等；resize 图像 withinTolerance，show / interrupt 的运动截图仍保留上文已确认的
+目标提交时序差异，稳定终点 withinTolerance。没有更改 Box 语义或重分类原始不同结果。
+Windows Catalog 实际点击打开 RichTooltip，确认标题/正文/动作显示，点击 Got it 关闭。
+这条桌面路径已验证，仍不代表文字像素一致性或屏幕阅读器验收。

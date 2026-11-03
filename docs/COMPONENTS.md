@@ -47,6 +47,7 @@
 - [Card](../src/Material3Expressive/Components/Card/README.md)：填充、阴影与描边卡片
 - [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md)：屏幕槽位、Padding 与 Insets
 - [Divider](../src/Material3Expressive/Components/Divider/README.md)：原生 Separator 与水平/垂直分隔
+- [VerticalDragHandle](../src/Material3Expressive/Components/DragHandle/README.md)：横向拖动的竖向把手外观与共享交互源
 - [Others](../src/Material3Expressive/Components/Others/README.md)：ItemsControl、Label、Window、PopupRoot、GridSplitter、TableViewCell 等通用控件的结构主题
 
 ## 提示与状态
@@ -56,7 +57,7 @@
 - [AlertDialog](../src/Material3Expressive/Components/AlertDialog/README.md)：标准与自定义内容对话框
 - [DatePickerDialog](../src/Material3Expressive/Components/DatePickerDialog/README.md)：日期编辑器对话框容器
 - [TimePickerDialog](../src/Material3Expressive/Components/TimePickerDialog/README.md)：时间编辑器的标题、内容与动作容器
-- [Tooltip](../src/Material3Expressive/Components/Tooltip/README.md)：静态提示外观与 TooltipBox 行为
+- [Tooltip](../src/Material3Expressive/Components/Tooltip/README.md)：Plain / Rich 提示表面与 TooltipBox 行为
 - [Snackbar](../src/Material3Expressive/Components/Snackbar/README.md)：短消息及队列宿主
 - [Badge](../src/Material3Expressive/Components/Badge/README.md)：徽标与 BadgedBox
 - [ProgressIndicator](../src/Material3Expressive/Components/ProgressIndicator/README.md)：线形/圆形、直线/波浪进度

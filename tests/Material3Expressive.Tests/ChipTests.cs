@@ -23,6 +23,74 @@ namespace Material3Expressive.Tests;
 public class ChipTests
 {
     [AvaloniaTheory]
+    [InlineData("assist")]
+    [InlineData("suggestion")]
+    [InlineData("filter")]
+    [InlineData("input")]
+    public void SharedSource_DragOrderingAndSourceReplacement_PreserveElevationWithoutActivation(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        Chip chip = kind switch { "assist" => new AssistChip(), "suggestion" => new SuggestionChip(), "filter" => new FilterChip(), _ => new InputChip() };
+        var source = new MaterialInteractionSource(); var replacement = new MaterialInteractionSource();
+        chip.InteractionSource = source; chip.Content = "Shared source";
+        chip.Elevation = new(2, 3, 4, 5, 9, 1);
+        var clicks = 0; chip.Click += (_, _) => clicks++;
+        var window = Show(chip);
+        void Settle()
+        {
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
+        }
+        try
+        {
+            var drag = new MaterialInteractionEvent.DragStart(); var second = new MaterialInteractionEvent.DragStart();
+            source.Emit(drag); source.Emit(second); Settle(); Assert.Equal(9, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            source.Emit(new MaterialInteractionEvent.DragStop(drag)); Settle(); Assert.Equal(9, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            chip.InteractionSource = replacement; source.Emit(new MaterialInteractionEvent.DragCancel(second)); Settle();
+            Assert.Equal(9, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            var hover = new MaterialInteractionEvent.HoverEnter(); replacement.Emit(hover); Settle(); Assert.Equal(5, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            replacement.Emit(new MaterialInteractionEvent.HoverExit(hover)); Settle(); Assert.Equal(9, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            replacement.Emit(new MaterialInteractionEvent.DragCancel(second)); Settle(); Assert.Equal(2, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            Assert.Equal(0, clicks); if (chip is SelectableChip selectable) Assert.False(selectable.IsSelected);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void SourcePress_UsesIndependentRememberedShapeState_AndUnmountClearsCollectors()
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource(); var replacement = new MaterialInteractionSource();
+        var chip = new InputChip { Content = "Press", InteractionSource = source,
+            Shapes = new(new CornerRadius(8), new CornerRadius(12), new CornerRadius(2)), Elevation = new(2, 3, 4, 5, 9, 1) };
+        var window = Show(chip);
+        void Settle()
+        {
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromSeconds(2));
+        }
+        try
+        {
+            var press = new MaterialInteractionEvent.Press(new Point(10, 10)); source.Emit(press); Settle();
+            Assert.Equal(2, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
+            chip.InteractionSource = replacement; source.Emit(new MaterialInteractionEvent.Release(press)); Settle();
+            Assert.Equal(2, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
+            var hover = new MaterialInteractionEvent.HoverEnter(); replacement.Emit(hover); Settle();
+            Assert.Equal(8, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
+            replacement.Emit(new MaterialInteractionEvent.HoverExit(hover)); Settle();
+            Assert.Equal(3, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            var parent = (Grid)window.Content!; parent.Children.Remove(chip);
+            Assert.Equal(0, clock.PendingFrameCount);
+            parent.Children.Add(chip); window.UpdateLayout(); Settle();
+            Assert.Equal(2, Part<MaterialSurface>(chip, "PART_Container").ShadowElevation);
+            Assert.Equal(8, Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius.TopLeft);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
     [InlineData("assist", 64)]
     [InlineData("suggestion", 64)]
     [InlineData("filter", 64)]
@@ -180,6 +248,8 @@ public class ChipTests
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(120));
         Assert.Equal(3, surface.ShadowElevation);
         chip.IsEnabled = false; clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(3, surface.ShadowElevation); // The already composed Surface retains this frame.
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0, surface.ShadowElevation); window.Close(); Assert.Equal(0, clock.PendingFrameCount);
     }
 

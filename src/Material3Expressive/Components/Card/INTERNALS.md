@@ -77,10 +77,10 @@ Card 本次授权依据仍以上面的组件历史记录为准，不把共享决
 
 ## 一致性边界与验证
 
-维护者明确暂缺的能力仍是“尚未实现”：公开可注入 MutableInteractionSource、可配置 inset
-focus ring、任意路径/切角 Shape、完整 ColumnScope。Drag 高度分支已有选择逻辑，但缺少
-外部注入且未经端到端验证；默认 opacity 焦点反馈不等于 focus ring 已完成。
-文字 raster、实体桌面手动输入未经验证。
+尚未实现任意路径/切角 Shape、完整 ColumnScope。
+共享 Surface 已提供可配置 inset focus ring，本次控件测试验证 Card source 下的原生 Tab 聚焦/失焦与卸载；
+Card 自身的双端焦点环视觉矩阵仍未经验证，不能由默认 opacity 或共享 Button 用例推定。
+文字 raster、完整实体桌面输入矩阵未经验证；共享拖动的桌面检查范围见下文。
 
 [CardTests](../../../../tests/Material3Expressive.Tests/CardTests.cs) 检查普通/可点击尺寸、子控件输入、
 命令、动态 automation、键盘、颜色与局部优先级、Column 剩余高度、高度顺序和生命周期。
@@ -100,3 +100,33 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 当前依赖见[公共接入](../../../../docs/GETTING_STARTED.md)，参考环境、采样及原始差异读取见
 [VisualParity](../../../../tests/VisualParity/README.md)。
+
+## 可注入交互源
+
+2026-11-03 剩余移植任务授权新增非破坏性组件 API，增加 `InteractionSource`，沿用现有
+MaterialInteractionSource，不新建公共抽象。null 使用私有 source；仅可点击模式接入。
+原生输入由共享 controller 发射，indication 继续使用共享 ripple/状态层实现。
+
+`CardElevation.animateElevation` 的 remember interaction list 位于组件内，按开始对象身份配对，
+独立于 indication collector。更换 source 时取消旧原生输入、退订旧流，再订阅新流；
+保留已记住的外部交互和正在运行的 elevation，这与上游无 key 的 remember 相同。
+指示层则按 Core indication node 的替换语义重置。不能用 controller 的清空列表替代高度列表。
+普通/可点击分支切换及卸载会清空高度列表，模板重建保留；外部事件不触发原生激活。
+
+控件测试覆盖三个变体的重叠 DragStart、source 替换后回落到旧拖动、禁用恢复、原生 Press/Release
+发射、模式切换和重挂。双端新增 source-drag / source-replace / source-disable / source-mode
+各三种变体，保留现有精确 motion 比较及阴影/输入差异，结果须按报告区分。
+
+补充禁用当帧的 Surface 提交顺序：上游组合先读取旧 elevation，再由 LaunchedEffect snap。
+本地仍立即更新 Animatable，暂时保留当帧已提交的 Surface 高度，下一组合帧重新连接既有动画绑定。
+这不把 snap 改成 Tween；模板替换/卸载会释放绑定，后续提交检查 Surface 与动画对象身份。
+
+source-drag 暴露共享状态层遗漏的同类型交互身份：第二个 DragStart 即使 alpha 目标不变，
+上游也重新启动动画，随后 Hover 会从该动画最后一帧中断。controller 现比较开始对象身份，
+`StateLayerTests` 覆盖 64/65/66/67ms 的连续重叠/结束/中断，未修改动画时长或放宽比较。
+Catalog 的 Windows 鼠标拖动已验证 Card 宽度跟随面板从 240 改为 313 DIP。
+
+2026-11-03 最终全族 97 例 self-test：54 equal、21 withinTolerance、22 different，全部重复稳定、
+执行错误 0。新增 12 个 source 用例的 174 张捕获均 withinTolerance，布局与回调事实相等；
+高度最大数值差约 0.000000832 DIP。全族 different 仍含历史数值、Enter 时机及半透明阴影观测，
+不将它们改成通过，也不据此扩大既有差异许可。

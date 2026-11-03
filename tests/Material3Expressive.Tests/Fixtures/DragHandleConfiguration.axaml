@@ -1,0 +1,12 @@
+<m3:VerticalDragHandle xmlns="https://github.com/avaloniaui"
+                      xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <m3:VerticalDragHandle.Sizes>
+    <m3:DragHandleSizes Size="6,40" PressedSize="10,48" DraggedSize="14,56" />
+  </m3:VerticalDragHandle.Sizes>
+  <m3:VerticalDragHandle.Colors>
+    <m3:DragHandleColors Color="Red" PressedColor="Green" DraggedColor="Blue" />
+  </m3:VerticalDragHandle.Colors>
+  <m3:VerticalDragHandle.Shapes>
+    <m3:DragHandleShapes Shape="2" PressedShape="4" DraggedShape="6" />
+  </m3:VerticalDragHandle.Shapes>
+</m3:VerticalDragHandle>

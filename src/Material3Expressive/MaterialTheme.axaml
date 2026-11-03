@@ -57,6 +57,8 @@
                     <m3:ScaffoldTokenSource />
                     <m3:LoadingIndicatorTokenSource />
                     <m3:PlainTooltipTokenSource />
+                    <m3:RichTooltipTokenSource />
+                    <m3:DragHandleTokenSource />
                     <m3:SnackbarTokenSource />
                     <m3:MenuTokenSource />
                     <m3:DatePickerModalTokenSource />
@@ -95,6 +97,7 @@
     <StyleInclude Source="/Components/ScrollViewer/ScrollViewer.axaml" />
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
+    <StyleInclude Source="/Components/DragHandle/DragHandle.axaml" />
     <StyleInclude Source="/Components/RadioButton/RadioButton.axaml" />
     <StyleInclude Source="/Components/Switch/Switch.axaml" />
     <StyleInclude Source="/Components/Badge/Badge.axaml" />

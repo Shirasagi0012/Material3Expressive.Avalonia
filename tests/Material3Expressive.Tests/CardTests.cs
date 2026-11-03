@@ -20,6 +20,69 @@ namespace Material3Expressive.Tests;
 
 public class CardTests
 {
+    [AvaloniaTheory]
+    [InlineData("filled")]
+    [InlineData("elevated")]
+    [InlineData("outlined")]
+    public void ExternalSource_OrdersOverlappingInteractions_AndPreservesCollectorAcrossReplacement(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var first = new MaterialInteractionSource(); var second = new MaterialInteractionSource();
+        var card = Create(kind); card.IsClickable = true; card.InteractionSource = first;
+        card.Elevation = new CardElevation { Default = 2, Pressed = 3, Focused = 4, Hovered = 5, Dragged = 9, Disabled = 1 };
+        var window = Show(card);
+        void Settle()
+        {
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(160));
+        }
+        try
+        {
+            var one = new MaterialInteractionEvent.DragStart(); var two = new MaterialInteractionEvent.DragStart();
+            first.Emit(one); first.Emit(two); Settle(); Assert.Equal(9, Surface(card).ShadowElevation);
+            first.Emit(new MaterialInteractionEvent.DragStop(one)); Settle(); Assert.Equal(9, Surface(card).ShadowElevation);
+            card.InteractionSource = second;
+            first.Emit(new MaterialInteractionEvent.DragCancel(two)); Settle(); Assert.Equal(9, Surface(card).ShadowElevation);
+            var hover = new MaterialInteractionEvent.HoverEnter(); second.Emit(hover); Settle(); Assert.Equal(5, Surface(card).ShadowElevation);
+            second.Emit(new MaterialInteractionEvent.HoverExit(hover)); Settle(); Assert.Equal(9, Surface(card).ShadowElevation);
+            card.IsEnabled = false; Settle(); Assert.Equal(1, Surface(card).ShadowElevation);
+            card.IsEnabled = true; Settle(); Assert.Equal(9, Surface(card).ShadowElevation);
+            second.Emit(new MaterialInteractionEvent.DragCancel(two)); Settle(); Assert.Equal(2, Surface(card).ShadowElevation);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void ExternalSource_ReceivesNativePress_AndDoesNotActivateOrSurvivePassiveMode()
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource(); var events = new List<MaterialInteractionEvent>();
+        source.Interaction += events.Add;
+        var card = Create("filled"); card.IsClickable = true; card.InteractionSource = source;
+        card.Elevation = new CardElevation { Default = 2, Dragged = 9 };
+        var window = Show(card); var clicks = 0; card.Click += (_, _) => clicks++;
+        try
+        {
+            Click(card, window);
+            var press = Assert.Single(events.OfType<MaterialInteractionEvent.Press>());
+            Assert.Same(press, Assert.Single(events.OfType<MaterialInteractionEvent.Release>()).Start);
+            Assert.Equal(1, clicks);
+            source.Emit(new MaterialInteractionEvent.DragStart());
+            card.IsClickable = false; window.UpdateLayout();
+            source.Emit(new MaterialInteractionEvent.DragStart());
+            card.IsClickable = true; window.UpdateLayout();
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(2, Surface(card).ShadowElevation); Assert.Equal(1, clicks);
+            var parent = (Grid)window.Content!; parent.Children.Remove(card);
+            source.Emit(new MaterialInteractionEvent.DragStart());
+            parent.Children.Add(card); window.UpdateLayout();
+            Assert.Equal(2, Surface(card).ShadowElevation);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void PassiveElevation_RemembersInitialHeight_UntilModeOrMountChanges()
     {
@@ -261,6 +324,9 @@ public class CardTests
             clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); clock.AdvanceBy(TimeSpan.FromMilliseconds(60));
             Assert.InRange(Surface(card).ShadowElevation, 3, 5);
             card.IsEnabled = false; clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            // Fixed Core reads the Surface argument before LaunchedEffect snaps its State.
+            Assert.InRange(Surface(card).ShadowElevation, 3, 5);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
             Assert.Equal(1, Surface(card).ShadowElevation);
             Assert.Null(MotionTestClockScope.Error(card));
             Assert.Equal(9, Card.Target(new CardElevation { Default = 2, Pressed = 3, Focused = 4, Hovered = 5, Dragged = 9, Disabled = 1 }, InteractionState.Dragged, true));

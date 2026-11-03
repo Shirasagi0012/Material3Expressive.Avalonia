@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Tokens;
+using Material3Expressive.Foundation.Interaction;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -65,6 +66,10 @@ public sealed class ChipCases
 
     public static IEnumerable<CaseData<ChipConfig>> DynamicConfigurations()
     {
+        foreach (var variant in Variants())
+        foreach (var action in new[] { "source-drag", "source-press", "source-replace", "source-disable" })
+            yield return Data($"dynamic.{variant.Kind}.{(variant.Morph ? "morph" : "fixed")}.{action}",
+                variant with { Custom = "source-elevation", Action = action });
         // Colors/elevation differ by kind; input feedback, cancellation and disabling share a controller.
         foreach (var kind in Kinds)
         foreach (var action in new[] { "press", "hover", "quick", "disabled-input" })
@@ -117,6 +122,41 @@ public sealed class ChipCases
         Sample("initial");
         switch (config.Action)
         {
+            case "source-drag": case "source-press": case "source-replace": case "source-disable":
+                var source = scene.Source;
+                // Compose Press is local to its indication node. Avalonia source Press uses
+                // the input owner's coordinates, including the outer minimum-size spacing.
+                var surface = chip.GetVisualDescendants().OfType<MaterialSurface>().Single(s => ReferenceEquals(s.TemplatedParent, chip));
+                MaterialInteractionEvent.Press Press(double x) => new(surface.TranslatePoint(new Point(x, 12), chip)!.Value);
+                MaterialInteractionEvent start = config.Action == "source-drag"
+                    ? new MaterialInteractionEvent.DragStart() : Press(12);
+                MaterialInteractionEvent End(MaterialInteractionEvent value) => value is MaterialInteractionEvent.DragStart drag
+                    ? new MaterialInteractionEvent.DragStop(drag) : new MaterialInteractionEvent.Release((MaterialInteractionEvent.Press)value);
+                Mutate(1000, "start", () => source.Emit(start)); Times(16000, 32000, 64000);
+                if (config.Action == "source-replace")
+                {
+                    var replacement = new MaterialInteractionSource(); var hover = new MaterialInteractionEvent.HoverEnter();
+                    Mutate(65000, "replace", () => chip.InteractionSource = replacement);
+                    Mutate(66000, "old-release", () => source.Emit(End(start)));
+                    Mutate(67000, "new-hover", () => replacement.Emit(hover)); Times(80000, 160000, 400000);
+                    Mutate(401000, "hover-exit", () => replacement.Emit(new MaterialInteractionEvent.HoverExit(hover))); Times(416000, 640000);
+                    Mutate(641000, "retained-release", () => replacement.Emit(End(start))); Times(656000, 800000, 1200000);
+                }
+                else if (config.Action == "source-disable")
+                {
+                    Mutate(65000, "disable", () => chip.IsEnabled = false); Times(80000, 160000);
+                    Mutate(161000, "enable", () => chip.IsEnabled = true); Times(176000, 400000);
+                    Mutate(401000, "release", () => source.Emit(End(start))); Times(416000, 640000, 1000000);
+                }
+                else
+                {
+                    MaterialInteractionEvent second = config.Action == "source-drag"
+                        ? new MaterialInteractionEvent.DragStart() : Press(20);
+                    Mutate(65000, "overlap", () => source.Emit(second));
+                    Mutate(66000, "end-first", () => source.Emit(End(start))); Times(80000, 160000);
+                    Mutate(161000, "end-last", () => source.Emit(End(second))); Times(176000, 240000, 400000, 800000);
+                }
+                break;
             case "resize":
                 Mutate(1000, "selected", () => ((SelectableChip)chip).IsSelected = true); Times(16000, 64000, 800000);
                 Mutate(801000, "taller", () => chip.Height = 64); Times(816000, 960000);
@@ -170,10 +210,15 @@ public sealed class ChipCases
         readonly Marker label;
         int clicks;
         public Chip Chip { get; }
+        public MaterialInteractionSource Source { get; } = new();
         public ChipScene(AvaloniaHost host, ChipConfig config)
         {
             this.host = host; this.config = config;
             CaseDefaults.SetThemeColors(host, config.Dark);
+            // MaterialTheme alone leaves Compose LocalContentColor at its black default.
+            // A transparent Chip's indication inherits that ambient; it is not the label color.
+            // Match the existing reference input explicitly instead of using the Window theme ink.
+            host.Window.Foreground = Brushes.Black;
             if (config.Rtl) host.Window.FlowDirection = FlowDirection.RightToLeft;
             Chip = config.Kind switch
             {
@@ -181,6 +226,7 @@ public sealed class ChipCases
                 "suggestion" => new SuggestionChip(), "elevated-suggestion" => new SuggestionChip { IsElevated = true },
                 "filter" => new FilterChip(), "elevated-filter" => new FilterChip { IsElevated = true }, _ => new InputChip()
             };
+            Chip.InteractionSource = Source;
             if (Chip is SelectableChip selectable) { selectable.IsSelected = config.Selected; if (!config.Morph) selectable.Shapes = null; }
             if (config.Morph)
             {
@@ -200,6 +246,7 @@ public sealed class ChipCases
             if (config.Custom == "spacing") { Chip.Spacing = new ChipSpacing(6, 6); Chip.Padding = new Thickness(5, 2, 11, 4); }
             if (config.Custom == "border") { Chip.BorderBrush = Brushes.Red; Chip.BorderThickness = new Thickness(2); }
             if (config.Custom == "elevation") Chip.Elevation = new ChipElevation(6, 6, 6, 6, 6, 6);
+            if (config.Custom == "source-elevation") Chip.Elevation = new ChipElevation(2, 3, 4, 5, 9, 1);
             Chip.Click += (_, _) => { clicks++; if (Chip is SelectableChip c && config.Action != "request-only") c.IsSelected = !c.IsSelected; };
         }
         public void SetIcons(string icons)

@@ -4,6 +4,7 @@ package parity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -49,6 +50,37 @@ class CardCases {
             val center=coordinates.localToRoot(Offset(coordinates.size.width/2f,coordinates.size.height/2f))/ComposeHost.RenderScale.toFloat()
             val outside=Offset(8f,8f);sample("initial")
             when(config.action) {
+                "source-drag","source-replace","source-disable","source-mode" -> {
+                    val source=scene.source;val drag=DragInteraction.Start();val overlap=DragInteraction.Start();val hover=HoverInteraction.Enter()
+                    mutate(1000,"drag"){source.tryEmit(drag)};times(16000,32000,64000)
+                    when(config.action) {
+                        "source-replace" -> {
+                            val replacement=MutableInteractionSource()
+                            mutate(65000,"replace"){scene.source=replacement}
+                            mutate(66000,"old-stop"){source.tryEmit(DragInteraction.Stop(drag))}
+                            mutate(67000,"new-hover"){replacement.tryEmit(hover)};times(80000,160000,240000)
+                            mutate(241000,"hover-exit"){replacement.tryEmit(HoverInteraction.Exit(hover))};times(256000,400000)
+                            mutate(401000,"retained-drag-stop"){replacement.tryEmit(DragInteraction.Stop(drag))};times(416000,600000)
+                        }
+                        "source-disable" -> {
+                            mutate(65000,"disable"){scene.enabled=false};times(80000,160000)
+                            mutate(161000,"enable"){scene.enabled=true};times(176000,320000)
+                            mutate(321000,"stop"){source.tryEmit(DragInteraction.Stop(drag))};times(336000,560000)
+                        }
+                        "source-mode" -> {
+                            mutate(65000,"passive"){scene.clickable=false};times(80000,160000)
+                            mutate(161000,"clickable"){scene.clickable=true};times(176000,320000)
+                            mutate(321000,"old-stop"){source.tryEmit(DragInteraction.Stop(drag))};times(336000,560000)
+                        }
+                        else -> {
+                            mutate(65000,"overlap"){source.tryEmit(overlap)}
+                            mutate(66000,"stop-first"){source.tryEmit(DragInteraction.Stop(drag))}
+                            mutate(67000,"hover"){source.tryEmit(hover)};times(80000,160000,240000)
+                            mutate(241000,"hover-exit"){source.tryEmit(HoverInteraction.Exit(hover))};times(256000,400000)
+                            mutate(401000,"cancel-last"){source.tryEmit(DragInteraction.Cancel(overlap))};times(416000,600000)
+                        }
+                    }
+                }
                 "nested-pointer" -> {
                     val child=checkNotNull(scene.childProbe.coordinates)
                     val childCenter=child.localToRoot(Offset(child.size.width/2f,child.size.height/2f))/ComposeHost.RenderScale.toFloat()
@@ -101,6 +133,7 @@ class CardCases {
         }
     }
     private class CardScene(val config:CardConfig) {
+        var source by mutableStateOf(MutableInteractionSource())
         var enabled by mutableStateOf(config.enabled)
         var clickable by mutableStateOf(config.clickable)
         var dark by mutableStateOf(config.dark)
@@ -143,9 +176,9 @@ class CardCases {
                         }
                         if(clickable) {
                             when(config.kind) {
-                                "elevated"->ElevatedCard({clicks++},modifier,enabled,shape,colors,elevation,content=content)
-                                "outlined"->OutlinedCard({clicks++},modifier,enabled,shape,colors,elevation,border=border ?: CardDefaults.outlinedCardBorder(enabled),content=content)
-                                else->Card({clicks++},modifier,enabled,shape,colors,elevation,border=border,content=content)
+                                "elevated"->ElevatedCard({clicks++},modifier,enabled,shape,colors,elevation,interactionSource=source,content=content)
+                                "outlined"->OutlinedCard({clicks++},modifier,enabled,shape,colors,elevation,border=border ?: CardDefaults.outlinedCardBorder(enabled),interactionSource=source,content=content)
+                                else->Card({clicks++},modifier,enabled,shape,colors,elevation,border=border,interactionSource=source,content=content)
                             }
                         } else {
                             when(config.kind) {

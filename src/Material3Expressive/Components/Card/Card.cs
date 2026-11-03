@@ -27,6 +27,9 @@ public class Card : Button
     public IBrush? DisabledContentColor { get => GetValue(DisabledContentColorProperty); set => SetValue(DisabledContentColorProperty, value); }
     public static readonly StyledProperty<CardElevation> ElevationProperty = AvaloniaProperty.Register<Card, CardElevation>(nameof(Elevation), new CardElevation(), validate: value => value is not null);
     public CardElevation Elevation { get => GetValue(ElevationProperty); set => SetValue(ElevationProperty, value); }
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty = AvaloniaProperty.Register<Card, MaterialInteractionSource?>(nameof(InteractionSource));
+    /// <summary>The clickable card's shared interaction stream. Null uses a private source.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
 
     internal static readonly StyledProperty<IControlTemplate?> DefaultTemplateProperty = AvaloniaProperty.Register<Card, IControlTemplate?>(nameof(DefaultTemplate));
     internal IControlTemplate? DefaultTemplate { get => GetValue(DefaultTemplateProperty); set => SetValue(DefaultTemplateProperty, value); }
@@ -39,8 +42,22 @@ public class Card : Button
     private Animatable<double>? _elevation;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
+    private IDisposable? _elevationBinding;
+    private CancellationTokenSource? _elevationCommit;
     private double? _passiveElevation;
     private bool _pending;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+    // CardElevation's remember list is independent of the indication node: it survives source replacement.
+    private readonly List<MaterialInteractionEvent> _elevationInteractions = [];
+    private InteractionState ElevationInteraction => _elevationInteractions.LastOrDefault() switch
+    {
+        MaterialInteractionEvent.Press => InteractionState.Pressed,
+        MaterialInteractionEvent.HoverEnter => InteractionState.Hovered,
+        MaterialInteractionEvent.Focus => InteractionState.Focused,
+        MaterialInteractionEvent.DragStart => InteractionState.Dragged,
+        _ => InteractionState.None,
+    };
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -56,6 +73,7 @@ public class Card : Button
         base.OnAttachedToVisualTree(e);
         _attachScope = AnimationScope.Get(this).CreateChild("Card");
         _passiveElevation = null;
+        ConnectSource();
         Refresh();
         InitializeMotion();
     }
@@ -63,6 +81,7 @@ public class Card : Button
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _passiveElevation = null;
+        DisconnectSource();
         DisposeMotion();
         _attachScope?.Dispose(); _attachScope = null;
         base.OnDetachedFromVisualTree(e);
@@ -86,15 +105,54 @@ public class Card : Button
                 if (IsFocused) TopLevel.GetTopLevel(this)?.FocusManager?.Focus(null);
                 DisposeMotion();
             }
-            else if (_interaction is null)
-            {
-                _interaction = MaterialInteraction.GetOrCreate(this);
-                _interaction.Changed += QueueElevation;
-            }
+            if (IsClickable) ConnectSource();
+            else DisconnectSource();
             Refresh();
         }
+        else if (change.Property == InteractionSourceProperty) ConnectSource();
         else if (change.Property == ElevationProperty
                  || change.Property == IsEffectivelyEnabledProperty) Refresh();
+    }
+
+    private void ConnectSource()
+    {
+        if (!IsClickable || !this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        var replacing = _source is not null;
+        // Native hover/press cancellation belongs to the old stream and must reach its collector.
+        _interaction ??= MaterialInteraction.GetOrCreate(this);
+        _interaction.ConnectSource(null);
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = source;
+        _source.Interaction += ReceiveInteraction;
+        _interaction.ConnectSource(source);
+        if (replacing) _interaction.ResetSourceIndication();
+    }
+
+    private void DisconnectSource()
+    {
+        if (_source is not null) _source.Interaction -= ReceiveInteraction;
+        _source = null;
+        _interaction?.ConnectSource(null);
+        _elevationInteractions.Clear();
+    }
+
+    private void ReceiveInteraction(MaterialInteractionEvent interaction)
+    {
+        MaterialInteractionEvent? start = interaction switch
+        {
+            MaterialInteractionEvent.Release e => e.Start,
+            MaterialInteractionEvent.CancelPress e => e.Start,
+            MaterialInteractionEvent.HoverExit e => e.Start,
+            MaterialInteractionEvent.Unfocus e => e.Start,
+            MaterialInteractionEvent.DragStop e => e.Start,
+            MaterialInteractionEvent.DragCancel e => e.Start,
+            _ => null,
+        };
+        if (start is null) _elevationInteractions.Add(interaction);
+        else _elevationInteractions.Remove(start);
+        QueueElevation();
     }
 
     private void Refresh()
@@ -116,8 +174,8 @@ public class Card : Button
     private void InitializeMotion()
     {
         if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
-        _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, _interaction?.LastInteraction ?? InteractionState.None, IsEffectivelyEnabled), VisibilityThresholds.Double);
-        motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, ElevationInteraction, IsEffectivelyEnabled), VisibilityThresholds.Double);
+        _elevationBinding = motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
     }
 
     private void QueueElevation()
@@ -133,7 +191,7 @@ public class Card : Button
             ct.ThrowIfCancellationRequested();
             _pending = false;
             var values = Elevation;
-            var interaction = _interaction?.LastInteraction ?? InteractionState.None;
+            var interaction = ElevationInteraction;
             var target = Target(values, interaction, IsEffectivelyEnabled);
             if (_elevation is not { } elevation || elevation.TargetValue == target) return;
             // CardElevation infers the outgoing interaction from target height, in this exact order.
@@ -155,7 +213,31 @@ public class Card : Button
                 try
                 {
                     if (!enabled || (from == InteractionState.None && interaction == InteractionState.None))
+                    {
+                        // Surface reads this State during composition, before LaunchedEffect
+                        // snaps it. Preserve that composed value until the next composition frame.
+                        var surface = _surface!;
+                        var composedElevation = surface.ShadowElevation;
+                        _elevationBinding?.Dispose(); _elevationBinding = null;
+                        surface.ShadowElevation = composedElevation;
                         await elevation.SnapToAsync(target, effect.Token);
+                        _elevationCommit?.Cancel();
+                        _ = motion.Launch(async commitToken =>
+                        {
+                            using var commit = CancellationTokenSource.CreateLinkedTokenSource(commitToken);
+                            _elevationCommit = commit;
+                            try
+                            {
+                                await motion.NextFrameAsync(commit.Token);
+                                if (ReferenceEquals(_surface, surface) && ReferenceEquals(_elevation, elevation))
+                                {
+                                    _elevationBinding?.Dispose();
+                                    _elevationBinding = motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, elevation);
+                                }
+                            }
+                            finally { if (ReferenceEquals(_elevationCommit, commit)) _elevationCommit = null; }
+                        }, "Card elevation composition");
+                    }
                     else
                         await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
                             interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
@@ -170,6 +252,8 @@ public class Card : Button
     private void DisposeMotion()
     {
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
+        _elevationBinding?.Dispose(); _elevationBinding = null;
+        _elevationCommit?.Cancel(); _elevationCommit = null;
         _elevation = null; _pending = false;
     }
 

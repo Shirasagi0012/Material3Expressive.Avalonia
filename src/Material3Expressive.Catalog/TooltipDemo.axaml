@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Catalog.TooltipDemo" Width="640" Height="520" Title="Tooltips">
+        x:Class="Material3Expressive.Catalog.TooltipDemo" Width="640" Height="640" Title="Tooltips">
   <StackPanel Margin="40" Spacing="24">
     <TextBlock Text="ToolTip.Tip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <StackPanel Orientation="Horizontal" Spacing="24">
@@ -34,6 +34,17 @@
     <m3:TooltipBox x:Name="Programmatic" EnableUserInput="False">
       <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="This tooltip was shown from code" /></m3:TooltipBox.Tooltip>
       <Button Content="Show tooltip" Click="OnShow" />
+    </m3:TooltipBox>
+    <TextBlock Text="RichTooltip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <m3:TooltipBox x:Name="RichHelp" AnchorPosition="Above" HasAction="True" EnableUserInput="False">
+      <m3:TooltipBox.Tooltip>
+        <m3:RichTooltip Title="Collections" Content="Save related items together so you can find them again.">
+          <m3:RichTooltip.Action>
+            <Button Content="Got it" Theme="{StaticResource MaterialTextButtonTheme}" Click="OnDismissRich" />
+          </m3:RichTooltip.Action>
+        </m3:RichTooltip>
+      </m3:TooltipBox.Tooltip>
+      <Button Content="About collections" Click="OnShowRich" />
     </m3:TooltipBox>
   </StackPanel>
 </Window>

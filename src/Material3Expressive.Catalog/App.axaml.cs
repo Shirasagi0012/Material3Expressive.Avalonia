@@ -17,6 +17,10 @@ public partial class App : Application
         {
             desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--app-bars") >= 0
                 ? new AppBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--drag-handles") >= 0
+                ? new DragHandleDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--tooltips") >= 0
+                ? new TooltipDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--secure-text-fields") >= 0
                 ? new SecureTextFieldDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--menu-bar") >= 0

@@ -121,8 +121,9 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 
 ## 一致性边界
 
-尚未实现任意路径/切角 Shape、通用 Compose Arrangement、hoisted MutableInteractionSource、
-可配置 inset focus ring。圆角配置和逻辑前后间距不能描述这些上游能力的全部范围。
+尚未实现任意路径/切角 Shape、通用 Compose Arrangement；圆角配置和逻辑前后间距不能描述它们的全部范围。
+共享 Surface 已提供可配置 inset focus ring，本次控件测试验证 InputChip source 下的原生 Tab 聚焦/失焦与卸载；
+Chip 自身的双端焦点环视觉矩阵仍未经验证，不能由默认 opacity 或共享 Button 用例推定。
 
 旧双端观测中的 64ms elevation 约 0.0000006 DIP 数值差异、阴影坐标差异、平面 Filter hover 高度及
 Enter 时机分别按上述明确范围处理。没有把其余时序、布局或视觉差异一并认定为已接受。
@@ -148,3 +149,48 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
 不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
 分别说明执行错误、双端差异、稳定性及未覆盖项。
+
+## 共享交互源与中断补齐
+
+2026-11-03 剩余移植任务授权新增非破坏性组件 API，四族增加 `InteractionSource`，
+复用已有 MaterialInteractionSource。固定 AndroidX 与 Core 的 Chip.kt 内容一致。
+组件持有 ChipElevation 的记忆列表、collectIsPressedAsState 的 collector 列表和记忆布尔值；
+不能用 indication 的聚合 flags 替代它们，因为 source 替换时三者的生命周期不同。
+高度列表保留旧交互；按压列表清空但布尔值保留到下一事件；indication 清空动画并只观察未来事件。
+普通 native 输入仍由共享 controller 发出；Press 坐标使用本地 owner DIP，绘制时映射到内部 Surface。
+双端夹具按同一 Surface 局部原点注入，Avalonia 端显式转换到 owner 坐标，未改参考算法。
+
+新中断用例定位到旧高度实现的两处缺口：直接 AnimateTo 中断保留旧帧时间，且提前更新
+lastInteraction。现按上游 LaunchedEffect 取消、等待旧 effect 结束后启动新动画，
+lastInteraction 只在动画或 snap 成功完成后更新。提交新 effect 前先让旧动画采样当前帧。
+source-replace 的 80ms 高度误差从 0.07242 DIP 降到约 0.00000002 DIP；其他时刻仍精确报告。
+
+禁用或无交互配置变更时，Animatable 仍立即 snap；Surface 是组合阶段已读取的值，
+因此保留当帧显示值，下一组合帧用既有 BindAnimatedValue 重新连接。使用原有作用域、
+帧等待与绑定释放能力，模板/卸载清理绑定，提交前检查原动画与 Surface 身份，不新增公共框架。
+
+夹具对齐环境色：固定 Core 的 MaterialTheme 不提供 LocalContentColor，其外层默认是黑色；
+Avalonia 夹具显式令 Window.Foreground 为黑色，与此相同。透明 Chip 的 indication 继承这个环境色，
+不能把框架 Window 的默认 OnSurface 当作 Compose 外层输入。参考实现、容差与比较器未修改。
+
+2026-11-03 新 source 用例的布局/选中/回调事实相等，高度最大数值差约 0.00000116 DIP。
+仍有三个**未解决、未接受**的 raster 差异：Filter、ElevatedFilter、Input 的 morph.source-disable，
+160ms 处 reference 在半透明内容上出现额外弥散灰色，本地的矩形 marker 内部较均匀；图像已实际检查。
+复现配置为 `chip.Elevation = new(2, 3, 4, 5, 9, 1)`，外部 Press 后 65ms 禁用、160ms 捕获。
+另外创建独立诊断输入，保留 source-disable 行为与形变，仅恢复默认 elevation（Disabled=0）：
+三种 Core 捕获的标签区域都与原 Avalonia 图逐像素相等，原来 RGB 最大差 5 降为 0，
+因此已定位到阴影参与的分支；诊断输入没有替换正式用例或参考产物。
+具体路径坐标/轮廓对 tessellator 的影响尚未核实，不能把新观测自动归入既有阴影许可。
+建议下一步以同一动画轮廓做 DIP+CTM / 物理像素路径的原生双探针；若修复需要改变共享坐标接入，
+必须由维护者重新决定上述已确认的保留方案，影响全部 MaterialSurface 阴影，公共 DIP elevation API 不必改变。
+本次未改阴影实现、容差或默认高度，也不以禁用阴影作为组件实现的替代。
+
+重叠 source-press 的部分 Core 重复捕获及 extraImages 检查出现 RGB 单通道最大 1 个字节值差异；
+已逐图比较，Avalonia 两项重复检查稳定。self-test 的原始 unstable 和非零退出保留，
+未放宽稳定性门禁。推荐先定位固定 Core/Skiko 绘制重现性，再由维护者决定是否另行处理参考端；
+不把这一观测记录成已批准的豁免。
+
+最终全族 247 例 self-test：162 equal、31 withinTolerance、54 different，执行错误 0；
+240 例重复稳定、7 例因上述 Core 重复/额外截图差异 unstable（进程非零退出）。
+新增 40 个 source 用例共 570 张捕获，其中 567 withinTolerance、3 张为上述未解决阴影差异；
+布局、选中和回调事实均相等。没有更改稳定性规则、精确数值比较或截图容差。

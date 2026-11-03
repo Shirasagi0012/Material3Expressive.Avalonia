@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Parity;
 
@@ -66,6 +67,9 @@ public sealed class CardCases
         yield return Data("dynamic.filled.nested-space", new("filled", true, TwoChildren: false, Action: "nested-space"));
         yield return Data("dynamic.filled.passive-nested-pointer", new("filled", false, TwoChildren: false, Action: "nested-pointer"));
         yield return Data("dynamic.filled.passive-elevation", new("filled", false, Custom: "elevation", Action: "elevation"));
+        foreach (var kind in Kinds)
+        foreach (var action in new[] { "source-drag", "source-replace", "source-disable", "source-mode" })
+            yield return Data($"dynamic.{kind}.{action}", new(kind, true, Custom: "elevation", Action: action));
     }
 
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
@@ -93,6 +97,44 @@ public sealed class CardCases
         var outside = new Point(8, 8); Sample("initial");
         switch (config.Action)
         {
+            case "source-drag": case "source-replace": case "source-disable": case "source-mode":
+                var source = scene.Source;
+                var drag = new MaterialInteractionEvent.DragStart();
+                var overlap = new MaterialInteractionEvent.DragStart();
+                var hover = new MaterialInteractionEvent.HoverEnter();
+                Mutate(1000, "drag", () => source.Emit(drag)); Times(16000, 32000, 64000);
+                if (config.Action == "source-replace")
+                {
+                    var replacement = new MaterialInteractionSource();
+                    Mutate(65000, "replace", () => card.InteractionSource = replacement);
+                    Mutate(66000, "old-stop", () => source.Emit(new MaterialInteractionEvent.DragStop(drag)));
+                    Mutate(67000, "new-hover", () => replacement.Emit(hover)); Times(80000, 160000, 240000);
+                    Mutate(241000, "hover-exit", () => replacement.Emit(new MaterialInteractionEvent.HoverExit(hover)));
+                    Times(256000, 400000);
+                    Mutate(401000, "retained-drag-stop", () => replacement.Emit(new MaterialInteractionEvent.DragStop(drag)));
+                    Times(416000, 600000);
+                }
+                else if (config.Action == "source-disable")
+                {
+                    Mutate(65000, "disable", () => card.IsEnabled = false); Times(80000, 160000);
+                    Mutate(161000, "enable", () => card.IsEnabled = true); Times(176000, 320000);
+                    Mutate(321000, "stop", () => source.Emit(new MaterialInteractionEvent.DragStop(drag))); Times(336000, 560000);
+                }
+                else if (config.Action == "source-mode")
+                {
+                    Mutate(65000, "passive", () => card.IsClickable = false); Times(80000, 160000);
+                    Mutate(161000, "clickable", () => card.IsClickable = true); Times(176000, 320000);
+                    Mutate(321000, "old-stop", () => source.Emit(new MaterialInteractionEvent.DragStop(drag))); Times(336000, 560000);
+                }
+                else
+                {
+                    Mutate(65000, "overlap", () => source.Emit(overlap));
+                    Mutate(66000, "stop-first", () => source.Emit(new MaterialInteractionEvent.DragStop(drag)));
+                    Mutate(67000, "hover", () => source.Emit(hover)); Times(80000, 160000, 240000);
+                    Mutate(241000, "hover-exit", () => source.Emit(new MaterialInteractionEvent.HoverExit(hover))); Times(256000, 400000);
+                    Mutate(401000, "cancel-last", () => source.Emit(new MaterialInteractionEvent.DragCancel(overlap))); Times(416000, 600000);
+                }
+                break;
             case "nested-pointer":
                 var child = scene.Child!;
                 var childCenter = child.TranslatePoint(new Rect(child.Bounds.Size).Center, host.Window)!.Value;
@@ -147,6 +189,7 @@ public sealed class CardCases
         readonly List<Marker> markers = [];
         int clicks, childClicks;
         public Card Card { get; }
+        public MaterialInteractionSource Source { get; } = new();
         public Button? Child { get; }
         public CardScene(AvaloniaHost host, CardConfig config)
         {
@@ -154,6 +197,7 @@ public sealed class CardCases
             if (config.Rtl) host.Window.FlowDirection = FlowDirection.RightToLeft;
             Card = config.Kind switch { "elevated" => new ElevatedCard(), "outlined" => new OutlinedCard(), _ => new Card() };
             Card.IsClickable = config.Clickable; Card.IsEnabled = config.Enabled;
+            Card.InteractionSource = Source;
             if (config.Width is { } width) Card.Width = width;
             if (config.Height is { } height) Card.Height = height;
             var column = new CardColumn();

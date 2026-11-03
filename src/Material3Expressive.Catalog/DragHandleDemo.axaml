@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.DragHandleDemo" Width="760" Height="480" Title="Vertical drag handle">
+  <StackPanel Margin="32" Spacing="20">
+    <TextBlock Text="VerticalDragHandle" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="Drag horizontally to resize the panels. The host shares drag interactions with the handle, first card and chip. Dragging raises their elevation without changing selection." TextWrapping="Wrap" />
+    <Grid x:Name="Panels" Height="180" ColumnDefinitions="240,48,*">
+      <m3:ElevatedCard x:Name="LinkedCard" IsClickable="True" Width="240" Height="180"
+                       HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <TextBlock Text="First panel" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </m3:ElevatedCard>
+      <Border x:Name="DragRegion" Grid.Column="1" Background="Transparent" Cursor="SizeWestEast"
+              PointerPressed="OnPressed" PointerMoved="OnMoved" PointerReleased="OnReleased" PointerCaptureLost="OnCaptureLost">
+        <m3:VerticalDragHandle x:Name="Handle" />
+      </Border>
+      <Border Grid.Column="2" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SecondaryContainer}}" CornerRadius="16">
+        <TextBlock Text="Second panel" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+    </Grid>
+    <TextBlock x:Name="Status" Text="Ready" />
+    <StackPanel Orientation="Horizontal" Spacing="24">
+      <m3:VerticalDragHandle />
+      <m3:VerticalDragHandle x:Name="CustomHandle" />
+      <TextBlock Text="Default / custom" VerticalAlignment="Center" />
+      <m3:InputChip x:Name="LinkedChip" Content="Shared drag" />
+    </StackPanel>
+  </StackPanel>
+</Window>

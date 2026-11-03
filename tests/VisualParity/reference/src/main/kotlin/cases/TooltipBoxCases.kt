@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class TooltipBoxConfig(val position:String="Above",val x:Int=112,val y:Int=80,val rtl:Boolean=false,
     val dark:Boolean=false,val spacing:Double=4.0,val contentWidth:Double=64.0,val contentHeight:Double=8.0,
     val action:String="none",val persistent:Boolean=false,val enabled:Boolean=true,val hasAction:Boolean=false,val elevation:Double=0.0,
-    val anchorScale:Double=1.0)
+    val anchorScale:Double=1.0,val rich:Boolean=false)
 @ParitySuite("tooltip-box") class TooltipBoxCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
@@ -85,10 +85,14 @@ import kotlinx.serialization.Serializable
                         TooltipBox(positionProvider=TooltipDefaults.rememberTooltipPositionProvider(anchorPosition,config.spacing.toFloat().dp),state=state,
                             enableUserInput=dynamic&&config.enabled&&config.action !in setOf("outside","request","resize"),hasAction=config.hasAction,
                             onDismissRequest=if(config.action=="request")({requests++})else null,tooltip={
-                                PlainTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp) {
+                                val body:@Composable ()->Unit={
                                     val color=LocalContentColor.current
                                     Canvas(content.modifier().size(contentWidth.toFloat().dp,config.contentHeight.toFloat().dp)){painted=color;drawRect(color)}
                                 }
+                                if(config.rich) RichTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp,
+                                    title={val color=LocalContentColor.current;Canvas(Modifier.size(32.dp,10.dp)){drawRect(color)}},
+                                    action={val color=LocalContentColor.current;Canvas(Modifier.size(24.dp,12.dp)){drawRect(color)}},text=body)
+                                else PlainTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp,content=body)
                             }) {Canvas(anchor.modifier().size(anchorWidth.dp,24.dp).focusRequester(focus).focusable()){drawRect(Color.Blue)}}
                         }
                         Box(Modifier.absoluteOffset(16.dp,72.dp)) {

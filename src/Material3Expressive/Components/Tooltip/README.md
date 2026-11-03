@@ -1,4 +1,4 @@
-# ToolTip / TooltipBox / PlainTooltip
+# ToolTip / TooltipBox / PlainTooltip / RichTooltip
 
 普通悬停说明使用 Avalonia 原生 `ToolTip.Tip`，Material 主题为它提供静态外观。
 需要锚点焦点、长按、显示状态或提示内动作时，使用库的 `TooltipBox`，并以 `PlainTooltip`
@@ -109,12 +109,53 @@ PlainTooltip 用 `Background`、`Foreground`、`CornerRadius`、`Padding`、`Con
 位于默认限制外，可让宽度小于 40 或大于 200。文字默认 BodySmall，长内容按可用宽度换行。
 动态主题定制见[公共 Token 入口](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
+## RichTooltip
+
+需要标题或动作时，在同一个 TooltipBox 中使用 RichTooltip：
+
+```xml
+<m3:TooltipBox x:Name="Details" HasAction="True">
+  <m3:TooltipBox.Tooltip>
+    <m3:RichTooltip Title="收藏夹" Content="把相关内容保存在一起，方便下次查找。">
+      <m3:RichTooltip.Action>
+        <Button Content="知道了" Theme="{StaticResource MaterialTextButtonTheme}" />
+      </m3:RichTooltip.Action>
+    </m3:RichTooltip>
+  </m3:TooltipBox.Tooltip>
+  <Button Content="收藏夹说明" />
+</m3:TooltipBox>
+```
+
+`Title` / `TitleTemplate` 和 `Action` / `ActionTemplate` 是可选槽，`Content` / `ContentTemplate`
+是正文。模板可在内容为 null 时单独提供槽。动作的命令或 Click 处理由应用负责；需要关闭时调用
+`Details.State.Dismiss()`。需要持续显示时显式提供 `new TooltipState(isPersistent: true)`。
+
+默认背景为 SurfaceContainer、圆角 Medium、阴影 Level2（3 DIP）、tonal elevation 为 0；
+最大宽度 320、软最小尺寸 40×24、水平 Padding 16 DIP。显式尺寸的优先规则与 PlainTooltip 相同。
+`Foreground`、`TitleForeground`、`ActionForeground` 分别覆盖正文、标题和动作颜色，
+三个槽分别提供 BodyMedium、TitleSmall 和 LabelLarge。子控件的本地文字/颜色设置继续优先。
+
+标题首基线距顶部 28 DIP；有标题或动作时，正文首基线距其槽顶部 24 DIP、底部留白 16 DIP。
+仅有正文时上下留白为 4 DIP；动作区最小高度 36 DIP，底部留白 8 DIP。
+普通 TextBlock 与显式 `TextBlock.BaselineOffset` 可提供基线；复杂自定义容器的基线传播尚未实现，
+无基线内容采用上游的零基线分支。RichTooltip 也可以单独放入普通布局。
+
+复杂槽已有确定首基线时，可显式提供，数值为槽根内容坐标内的 DIP：
+
+```csharp
+var titlePanel = new Grid { Children = { new TextBlock { Text = "收藏夹" } } };
+TextBlock.SetBaselineOffset(titlePanel, 15);
+tooltip.Title = titlePanel;
+```
+
+这里的 15 应替换为该布局实际的首基线；嵌套布局改变时由调用者同步更新。
+
 ## 使用边界
 
-caret 和 RichTooltip 尚未实现，没有会被忽略的 CaretShape 属性。
+caret 路径尚未实现，没有会被忽略的 CaretShape 属性；PlainTooltip 和 RichTooltip 均实现默认无 caret 分支。
 TooltipBox 按固定 Core 桌面行为不抢焦点；`HasAction="True"` 且可见时消费 Tab，
 但不会将键盘焦点送到提示按钮，不宜把它当成完整键盘可操作弹窗。
 提示提供 ToolTip automation 与 Assertive live setting，实际屏幕阅读器播报、物理触摸/笔设备、
-文字像素及 OS 桌面交互尚未经验证。动画提交时序有已接受差异，见
+文字像素尚未经验证；RichTooltip 的桌面点击打开/动作关闭已检查，未覆盖所有桌面输入路径。动画提交时序有已接受差异，见
 [一致性边界](INTERNALS.md#一致性边界与验证)。完整使用例子见
 [TooltipDemo](../../../Material3Expressive.Catalog/TooltipDemo.axaml)。

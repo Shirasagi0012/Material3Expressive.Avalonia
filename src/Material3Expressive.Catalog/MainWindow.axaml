@@ -117,6 +117,7 @@
                 </m3:SingleChoiceSegmentedButtonRow>
                 <Button Content="AppBar demo" Click="OnAppBarDemo" HorizontalAlignment="Left" />
                 <Button Content="Tooltip demo" Click="OnTooltipDemo" HorizontalAlignment="Left" />
+                <Button Content="Drag handle demo" Click="OnDragHandleDemo" HorizontalAlignment="Left" />
                 <Button Content="Snackbar demo" Click="OnSnackbarDemo" HorizontalAlignment="Left" />
                 <TextBlock Text="Chip" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>

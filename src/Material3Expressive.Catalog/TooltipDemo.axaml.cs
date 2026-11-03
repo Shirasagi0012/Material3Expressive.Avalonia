@@ -14,6 +14,7 @@ public partial class TooltipDemo : Window
         InitializeComponent();
         // Keep hover/focus requests from rejecting this programmatic demo's Default priority.
         Programmatic.State = new TooltipState(isPersistent: false, mutatorMutex: new());
+        RichHelp.State = new TooltipState(isPersistent: true, mutatorMutex: new());
     }
 
     private async void OnShow(object? sender, RoutedEventArgs e)
@@ -21,4 +22,12 @@ public partial class TooltipDemo : Window
         try { await Programmatic.State.ShowAsync(); }
         catch (OperationCanceledException) { }
     }
+
+    private async void OnShowRich(object? sender, RoutedEventArgs e)
+    {
+        try { await RichHelp.State.ShowAsync(); }
+        catch (OperationCanceledException) { }
+    }
+
+    private void OnDismissRich(object? sender, RoutedEventArgs e) => RichHelp.State.Dismiss();
 }

@@ -22,6 +22,34 @@ namespace Material3Expressive.Tests;
 /// </summary>
 public class StateLayerTests
 {
+    [AvaloniaFact]
+    public void OverlappingSourceStarts_RestartTheStateLayerBeforeTheNextInterruption()
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource();
+        var card = new Card { IsClickable = true, InteractionSource = source, Content = "Drag" };
+        var window = DialogTests.Show(card);
+        var controller = MaterialInteraction.GetOrCreate(card);
+        try
+        {
+            var first = new MaterialInteractionEvent.DragStart();
+            source.Emit(first);
+            clock.SendFrame(TimeSpan.Zero);
+            clock.SendFrame(TimeSpan.FromMilliseconds(64));
+            Assert.Equal(.16, controller.StateLayerOpacity, 6);
+            source.Emit(new MaterialInteractionEvent.DragStart());
+            clock.SendFrame(TimeSpan.FromMilliseconds(65));
+            source.Emit(new MaterialInteractionEvent.DragStop(first));
+            clock.SendFrame(TimeSpan.FromMilliseconds(66));
+            source.Emit(new MaterialInteractionEvent.HoverEnter());
+            clock.SendFrame(TimeSpan.FromMilliseconds(67));
+            // The second start keeps an equal-target animation running. Hover interrupts
+            // from its last frame (66ms), matching Ripple.StateLayer's object identity key.
+            Assert.Equal(.16 - .08 / 15, controller.StateLayerOpacity, 6);
+        }
+        finally { window.Close(); }
+    }
+
     [Theory]
     [InlineData(InteractionState.Hovered, InteractionState.Hovered)]
     [InlineData(InteractionState.Hovered | InteractionState.Focused, InteractionState.Focused)]

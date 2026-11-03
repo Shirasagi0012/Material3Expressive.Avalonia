@@ -4,6 +4,7 @@ package parity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -55,6 +56,33 @@ class ChipCases {
             val outside=Offset(8f,8f)
             sample("initial")
             when(config.action) {
+                "source-drag","source-press","source-replace","source-disable" -> {
+                    val source=scene.source
+                    val start:Interaction=if(config.action=="source-drag") DragInteraction.Start() else PressInteraction.Press(Offset(12f,12f)*ComposeHost.RenderScale.toFloat())
+                    fun end(value:Interaction):Interaction=if(value is DragInteraction.Start) DragInteraction.Stop(value) else PressInteraction.Release(value as PressInteraction.Press)
+                    mutate(1000,"start"){source.tryEmit(start)};times(16000,32000,64000)
+                    when(config.action) {
+                        "source-replace" -> {
+                            val replacement=MutableInteractionSource();val hover=HoverInteraction.Enter()
+                            mutate(65000,"replace"){scene.source=replacement}
+                            mutate(66000,"old-release"){source.tryEmit(end(start))}
+                            mutate(67000,"new-hover"){replacement.tryEmit(hover)};times(80000,160000,400000)
+                            mutate(401000,"hover-exit"){replacement.tryEmit(HoverInteraction.Exit(hover))};times(416000,640000)
+                            mutate(641000,"retained-release"){replacement.tryEmit(end(start))};times(656000,800000,1200000)
+                        }
+                        "source-disable" -> {
+                            mutate(65000,"disable"){scene.enabled=false};times(80000,160000)
+                            mutate(161000,"enable"){scene.enabled=true};times(176000,400000)
+                            mutate(401000,"release"){source.tryEmit(end(start))};times(416000,640000,1000000)
+                        }
+                        else -> {
+                            val second:Interaction=if(config.action=="source-drag") DragInteraction.Start() else PressInteraction.Press(Offset(20f,12f)*ComposeHost.RenderScale.toFloat())
+                            mutate(65000,"overlap"){source.tryEmit(second)}
+                            mutate(66000,"end-first"){source.tryEmit(end(start))};times(80000,160000)
+                            mutate(161000,"end-last"){source.tryEmit(end(second))};times(176000,240000,400000,800000)
+                        }
+                    }
+                }
                 "resize" -> {
                     mutate(1000,"selected") { scene.selected=true }; times(16000,64000,800000)
                     mutate(801000,"taller") { scene.height=64.0 }; times(816000,960000)
@@ -108,6 +136,7 @@ class ChipCases {
     }
 
     private class ChipScene(val config:ChipConfig) {
+        var source by mutableStateOf(MutableInteractionSource())
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -167,22 +196,24 @@ class ChipCases {
                                 "input"->InputChipDefaults.inputChipBorder(enabled,selected)
                                 else->null
                             }
-                        val basicElevation=if(config.custom=="elevation") ChipElevation(6.dp,6.dp,6.dp,6.dp,6.dp,6.dp)
+                        val basicElevation=if(config.custom=="source-elevation") ChipElevation(2.dp,3.dp,4.dp,5.dp,9.dp,1.dp)
+                            else if(config.custom=="elevation") ChipElevation(6.dp,6.dp,6.dp,6.dp,6.dp,6.dp)
                             else if(config.kind.contains("assist")) {
                                 if(elevated) AssistChipDefaults.elevatedAssistChipElevation() else AssistChipDefaults.assistChipElevation()
                             } else {
                                 if(elevated) SuggestionChipDefaults.elevatedSuggestionChipElevation() else SuggestionChipDefaults.suggestionChipElevation()
                             }
-                        val selectableElevation=if(config.kind=="input") InputChipDefaults.inputChipElevation()
+                        val selectableElevation=if(config.custom=="source-elevation") SelectableChipElevation(2.dp,3.dp,4.dp,5.dp,9.dp,1.dp)
+                            else if(config.kind=="input") InputChipDefaults.inputChipElevation()
                             else if(elevated) FilterChipDefaults.elevatedFilterChipElevation() else FilterChipDefaults.filterChipElevation()
                         val shapes=customShapes ?: if(config.kind=="input") InputChipDefaults.shapes() else FilterChipDefaults.shapes()
                         when(config.kind) {
-                            "assist","elevated-assist" -> AssistChip(click,label,modifier,enabled,leading,trailing,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding)
-                            "suggestion","elevated-suggestion" -> SuggestionChip(click,label,modifier,enabled,leading,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding)
-                            "filter","elevated-filter" -> if(config.morph) FilterChip(selected,click,label,shapes,modifier,enabled,leading,trailing,selectableColors,selectableElevation,border,arrangement,padding)
-                                else FilterChip(selected,click,label,modifier,enabled,leading,trailing,colors=selectableColors,elevation=selectableElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding)
-                            "input" -> if(config.morph) InputChip(selected,click,label,shapes,modifier,enabled,leading,avatar,trailing,selectableColors,selectableElevation,border,arrangement,padding)
-                                else InputChip(selected,click,label,modifier,enabled,leading,avatar,trailing,colors=selectableColors,elevation=selectableElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding)
+                            "assist","elevated-assist" -> AssistChip(click,label,modifier,enabled,leading,trailing,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)
+                            "suggestion","elevated-suggestion" -> SuggestionChip(click,label,modifier,enabled,leading,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)
+                            "filter","elevated-filter" -> if(config.morph) FilterChip(selected,click,label,shapes,modifier,enabled,leading,trailing,selectableColors,selectableElevation,border,arrangement,padding,source)
+                                else FilterChip(selected,click,label,modifier,enabled,leading,trailing,colors=selectableColors,elevation=selectableElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)
+                            "input" -> if(config.morph) InputChip(selected,click,label,shapes,modifier,enabled,leading,avatar,trailing,selectableColors,selectableElevation,border,arrangement,padding,source)
+                                else InputChip(selected,click,label,modifier,enabled,leading,avatar,trailing,colors=selectableColors,elevation=selectableElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)
                         }
                     }
                 }

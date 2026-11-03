@@ -83,8 +83,26 @@
 
 ## 使用边界
 
-没有公开可注入的 MutableInteractionSource；Drag 高度的外部注入尚未提供。
-可配置 inset focus ring、任意路径/切角 Shape 及完整 ColumnScope 尚未实现；当前形状用四角 CornerRadius。
+可点击模式的 `InteractionSource` 接收已有共享事件流；null 使用私有 source。普通模式忽略此属性。
+外部拖动可驱动阴影与状态层，不会触发 Click、移动卡片或改变选中状态：
+
+```csharp
+var source = new MaterialInteractionSource();
+card.IsClickable = true;
+card.InteractionSource = source;
+var drag = new MaterialInteractionEvent.DragStart();
+source.Emit(drag);
+// 宿主完成拖动；取消时使用 DragCancel(drag)。
+source.Emit(new MaterialInteractionEvent.DragStop(drag));
+```
+
+原生指针/键盘也发到同一个流。高度使用最后存活的交互，重叠事件按开始对象身份配对。
+按固定上游语义，更换 source 不清空高度 collector 已记住的外部交互；先结束旧交互再替换，
+或由新 source 发对应结束事件。切成普通模式或卸载会清空 collector；单独换模板保留。
+Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard。
+
+可通过继承的 `MaterialInteraction.FocusFeedback="InsetRing"` 使用共享焦点环；组件级双端视觉矩阵尚未验证。
+任意路径/切角 Shape 及完整 ColumnScope 尚未实现；当前形状用四角 CornerRadius。
 半透明 ElevatedCard 仍存在已观察到的共享阴影差异，动画也有已记录数值精度差异，不能视作完整视觉一致。
-实际桌面手动交互与文字像素一致性尚未经验证。
+共享拖动示例已检查实际桌面鼠标路径；其他桌面输入及文字像素一致性尚未经验证。
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示三种普通、可点击及禁用外观。

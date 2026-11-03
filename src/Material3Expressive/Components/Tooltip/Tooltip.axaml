@@ -77,6 +77,47 @@
         </ControlTemplate>
       </Setter>
     </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:RichTooltip}" TargetType="m3:RichTooltip">
+      <Setter Property="TooltipMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.MaxWidth}}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SupportingTextColor}}" />
+      <Setter Property="TitleForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SubheadColor}}" />
+      <Setter Property="ActionForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ActionLabelTextColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ContainerShape}}" />
+      <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ContainerElevation}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ContentPadding}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:PlainTooltipLayout TooltipMaxWidth="{TemplateBinding TooltipMaxWidth}"
+              DefaultMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinWidth}}"
+              DefaultMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+PlainTooltip.MinHeight}}"
+              Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+              MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+              MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}"
+                TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
+              <m3:RichTooltipLayout>
+                <ContentPresenter x:Name="PART_Title" IsVisible="False" Content="{TemplateBinding Title}" ContentTemplate="{TemplateBinding TitleTemplate}"
+                    Foreground="{TemplateBinding TitleForeground}" TextWrapping="Wrap"
+                    m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SubheadFont}}" />
+                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                    Foreground="{TemplateBinding Foreground}" TextWrapping="Wrap"
+                    m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.SupportingTextFont}}" />
+                <ContentPresenter x:Name="PART_Action" IsVisible="False" Content="{TemplateBinding Action}" ContentTemplate="{TemplateBinding ActionTemplate}"
+                    Foreground="{TemplateBinding ActionForeground}" TextWrapping="Wrap"
+                    m3:MaterialText.Style="{m3:Token {x:Static m3:MaterialTokens+Comp+RichTooltip.ActionLabelTextFont}}" />
+              </m3:RichTooltipLayout>
+            </m3:MaterialSurface>
+          </m3:PlainTooltipLayout>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:has-title /template/ ContentPresenter#PART_Title"><Setter Property="IsVisible" Value="True" /></Style>
+      <Style Selector="^:has-action /template/ ContentPresenter#PART_Action"><Setter Property="IsVisible" Value="True" /></Style>
+    </ControlTheme>
   </Styles.Resources>
   <!-- ToolTip reads placement from its anchor, rather than its own ControlTheme. -->
   <Style Selector=":is(Control)">
