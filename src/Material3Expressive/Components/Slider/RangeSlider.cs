@@ -28,7 +28,7 @@ using Material3Expressive.Foundation.Interaction;
 namespace Material3Expressive.Components;
 
 /// <summary>Two independently focusable Material3 thumbs with a shared, non-crossing active range.</summary>
-public sealed class RangeSlider : TemplatedControl
+public sealed partial class RangeSlider : TemplatedControl
 {
     protected override bool BypassFlowDirectionPolicies => true;
     public static readonly StyledProperty<RangeSliderState?> StateProperty = AvaloniaProperty.Register<RangeSlider, RangeSliderState?>(nameof(State), null);
@@ -114,11 +114,15 @@ public sealed class RangeSlider : TemplatedControl
         (StartPresenter?.GetVisualParent() as SliderLayout)?.InvalidateArrange();
         InvalidateArrange(); RefreshVisuals();
     }
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); ConfigureState(State is null); Subscribe(); }
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { CancelGesture(); Unsubscribe(); base.OnDetachedFromVisualTree(e); }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); ConfigureState(State is null); Subscribe(); ConnectInteractions(); }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) { EndThumbHover(); CancelGesture(); DisconnectInteractions(); Unsubscribe(); base.OnDetachedFromVisualTree(e); }
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        CancelGesture(); base.OnApplyTemplate(e);
+        EndThumbHover(); CancelGesture();
+        if (StartPresenter is { } oldStart) { oldStart.GotFocus -= OnThumbFocus; oldStart.LostFocus -= OnThumbFocus; }
+        if (EndPresenter is { } oldEnd) { oldEnd.GotFocus -= OnThumbFocus; oldEnd.LostFocus -= OnThumbFocus; }
+        EndFocusInteractions();
+        base.OnApplyTemplate(e);
         StartPresenter = e.NameScope.Find<SliderThumbPresenter>("PART_StartThumb"); EndPresenter = e.NameScope.Find<SliderThumbPresenter>("PART_EndThumb"); _track = e.NameScope.Find<ContentPresenter>("PART_Track");
         _defaultStart = StartPresenter?.Content as Control; _defaultEnd = EndPresenter?.Content as Control; _defaultTrack = _track?.Content as Control;
         if (StartPresenter?.GetVisualParent() is InputElement capture)
@@ -130,22 +134,15 @@ public sealed class RangeSlider : TemplatedControl
     private void OnThumbFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (sender is not SliderThumbPresenter thumb) return;
-        ref var interaction = ref (thumb.IsStart ? ref _startInteraction : ref _endInteraction);
-        SetAndRaise(thumb.IsStart ? StartInteractionProperty : EndInteractionProperty, ref interaction,
-            thumb.IsFocused ? interaction | InteractionState.Focused : interaction & ~InteractionState.Focused);
-        RefreshVisuals();
+        SetFocusInteraction(thumb.IsStart, thumb.IsFocused);
     }
     private void RefreshSlots()
     {
         if (StartPresenter is { } start) { start.Content = StartThumb ?? (StartThumbTemplate is not null ? ActualState : _defaultStart); start.ContentTemplate = StartThumbTemplate; }
         if (EndPresenter is { } end) { end.Content = EndThumb ?? (EndThumbTemplate is not null ? ActualState : _defaultEnd); end.ContentTemplate = EndThumbTemplate; }
+        if (_defaultStart is SliderThumb first) first.InteractionSource = StartSource;
+        if (_defaultEnd is SliderThumb last) last.InteractionSource = EndSource;
         if (_track is not null) { _track.Content = Track ?? (TrackTemplate is not null ? ActualState : _defaultTrack); _track.ContentTemplate = TrackTemplate; }
-    }
-    private void SetInteraction(InteractionState flag, bool active)
-    {
-        ref var interaction = ref (_draggingStart ? ref _startInteraction : ref _endInteraction);
-        SetAndRaise(_draggingStart ? StartInteractionProperty : EndInteractionProperty, ref interaction, active ? interaction | flag : interaction & ~flag);
-        RefreshVisuals();
     }
     private void RefreshVisuals()
     {
@@ -163,7 +160,30 @@ public sealed class RangeSlider : TemplatedControl
         if (e.Property == StateProperty || e.Property == MinimumProperty || e.Property == MaximumProperty || e.Property == StepsProperty) ConfigureState(true);
         else if (e.Property == RangeStartProperty || e.Property == RangeEndProperty || e.Property == FlowDirectionProperty) ConfigureState();
         else if (e.Property == StartThumbProperty || e.Property == StartThumbTemplateProperty || e.Property == EndThumbProperty || e.Property == EndThumbTemplateProperty || e.Property == TrackProperty || e.Property == TrackTemplateProperty) RefreshSlots();
-        else if (e.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) CancelGesture();
+        else if (e.Property == StartThumbInteractionSourceProperty || e.Property == EndThumbInteractionSourceProperty)
+        {
+            // Restarting pointerInput's keys cancels its coroutine before the launched Cancel
+            // can be emitted. ThumbContent's remembered interactions survive this restart.
+            var start = e.Property == StartThumbInteractionSourceProperty;
+            var presenter = start ? StartPresenter : EndPresenter;
+            if (presenter is not null)
+                foreach (var thumb in presenter.GetVisualDescendants().OfType<SliderThumb>()) thumb.EndHover(waitForExit: true);
+            CancelGesture(emitInteraction: false);
+            SetFocusInteraction(start, false);
+            if (start)
+            {
+                if (_observedStart is not null) _observedStart.Interaction -= _startListener;
+                _observedStart = null;
+            }
+            else
+            {
+                if (_observedEnd is not null) _observedEnd.Interaction -= _endListener;
+                _observedEnd = null;
+            }
+            if (this.IsAttachedToVisualTree()) ConnectInteractions();
+            RefreshSlots();
+        }
+        else if (e.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) { EndThumbHover(); CancelGesture(); EndFocusInteractions(); }
     }
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
     private void ResolveDragThumb(double horizontalOffset)
@@ -171,7 +191,6 @@ public sealed class RangeSlider : TemplatedControl
         if (!_chooseThumbOnDrag) return;
         // Intentional deviation: an initially collapsed range chooses its thumb
         // from the first horizontal drag direction, then keeps it for this gesture.
-        SetInteraction(InteractionState.Pressed, false);
         _draggingStart = (ActualState.IsRtl ? -horizontalOffset : horizontalOffset) < 0;
         _chooseThumbOnDrag = false;
     }
@@ -184,7 +203,11 @@ public sealed class RangeSlider : TemplatedControl
         var difference = MathF.Abs(ActualState.RawOffsetStart - _pressX).CompareTo(MathF.Abs(ActualState.RawOffsetEnd - _pressX));
         _draggingStart = difference != 0 ? difference < 0 : ActualState.RawOffsetStart > _pressX;
         _chooseThumbOnDrag = ActualState.ActiveRangeStart == ActualState.ActiveRangeEnd;
-        SetInteraction(InteractionState.Pressed, true);
+        e.Handled = true;
+        var source = _gestureSource = _draggingStart ? StartSource : EndSource;
+        var press = _pressInteraction = new MaterialInteractionEvent.Press(_down);
+        source.Emit(press);
+        if (_pointer != e.Pointer) return;
         e.Pointer.Capture(StartPresenter?.GetVisualParent() as InputElement ?? this); e.Handled = true;
     }
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -196,9 +219,14 @@ public sealed class RangeSlider : TemplatedControl
         {
             if (Math.Abs(total.X) <= Math.Abs(total.Y)) { CancelGesture(); return; }
             ResolveDragThumb(total.X);
-            SetInteraction(InteractionState.Pressed, false); SetInteraction(InteractionState.Dragged, true);
+            BeginDragInteraction();
+            if (_pointer != e.Pointer) return;
             var initial = _pressX - (_draggingStart ? ActualState.RawOffsetStart : ActualState.RawOffsetEnd);
-            ActualState.Drag(_draggingStart, initial + (float)total.X * Scale * (ActualState.IsRtl ? -1 : 1));
+            var state = ActualState;
+            state.Drag(_draggingStart, initial + (float)total.X * Scale * (state.IsRtl ? -1 : 1));
+            // Avalonia value/source callbacks run synchronously. A callback can cancel this
+            // gesture by replacing its state or source; do not revive it on return.
+            if (_pointer != e.Pointer || !ReferenceEquals(state, ActualState)) return;
             _dragging = ActualState.IsDragging = true;
         }
         else if (_dragging) ActualState.Drag(_draggingStart, (float)(position.X - _last.X) * Scale * (ActualState.IsRtl ? -1 : 1));
@@ -214,20 +242,27 @@ public sealed class RangeSlider : TemplatedControl
             // The final up event is also part of rangeSliderPressDragModifier's slop loop.
             // A horizontal displacement on that event becomes an immediate completed drag.
             var total = e.GetPosition(this) - _down;
-            if (Math.Abs(total.X) > Math.Abs(total.Y)) ResolveDragThumb(total.X);
+            if (Math.Abs(total.X) > Math.Abs(total.Y)) { ResolveDragThumb(total.X); BeginDragInteraction(); }
+            else EndGestureInteraction(cancelled: false);
             var offset = _pressX - (_draggingStart ? ActualState.RawOffsetStart : ActualState.RawOffsetEnd);
             if (Math.Abs(total.X) > Math.Abs(total.Y)) offset += (float)total.X * Scale * (ActualState.IsRtl ? -1 : 1);
             ActualState.Drag(_draggingStart, offset);
         }
         _chooseThumbOnDrag = _dragging = ActualState.IsDragging = false;
-        SetInteraction(InteractionState.Pressed | InteractionState.Dragged, false); Finish(); pointer.Capture(null); e.Handled = true;
+        EndGestureInteraction(cancelled: false); Finish(); pointer.Capture(null); e.Handled = true;
     }
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e) { base.OnPointerCaptureLost(e); if (_pointer == e.Pointer) CancelGesture(); }
-    private void CancelGesture()
+    private void EndThumbHover()
+    {
+        foreach (var thumb in this.GetVisualDescendants().OfType<SliderThumb>()) thumb.EndHover();
+    }
+    private void CancelGesture(bool emitInteraction = true)
     {
         if (_pointer is null) return;
         var pointer = _pointer; var state = ActualState; _pointer = null; var dragging = _dragging;
-        _chooseThumbOnDrag = _dragging = false; SetInteraction(InteractionState.Pressed | InteractionState.Dragged, false);
+        _chooseThumbOnDrag = _dragging = false;
+        if (emitInteraction) EndGestureInteraction(cancelled: true);
+        else { _gestureSource = null; _pressInteraction = null; _dragInteraction = null; }
         // The upstream cancellation finally invokes gestureEndAction while its drag
         // guard still prevents reentrant layout from resetting the accumulated offsets.
         try { if (dragging) Finish(); }

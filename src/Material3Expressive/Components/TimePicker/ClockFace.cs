@@ -11,11 +11,12 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Interaction;
 using Spring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
-internal sealed class ClockFace : Control
+internal sealed partial class ClockFace : Control
 {
     public static readonly StyledProperty<double> DialSizeProperty = AvaloniaProperty.Register<ClockFace, double>(nameof(DialSize), 256d);
     public double DialSize { get => GetValue(DialSizeProperty); set => SetValue(DialSizeProperty, value); }
@@ -35,12 +36,13 @@ internal sealed class ClockFace : Control
     private readonly List<Button> _labels=[];
     private AnimationChildScope? _scope;
     private Animatable<float>? _angle;
+    private readonly MutatorMutex _angleMutex = new();
     private float _position;
     private bool _pressed, _dragged;
     private Point _start;
     private TimeSelection? _lastSelection;
     private bool _last24;
-    static ClockFace(){FocusableProperty.OverrideDefaultValue<ClockFace>(true);AffectsRender<ClockFace>(DialBrushProperty,SelectorBrushProperty,CenterSizeProperty,HandleSizeProperty);AffectsMeasure<ClockFace>(DialSizeProperty,LabelSizeProperty);}
+    static ClockFace(){AffectsRender<ClockFace>(DialBrushProperty,SelectorBrushProperty,CenterSizeProperty,HandleSizeProperty);AffectsMeasure<ClockFace>(DialSizeProperty,LabelSizeProperty);}
     internal ClockFace(TimeEntryController controller)
     {
         _controller=controller;FlowDirection=FlowDirection.LeftToRight;
@@ -52,6 +54,8 @@ internal sealed class ClockFace : Control
         AddHandler(PointerPressedEvent,Pressed,RoutingStrategies.Tunnel);
         AddHandler(PointerMovedEvent,Moved,RoutingStrategies.Tunnel);
         AddHandler(PointerReleasedEvent,Released,RoutingStrategies.Tunnel);
+        AddHandler(KeyDownEvent, DialKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(KeyUpEvent, DialKeyUp, RoutingStrategies.Tunnel);
         AnimationScope.AddScopeChangedHandler(this, (_, e) =>
         {
             if (e.NewScope is { } scope && this.IsAttachedToVisualTree())
@@ -97,6 +101,8 @@ internal sealed class ClockFace : Control
     }
     internal void Update()
     {
+        var previousSelected = _labels.FindIndex(label => label.Classes.Contains("selected"));
+        var selectionChanged = _lastSelection != _controller.Selection || _last24 != _controller.Is24Hour;
         if(_lastSelection!=_controller.Selection || _last24!=_controller.Is24Hour)
         {
             foreach(var button in _labels){VisualChildren.Remove(button);LogicalChildren.Remove(button);}
@@ -106,7 +112,8 @@ internal sealed class ClockFace : Control
             {
                 var index=i;
                 var value=ClockValue(i);
-                var button=new Button {Content=value.ToString(),Padding=new(0)};
+                var button=new Button {Content=value.ToString(),Padding=new(0),Focusable=_dialFocusable};
+                MaterialInteraction.GetOrCreate(button).RippleRadius = 24; // MinimumInteractiveSize / 2.
                 TimeEntryController.BindDimension(button, WidthProperty, Comp.TimePicker.ClockDialLabelContainerSize);
                 TimeEntryController.BindDimension(button, HeightProperty, Comp.TimePicker.ClockDialLabelContainerSize);
                 button.Bind(StyledElement.ThemeProperty,new DynamicResourceExtension("MaterialClockLabelTheme"));
@@ -122,24 +129,32 @@ internal sealed class ClockFace : Control
         }
         for(var i=0;i<_labels.Count;i++)
             _labels[i].Classes.Set("selected",IsSelected(ClockValue(i)));
-        Animate(TargetAngle,_pressed);InvalidateVisual();
+        if (_dialFocusable && (selectionChanged || previousSelected != _labels.FindIndex(label => label.Classes.Contains("selected"))))
+            Activate();
+        if (!_keyboardSelecting) Animate(TargetAngle,_pressed);
+        InvalidateVisual();
     }
     private void Animate(float target,bool snap)
     {
+        if (!snap && _angle is { } current && Normalize(current.TargetValue) == Normalize(target)
+            && (current.IsRunning || Normalize(current.Value) == Normalize(target))) return;
         while(_position-target>MathF.PI)target+=MathF.Tau;
         while(_position-target<=-MathF.PI)target-=MathF.Tau;
         if(_scope is not { } scope || scope.Lifetime.IsCancellationRequested || _angle is null){_position=target;return;}
         var track=_angle;var motion=Motion;
-        _= scope.Launch(async ct=>
+        _= scope.Launch(ct => _angleMutex.MutateAsync(async token=>
         {
-            if(snap)await track.SnapToAsync(target,cancellationToken:ct);
-            else await track.AnimateToAsync(scope,target,new SpringSpec<float>(motion.DampingRatio,motion.Stiffness,(float)motion.VisibilityThreshold),cancellationToken:ct);
-        },"Clock selector");
+            if(snap)await track.SnapToAsync(target,cancellationToken:token);
+            else await track.AnimateToAsync(scope,target,new SpringSpec<float>(motion.DampingRatio,motion.Stiffness,(float)motion.VisibilityThreshold),cancellationToken:token);
+            return true;
+        }, snap ? MutatePriority.UserInput : MutatePriority.PreventUserInput, ct),"Clock selector");
     }
+    private static float Normalize(float angle) { var value = angle % MathF.Tau; return value < 0 ? value + MathF.Tau : value; }
     private void Pressed(object? sender,PointerPressedEventArgs e)
     {
         if(!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)return;
-        _pressed=true;_dragged=false;_start=e.GetPosition(this);e.Pointer.Capture(this);Focus();e.Handled=true;
+        if (e.Pointer.Type == PointerType.Touch) SetDialFocusable(false);
+        _pressed=true;_dragged=false;_start=e.GetPosition(this);e.Pointer.Capture(this);e.Handled=true;
     }
     private void Moved(object? sender,PointerEventArgs e)
     {
@@ -175,18 +190,6 @@ internal sealed class ClockFace : Control
             var step=tap?5:1;
             _controller.SetMinute(((int)MathF.Floor(angle/(MathF.Tau/60)/step+0.5f)*step)%60);
         }
-    }
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        base.OnKeyDown(e);
-        var delta=e.Key is Key.Up or Key.Right?1:e.Key is Key.Down or Key.Left?-1:0;
-        if(delta!=0)
-        {
-            if(_controller.Selection==TimeSelection.Hour)_controller.SetHour((_controller.Value.Hour+delta+24)%24);
-            else _controller.SetMinute((_controller.Value.Minute+delta+60)%60);
-            e.Handled=true;
-        }
-        else if(e.Key is Key.Enter or Key.Space){_controller.Select(_controller.Selection==TimeSelection.Hour?TimeSelection.Minute:TimeSelection.Hour);e.Handled=true;}
     }
     protected override Size MeasureOverride(Size available){foreach(var b in _labels)b.Measure(new(LabelSize,LabelSize));return new(DialSize,DialSize);}
     protected override Size ArrangeOverride(Size size)

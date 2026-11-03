@@ -102,6 +102,18 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
     internal void SetMinute(int minute) =>
         owner.SetCurrentValue(TimePicker.SelectedTimeProperty, new TimeOnly(Value.Hour, minute));
 
+    internal void LeaveDial(bool backwards)
+    {
+        if (backwards) _fields[(int)Selection]?.Focus(NavigationMethod.Tab);
+        else if (Selection == TimeSelection.Hour) _fields[1]?.Focus(NavigationMethod.Tab);
+        else if (!Is24Hour) _periods[0]?.Focus(NavigationMethod.Tab);
+        else
+        {
+            _fields[1]?.Focus(NavigationMethod.Tab);
+            TopLevel.GetTopLevel(owner)?.FocusManager?.TryMoveFocus(NavigationDirection.Next);
+        }
+    }
+
     private void Build()
     {
         if (_body is null) return;
@@ -250,7 +262,19 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                         BindDimension(button, Control.HeightProperty, fieldHeight);
                         button.Classes.Set("vibrant", Vibrant);
                         button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimeSelectorTheme"));
-                        button.Click += (_, _) => Select((TimeSelection)index);
+                        var touchActivation = false;
+                        button.AddHandler(InputElement.PointerPressedEvent, (_, e) => touchActivation = e.Pointer.Type == PointerType.Touch,
+                            Avalonia.Interactivity.RoutingStrategies.Tunnel);
+                        button.AddHandler(InputElement.KeyDownEvent, (_, _) => touchActivation = false,
+                            Avalonia.Interactivity.RoutingStrategies.Tunnel);
+                        button.GotFocus += (_, _) => _clock?.SetDialFocusable(false);
+                        button.Click += (_, _) =>
+                        {
+                            if (touchActivation) _clock?.SetDialFocusable(false);
+                            Select((TimeSelection)index);
+                            // ClockText's canFocus excludes InputMode.Touch.
+                            if (!touchActivation) _clock?.Activate();
+                        };
                         AutomationProperties.SetName(button,
                             DateTimeStrings.Get(i == 0 ? "TimePickerHourSelection" : "TimePickerMinuteSelection"));
                         _fields[i] = button;
@@ -323,6 +347,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     BindDimension(button, Control.WidthProperty, x => _horizontal ? (x[0] - x[1]) / 2 : x[0], periodWidth, periodSpacing);
                     button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialTimePeriodTheme"));
                     button.Click += (_, _) => SetHour(Value.Hour % 12 + period * 12);
+                    if (kind == TimeEntryKind.Dial) button.GotFocus += (_, _) => _clock?.SetDialFocusable(false);
                     _periods[i] = button;
                     periods.Children.Add(button);
                 }

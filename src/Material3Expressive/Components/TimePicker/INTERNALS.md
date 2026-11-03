@@ -32,7 +32,15 @@
 分离视觉树时只释放自己的子作用域，立即取消表盘工作；重新附着从当前选中时间建立角度状态。
 祖先作用域重建时通过 `ScopeChanged` 重建子作用域及订阅，从保留的角度重新运行到当前目标。
 这种手动恢复不承诺内置动画宿主的速度及帧基准恢复。
-键盘左右或上下按 1 调整当前字段，并在 0 到 23、0 到 59 上循环。
+`ClockFace.Keyboard.cs` 对照 `ClockText` / `ClockFace`：选择器激活后，只有当前钟面的标签可聚焦，
+初始焦点在选中刻度；方向键按外圈、内圈的顺序循环，仅移动焦点。Enter/Space KeyUp 用 SnapSpec 语义确认，
+不触发自动切到分钟。Tab/Shift+Tab 交回选择器、时段按钮或后续控件，离开后钟面标签退出 Tab 序列。
+外部时间改变时，已激活钟面的焦点跟随新的选中刻度。模板复用现有 MaterialSurface 圆形状态层，
+不再继承原生日期按钮的矩形 focus-visible 描边；ClockText 的 ripple 半径是 MinimumInteractiveSize / 2。
+
+角度动画接入已有 `MutatorMutex`：程序/字段切换动画是 PreventUserInput，键盘确认是 UserInput，
+低优先级确认在动画期间被拒绝，不排队。作用域重建后取消的动画即使 TargetValue 未变仍从当前位置恢复，
+不能把 isUpdated 的短路直接用于框架作用域重建。
 
 `TimeScroll` 的小时列在 12 小时模式是 1 到 12 且循环，24 小时模式是 0 到 23。分钟列是 0 到 59。
 12 小时的 12 写回 0 或 12，取决于当前是 AM 还是 PM。
@@ -46,10 +54,17 @@
 
 ## 尚未实现或未验证
 
-- 钟面标签的焦点环、内外圈遍历顺序和 `ClockDialNode` 的命中细节没有逐项对照。
+- 已补齐标签键盘焦点、内外圈遍历、确认与退出路径。`ClockDialNode` 的指针 slop、连续角度和完整优先级仍未移植完成；当前指针输入仍会先写入离散值，不能由键盘路径的验证推断其一致性。
+- 上游小时/分钟标签 Crossfade 和根据动画 selectorPos 判断文字选中色仍未实现；现有文字、时段色及原生时段焦点描边有双端像素差异。
 - `Automatic` 在钟面上比较 TopLevel 客户区的宽高，并在客户区尺寸变化后，仅当横竖结果改变时重建。初次套用模板时如果还没有 TopLevel，会保持纵向，直到控件进入窗口。
 - 秒、分钟步长只存在于原生 `TimePicker` 主题。
 - 双端像素差异保留证据，不在本轮追修。
 
-逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs`。
+逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs` 和 `ClockKeyboardTests.cs`。
 双端用例是 `tests/VisualParity/Material3Expressive.Parity/Cases/TimePickerCases.cs` 与 reference 侧同名 Kotlin。
+`TimePickerKeyboardCases` 使用真实按键，读取实际 focused 语义、时间及字段，覆盖 12/24 小时、LTR/RTL、
+切换动画期间的拒绝和结束后的确认；图像失配和 Core 重复截图不稳定保留在报告中，不作为已接受差异。
+运行 `20261103-142211-539f9114` 的 4 个用例、68 个采样的焦点刻度、时间和字段读数均相等；
+图像仍全部 different。Avalonia 重复及额外截图均稳定，Core 的 12h.ltr 在重激活/离开分钟的截图不稳定：
+被动额外截图对照中有 60 个物理像素发生最大 1 通道值差异，集中在分钟选择器边缘。
+尚不能宣称动画图像验收通过，不通过降低门禁消除该证据。

@@ -57,9 +57,10 @@ Automation Invoke 表达锚点的长按显示，提示提供 ToolTip / Assertive
 Core clippingEnabled=false 的阴影，不应为了匹配截图裁掉显式 shadow elevation。
 
 位置提供器使用物理窗口像素：居中整数除法截断，先翻边再夹到客户区，超大提示原点夹到 0。
-Start/End 按 FlowDirection 解析。变换锚点仍使用 Core 的 `positionInWindow + local size`，
-不能替换成变换四角后的包围盒。读取原点时撤销 Avalonia 自动 RTL 镜像，保留显式 RenderTransform，
-镜像可能来自锚点或父容器。
+Start/End 按 FlowDirection 解析。Core BasicTooltipBox 的外层 Box 同时承载 Popup 和 WrappedAnchor，传入的 modifier 仅作用于后者。
+TooltipAnchor 因此从父坐标转换 owner.Bounds 的物理起点，保留祖先变换、排除 owner 自身 RenderTransform，
+再加未变换的局部尺寸；不使用变换四角后的包围盒。读取原点时撤销祖先的 Avalonia 自动 RTL 镜像。
+祖先 Bounds、RenderTransform、Origin 和可变 Transform.Changed 触发重定位；detach 解除所有监听。
 
 动态几何读取未变换 Popup 与局部尺寸，真实动画用同时间线截图比较；Float/Double 矩阵末位
 不伪装成布局差异。锚点移动场景需保留首次与同帧再次绘制采样，并等待 onPlaced 触发的重测完成。
@@ -93,9 +94,8 @@ Label 调用 BasicTooltipBox 而非 TooltipBox 动画包装，所以显隐立即
 尚未实现 caret 的形状及背景、裁剪、阴影路径并集，任意自定义容器的基线透传也尚未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
 
-TooltipLabel 的纯 RenderTransform 更新尚未对齐固定 Core 的放置生命周期：Popup.skiko.kt 在 onPlaced 读取父坐标，graphicsLayer 变化不触发布局放置；本地 TooltipBox/Label 接入会跟随变换。该差异未获接受。
-建议在 Tooltip 内统一实现布局放置的锚点快照与失效条件，覆盖祖先移动、重新打开和内容尺寸变化，不在 Label 内复制布局跟踪。例如持续显示时设置 label.RenderTransform = new ScaleTransform(1.5, 1.25)，应区分纯绘制更新与实际布局，不能延后所有定位或改变容差来通过。
-Slider/RangeSlider 尚无公开交互源接线，Label 不能证明完整 Slider 标签集成；跨屏 DPI、字体栅格和真实触摸设备未经验收。Windows Catalog 已检查常驻标签、IconButton/Switch 悬停及点击关闭、分段按钮选择写回。
+RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分别连接自定义 Thumb 内的 TooltipLabel。
+单值原生 Slider 尚无公共交互源接线；跨屏 DPI、字体栅格和真实触摸设备未经验收。
 
 ## 4. 验证入口
 
@@ -109,5 +109,8 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family rich-tooltip --require-match
 ./tests/VisualParity/parity.ps1 self-test --family tooltip-box
 ```
-TooltipLabelTests 8 项行为测试通过。双端 tooltip-label 覆盖主题、RTL、边缘翻转、受限内容、交互身份与重叠、换源、卸载、持续模式、外部关闭、移动、尺寸及渲染变换。
-运行 20261103-115022-b0fa088d 的 36 例为 34 equal、2 different，双端重复稳定、零捕获错误；两个差异均为上述纯变换 Popup 位置，不代表已接受。使用 self-test --family tooltip-label 复验，读取不同值与实际截图，不修改参考或容差。
+TooltipLabelTests 与 TooltipAnchorTests 覆盖身份、重叠、换源、卸载、持续模式、外部关闭及自身/祖先变换。
+`tooltip-label` 扩充后的 38 个双端用例全部截图逐像素相等、重复稳定、零捕获错误
+（运行 `20261103-142626-64eb60bc`）。其中 34 个用例整体 equal；4 个旋转时间线因锚内容的
+float/double AABB 坐标约 10^-6 DIP 差异被精确比较标为 different，Popup 和内容几何仍相等。
+未对坐标取整或修改门禁。变换时间线包含缩放、平移、旋转、原位修改变换、内容变宽、布局移动、清除变换和重开。

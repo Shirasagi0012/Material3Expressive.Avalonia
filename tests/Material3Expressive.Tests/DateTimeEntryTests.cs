@@ -112,7 +112,7 @@ public class DateTimeEntryTests
     }
 
     [AvaloniaFact]
-    public async Task Dial_TapAdvancesToMinute_KeyboardWraps_AndDetachCancelsMotion()
+    public async Task Dial_TapAdvancesToMinute_KeyboardSelectsTick_AndDetachCancelsMotion()
     {
         using var clock=new MotionTestClockScope();
         var picker=new TimePicker {SelectedTime=new(0,0),Is24Hour=true,Layout=TimePickerLayout.Vertical};
@@ -123,8 +123,13 @@ public class DateTimeEntryTests
         Assert.Equal(3,picker.SelectedTime.Hour);
         await Task.Delay(150); clock.AdvanceBy(TimeSpan.FromMilliseconds(150)); Flush(window);
         Assert.Equal(TimeSelection.Minute,picker.Selection);
-        dial.Focus();window.KeyPress(Key.Left,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
-        Assert.Equal(59,picker.SelectedTime.Minute);
+        dial.Activate();window.KeyPress(Key.Left,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
+        Assert.Equal(0,picker.SelectedTime.Minute);
+        window.KeyRelease(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
+        Assert.Equal(0,picker.SelectedTime.Minute); // Switching fields owns PreventUserInput.
+        clock.SendFrame(clock.Now); clock.AdvanceBy(TimeSpan.FromSeconds(1)); Flush(window);
+        window.KeyRelease(Key.Enter,Avalonia.Input.RawInputModifiers.None,PhysicalKey.None,null); Flush(window);
+        Assert.Equal(55,picker.SelectedTime.Minute);
         window.Content=null; clock.AdvanceBy(TimeSpan.FromSeconds(1));
         Assert.Null(window.MotionRoot.Diagnostics.LastError);
         window.Close();

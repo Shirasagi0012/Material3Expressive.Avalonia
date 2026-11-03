@@ -48,6 +48,34 @@
       <Button Content="About collections" Click="OnShowRich" />
     </m3:TooltipBox>
     <TextBlock Text="TooltipLabel" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="Range values" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+    <m3:RangeSlider x:Name="LabelRange" Width="320" HorizontalAlignment="Left" RangeStart="0.25" RangeEnd="0.75" Margin="0,32,0,0">
+      <m3:RangeSlider.StartThumb>
+        <m3:TooltipLabel x:Name="RangeStartLabel">
+          <m3:TooltipLabel.Label><m3:PlainTooltip Content="{Binding RangeStart, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
+          <m3:SliderThumb x:Name="LabelRangeStartThumb" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
+                          Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+        </m3:TooltipLabel>
+      </m3:RangeSlider.StartThumb>
+      <m3:RangeSlider.EndThumb>
+        <m3:TooltipLabel x:Name="RangeEndLabel">
+          <m3:TooltipLabel.Label><m3:PlainTooltip Content="{Binding RangeEnd, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
+          <m3:SliderThumb x:Name="LabelRangeEndThumb" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
+                          Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
+        </m3:TooltipLabel>
+      </m3:RangeSlider.EndThumb>
+    </m3:RangeSlider>
+    <TextBlock Text="Position follows layout and parent transforms" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+    <StackPanel Orientation="Horizontal" Spacing="16">
+      <Button Content="Transform anchor" Click="OnTransformAnchor" />
+      <Button Content="Transform parent" Click="OnTransformParent" />
+    </StackPanel>
+    <Border x:Name="TransformedLabelParent" HorizontalAlignment="Left" Margin="24,32,0,0">
+      <m3:TooltipLabel x:Name="TransformedLabel" IsPersistent="True">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Layout anchor" /></m3:TooltipLabel.Label>
+        <m3:AssistChip Content="Anchor" />
+      </m3:TooltipLabel>
+    </Border>
     <TextBlock Text="The label shares the chip's hover/press stream; focus alone does not show it." TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Spacing="48" Margin="0,24,0,0">
       <m3:TooltipLabel x:Name="InteractionLabel">

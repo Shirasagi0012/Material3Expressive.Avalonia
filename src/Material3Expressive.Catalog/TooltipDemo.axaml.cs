@@ -33,6 +33,8 @@ public partial class TooltipDemo : Window
         FabLabel.InteractionSource = LabelFab.InteractionSource = new();
         DrawerLabel.InteractionSource = LabelDrawerItem.InteractionSource = new();
         TabLabel.InteractionSource = LabelTab.InteractionSource = new();
+        RangeStartLabel.InteractionSource = LabelRangeStartThumb.InteractionSource = LabelRange.StartThumbInteractionSource = new();
+        RangeEndLabel.InteractionSource = LabelRangeEndThumb.InteractionSource = LabelRange.EndThumbInteractionSource = new();
     }
 
     private void OnChoosePeriod(object? sender, RoutedEventArgs e)
@@ -54,4 +56,10 @@ public partial class TooltipDemo : Window
     }
 
     private void OnDismissRich(object? sender, RoutedEventArgs e) => RichHelp.State.Dismiss();
+
+    private void OnTransformAnchor(object? sender, RoutedEventArgs e) =>
+        TransformedLabel.RenderTransform = TransformedLabel.RenderTransform is null ? new Avalonia.Media.ScaleTransform(1.25, 1.25) : null;
+
+    private void OnTransformParent(object? sender, RoutedEventArgs e) =>
+        TransformedLabelParent.RenderTransform = TransformedLabelParent.RenderTransform is null ? new Avalonia.Media.TranslateTransform(32, 12) : null;
 }

@@ -51,6 +51,20 @@ RangeSlider 自行处理 RTL 并绕过自动镜像，避免方向被翻转两次
 捕获在模板布局节点的 tunnel 阶段处理，按下不自动请求鼠标焦点。
 拖动中禁止端点交叉；Start/EndInteraction 分别反馈手势与焦点。
 
+`RangeSlider.Interaction.cs` 对应 `rangeSliderPressDragModifier` 的 Press → Cancel → Drag.Start → Stop/Cancel，
+两端独立源，所有结束事件引用原始开始事件。纵向超过 slop 取消 Press；释放事件首次发生水平位移时
+仍走立即完成的 Drag。同步回调换源会中止当前输入路径，旧源事件回调不会写入新 collector。
+`StartInteraction` / `EndInteraction` 保留原来的按压、拖动和焦点位；hover 通过源提供，不扩展旧属性含义。
+
+`SliderThumb` 对应 `ThumbContent`，按身份维护重叠事件，不通过布尔标志抹去外部事件。
+换源时保留 remembered 活动列表。固定 Core 的 pointerInput key 重启没有向旧源发出 Drag.Cancel，
+Thumb 可能继续缩小；双端 `source` 用例验证这一现象。本地保留该语义，未把它改成自动清空。
+卸载会先退出 hover，再取消拖动，清除本地 collector；禁用取消活动输入与焦点。
+
+Avalonia 捕获布局节点后不再把 Thumb 视为 pointer-over，故 SliderThumb 在捕获期间重算自己的
+布局盒命中，并在布局后更新移动 Thumb 的 hover。非捕获场景仍检查实际视觉命中、遮挡及裁剪；
+顶层观察者在卸载时释放。固定上游 Thumb 的 hoverable 不随 enabled 关闭。
+
 两端 presenter 独立聚焦并提供 IRangeValueProvider，父级为 Group；自动化边界沿轴扩展 10 DIP。
 自定义 Thumb 的 AutomationProperties.Name 可成为本地化名称。完成通知仍按点击释放、
 拖动结束/取消、受支持键 KeyUp 或产生变化的自动化赋值触发；取消回调若修改布局，
@@ -87,11 +101,25 @@ Range 的显式 State 与调用者写回职责、内容模板方案同日获确�
 颜色、尺寸、圆角、Centered、自定义 Thumb、程序赋值、键盘/拖动与中断。
 单值已接受的原生差异和不可比较字段仍会被报告，不能把 self-test 执行完成当成全量匹配。
 
+新增 `range-slider-interaction` 的 36 个双端用例中，24 个全等，36 个重复稳定且捕获错误为零
+（`20261103-143939-ffaf59ca`）。12 个存在差异，其中 8 个是 disable / release-jump 的双端点 × LTR/RTL：
+事件身份及顺序、区间值和 Thumb 几何一致，Label 在生命周期边界的呈现帧不同；不是已接受差异。
+原因定位到源事件与 Compose 重组提交的先后，不能用删除过渡帧或延迟全部事件隐藏。
+后续需进一步核对 TooltipLabel collector 的提交调度；它影响共享 Label 消费者，不仅是 Slider 绘制。
+
+另外 4 个 focus 时间线验证：更换另一端源不会清理本端焦点，更换聚焦端源会向旧源发出 Unfocus。
+自定义 Thumb 与父 RangeSlider 分别赋源时仍有时序差异：本地先给父级换源会让旧 Thumb collector
+收到 Unfocus 后恢复宽度；Core 在同次重组中先取消旧 collector，保留已记住的 Focus 并继续缩小。
+事件序列一致不等于消费者结果一致。该差异未获接受，也未通过调整调用顺序掩盖；推荐保持源身份稳定，
+后续需明确组件源绑定的提交边界，影响示例中 RangeSlider / SliderThumb / TooltipLabel 三者的共同换源。
+
 ## 验证入口
 
 - [控件测试](../../../../tests/Material3Expressive.Tests/SliderTests.cs)：原生模板对照输入/事件顺序、绑定、程序/自动化赋值、Token、几何/不规则刻度及完整 Range 状态、自动化、重合/取消手势。
+- [交互源测试](../../../../tests/Material3Expressive.Tests/RangeSliderInteractionTests.cs)：端点配对、重叠身份、生命周期、回调重入、遮挡和 Label 组合。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SliderCases.cs) /
   [Compose 双端用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SliderCases.kt)
+- `RangeSliderInteractionCases.cs` / `.kt` 记录真实输入的完整交互序列、Label 几何与截图。
 - [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml) 提供真实内容组合；其事件处理见
   [MainWindow.axaml.cs](../../../Material3Expressive.Catalog/MainWindow.axaml.cs)
 

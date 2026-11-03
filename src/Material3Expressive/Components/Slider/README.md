@@ -120,6 +120,33 @@ state.OnValueChange = value =>
 模板未给显式内容时以 `ActualState` 为数据；`StartInteraction`/`EndInteraction` 是只读反馈。
 两端独立聚焦并提供 RangeValue 自动化，可在自定义 Thumb 上设置 AutomationProperties.Name。
 
+`StartThumbInteractionSource` / `EndThumbInteractionSource` 分别暴露端点的按压、拖动、焦点和 hover 事件。
+不设置时控件各自持有内部源。自定义 `SliderThumb` 和 `TooltipLabel` 应连接同一个端点源：
+
+```csharp
+using Avalonia.Controls;
+using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
+
+var start = new MaterialInteractionSource();
+var slider = new RangeSlider
+{
+    RangeStart = .25f, RangeEnd = .75f,
+    StartThumbInteractionSource = start,
+    StartThumb = new TooltipLabel
+    {
+        InteractionSource = start,
+        Content = new SliderThumb { Width = 4, Height = 44, InteractionSource = start },
+        Label = new PlainTooltip { Content = new TextBlock { Text = "Lower bound" } }
+    }
+};
+```
+
+`SliderThumb.InteractionSource` 消费活动事件并在自身布局盒内产生 hover；按压、拖动和焦点只缩小绘制宽度，
+不改变布局尺寸。Catalog 的 “Tooltips” 页面展示两个随区间值更新的 Label。
+固定上游在拖动中换源会保留 Thumb 已收集的活动状态，因此应保持每个端点源的身份稳定；
+换源不是清除反馈的入口。禁用和释放跳跃时的 Label 呈现帧仍有双端差异，见维护说明。
+
 两端在按下时重合，会按首次有效水平拖动方向选择端点：LTR 左拉起点、右拉终点，RTL 相反；
 此次手势确定后不再换端。普通点击、非重合手势、键盘和自动化仍沿原规则。
 

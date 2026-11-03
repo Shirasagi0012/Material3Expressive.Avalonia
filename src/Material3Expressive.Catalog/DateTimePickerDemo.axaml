@@ -16,6 +16,7 @@
           <m3:DateRangePicker Name="Range" Width="420" />
         </WrapPanel>
         <TextBlock Text="TimePicker · TimeInput · TimeScroll — shared valid value" FontSize="20" />
+        <TextBlock Text="Keyboard: activate an hour/minute selector, use arrows to move around the dial, Enter/Space to choose, and Tab or Shift+Tab to leave. In 24-hour mode, arrows connect both rings." TextWrapping="Wrap" />
         <WrapPanel>
           <m3:TimePicker Name="Dial" Layout="Vertical" Margin="0,0,32,0" />
           <StackPanel Spacing="24">

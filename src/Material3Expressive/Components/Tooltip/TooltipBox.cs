@@ -74,6 +74,7 @@ public class TooltipBox : ContentControl
     private TaskCompletionSource? _release;
     private bool _longPressed;
     private Size _lastWindowSize;
+    private readonly TooltipAnchor _anchor;
 
     internal bool IsPresented => _popup.IsOpen;
     internal Control Presentation => _layer;
@@ -82,6 +83,7 @@ public class TooltipBox : ContentControl
 
     public TooltipBox()
     {
+        _anchor = new TooltipAnchor(this, () => UpdatePosition());
         _layer = new Border { Child = _presenter, ClipToBounds = false, RenderTransformOrigin = RelativePoint.Center };
         // graphicsLayer alpha applies once to the whole surface, including overlapping children.
         var presentationRoot = new Border { Child = _layer };
@@ -120,6 +122,7 @@ public class TooltipBox : ContentControl
     {
         base.OnAttachedToVisualTree(e);
         _topLevel = TopLevel.GetTopLevel(this);
+        _anchor.Attach();
         _topLevel?.AddHandler(PointerPressedEvent, OnOutsidePressed, RoutingStrategies.Tunnel, true);
         AttachState();
         // The owner's Window template establishes the popup layer during its first layout.
@@ -128,6 +131,7 @@ public class TooltipBox : ContentControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _anchor.Detach();
         _topLevel?.RemoveHandler(PointerPressedEvent, OnOutsidePressed); _topLevel = null;
         ReleasePointer();
         DetachState();
@@ -151,8 +155,7 @@ public class TooltipBox : ContentControl
         if (change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) ConfigureMotion();
         if (change.Property == EnableUserInputProperty && !EnableUserInput) ReleasePointer();
         if (change.Property == AnchorPositionProperty || change.Property == SpacingProperty || change.Property == PositionProviderProperty
-            || change.Property == FlowDirectionProperty || change.Property == RenderTransformProperty
-            || change.Property == RenderTransformOriginProperty || change.Property == HasMirrorTransformProperty) UpdatePosition(force: true);
+            || change.Property == FlowDirectionProperty) UpdatePosition(force: true);
     }
 
     private void AttachState()
@@ -239,23 +242,10 @@ public class TooltipBox : ContentControl
         _layer.RenderTransform = new ScaleTransform(_scale, _scale);
     }
 
-    private Rect AnchorBounds()
-    {
-        // Core Popup.onPlaced uses positionInWindow() plus the parent's local size,
-        // not the axis-aligned bounds of its transformed corners.
-        // Avalonia implements RTL with automatic mirror transforms, while Core's
-        // layout coordinates still start at the physical left of the node.
-        var mirrored = false;
-        for (Visual? visual = this; visual is not null && visual != _topLevel; visual = visual.GetVisualParent())
-            mirrored ^= visual.HasMirrorTransform;
-        var origin = mirrored ? new Point(Bounds.Width, 0) : default;
-        return new Rect(this.TranslatePoint(origin, _topLevel!)!.Value, Bounds.Size);
-    }
-
     private void UpdatePosition(bool force = false)
     {
         if (!_popup.IsOpen || _topLevel is null) return;
-        var bounds = AnchorBounds();
+        var bounds = TooltipAnchor.BoundsInWindow(this, _topLevel);
         if (_lastWindowSize != _topLevel.ClientSize) force = true;
         _lastWindowSize = _topLevel.ClientSize;
         if (force) _popup.PlacementRect = null;
@@ -267,7 +257,7 @@ public class TooltipBox : ContentControl
         var topLevel = _topLevel!;
         var density = topLevel.RenderScaling;
         int Pixel(double dip) => (int)MathF.Floor((float)(dip * density) + .5f);
-        var bounds = AnchorBounds();
+        var bounds = TooltipAnchor.BoundsInWindow(this, topLevel);
         var anchor = new PixelRect(Pixel(bounds.Left), Pixel(bounds.Top), Pixel(bounds.Width), Pixel(bounds.Height));
         var provider = PositionProvider ?? TooltipDefaults.CreatePositionProvider(AnchorPosition, Spacing, density);
         var point = provider.CalculatePosition(anchor, new(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)),

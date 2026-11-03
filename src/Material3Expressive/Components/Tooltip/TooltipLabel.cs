@@ -51,11 +51,13 @@ public class TooltipLabel : ContentControl
     private TopLevel? _topLevel;
     private bool _wasVisible, _visible;
     private Size _lastWindowSize;
+    private readonly TooltipAnchor _anchor;
 
     internal bool IsPresented => _popup.IsOpen;
 
     public TooltipLabel()
     {
+        _anchor = new TooltipAnchor(this, () => UpdatePosition());
         _popup = new Popup
         {
             Child = _presenter, ShouldUseOverlayLayer = true, IsLightDismissEnabled = false,
@@ -86,6 +88,7 @@ public class TooltipLabel : ContentControl
     {
         base.OnAttachedToVisualTree(e);
         _topLevel = TopLevel.GetTopLevel(this);
+        _anchor.Attach();
         _topLevel?.AddHandler(PointerPressedEvent, OnOutsidePressed, RoutingStrategies.Tunnel, true);
         AttachSource();
         // A Window being mounted establishes its overlay layer in the first layout pass.
@@ -97,6 +100,7 @@ public class TooltipLabel : ContentControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _anchor.Detach();
         _topLevel?.RemoveHandler(PointerPressedEvent, OnOutsidePressed);
         DetachSource();
         _topLevel = null;
@@ -118,8 +122,7 @@ public class TooltipLabel : ContentControl
             DetachSource();
             AttachSource();
         }
-        if (change.Property == FlowDirectionProperty || change.Property == RenderTransformProperty
-            || change.Property == RenderTransformOriginProperty || change.Property == HasMirrorTransformProperty)
+        if (change.Property == FlowDirectionProperty)
             UpdatePosition(force: true);
     }
 
@@ -174,22 +177,13 @@ public class TooltipLabel : ContentControl
         else _popup.Close();
     }
 
-    private Rect AnchorBounds()
-    {
-        var mirrored = false;
-        for (Visual? visual = this; visual is not null && visual != _topLevel; visual = visual.GetVisualParent())
-            mirrored ^= visual.HasMirrorTransform;
-        var origin = mirrored ? new Point(Bounds.Width, 0) : default;
-        return new Rect(this.TranslatePoint(origin, _topLevel!)!.Value, Bounds.Size);
-    }
-
     private void UpdatePosition(bool force = false)
     {
         if (!_popup.IsOpen || _topLevel is null) return;
         if (_lastWindowSize != _topLevel.ClientSize) force = true;
         _lastWindowSize = _topLevel.ClientSize;
         if (force) _popup.PlacementRect = null;
-        _popup.PlacementRect = AnchorBounds();
+        _popup.PlacementRect = TooltipAnchor.BoundsInWindow(this, _topLevel);
     }
 
     private void PlacePopup(CustomPopupPlacement placement)
@@ -197,7 +191,7 @@ public class TooltipLabel : ContentControl
         var topLevel = _topLevel!;
         var density = topLevel.RenderScaling;
         int Pixel(double dip) => (int)MathF.Floor((float)(dip * density) + .5f);
-        var bounds = AnchorBounds();
+        var bounds = TooltipAnchor.BoundsInWindow(this, topLevel);
         var point = TooltipDefaults.CreatePositionProvider(renderScaling: density).CalculatePosition(
             new PixelRect(Pixel(bounds.Left), Pixel(bounds.Top), Pixel(bounds.Width), Pixel(bounds.Height)),
             new PixelSize(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)),

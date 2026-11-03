@@ -38,9 +38,9 @@ public class TooltipBoxTests
             FlowDirection = parentRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
             Children = { box }
         });
-        // Avalonia mirrors RTL coordinates; Core's positionInWindow starts at
-        // the physical left of the layout node, including its explicit scale.
-        var anchorOrigin = box.TranslatePoint(new Point(box.Bounds.Width, 0), window)!.Value;
+        // BasicTooltipBox's outer Box excludes the WrappedAnchor modifier and uses
+        // the physical layout origin even when the anchor content is mirrored.
+        var anchorOrigin = TooltipAnchor.BoundsInWindow(box, window).Position;
         var first = tooltip.TranslatePoint(default, window)!.Value;
         var last = tooltip.TranslatePoint(new Point(tooltip.Bounds.Width, 0), window)!.Value;
         var tooltipOrigin = new Point(Math.Min(first.X, last.X), first.Y);
@@ -49,14 +49,14 @@ public class TooltipBoxTests
     }
 
     [AvaloniaFact]
-    public void TransformedAnchor_UsesWindowOriginAndLocalSizeLikeCorePopup()
+    public void TransformedAnchor_UsesUnmodifiedOuterBoxLikeCorePopup()
     {
         using var clock = new MotionTestClockScope();
         var tooltip = new PlainTooltip { Content = new Border { Width = 64, Height = 8 } };
         var box = Box(tooltip, new(initialIsVisible: true, mutatorMutex: new()));
         box.RenderTransform = new ScaleTransform(2, 2);
         var window = DialogTests.Show(new Grid { Children = { box } });
-        var anchor = box.TranslatePoint(default, window)!.Value;
+        var anchor = box.GetVisualParent()!.TranslatePoint(box.Bounds.Position, window)!.Value;
         Assert.Equal(new Point(anchor.X - 28, anchor.Y - 28), tooltip.TranslatePoint(default, window));
         Assert.Equal(new Size(24, 24), box.Bounds.Size);
     }

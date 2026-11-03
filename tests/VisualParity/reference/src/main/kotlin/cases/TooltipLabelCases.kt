@@ -84,10 +84,16 @@ class TooltipLabelCases {
                     change("grow"){scene.anchorWidth=40;scene.width=120.0}
                     change("bottom-right"){scene.x=212;scene.y=164}
                 }
-                "transform" -> {
+                "transform", "ancestor-transform" -> {
                     change("scale"){scene.scaled=true}
                     change("translate"){scene.translated=true}
-                    change("reset"){scene.scaled=false;scene.translated=false}
+                    change("content-resize"){scene.width=100.0}
+                    change("layout-move"){scene.y=100}
+                    change("rotate"){scene.scaled=false;scene.translated=false;scene.rotation=30f}
+                    change("mutate-rotation"){scene.rotation=60f}
+                    change("reset"){scene.scaled=false;scene.translated=false;scene.rotation=0f}
+                    change("hide"){scene.persistent=false}
+                    change("reopen"){scene.persistent=true}
                 }
                 "detach" -> {
                     emit("hover",hover);change("detach"){scene.attached=false}
@@ -105,14 +111,21 @@ class TooltipLabelCases {
         var x by mutableStateOf(config.x);var y by mutableStateOf(config.y)
         var anchorWidth by mutableStateOf(24);var width by mutableStateOf(config.contentWidth)
         var scaled by mutableStateOf(false);var translated by mutableStateOf(false)
+        var rotation by mutableStateOf(0f)
         val anchor=Probe();val tooltip=Probe();val content=Probe()
         var painted=Color.Transparent
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(config.dark)darkColorScheme()else lightColorScheme()) {
                 CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl)LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=AbsoluteAlignment.TopLeft) {
-                        if(attached) Box(Modifier.absoluteOffset(x.dp,y.dp)) {
+                        if(attached) Box(Modifier.absoluteOffset(x.dp,y.dp).then(
+                            if(config.action=="ancestor-transform") Modifier.graphicsLayer {
+                                rotationZ=rotation
+                                scaleX=if(scaled)1.5f else 1f;scaleY=if(scaled)1.25f else 1f
+                                translationX=if(translated)8f*density else 0f;translationY=if(translated)12f*density else 0f
+                            } else Modifier)) {
                             Label(modifier=if(config.action=="transform") Modifier.graphicsLayer {
+                                rotationZ=rotation
                                 scaleX=if(scaled)1.5f else 1f;scaleY=if(scaled)1.25f else 1f
                                 translationX=if(translated)8f*density else 0f;translationY=if(translated)12f*density else 0f
                             } else Modifier, interactionSource=source,isPersistent=persistent,label={

@@ -29,10 +29,10 @@ public sealed class TooltipLabelCases
 
     public static IEnumerable<CaseData<TooltipLabelConfig>> DynamicConfigurations()
     {
-        foreach (var action in new[] { "overlap", "cancel", "identity", "focus", "source", "outside", "persistent", "resize", "transform", "detach" })
+        foreach (var action in new[] { "overlap", "cancel", "identity", "focus", "source", "outside", "persistent", "resize", "transform", "ancestor-transform", "detach" })
         foreach (var rtl in new[] { false, true })
             yield return Data($"dynamic.{action}.{(rtl ? "rtl" : "ltr")}",
-                new(Persistent: action is "persistent" or "resize" or "transform", Rtl: rtl, Action: action));
+                new(Persistent: action is "persistent" or "resize" or "transform" or "ancestor-transform", Rtl: rtl, Action: action));
     }
 
     static CaseData<TooltipLabelConfig> Data(string id, TooltipLabelConfig config) => new(id, id.Replace('.', ' '), config);
@@ -56,8 +56,9 @@ public sealed class TooltipLabelCases
         // component inherits RTL; making the outer Canvas RTL would mirror the scene's input X.
         var label = new TooltipLabel { Label = tip, Content = anchor, InteractionSource = source, IsPersistent = config.Persistent,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
-        var canvas = new Canvas { Background = Brushes.White, Children = { label } };
-        Canvas.SetLeft(label, config.X); Canvas.SetTop(label, config.Y);
+        Control positioned = config.Action == "ancestor-transform" ? new Grid { Children = { label } } : label;
+        var canvas = new Canvas { Background = Brushes.White, Children = { positioned } };
+        Canvas.SetLeft(positioned, config.X); Canvas.SetTop(positioned, config.Y);
         host.Mount(canvas); host.Frame(-1000); host.Frame(0);
         void Sample(string id)
         {
@@ -124,9 +125,17 @@ public sealed class TooltipLabelCases
                 Change("grow", () => { anchor.Width = 40; marker.PreferredSize = new Size(120, config.ContentHeight); });
                 Change("bottom-right", () => { Canvas.SetLeft(label, 212); Canvas.SetTop(label, 164); }); break;
             case "transform":
-                Change("scale", () => { label.RenderTransformOrigin = RelativePoint.Center; label.RenderTransform = new ScaleTransform(1.5, 1.25); });
-                Change("translate", () => label.RenderTransform = new TransformGroup { Children = { new ScaleTransform(1.5, 1.25), new TranslateTransform(8, 12) } });
-                Change("reset", () => label.RenderTransform = null); break;
+            case "ancestor-transform":
+                Change("scale", () => { positioned.RenderTransformOrigin = RelativePoint.Center; positioned.RenderTransform = new ScaleTransform(1.5, 1.25); });
+                Change("translate", () => positioned.RenderTransform = new TransformGroup { Children = { new ScaleTransform(1.5, 1.25), new TranslateTransform(8, 12) } });
+                Change("content-resize", () => marker.PreferredSize = new Size(100, config.ContentHeight));
+                Change("layout-move", () => Canvas.SetTop(positioned, 100));
+                var rotation = new RotateTransform(30);
+                Change("rotate", () => positioned.RenderTransform = rotation);
+                Change("mutate-rotation", () => rotation.Angle = 60);
+                Change("reset", () => positioned.RenderTransform = null);
+                Change("hide", () => label.IsPersistent = false);
+                Change("reopen", () => label.IsPersistent = true); break;
             case "detach":
                 Emit("hover", hover); Change("detach", () => canvas.Children.Remove(label));
                 Emit("detached-drag", drag); Change("reattach", () => canvas.Children.Add(label));

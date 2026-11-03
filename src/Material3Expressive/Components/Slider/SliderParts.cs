@@ -52,10 +52,121 @@ public sealed class SliderThumb : Control
     public static readonly StyledProperty<SliderColors?> ColorsProperty = AvaloniaProperty.Register<SliderThumb, SliderColors?>(nameof(Colors), null);
     public SliderColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
 
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<SliderThumb, MaterialInteractionSource?>(nameof(InteractionSource));
+    /// <summary>Observes shared feedback and emits hover events for this thumb's bounds.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private MaterialInteractionSource? _source;
+    private Action<MaterialInteractionEvent>? _sourceListener;
+    private MaterialInteractionEvent.HoverEnter? _hover;
+    private readonly List<MaterialInteractionEvent> _events = [];
+    private TopLevel? _hoverRoot;
+    private Avalonia.Input.PointerEventArgs? _lastPointer;
+    private bool _hoverReset;
+    private bool _hoverAwaitExit;
+
+    public SliderThumb()
+    {
+        LayoutUpdated += (_, _) => { if (_lastPointer is { } pointer) UpdateCapturedHover(pointer); };
+    }
+
+    private void ConnectSource(bool clearEvents = true)
+    {
+        if (!clearEvents && _hover is not null) _hoverAwaitExit = true;
+        DisconnectSource(clearEvents);
+        if (InteractionSource is { } source)
+        {
+            _source = source;
+            source.Interaction += _sourceListener = interaction => { if (_source == source) ReceiveInteraction(interaction); };
+        }
+    }
+    private void DisconnectSource(bool clearEvents = true)
+    {
+        EndHover();
+        if (_source is not null) _source.Interaction -= _sourceListener;
+        if (clearEvents && _source is not null) SetCurrentValue(InteractionProperty, InteractionState.None);
+        _source = null;
+        if (clearEvents) { _events.Clear(); _hoverAwaitExit = false; }
+    }
+    private void ReceiveInteraction(MaterialInteractionEvent interaction) =>
+        SetCurrentValue(InteractionProperty, SliderInteraction.Update(_events, interaction));
+    internal void EndHover(bool waitForExit = false)
+    {
+        if (waitForExit && _hover is not null) _hoverAwaitExit = true;
+        _lastPointer = null;
+        _hoverReset = true;
+        var hover = _hover; _hover = null;
+        if (hover is not null) _source?.Emit(new MaterialInteractionEvent.HoverExit(hover));
+    }
+    protected override void OnPointerEntered(Avalonia.Input.PointerEventArgs e)
+    {
+        base.OnPointerEntered(e);
+        if (!_hoverReset && !_hoverAwaitExit && _source is not null && _hover is null)
+        {
+            var hover = _hover = new();
+            _source.Emit(hover);
+        }
+    }
+    protected override void OnPointerExited(Avalonia.Input.PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        // RangeSlider captures its layout node, not the thumb. Native pointer-over then excludes
+        // the thumb even while the pointer remains inside the hoverable's unchanged layout box.
+        if (e.Pointer.Captured is Visual captured && captured.IsVisualAncestorOf(this)
+            && new Rect(Bounds.Size).Contains(e.GetPosition(this))) return;
+        _hoverAwaitExit = false;
+        EndHover();
+    }
+    private void ObservePointer(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        _hoverReset = false;
+        _lastPointer = e;
+        UpdateCapturedHover(e);
+    }
+    private void UpdateCapturedHover(Avalonia.Input.PointerEventArgs e)
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var inside = new Rect(Bounds.Size).Contains(e.GetPosition(this));
+        if (inside && e.Pointer.Captured is not Visual)
+        {
+            // A top-level observer must still respect clipping and occlusion. Disabled thumbs
+            // are hoverable upstream, so use visual hit testing rather than enabled input hits.
+            var hit = _hoverRoot?.GetVisualAt(e.GetPosition(_hoverRoot));
+            inside = hit == this || hit is not null && this.IsVisualAncestorOf(hit);
+        }
+        else if (inside && e.Pointer.Captured is Visual capture && !capture.IsVisualAncestorOf(this))
+            inside = capture == this;
+        if (!inside)
+        {
+            _hoverAwaitExit = false;
+            var hover = _hover; _hover = null;
+            if (hover is not null) _source?.Emit(new MaterialInteractionEvent.HoverExit(hover));
+        }
+        else if (!_hoverAwaitExit && _hover is null && _source is not null)
+        {
+            var hover = _hover = new();
+            _source.Emit(hover);
+        }
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty && this.IsAttachedToVisualTree())
+        {
+            // ThumbContent remembers its list outside LaunchedEffect(interactionSource).
+            ConnectSource(clearEvents: InteractionSource is null);
+            RefreshNativeFeedback();
+        }
+    }
+
     private Avalonia.Controls.Slider? _nativeOwner;
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        ConnectSource();
+        _hoverRoot = TopLevel.GetTopLevel(this);
+        _hoverRoot?.AddHandler(PointerMovedEvent, ObservePointer, Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
+        _hoverRoot?.AddHandler(PointerReleasedEvent, ObservePointer, Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
         _nativeOwner = this.GetVisualAncestors().OfType<Avalonia.Controls.Slider>().FirstOrDefault();
         if (_nativeOwner is { } owner)
         {
@@ -72,6 +183,10 @@ public sealed class SliderThumb : Control
             owner.Classes.CollectionChanged -= NativeClassesChanged;
         }
         _nativeOwner = null;
+        _hoverRoot?.RemoveHandler(PointerMovedEvent, ObservePointer);
+        _hoverRoot?.RemoveHandler(PointerReleasedEvent, ObservePointer);
+        _hoverRoot = null;
+        DisconnectSource();
         base.OnDetachedFromVisualTree(e);
     }
     private void NativeChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => RefreshNativeFeedback();
@@ -80,6 +195,7 @@ public sealed class SliderThumb : Control
     {
         if (_nativeOwner is not { } owner) return;
         SetCurrentValue(IsVerticalProperty, owner.Orientation == Orientation.Vertical);
+        if (_source is not null) return;
         SetCurrentValue(InteractionProperty, !owner.IsEffectivelyEnabled ? InteractionState.None
             : (owner.IsFocused ? InteractionState.Focused : InteractionState.None)
                 | (owner.Classes.Contains(":pressed") ? InteractionState.Pressed : InteractionState.None));

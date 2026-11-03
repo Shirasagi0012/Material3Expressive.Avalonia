@@ -50,8 +50,20 @@
       <Setter Property="MinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelContainerSize}}" /><Setter Property="MinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelContainerSize}}" />
       <Setter Property="Padding" Value="0" /><Setter Property="BorderThickness" Value="0" />
       <Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialUnselectedLabelTextColor}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialLabelTextFont}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}"
+                              StateLayerBrush="{TemplateBinding Foreground}" TextElement.Foreground="{TemplateBinding Foreground}">
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:focus-visible"><Setter Property="BorderThickness" Value="0" /></Style>
       <Style Selector="^.selected"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimePicker.ClockDialSelectedLabelTextColor}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:ClockFace}" TargetType="m3:ClockFace">

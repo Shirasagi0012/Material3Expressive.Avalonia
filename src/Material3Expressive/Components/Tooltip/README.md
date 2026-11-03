@@ -85,7 +85,7 @@ SaveLabel.InteractionSource = SaveChip.InteractionSource = new();
 持续标签忽略该关闭请求。Escape、焦点、长按不会由包装器额外处理；提示不会夺取焦点。
 更换源、切换持续模式、卸载会结束旧订阅；重新挂载只接收后续事件，不回放旧状态。
 PlainTooltip/RichTooltip 的 caret 限制仍适用；不把它当作交互式弹窗或 Slider 输入适配层。
-纯 RenderTransform 更新时，标签的定位更新时机尚未与固定 Core 对齐；布局移动与尺寸变化已双端验证。
+锚点自身的 RenderTransform 只改变锚点外观，提示仍对齐未变换的布局位置；祖先的变换、布局移动及提示内容尺寸变化会更新定位。
 具体范围见 [TooltipLabel 实现边界](INTERNALS.md#3-已确认决定与已知差异)。
 
 ## 使用限制与注意事项
