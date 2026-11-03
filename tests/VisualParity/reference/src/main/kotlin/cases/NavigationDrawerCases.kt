@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -105,7 +107,8 @@ class NavigationDrawerCases {
             }
         }
     }
-    private class Scene(val c:NavigationDrawerConfig) {
+    internal class Scene(val c:NavigationDrawerConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         lateinit var state:DrawerState; lateinit var scope:CoroutineScope
         var dark by mutableStateOf(c.dark); var selected by mutableStateOf(c.selected); var width by mutableStateOf(c.width)
         var clicks=0; var focused=false
@@ -139,7 +142,7 @@ class NavigationDrawerCases {
             val content:@Composable ColumnScope.()->Unit={
                 if(!c.empty) Column(Modifier.padding(horizontal=12.dp,vertical=16.dp)) {
                     Marker(null,48.0,32.0,null)
-                    NavigationDrawerItem(label={Marker(label,48.0,16.0,"label")},selected=selected,onClick={clicks++},modifier=item.modifier().onFocusChanged { focused=it.isFocused },
+                    NavigationDrawerItem(label={Marker(label,48.0,16.0,"label")},selected=selected,onClick={clicks++},interactionSource=interactions,modifier=item.modifier().onFocusChanged { focused=it.isFocused },
                         icon=if(c.icon) ({Marker(icon,24.0,24.0,"icon")}) else null,
                         badge=if(c.badge) ({Marker(badge,20.0,12.0,"badge")}) else null,
                         colors=if(c.custom) NavigationDrawerItemDefaults.colors(selectedContainerColor=Color(0xFFE0F0E8),

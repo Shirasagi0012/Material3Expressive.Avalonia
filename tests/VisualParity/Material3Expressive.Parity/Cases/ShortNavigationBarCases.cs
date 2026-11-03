@@ -160,7 +160,7 @@ public sealed class ShortNavigationBarCases
         }
     }
 
-    sealed class BarScene
+    internal sealed class BarScene
     {
         readonly AvaloniaHost host;
         readonly ShortNavigationBarConfig config;

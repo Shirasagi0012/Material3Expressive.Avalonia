@@ -12,6 +12,27 @@ namespace Material3Expressive.Components;
 // owner's explicit dimensions/minima separately from the default container size.
 internal sealed class ButtonLayout : Decorator, IMinimumInteractiveLayout
 {
+    // Only native Button/ToggleButton/SplitButton templates opt in. IconButton has its own
+    // shape collector and public source, despite sharing the minimum-size layout.
+    public static readonly StyledProperty<bool> CollectButtonInteractionsProperty =
+        AvaloniaProperty.Register<ButtonLayout, bool>(nameof(CollectButtonInteractions));
+    public bool CollectButtonInteractions { get => GetValue(CollectButtonInteractionsProperty); set => SetValue(CollectButtonInteractionsProperty, value); }
+    private ButtonInteraction? _buttonInteraction;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (CollectButtonInteractions && TemplatedParent is Button button)
+            _buttonInteraction = new ButtonInteraction(button);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _buttonInteraction?.Dispose();
+        _buttonInteraction = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
     public static readonly StyledProperty<bool> IsMinimumInteractiveSizeEnabledProperty =
         AvaloniaProperty.Register<ButtonLayout, bool>(nameof(IsMinimumInteractiveSizeEnabled), true);
     public bool IsMinimumInteractiveSizeEnabled { get => GetValue(IsMinimumInteractiveSizeEnabledProperty); set => SetValue(IsMinimumInteractiveSizeEnabledProperty, value); }

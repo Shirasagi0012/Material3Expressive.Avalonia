@@ -27,54 +27,64 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
     private FloatingActionButtonElevation _values;
     private InteractionState _last, _target;
     private bool _pending;
-    private (FloatingActionButtonElevation Values, InteractionState Interaction) _next;
+    private FloatingActionButtonElevation _nextValues;
 
     internal FloatingActionButtonElevationController(MaterialSurface surface, AnimationScope parent, FloatingActionButtonElevation values, InteractionState interaction)
     {
-        _values = values;
+        _values = _nextValues = values;
         _scope = parent.CreateChild("FAB elevation");
         _value = new Animatable<double>(new DoubleConverter(), values.Default, VisibilityThresholds.Double);
         _scope.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _value);
-        Update(values, interaction);
+        UpdateInteraction(interaction);
     }
     private static double Target(FloatingActionButtonElevation values, InteractionState state) => (state switch
     {
         InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
         InteractionState.Focused => values.Focused, _ => values.Default
     });
-    internal void Update(FloatingActionButtonElevation values, InteractionState interaction)
+    internal void UpdateConfiguration(FloatingActionButtonElevation values)
     {
-        _next = (values, interaction);
-        if (_pending || _scope.Lifetime.IsCancellationRequested) return;
+        _nextValues = values;
+        if (_pending || _values == values || _scope.Lifetime.IsCancellationRequested) return;
         _pending = true;
         _ = _scope.Launch(async ct =>
         {
+            // LaunchedEffect(elevation) updates configuration during composition. Changing
+            // an unused state's height must not snap or cancel the current animation.
             await _scope.NextFrameAsync(ct);
             _pending = false;
-            var (configuration, state) = _next;
-            if (_values != configuration)
+            _values = _nextValues;
+            var target = Target(_values, _target);
+            if (_value.TargetValue != target)
             {
-                _values = configuration;
-                // LaunchedEffect(elevation) updates and snaps the current target first.
-                await _value.SnapToAsync(Target(_values, _target), ct);
-                _last = _target;
+                try { await _value.SnapToAsync(target, ct); }
+                finally { _last = _target; }
             }
-            var target = Target(_values, state);
+        }, "FAB elevation configuration");
+    }
+    internal void UpdateInteraction(InteractionState interaction)
+    {
+        if (_scope.Lifetime.IsCancellationRequested) return;
+        // The interaction collector launches directly, independently of the configuration
+        // effect. It also observes overlapping events whose target height has not changed.
+        _ = _scope.Launch(async ct =>
+        {
+            var target = Target(_values, interaction);
             var from = _last;
-            _target = state;
+            _target = interaction;
             try
             {
                 if (_value.TargetValue != target)
                 {
-                    if (from == InteractionState.None && state == InteractionState.None)
+                    if (from == InteractionState.None && interaction == InteractionState.None)
                         await _value.SnapToAsync(target, ct);
                     else
                         await _value.AnimateToAsync(_scope, target,
-                            new TweenSpec<double>(TimeSpan.FromMilliseconds(state != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
-                                easing: state != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)), cancellationToken: ct);
+                            new TweenSpec<double>(TimeSpan.FromMilliseconds(interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
+                                easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)), cancellationToken: ct);
                 }
             }
-            finally { _last = state; }
+            finally { _last = interaction; }
         }, "FAB elevation effect");
     }
     public void Dispose() => _scope.Dispose();

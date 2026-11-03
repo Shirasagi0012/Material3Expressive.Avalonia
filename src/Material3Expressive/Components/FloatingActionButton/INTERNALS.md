@@ -82,8 +82,20 @@ FloatingActionButtonElevation 保留，正常默认仍由主题的多值绑定�
 ## 动画、输入与生命周期
 
 Elevation 记录最后一个实际 press/focus/hover，而非仅从相同高度倒推状态。
-Tonal elevation 固定使用配置 Default；更换配置先 snap 当前目标，再处理新交互。
+Tonal elevation 固定使用配置 Default；更换配置只在当前交互的目标高度改变时 snap，
+仅修改其他状态的高度不会提前结束正在运行的动画。
 动画优先级绑定随 scope 释放，不能让多个 FAB 共用运行状态。
+交互流直接启动 elevation 动画，不额外排队一个重组帧；elevation 配置变更独立等待下一帧提交。
+共享控制器仅在完整源事件结束时调用 FAB 的交互收集路径，构建 ripple 和属性更新不会伪造额外交互。
+配置与交互分别对应固定上游 `updateElevation` / `animateElevation`；在等待配置提交时仍可处理真实交互。
+中断沿用 Animatable 的当前值及最后帧时间。固定 Core 的自定义高度 2/4/6/9 DIP 用例在 64ms hover
+读取约 6.295164 DIP，随后 press 的 80ms 采样约 6.180564 DIP；这些读数另有 headless 与双端探针覆盖。
+
+普通与 Extended FAB 的 `InteractionSource` 直接连接共享交互控制器，null 使用私有源。
+固定 `FloatingActionButtonElevation.animateElevation` 以 source 为 remember key，交互列表在 effect 内；
+因此换源同时重建 indication 与 elevation animatable，从 Default 初始化，不复用普通 Button 跨源保留列表的路径。
+开始对象按身份配对，外部交互不执行 Click。卸载断开订阅，重挂只接收未来事件。
+固定 `FloatingActionButtonMenu.kt` 的 Toggle 与菜单项没有公开 interactionSource 参数，未增加对应 API。
 
 Toggle 保留初始外层占位，内层朝逻辑 TopEnd 收缩；Oklab 颜色、动态圆角、固定阴影及显式
 ripple 半径分别处理。内容按整数除法居中，图标尺寸按物理像素取整；反向 checked 按
@@ -110,6 +122,21 @@ Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../.
 
 ## 验证与边界
 
+`FabInteractionSourceTests` 检查普通/Extended 的多 press 身份、最后交互高度、换源重置、原生取消及重挂。
+双端 `fab-source` 覆盖三种内容入口、四尺寸、RTL、重叠及换源；几何和真实截图使用既有 FAB 测量，
+另被动读取双方实际 Surface 阴影高度，不用模拟反馈代替组件。
+21 个交互源场景已完成双端捕获，执行错误为零。修正首帧后，小尺寸 RTL hover 的截图差异已进入既有容差；
+普通交互/换源用例后续连续帧的高度最大余差约 0.00000093 DIP，原始事实仍精确标记 different。
+换源及未完成 Focus 退出时的事件当帧，Avalonia 已应用重置/snap，Core 等下一重组帧，仍有明显高度差；
+后续帧收敛，不把这类时序差归入浮点适配。部分 Compose 重复采集或额外被动截图不稳定，Avalonia 自检稳定。
+
+`configuration` 用例在同一 Compose elevation 工厂调用点修改参数。未使用状态高度更新时，两端都保留 hover 动画；
+活动目标变更仍有呈现时序缺口：209ms 执行 `fab.Elevation = new(2, 5, 60, 9)` 后，224ms Core 图层仍约
+39.23 DIP，Avalonia 已为 5 DIP，240ms 两端为 5 DIP。建议独立评估共享的属性提交/呈现阶段；
+简单再等一帧会改变这段间隔内新交互读取的配置与动画值，不能作为等价转换。本次未新增公共调度框架或局部补帧。
+该用例此前使用 40 DIP 自定义 pressed 高度，208ms 的阴影截图仍超出门禁；微小高度余差与大阴影渲染差异
+分别保留，不能把可见差异纳入已确认的微小浮点范围。这些问题仍需维护者决定共享能力的后续适用范围。
+
 [FloatingActionButtonTests](../../../../tests/Material3Expressive.Tests/FloatingActionButtonTests.cs) 覆盖尺寸、
 显隐、状态请求/automation、颜色角色、图标绑定、整数放置、受限菜单焦点、detach / reattach。
 [FloatingActionButtonTokenConfigurationTests](../../../../tests/Material3Expressive.Tests/FloatingActionButtonTokenConfigurationTests.cs)
@@ -117,6 +144,9 @@ Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../.
 [Avalonia 用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/FloatingActionButtonCases.cs)与
 [Compose 用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/FloatingActionButtonCases.kt)
 覆盖四尺寸/内容重载、主题、约束、RTL、elevation、输入、展开/反向、Toggle、菜单增项和显隐。
+本次 elevation 生命周期修正后的既有 111 例复测为 2 equal、108 withinTolerance、1 different，
+执行错误为零，重复捕获及额外被动截图稳定。剩余 `dynamic.menu.count` 在 append 事件当帧有结构差异；
+此结果不覆盖上述新增配置用例的时序和大阴影问题。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~FloatingActionButtonTests

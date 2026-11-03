@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -13,7 +14,7 @@ namespace Material3Expressive.Parity;
 public sealed record FloatingToolbarConfig(bool Horizontal = true, string Fab = "none", bool Expanded = true,
     bool Vibrant = false, bool Dark = false, bool Rtl = false, bool Leading = true, bool Trailing = true,
     double ContentWidth = 48, double ContentHeight = 48, double? MaxWidth = null, double? MaxHeight = null,
-    string Content = "glyph", string Custom = "none", string Action = "none", string Exit = "bottom");
+    string Content = "glyph", string Custom = "none", string Action = "none", string Exit = "bottom", bool FabTemplateOnly = false);
 
 [ParitySuite("floating-toolbar")]
 public sealed class FloatingToolbarCases
@@ -133,7 +134,8 @@ public sealed class FloatingToolbarCases
             {
                 fab = new FloatingActionButton { Content = Glyph(24, 24) };
                 fab.Theme = (ControlTheme)host.Window.FindResource(config.Vibrant ? "MaterialVibrantFloatingToolbarFabTheme" : "MaterialStandardFloatingToolbarFabTheme")!;
-                Toolbar.FloatingActionButton = fab;
+                if (config.FabTemplateOnly) Toolbar.FloatingActionButtonTemplate = new FuncDataTemplate<object?>((_, _) => fab);
+                else Toolbar.FloatingActionButton = fab;
             }
             if (config.MaxWidth is { } width) Toolbar.MaxWidth = width;
             if (config.MaxHeight is { } height) Toolbar.MaxHeight = height;

@@ -78,15 +78,25 @@ WindowInsets 是宿主提供的物理 Thickness，桌面为零、RTL 不交换�
 
 ## 历史问题与待核验范围
 
-旧验证在按压中切换 IconPosition 后观察到额外 hover，并记载 indication 重挂方案待确认。
-当前 [ShortNavigationBarItem.cs](ShortNavigationBarItem.cs) 已在位置改变时从布局移除并重新加入 ripple Surface，
-以重建 indication；这是当前代码事实，不独自证明方案已获批准或旧差异已消除。
-现有记录没有提供这一变化后的同场景新结果及确认依据，需重跑 `dynamic.position-press` 并核对历史授权。
-旧文把它与 Width 同列在两个 different 之后，不能据此视为已接受。
+固定 NavigationItem.kt 在 IconPosition 改变时切换 mapped/raw source，重建的是 indication。
+本地通过 `ResetSourceIndication` 清除波纹和状态层，不再移除/readd ripple Surface；后者会额外取消 owner 的原生按压。
+保持选择动画与原生按压，松开仍按开始对象配对。`NavigationInteractionSourceTests` 验证该生命周期，
+双端 `navigation-source` 的两种 position 场景及原 `dynamic.position-press` 保留实际逐帧差异检查。
+这不是接受旧额外 hover 差异，也不改变 Width 的已确认适配。
+`navigation-source` 两个 position 场景的 80/128/160/400/800ms 栅格与事实相等；位置变更及释放的事件帧
+仍有属性即时提交差异，未声明严格逐帧相等。重叠波纹的部分 Compose 自检仍不稳定，Avalonia 稳定。
 整族 require-match 至少受已接受 Width 差异影响；应逐项读取结果，不调整容差，也不将所有 different 解释为 Width。
 
 内容色直接变化，默认 Foreground 不随自定义 Background 重做 contentColorFor；这是当前默认值关系，
 不要为统一外观擅自改为常规 Bar 的动态内容色绑定。真实文字/Material Symbols 栅格、人工桌面交互及屏幕阅读器未经验收。
+
+公开 `InteractionSource` 连接已有 MaterialInteractionController，null 使用每实例私有源。
+挂载连接、卸载断开；更换源取消原生 starts 并重建 indication，不重放旧源事件，也不改变外部选择状态。
+外部按压沿用组件既有 owner 坐标映射；禁用只结束原生输入，仍由外部发出者结束自己的交互。
+
+`NavigationInteractionSourceTests` 覆盖身份配对、禁用、源替换、重挂和键盘输入；双端
+`navigation-source` 覆盖重叠按压、源替换、悬停/焦点交接、RTL 与非标准图标尺寸的映射。
+这些新增路径的结果应从本次报告读取，不由既有导航 suite 的历史记录推定。
 
 ## 验证入口
 

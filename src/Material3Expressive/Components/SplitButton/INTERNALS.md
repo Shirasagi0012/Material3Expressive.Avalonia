@@ -82,7 +82,7 @@ Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，
 
 ## 一致性边界
 
-尚未实现任意 Compose Shape 和外部 MutableInteractionSource。静止/按压使用圆角矩形，
+尚未实现任意 Compose Shape。静止/按压使用圆角矩形，
 尾部选中使用默认圆形，不存在完整 Shape 对象移植。
 
 旧 4× headless 静态场景在既定容差内；动态仍保留原生 Enter 和属性/主题/禁用当帧时机差异。
@@ -93,7 +93,19 @@ Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，
 行为未由现有无字形 Headless 场景证明。共享描边和其他组件的历史代表性回归范围见
 [ToggleButton 维护说明](../ToggleButton/INTERNALS.md#一致性边界)，不宣称共享组件全部 parity 通过。
 
+`MaterialButton.InteractionSource` 复用 Button 模板局部的 `ButtonInteraction`，shape 的 press 列表与
+remembered bool、elevation 的 remembered 列表和 indication 分开。替换源时不把它们一并清空，
+外部 Press 不写原生 IsPressed / IsChecked；具体上游生命周期见 [Button 维护说明](../Button/INTERNALS.md#交互与动画职责)。
+模板卸载断开订阅，重建模板重新开始收集。禁用只配对取消原生 starts，不取消调用方的 starts。
+
+`ButtonInteractionSourceTests` 覆盖配对、替换、禁用、重挂和 TooltipLabel；双端 `button-source`
+覆盖四种外观、重叠、源替换及原生按压中的替换。真实差异以该 suite 的新捕获结果为准，不将旧 suite 结果扩大到此入口。
+
 ## 验证入口
+
+交互源接入后的既有 `split-button` 99 例复测完成：50 equal、30 withinTolerance、19 different，
+执行错误为零，重复捕获与额外被动截图稳定。different 仍包括 Enter 时机、属性变更当帧及 hover 高度微差；
+这不是对未决差异的新接受。
 
 - [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：双区独立输入、尾部原生切换、共同布局、窄宽溢出、光学偏移和选中动画中修改非活动形状；同时覆盖 Toggle 生命周期；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查条件默认与用户 Style 优先级。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SplitButtonCases.cs) /

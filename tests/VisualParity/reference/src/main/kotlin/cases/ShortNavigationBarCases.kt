@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -121,7 +123,8 @@ class ShortNavigationBarCases {
         }
     }
 
-    private class BarScene(val config:ShortNavigationBarConfig) {
+    internal class BarScene(val config:ShortNavigationBarConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -189,7 +192,7 @@ class ShortNavigationBarCases {
             ) else ShortNavigationBarItemDefaults.colors()
             ShortNavigationBarItem(selected,{ clicks++; selected=true },
                 icon={ Marker(icon,config.iconWidth,config.iconHeight,true,"icon") },
-                modifier=modifier, enabled=enabled,
+                modifier=modifier, enabled=enabled, interactionSource=interactions,
                 label=if(!hasLabel) null else ({ Marker(label,config.labelWidth,labelHeight,false,"label") }),
                 iconPosition=if(position=="start") NavigationItemIconPosition.Start else NavigationItemIconPosition.Top,colors=colors)
         }

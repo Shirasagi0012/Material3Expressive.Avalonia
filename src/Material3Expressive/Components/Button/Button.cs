@@ -281,6 +281,13 @@ public class TonalButtonTokenSource : ITokenSource
 /// <summary>Material options for Avalonia buttons using an interactive MaterialSurface template.</summary>
 public static class MaterialButton
 {
+    /// <summary>An optional shared input and feedback stream for native Material button themes.</summary>
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<Button, MaterialInteractionSource?>("InteractionSource", typeof(MaterialButton));
+
+    public static MaterialInteractionSource? GetInteractionSource(Button button) => button.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(Button button, MaterialInteractionSource? value) => button.SetValue(InteractionSourceProperty, value);
+
     /// <summary>The leading icon content for a native Button, ToggleButton, or SplitButton part.</summary>
     public static readonly AttachedProperty<object?> IconProperty =
         AvaloniaProperty.RegisterAttached<Button, object?>("Icon", typeof(MaterialButton));

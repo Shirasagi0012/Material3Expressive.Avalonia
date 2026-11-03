@@ -547,10 +547,10 @@ internal sealed partial class MaterialInteractionController
         }
     }
 
-    internal void NotifyInteractionChanged(bool deferShape = false)
+    internal void NotifyInteractionChanged(bool deferShape = false, bool sourceEvent = false)
     {
         Changed?.Invoke();
-        UpdateButtonElevation();
+        UpdateButtonElevation(sourceEvent);
         // Disabling or replacing a source cancels Clickable's press during composition. Its shape
         // observer invalidates the following composition, unlike cancellation by a pointer event.
         if (deferShape && Motion is { } motion && !motion.Lifetime.IsCancellationRequested)
@@ -570,7 +570,7 @@ internal sealed partial class MaterialInteractionController
         else _presenter?.OnInteractionChanged(_interaction);
     }
 
-    private void UpdateButtonElevation()
+    private void UpdateButtonElevation(bool sourceEvent = false)
     {
         if (_owner is FloatingActionButton fab)
         {
@@ -583,8 +583,15 @@ internal sealed partial class MaterialInteractionController
             }
             var fabInteraction = _interactions.LastOrDefault(state => state is
                 InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
-            _fabElevation ??= new FloatingActionButtonElevationController(_presenter, _motion, elevation, fabInteraction);
-            _fabElevation.Update(elevation, fabInteraction);
+            if (_fabElevation is null)
+                _fabElevation = new FloatingActionButtonElevationController(_presenter, _motion, elevation, fabInteraction);
+            else
+            {
+                _fabElevation.UpdateConfiguration(elevation);
+                // Source input may notify while building a ripple too. Only the completed
+                // event updates FAB's collector; ordinary property changes are not events.
+                if (sourceEvent || _source is null) _fabElevation.UpdateInteraction(fabInteraction);
+            }
             return;
         }
         if (_owner is not Button button || MaterialButton.GetElevation(button) is not { } values)
@@ -597,8 +604,9 @@ internal sealed partial class MaterialInteractionController
             return;
 
         // Button.kt collects only press, hover, and focus; drag belongs to other components.
-        var interaction = _interactions.LastOrDefault(state => state is
-            InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
+        var interaction = button.GetValue(ButtonInteraction.ElevationInteractionProperty)
+            ?? _interactions.LastOrDefault(state => state is
+                InteractionState.Pressed or InteractionState.Hovered or InteractionState.Focused);
         _buttonElevation ??= new ButtonElevationController(_presenter, _motion,
             ButtonElevationController.Target(values, interaction, IsEnabled));
         _buttonElevation.Update(values, interaction, IsEnabled);

@@ -70,6 +70,11 @@ Avalonia 没有 Compose intrinsic API，TabHeader 查询真实内容后必须按
 避免查询约束污染后续 Arrange。intrinsic 变化、父约束变化与选择变化分别遵循上游更新顺序。
 模板替换与 detach 取消旧动画、滚动任务和帧订阅；重新布局按当前选择恢复位置。
 
+`TabAppearance.InteractionSource` 同时服务受控 Tab 和原生 TabItem，Tab 的同名属性转发到同一附加属性。
+共享模板的 TabHeader 在挂载时连接最近的 Tab/TabItem owner，卸载时断开订阅；null 使用模板局部源。
+固定 Tab.kt 的 Tab / LeadingIconTab / 自定义内容重载将该源交给 selectable。换源只重建 indication，
+TabHeader 自身的颜色 Transition 保留，原生 TabItem 的选择时机也保持既有适配。
+
 颜色默认值和 TextStyle 的共享规则见
 [聚合排版](../../../../docs/DECISIONS.md#聚合-textstyle-与-token-层文字单位换算)、
 [颜色转换](../../../../docs/DECISIONS.md#composeanimation-颜色转换与原始动画终值)。
@@ -99,6 +104,15 @@ Avalonia 没有 Compose intrinsic API，TabHeader 查询真实内容后必须按
 - 桌面触摸/惯性与原生 PageTransition 实际运行画面仍需人工验证
 
 ## 验证入口
+
+`TabInteractionSourceTests` 检查两入口的输入身份、选择所有权、禁用、换源及真实模板替换。
+双端 `tab-source` 覆盖 Stacked/Leading/Custom/仅图标/仅标签、RTL、重叠按压、禁用与换源；
+原生按下选择的既有差异仍保留在结果中。
+
+当前 `tab-source` 的 18 个双端用例均完成捕获：6 equal、6 withinTolerance、6 different，执行错误为零。
+禁用/启用及换源仍有属性即时更新与 Core 下一重组帧的差异；受控入口后续帧收敛。
+原生换源用例保留已确认的按下选择时机，因此指示器在 Core release 前已开始移动；800ms 采样收敛。
+部分重叠波纹的 Compose 重复采集或额外截图不稳定，不能将整个新增套件宣称通过稳定性验收。
 
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：
 

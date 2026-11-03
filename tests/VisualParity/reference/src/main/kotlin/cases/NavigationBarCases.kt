@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -104,7 +106,8 @@ class NavigationBarCases {
         }
     }
 
-    private class BarScene(val config:NavigationBarConfig) {
+    internal class BarScene(val config:NavigationBarConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -163,7 +166,7 @@ class NavigationBarCases {
             ) else NavigationBarItemDefaults.colors()
             NavigationBarItem(selected,{ clicks++; selected=true },
                 icon={ Marker(icon,config.iconWidth,config.iconHeight,true,"icon") },
-                modifier=modifier, enabled=enabled,
+                modifier=modifier, enabled=enabled, interactionSource=interactions,
                 label=if(config.labels=="none") null else ({ Marker(label,config.labelWidth,config.labelHeight,false,"label") }),
                 alwaysShowLabel=config.labels=="always",colors=colors)
         }

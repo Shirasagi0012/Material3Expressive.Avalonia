@@ -301,7 +301,7 @@ public sealed class ButtonCases
         }
     }
 
-    sealed class ButtonScene
+    internal sealed class ButtonScene
     {
         readonly AvaloniaHost host;
         readonly ButtonConfig config;

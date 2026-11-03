@@ -131,7 +131,7 @@ public sealed class TabRowCases
         Advance(1100000); host.Draw(); Sample("passive-late", false);
     }
 
-    sealed class TabScene
+    internal sealed class TabScene
     {
         readonly AvaloniaHost host; readonly TabRowConfig config; int clicks;
         public ItemsControl Row { get; }
@@ -230,7 +230,7 @@ public sealed class TabRowCases
             return points.ToArray();
         }
     }
-    sealed class TabMarker : Control
+    internal sealed class TabMarker : Control
     {
         protected override bool BypassFlowDirectionPolicies => true;
         public bool Icon { get; init; }

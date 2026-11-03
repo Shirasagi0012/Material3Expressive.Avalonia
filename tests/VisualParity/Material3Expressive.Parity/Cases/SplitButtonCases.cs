@@ -112,7 +112,7 @@ public sealed class SplitButtonCases
                 Times(80000, 160000, 240000); Input(241000, "up", config.Action == "cancel" ? outside : center); Sample("release"); Times(256000, 400000, 800000); break;
         }
     }
-    sealed class Scene
+    internal sealed class Scene
     {
         readonly AvaloniaHost host;
         readonly SplitButtonConfig config;

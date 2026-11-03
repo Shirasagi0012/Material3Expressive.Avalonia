@@ -77,6 +77,53 @@
         <ToggleSwitch x:Name="LabelSwitch" AutomationProperties.Name="Enable sync" />
       </m3:TooltipLabel>
     </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="32" Margin="0,24,0,0">
+      <m3:TooltipLabel x:Name="ButtonLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Save changes" /></m3:TooltipLabel.Label>
+        <Button x:Name="LabelButton" Content="Save" m3:MaterialButton.PressedCornerRadius="8" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="ToggleLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Pin this item" /></m3:TooltipLabel.Label>
+        <ToggleButton x:Name="LabelToggle" Content="Pin" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="SplitLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Create an item or choose an option" /></m3:TooltipLabel.Label>
+        <m3:SplitButton>
+          <m3:SplitButton.LeadingButton>
+            <Button x:Name="LabelSplitLeading" Content="Create" Theme="{StaticResource MaterialFilledSplitButtonLeadingTheme}" />
+          </m3:SplitButton.LeadingButton>
+          <m3:SplitButton.TrailingButton>
+            <ToggleButton x:Name="LabelSplitTrailing" Content="{m3:Symbol ArrowDropDown}" Theme="{StaticResource MaterialFilledSplitButtonTrailingTheme}" AutomationProperties.Name="Options" />
+          </m3:SplitButton.TrailingButton>
+        </m3:SplitButton>
+      </m3:TooltipLabel>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="24" Margin="0,24,0,0">
+      <m3:TooltipLabel x:Name="BarLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Open library" /></m3:TooltipLabel.Label>
+        <m3:NavigationBarItem x:Name="LabelBarItem" Width="120" Icon="{m3:Symbol Book}" Label="Library" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="RailLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Open favorites" /></m3:TooltipLabel.Label>
+        <m3:NavigationRailItem x:Name="LabelRailItem" Icon="{m3:Symbol Favorite}" Label="Favorites" />
+      </m3:TooltipLabel>
+      <m3:TooltipLabel x:Name="ShortBarLabel">
+        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Open settings" /></m3:TooltipLabel.Label>
+        <m3:ShortNavigationBarItem x:Name="LabelShortBarItem" Width="144" Icon="{m3:Symbol Settings}" Label="Settings" IconPosition="Start" />
+      </m3:TooltipLabel>
+    </StackPanel>
+    <m3:TooltipLabel x:Name="FabLabel" Margin="0,24,0,0">
+      <m3:TooltipLabel.Label><m3:PlainTooltip Content="Create a new document" /></m3:TooltipLabel.Label>
+      <m3:ExtendedFloatingActionButton x:Name="LabelFab" Icon="{m3:Symbol Add}" Content="New document" />
+    </m3:TooltipLabel>
+    <m3:TooltipLabel x:Name="DrawerLabel" Margin="0,24,0,0">
+      <m3:TooltipLabel.Label><m3:PlainTooltip Content="Open inbox" /></m3:TooltipLabel.Label>
+      <m3:NavigationDrawerItem x:Name="LabelDrawerItem" Width="240" Content="Inbox" Icon="{m3:Symbol Inbox}" />
+    </m3:TooltipLabel>
+    <m3:TooltipLabel x:Name="TabLabel" Margin="0,24,0,0">
+      <m3:TooltipLabel.Label><m3:PlainTooltip Content="Open saved documents" /></m3:TooltipLabel.Label>
+      <m3:Tab x:Name="LabelTab" Width="160" Content="Saved" Icon="{m3:Symbol Book}" />
+    </m3:TooltipLabel>
   </StackPanel>
   </ScrollViewer>
 </Window>

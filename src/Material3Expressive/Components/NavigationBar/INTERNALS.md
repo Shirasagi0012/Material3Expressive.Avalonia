@@ -81,6 +81,18 @@ WindowInsets 为宿主提供的物理 Thickness、桌面默认零，保留外部
   当时重新采集双端并自检稳定，未修改容差；这是特定采样的历史观测，不是严格像素一致或当前回归结果
 - 真实文字、Material Symbols 栅格、桌面人工操作和屏幕阅读器体验未经该几何 parity 验收
 
+公开 `InteractionSource` 连接已有 MaterialInteractionController，null 使用每实例私有源。
+挂载连接、卸载断开；更换源取消原生 starts 并重建 indication，不重放旧源事件，也不改变外部选择状态。
+外部按压沿用组件既有 owner 坐标映射；禁用只结束原生输入，仍由外部发出者结束自己的交互。
+
+`NavigationInteractionSourceTests` 覆盖身份配对、禁用、源替换、重挂和键盘输入；双端
+`navigation-source` 覆盖重叠按压、源替换、悬停/焦点交接、RTL 与非标准图标尺寸的映射。
+悬停/焦点交接的事实与图像相等；重叠波纹部分 Compose 自检不稳定，抽查最大单通道差 1，Avalonia 稳定。
+禁用颜色仍复现既有 AnimatedState 提前采样：128ms 的 icon/label alpha 为 Core 197 / Avalonia 165，400ms 回到相等。
+该路径调用 `IconColor.UpdateTarget(disabledColor, effectsSpec)`，未加入组件局部补帧。
+若要恢复严格上游时序，需要维护者重新决定已确认的共享 AnimatedState 提交行为；建议独立评估该共享调度，
+影响导航选择、颜色及布局的到达帧和中断，不在交互源接入中改写决定。事件帧的 enabled/selected 即时更新差异也仍保留。
+
 ## 验证入口
 
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：

@@ -76,6 +76,19 @@ Rail 的 `Background` / `Foreground` 控制容器和环境色，Foreground 也�
 Rail 默认上/下留白各 4 DIP、项间距 4 DIP、Header 到第一项 16 DIP。需要展开布局、横向标签或不同整组排列时，
 使用 Wide Rail 的公开入口，不以替换窄 Rail 布局面板模拟。
 
+`NavigationRailItem.InteractionSource` 接受 `MaterialInteractionSource`，null 使用内部源。可以与 TooltipLabel 共享：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+item.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+这里 item 和 label 是视图中现有的导航项和 TooltipLabel。外部 Press 使用导航项自身坐标；
+组件按上游规则映射到反馈胶囊。Release/Cancel、Exit/Unfocus 必须引用对应的开始对象。
+外部交互不执行 Click/Command 或修改 IsSelected；禁用只取消原生输入，不结束调用方发出的按压。
+更换源清除旧反馈且不重放事件。Catalog 的 Tooltip 示例提供三种导航项接入。
+
 ## 使用边界
 
 该组件不管理应用路由，也不提供可展开或模态行为。真实文字/Material Symbols 的双端栅格、桌面人工交互

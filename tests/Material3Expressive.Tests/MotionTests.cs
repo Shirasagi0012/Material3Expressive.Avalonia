@@ -336,8 +336,9 @@ public class MaterialMotionTests
         var window = ButtonThemeFixture.ShowWindow(out var button, pressedCornerRadius: new CornerRadius(8));
         var controller = MaterialInteraction.GetOrCreate(button);
         var motion = controller.Motion!;
-        // Initialize persistent shape/elevation without a transient ripple in the baseline.
-        controller.Set(InteractionState.Pressed, true);
+        // Initialize shape/elevation through the paired press path; let its ripple finish before
+        // recording the baseline. Buttons now use an interaction source even when not hoisted.
+        controller.StartPress(new Point(8, 8));
         clock.SendFrame(clock.Now);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(225));
         controller.EndPress();

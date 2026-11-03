@@ -11,6 +11,7 @@ using Avalonia.Styling;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
@@ -66,6 +67,26 @@ internal sealed class TabHeader : Panel
     private ContentPresenter Icon => (ContentPresenter)Children[1];
     private bool HasLabel => Label.Content is not null;
     private bool HasIcon => ContentLayout != TabContentLayout.Custom && (Icon.Content is not null || Icon.ContentTemplate is not null);
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+    private Control? _interactionOwner;
+
+    private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == TabAppearance.InteractionSourceProperty) ConnectSource();
+    }
+    private void ConnectSource()
+    {
+        if (_interactionOwner is not { } owner) return;
+        var source = TabAppearance.GetInteractionSource(owner) ?? _localSource;
+        if (ReferenceEquals(_source, source)) return;
+        var replacing = _source is not null;
+        _source = source;
+        var controller = MaterialInteraction.GetOrCreate(owner);
+        controller.ConnectSource(source);
+        // Tab's content-color Transition belongs to this header, outside indication.
+        if (replacing) controller.ResetSourceIndication();
+    }
 
     static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty, TabHorizontalPaddingProperty, LeadingIconLabelSpaceProperty, StackedIconLabelSpaceProperty, SingleLineBaselineOffsetProperty, MultiLineBaselineOffsetProperty, BaselineExtraOffsetProperty);
     protected override void OnMeasureInvalidated()
@@ -76,6 +97,9 @@ internal sealed class TabHeader : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _interactionOwner = this.GetVisualAncestors().OfType<Control>().FirstOrDefault(control => control is Tab or TabItem);
+        if (_interactionOwner is not null) _interactionOwner.PropertyChanged += OwnerChanged;
+        ConnectSource();
         _attachScope = AnimationScope.Get(this).CreateChild("Tab header");
         Label.PropertyChanged += SlotChanged;
         Icon.PropertyChanged += SlotChanged;
@@ -86,6 +110,12 @@ internal sealed class TabHeader : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (_interactionOwner is not null)
+        {
+            _interactionOwner.PropertyChanged -= OwnerChanged;
+            MaterialInteraction.GetOrCreate(_interactionOwner).ConnectSource(null);
+        }
+        _interactionOwner = null; _source = null;
         Label.PropertyChanged -= SlotChanged;
         Icon.PropertyChanged -= SlotChanged;
         if (_transition is not null) _transition.PropertyChanged -= TransitionChanged;

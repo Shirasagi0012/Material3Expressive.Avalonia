@@ -52,6 +52,22 @@
 会限制自身内容，不能期望工具栏自动取消该约束。
 Expanded 可以绑定应用状态，启用编译绑定时声明 DataContext 类型。
 
+FAB 可以只提供模板，不必另设内容对象：
+
+```xml
+<m3:HorizontalFloatingToolbar Expanded="True">
+  <m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
+    <DataTemplate>
+      <m3:FloatingActionButton Icon="{m3:Symbol Add}" AutomationProperties.Name="新建"
+                              Theme="{StaticResource MaterialStandardFloatingToolbarFabTheme}" />
+    </DataTemplate>
+  </m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
+  <m3:IconButton Symbol="Edit" />
+</m3:HorizontalFloatingToolbar>
+```
+
+模板与内容对象同样选择 FAB 布局、默认 elevation 和收起占位；清除二者才回到普通三槽布局。
+
 ## 默认值与定制
 
 默认 Standard 背景为 SurfaceContainer，`vibrant` class 改为 PrimaryContainer；Foreground

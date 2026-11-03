@@ -131,7 +131,7 @@ public sealed class NavigationDrawerCases
                 Times(96000, 160000, 256000, 400000, 800000); break;
         }
     }
-    private sealed class Scene
+    internal sealed class Scene
     {
         private readonly AvaloniaHost _host;
         private readonly NavigationDrawerConfig _config;

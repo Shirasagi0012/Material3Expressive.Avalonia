@@ -7,12 +7,16 @@ using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A Compose-style controlled Tab. Click and Command never mutate IsSelected.</summary>
 public class Tab : Avalonia.Controls.Button
 {
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty = TabAppearance.InteractionSourceProperty;
+    /// <summary>Optional shared input/feedback stream. External interactions never select the tab.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<bool> IsSelectedProperty = AvaloniaProperty.Register<Tab, bool>(nameof(IsSelected));
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<Tab, object?>(nameof(Icon));
     public static readonly StyledProperty<IDataTemplate?> IconTemplateProperty = AvaloniaProperty.Register<Tab, IDataTemplate?>(nameof(IconTemplate));

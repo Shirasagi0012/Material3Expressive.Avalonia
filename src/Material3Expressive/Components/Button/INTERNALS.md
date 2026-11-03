@@ -133,6 +133,19 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 向 Surface 提供状态层、ripple 和形状输入；Button 的点击与命令仍由原生控件负责。
 高度从最后一个有效 press / hover / focus 记录选取，不能仅靠伪类优先级重建交互顺序。
 
+`MaterialButton.InteractionSource` 由模板的 `ButtonLayout.CollectButtonInteractions` 接入，
+`ButtonInteraction` 的生命周期跟随模板挂载；IconButton 保留其原有专用源入口。
+固定 Button.kt / ToggleButton.kt / SplitButton.kt 的形状收集器以 source 为 effect key：
+press 列表在换源时清空，remembered bool 保留，直到新源下一事件重算；只有需要按压变形的分支收集。
+elevation 的列表位于 effect 外，换源保留开始对象，Release/Exit/Unfocus 按身份删除；Drag 不参与高度。
+内部 ElevationInteraction 读数仅给已有 ButtonElevationController 选目标，不创建新的动画模型。
+indication 换源清空状态层与波纹，但保留形状和高度作用域。真正卸载模板则断开并清理所有本地收集器。
+
+禁用时普通按钮的 ripple 墨色取该外观的禁用内容 Token 候选，避免外部 held press 继续使用启用色；
+不覆盖应用的 Foreground。原生禁用取消自己的 starts，外部 held press 必须由发送者配对结束。
+测试入口为 `ButtonInteractionSourceTests` 与双端 `button-source`；后者保留属性即时更新首帧及浮点精度的真实差异，
+不作为这些差异已获接受的依据。
+
 `ButtonElevation` 是可共享的配置，每个按钮的 `ButtonElevationController` 才持有运行状态：
 
 - 目标在下一共享时钟帧合并提交，保留重组后 effect 的更新顺序；禁用直接 snap
@@ -186,6 +199,12 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 
 ### 未决差异与未经验证项
 
+- `button-source` 的 disable/enable、换源和原生 release 事件采样仍保留 Avalonia 属性即时更新与 Core 下一重组帧的差异。
+  Elevated disable 后首个 80ms 采样的阴影高度为 Core 1 / Avalonia 0 DIP；不能归入微小数值精度适配。
+  Toggle 重叠按压取消时另观察到约 0.0000014 DIP 圆角差，结构化事实继续标为 different。
+- 重叠波纹的部分 Compose 重复采集/额外被动截图有单通道差；Avalonia 对应自检稳定。
+  因此这些场景未达到稳定双端验收，不修改帧、基线或容差规避。
+
 - Button 全部样式/尺寸/形变组合的焦点环尚未全部进行双端验证
 
 - 既有记录中的属性变更当帧即时更新、替换 pressed shape 后状态层像素差异仍未解决，不能列为已接受偏离
@@ -200,6 +219,10 @@ Button 主题本身也无需知道这个子类。自定义模板若没有该部�
 阴影坐标接入差异只在各自共享决定的范围内接受。其他失败不会因为执行了回归而获得授权。
 
 ### 可追踪的验证入口
+
+交互源接入后的既有 `button` 191 例复测完成：132 equal、35 withinTolerance、24 different，
+执行错误为零；190 例自检稳定，另 1 例参考捕获不稳定。属性变更当帧、pressed shape 替换、
+Enter 和高度精度等残余仍按上面的边界保留，不从执行完成推导整族一致。
 
 | 范围 | 仓库内入口 |
 | --- | --- |

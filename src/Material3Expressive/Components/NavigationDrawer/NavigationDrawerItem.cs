@@ -9,12 +9,43 @@ using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A drawer destination. Content is the label; Click/Command never changes IsSelected.</summary>
 public class NavigationDrawerItem : Button
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<NavigationDrawerItem, MaterialInteractionSource?>(nameof(InteractionSource));
+    /// <summary>Optional shared input/feedback stream. External events do not select or activate the item.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ConnectSource();
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        _source = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(_source, source)) return;
+        var replacing = _source is not null;
+        _source = source;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication();
+    }
+
     public static readonly StyledProperty<bool> IsSelectedProperty = AvaloniaProperty.Register<NavigationDrawerItem, bool>(nameof(IsSelected));
     public bool IsSelected { get => GetValue(IsSelectedProperty); set => SetValue(IsSelectedProperty, value); }
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<NavigationDrawerItem, object?>(nameof(Icon));
@@ -58,6 +89,7 @@ public class NavigationDrawerItem : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == IsSelectedProperty) PseudoClasses.Set(":selected", IsSelected);
         if (change.Property == IsSelectedProperty || change.Property == IconProperty || change.Property == IconTemplateProperty
             || change.Property.PropertyType == typeof(Color)) Refresh();

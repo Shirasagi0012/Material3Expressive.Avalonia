@@ -94,6 +94,17 @@ Modal 的 scrim 用 `ScrimBrush`。Item 可分别覆盖 Selected/Unselected 的 
 
 ## 使用边界
 
+`NavigationDrawerItem.InteractionSource` 可连接共享交互源，null 使用内部源。例如现有视图中的 item 与 TooltipLabel：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+item.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+外部事件只驱动反馈，不请求导航或改变 IsSelected。结束事件须引用开始对象；更换源清除旧反馈，不重放事件。
+Catalog 的 Tooltip 示例包含此接入。
+
 `GesturesEnabled="False"` 关闭拖动和 scrim 点击，不阻止程序化或键盘关闭。
 打开完成后请求抽屉内焦点，关闭时退出命中和 Tab 遍历；当前没有焦点陷阱，也不恢复关闭前焦点。
 抽屉内 Escape KeyUp 可关闭，绑定 State 的 Sheet 响应离散 BackRequested；predictive-back 连续变形尚未实现。

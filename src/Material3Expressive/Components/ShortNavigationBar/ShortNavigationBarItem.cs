@@ -21,6 +21,25 @@ namespace Material3Expressive.Components;
 /// <summary>A short bar destination. Labels remain visible; selection belongs to the application.</summary>
 public class ShortNavigationBarItem : Button
 {
+    /// <summary>An optional shared input and feedback stream; selection remains application-owned.</summary>
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<ShortNavigationBarItem, MaterialInteractionSource?>(nameof(InteractionSource));
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(source, _source)) return;
+        var replacing = _source is not null;
+        _source = source;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(source);
+        if (replacing) controller.ResetSourceIndication();
+    }
+
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<ShortNavigationBarItem, object?>(nameof(Icon), null);
     public object? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
 
@@ -117,11 +136,14 @@ public class ShortNavigationBarItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        ConnectSource();
         if (_layout is not null) { _layout.PropertyChanged -= MotionConfigurationChanged; _layout.PropertyChanged += MotionConfigurationChanged; }
         InitializeMotion();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        _source = null;
         _selection = null; _pending = false; _activationKey = null;
         if (_layout is not null) _layout.PropertyChanged -= MotionConfigurationChanged;
         _attachScope?.Dispose(); _attachScope = null;
@@ -130,6 +152,7 @@ public class ShortNavigationBarItem : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == IsSelectedProperty)
         {
             PseudoClasses.Set(":selected", IsSelected);
@@ -141,7 +164,7 @@ public class ShortNavigationBarItem : Button
             // Switching MappedInteractionSource recreates Compose's indication node.
             if (_layout is not null && _ripple is not null && _indicationPosition != IconPosition)
             {
-                _layout.Children.Remove(_ripple); _layout.Children.Add(_ripple);
+                MaterialInteraction.GetOrCreate(this).ResetSourceIndication();
             }
             _indicationPosition = IconPosition;
             _peer?.RefreshChildren();

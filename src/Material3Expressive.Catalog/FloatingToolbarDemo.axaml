@@ -11,10 +11,12 @@
       <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
     </m3:HorizontalFloatingToolbar>
     <m3:HorizontalFloatingToolbar Classes="vibrant" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
-      <m3:HorizontalFloatingToolbar.FloatingActionButton>
-        <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
-                                 Icon="{m3:Symbol Add}" />
-      </m3:HorizontalFloatingToolbar.FloatingActionButton>
+      <m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
+        <DataTemplate>
+          <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
+                                   Icon="{m3:Symbol Add}" AutomationProperties.Name="New item" />
+        </DataTemplate>
+      </m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
       <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /><m3:IconButton Symbol="Delete" /></StackPanel>
     </m3:HorizontalFloatingToolbar>
     <Grid ColumnDefinitions="*,*" Height="220">

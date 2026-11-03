@@ -80,6 +80,17 @@ ISelectionProvider 报告状态，不替应用维护互斥。
   [Button INTERNALS](../Button/INTERNALS.md)为准，不将旧圆角、Enter 或禁用色失败当作当前事实
 - 真实文字/Material Symbols 栅格、桌面人工操作及屏幕阅读器体验未经几何 parity 验收；窄 Rail 没有采用 Wide 的连续化纵向布局
 
+公开 `InteractionSource` 连接已有 MaterialInteractionController，null 使用每实例私有源。
+挂载连接、卸载断开；更换源取消原生 starts 并重建 indication，不重放旧源事件，也不改变外部选择状态。
+外部按压沿用组件既有 owner 坐标映射；禁用只结束原生输入，仍由外部发出者结束自己的交互。
+
+`NavigationInteractionSourceTests` 覆盖身份配对、禁用、源替换、重挂和键盘输入；双端
+`navigation-source` 覆盖重叠按压、源替换、悬停/焦点交接、RTL 与非标准图标尺寸的映射。
+悬停/焦点交接相等；重叠波纹部分 Compose 自检不稳定，Avalonia 稳定。禁用和原生激活过程的颜色
+仍受已确认 AnimatedState 调度影响，例如禁用 128ms 的 alpha 为 Core 197 / Avalonia 165。
+时序缺口、推荐的共享调度评估及维护者决定边界见 [NavigationBar](../NavigationBar/INTERNALS.md#验证入口) 前的交互源说明；
+不将该颜色差或换源事件帧差异视为微小浮点适配。
+
 ## 验证入口
 
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：

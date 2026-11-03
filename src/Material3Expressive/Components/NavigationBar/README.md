@@ -73,6 +73,19 @@
 默认零，RTL 不交换其物理边。放入 [Scaffold](../Scaffold/README.md) 的 BottomBar 槽时，
 仍由 Bar 自己处理所需 Insets。
 
+`NavigationBarItem.InteractionSource` 接受 `MaterialInteractionSource`，null 使用内部源。可以与 TooltipLabel 共享：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+item.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+这里 item 和 label 是视图中现有的导航项和 TooltipLabel。外部 Press 使用导航项自身坐标；
+组件按上游规则映射到反馈胶囊。Release/Cancel、Exit/Unfocus 必须引用对应的开始对象。
+外部交互不执行 Click/Command 或修改 IsSelected；禁用只取消原生输入，不结束调用方发出的按压。
+更换源清除旧反馈且不重放事件。Catalog 的 Tooltip 示例提供三种导航项接入。
+
 ## 使用边界
 
 导航条不管理页面或路由，也没有 Compose 的嵌套 inset 消费环境。替换 ItemsPanel 或整个模板可能改变

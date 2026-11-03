@@ -61,6 +61,7 @@ public abstract class FloatingToolbar : ContentControl
     public bool TouchExplorationEnabled { get => GetValue(TouchExplorationEnabledProperty); set => SetValue(TouchExplorationEnabledProperty, value); }
     public bool EffectiveExpanded => _effectiveExpanded;
     internal bool Horizontal => this is HorizontalFloatingToolbar;
+    internal bool HasFloatingActionButton => FloatingActionButton is not null || FloatingActionButtonTemplate is not null;
     internal bool FabAtEnd => this is HorizontalFloatingToolbar horizontal ? horizontal.FloatingActionButtonPosition == FloatingToolbarHorizontalFabPosition.End
         : ((VerticalFloatingToolbar)this).FloatingActionButtonPosition == FloatingToolbarVerticalFabPosition.Bottom;
 
@@ -69,8 +70,8 @@ public abstract class FloatingToolbar : ContentControl
         base.OnPropertyChanged(change);
         if (change.Property == ExpandedProperty || change.Property == TouchExplorationEnabledProperty)
             SetAndRaise(EffectiveExpandedProperty, ref _effectiveExpanded, !_forceCollapse && (Expanded || TouchExplorationEnabled));
-        if (change.Property == FloatingActionButtonProperty)
-            PseudoClasses.Set(":with-fab", FloatingActionButton is not null);
+        if (change.Property == FloatingActionButtonProperty || change.Property == FloatingActionButtonTemplateProperty)
+            PseudoClasses.Set(":with-fab", HasFloatingActionButton);
         if (change.Property == LeadingContentProperty || change.Property == TrailingContentProperty || change.Property == FloatingActionButtonProperty)
         {
             if (change.OldValue is ILogical oldChild) LogicalChildren.Remove(oldChild);

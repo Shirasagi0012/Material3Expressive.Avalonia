@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -46,6 +47,9 @@ public static class TabRowAppearance
 /// <summary>Tab content layout and colors, also consumed by native TabItem headers.</summary>
 public static class TabAppearance
 {
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty = AvaloniaProperty.RegisterAttached<Control, MaterialInteractionSource?>("InteractionSource", typeof(TabAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(Control owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(Control owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
     public static readonly AttachedProperty<TabContentLayout> ContentLayoutProperty = AvaloniaProperty.RegisterAttached<Control, TabContentLayout>("ContentLayout", typeof(TabAppearance));
     public static readonly AttachedProperty<Color?> SelectedContentColorProperty = AvaloniaProperty.RegisterAttached<Control, Color?>("SelectedContentColor", typeof(TabAppearance));
     public static readonly AttachedProperty<Color?> UnselectedContentColorProperty = AvaloniaProperty.RegisterAttached<Control, Color?>("UnselectedContentColor", typeof(TabAppearance));

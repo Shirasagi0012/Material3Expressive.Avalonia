@@ -117,7 +117,7 @@ public sealed class ToggleButtonCases
         }
     }
 
-    sealed class Scene
+    internal sealed class Scene
     {
         readonly AvaloniaHost host;
         readonly ToggleButtonConfig config;

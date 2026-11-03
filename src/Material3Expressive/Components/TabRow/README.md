@@ -45,6 +45,18 @@ TabRow 继承 ItemsControl，只绘制栏，不负责页面或选择更新。应
 `ItemsSource` + `ItemTemplate` 应生成 Tab，并绑定其状态和命令。
 Tab 支持 CommandParameter、CanExecute、IsEnabled；Enter / Space 松开时请求激活。
 
+独立 Tab 可通过 `InteractionSource` 共享输入反馈；原生 TabItem 使用 `TabAppearance.InteractionSource` 附加属性：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+TabAppearance.SetInteractionSource(tabItem, source);
+label.InteractionSource = source;
+```
+
+这里 tabItem 和 label 是现有的 Tab/TabItem 与 TooltipLabel。null 使用内部源；外部事件只驱动反馈，
+不点击或更改选择。Release/Cancel、Exit/Unfocus 必须引用开始对象；替换源不重放旧事件，禁用只取消自身输入。
+Catalog 的 Tooltip 示例提供受控 Tab 接入。
+
 ## 四种栏与内容布局
 
 `Variant="Primary|Secondary"` × `IsScrollable="False|True"` 组合四种栏。

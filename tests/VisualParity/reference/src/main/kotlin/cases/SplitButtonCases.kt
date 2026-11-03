@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -78,12 +79,14 @@ class SplitButtonCases {
             }
         }
     }
-    private class Scene(val c:SplitButtonConfig) {
+    internal class Scene(val c:SplitButtonConfig) {
         var checked by mutableStateOf(c.checked)
         var leadingEnabled by mutableStateOf(c.enabled)
         var trailingEnabled by mutableStateOf(c.enabled)
         var dark by mutableStateOf(c.dark)
         var customRestShape by mutableStateOf(false)
+        var leadingSource by mutableStateOf<MutableInteractionSource?>(null)
+        var trailingSource by mutableStateOf<MutableInteractionSource?>(null)
         var leadingClicks=0; var trailingClicks=0
         val split=Probe(); val leading=Probe(); val trailing=Probe(); val leadingContent=Probe(); val trailingContent=Probe()
         val leadingFocus=FocusRequester(); val trailingFocus=FocusRequester()
@@ -102,7 +105,7 @@ class SplitButtonCases {
                                 SplitButtonDefaults.LeadingButton(onClick={ leadingClicks++ },modifier=leading.modifier().focusRequester(leadingFocus).heightIn(min=height),enabled=leadingEnabled,
                                     shapes=SplitButtonDefaults.leadingButtonShapesFor(height),colors=colors,elevation=elevation,
                                     border=if(c.style=="outlined") ButtonDefaults.outlinedButtonBorder(leadingEnabled) else null,
-                                    contentPadding=SplitButtonDefaults.leadingButtonContentPaddingFor(height)) {
+                                    contentPadding=SplitButtonDefaults.leadingButtonContentPaddingFor(height),interactionSource=leadingSource) {
                                     Box(leadingContent.modifier().size(32.dp,c.contentHeight.toFloat().dp).background(LocalContentColor.current))
                                 }
                             },trailingButton={
@@ -113,8 +116,8 @@ class SplitButtonCases {
                                 val border=if(c.style=="outlined") ButtonDefaults.outlinedButtonBorder(trailingEnabled) else null
                                 val padding=SplitButtonDefaults.trailingButtonContentPaddingFor(height)
                                 val body:@Composable RowScope.()->Unit={ val size=SplitButtonDefaults.trailingButtonIconSizeFor(height); Box(trailingContent.modifier().size(size).background(LocalContentColor.current)) }
-                                if(c.toggle) SplitButtonDefaults.TrailingButton(checked=checked,onCheckedChange={ trailingClicks++; checked=it },modifier=trailingModifier,enabled=trailingEnabled,shapes=shapes,colors=colors,elevation=elevation,border=border,contentPadding=padding,content=body)
-                                else SplitButtonDefaults.TrailingButton(onClick={ trailingClicks++ },modifier=trailingModifier,enabled=trailingEnabled,shapes=shapes,colors=colors,elevation=elevation,border=border,contentPadding=padding,content=body)
+                                if(c.toggle) SplitButtonDefaults.TrailingButton(checked=checked,onCheckedChange={ trailingClicks++; checked=it },modifier=trailingModifier,enabled=trailingEnabled,shapes=shapes,colors=colors,elevation=elevation,border=border,contentPadding=padding,interactionSource=trailingSource,content=body)
+                                else SplitButtonDefaults.TrailingButton(onClick={ trailingClicks++ },modifier=trailingModifier,enabled=trailingEnabled,shapes=shapes,colors=colors,elevation=elevation,border=border,contentPadding=padding,interactionSource=trailingSource,content=body)
                             })
                     }
                 }

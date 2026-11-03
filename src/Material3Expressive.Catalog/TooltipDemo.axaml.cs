@@ -20,6 +20,19 @@ public partial class TooltipDemo : Window
         SegmentLabel.InteractionSource = LabelDay.InteractionSource = LabelWeek.InteractionSource = new();
         SwitchLabel.InteractionSource = new();
         SwitchAppearance.SetInteractionSource(LabelSwitch, SwitchLabel.InteractionSource);
+        ButtonLabel.InteractionSource = new();
+        MaterialButton.SetInteractionSource(LabelButton, ButtonLabel.InteractionSource);
+        ToggleLabel.InteractionSource = new();
+        MaterialButton.SetInteractionSource(LabelToggle, ToggleLabel.InteractionSource);
+        SplitLabel.InteractionSource = new();
+        MaterialButton.SetInteractionSource(LabelSplitLeading, SplitLabel.InteractionSource);
+        MaterialButton.SetInteractionSource(LabelSplitTrailing, SplitLabel.InteractionSource);
+        BarLabel.InteractionSource = LabelBarItem.InteractionSource = new();
+        RailLabel.InteractionSource = LabelRailItem.InteractionSource = new();
+        ShortBarLabel.InteractionSource = LabelShortBarItem.InteractionSource = new();
+        FabLabel.InteractionSource = LabelFab.InteractionSource = new();
+        DrawerLabel.InteractionSource = LabelDrawerItem.InteractionSource = new();
+        TabLabel.InteractionSource = LabelTab.InteractionSource = new();
     }
 
     private void OnChoosePeriod(object? sender, RoutedEventArgs e)

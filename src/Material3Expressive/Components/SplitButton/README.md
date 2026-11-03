@@ -91,10 +91,17 @@ Trailing 为 22/22/26/38/50 DIP（XS/S/M/L/XL）；XS 标签间距为 4 DIP，�
 例如 `splitButton.ClearValue(SplitButton.SpacingProperty)`（`splitButton` 为父级实例）恢复默认间距。
 颜色与高度可继续使用 Button 族 Token 和完整 `MaterialButton.Elevation` 配置；更改局部颜色时需自行表达禁用差异。
 
+使用 `MaterialButton.SetInteractionSource(button, source)` 将动作按钮连接到已有
+`MaterialInteractionSource`；XAML 可绑定 `m3:MaterialButton.InteractionSource`。
+源可与 TooltipLabel 共享，外部事件只驱动波纹、形状和高度，不执行点击或改变选中值。
+SplitButton 的 LeadingButton 与 TrailingButton 分别设置，可用独立源；共享源会同时影响两侧反馈。
+
+具体配对和禁用规则见 [Button 的共享交互源](../Button/README.md#命令事件与状态)。
+
 ## 使用边界
 
 Trailing 优先获得宽度，两区使用共同高度，主区消费剩余空间；极窄宽度下 Trailing 可能溢出，容器不裁剪。
 自定义 Control 槽需要正确实现 Measure/DesiredSize；任意自定义内容的 intrinsic 等价性尚未全面验证。
-不提供任意 Compose `Shape` 或 MutableInteractionSource 映射；真实文字、桌面手工操作和屏幕阅读器体验
+不提供任意 Compose `Shape` 映射；真实文字、桌面手工操作和屏幕阅读器体验
 未由无字形 headless 场景证明。
 四种配对和普通/切换副区见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

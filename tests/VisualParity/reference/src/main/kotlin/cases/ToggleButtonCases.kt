@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -79,11 +80,12 @@ class ToggleButtonCases {
             }
         }
     }
-    private class Scene(val c:ToggleButtonConfig) {
+    internal class Scene(val c:ToggleButtonConfig) {
         var checked by mutableStateOf(c.checked)
         var enabled by mutableStateOf(c.enabled)
         var dark by mutableStateOf(c.dark)
         var customCheckedShape by mutableStateOf(false)
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var clicks=0
         val button=Probe(); val content=Probe(); val icon=Probe(); val requester=FocusRequester()
         @Composable fun Content() {
@@ -101,10 +103,10 @@ class ToggleButtonCases {
                         val body:@Composable RowScope.()->Unit={ if(!c.empty) Box(content.modifier().size(32.dp,16.dp).background(LocalContentColor.current)) }
                         val change:(Boolean)->Unit={ clicks++; checked=it }
                         when(c.style) {
-                            "tonal"->FilledTonalToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,content=body)
-                            "elevated"->ElevatedToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,content=body)
-                            "outlined"->OutlinedToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,content=body)
-                            else->ToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,content=body)
+                            "tonal"->FilledTonalToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,interactionSource=interactions,content=body)
+                            "elevated"->ElevatedToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,interactionSource=interactions,content=body)
+                            "outlined"->OutlinedToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,interactionSource=interactions,content=body)
+                            else->ToggleButton(checked,change,modifier,buttonSize=size,enabled=enabled,icon=iconContent,shapes=shapes,colors=colors,interactionSource=interactions,content=body)
                         }
                     }
                 }

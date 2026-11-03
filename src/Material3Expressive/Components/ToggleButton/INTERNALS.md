@@ -80,7 +80,7 @@ IsChecked 先变更再触发 Click/Command，Enter 按下、Space 默认松开�
 
 ## 一致性边界
 
-尚未实现任意 Shape/CutCornerShape 与外部 MutableInteractionSource。
+尚未实现任意 Shape/CutCornerShape。
 旧 4× headless 记录中，静态场景均在既定容差内，动态仍有原生 Enter 及属性/主题/禁用当帧时机差异。
 三个 hover 场景在 64ms 的共享 elevation 残差约 0.0000003–0.0000006 DIP，旧记录明确未认定为已接受；
 不能从[Chip 精度决定](../../../../docs/DECISIONS.md#本次保留-tween--bezier-精度差异)自动扩大授权。
@@ -91,7 +91,19 @@ IsChecked 先变更再触发 Click/Command，Enter 按下、Space 默认松开�
 非常大的非对称角、运行中约束更换、任意自定义内容组合尚未验证完整 Shape 等价性。
 无字形 marker 不证明字体栅格、系统屏幕阅读器或真实桌面体验一致。
 
+`MaterialButton.InteractionSource` 复用 Button 模板局部的 `ButtonInteraction`，shape 的 press 列表与
+remembered bool、elevation 的 remembered 列表和 indication 分开。替换源时不把它们一并清空，
+外部 Press 不写原生 IsPressed / IsChecked；具体上游生命周期见 [Button 维护说明](../Button/INTERNALS.md#交互与动画职责)。
+模板卸载断开订阅，重建模板重新开始收集。禁用只配对取消原生 starts，不取消调用方的 starts。
+
+`ButtonInteractionSourceTests` 覆盖配对、替换、禁用、重挂和 TooltipLabel；双端 `button-source`
+覆盖四种外观、重叠、源替换及原生按压中的替换。真实差异以该 suite 的新捕获结果为准，不将旧 suite 结果扩大到此入口。
+
 ## 验证入口
+
+交互源接入后的既有 `toggle-button` 104 例复测完成：68 equal、15 withinTolerance、21 different，
+执行错误为零，重复捕获与额外被动截图稳定。different 仍包括 Enter 时机、属性变更当帧及上述 hover 高度微差；
+这不是对未决差异的新接受。
 
 - [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：三形状/尺寸、原生键盘顺序、双向/nullable 绑定、图标色与生命周期，以及 Split 独立按钮和光学布局；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查 Style/局部值优先与描边动画消费模板配置。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ToggleButtonCases.cs) /

@@ -57,6 +57,10 @@ Icon / badge spacer 是无权重内容，受窄约束限制；不能让标签先
 Select / Click / Command 只请求激活，不更改 IsSelected 或关闭 Drawer；Page 导航属于调用方。
 Item 的图标可由内容或模板提供；只设置 IconTemplate 也使图标 presenter 可见。无显式尺寸的 MaterialSymbol 继承通用 24 DIP 默认值，自定义图标仍按实际尺寸参与布局。
 
+固定 NavigationDrawerItem 的 interactionSource 传给 selectable Surface。本地公开 `InteractionSource`，
+挂载连接共享交互控制器、卸载断开；null 使用私有源，替换源取消自身 starts 并重建 indication。
+外部事件只驱动反馈，不修改 IsSelected。组件没有额外颜色或形状交互收集器，不复制普通 Button 的 elevation 状态。
+
 共享交互、键盘反馈与焦点规则见
 [激活职责](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)和
 [Core Desktop 焦点](../../../../docs/DECISIONS.md#core-desktop-原生焦点反馈)。
@@ -90,6 +94,12 @@ predictive-back 连续变形/取消恢复尚未实现；焦点陷阱与关闭后
 执行错误为零不代表所有事实严格相等。
 
 ## 验证入口
+
+`NavigationInteractionSourceTests` 包含 DrawerItem 的外部/原生输入、替换和重挂；
+双端 `navigation-source.dynamic.drawer.*` 覆盖重叠、替换、悬停/焦点、原生换源和无附加槽 RTL。
+这五个用例的当前捕获为 1 equal、2 withinTolerance、2 different，执行错误为零；
+两个换源用例只在换源事件当帧有截图差异，后续帧收敛。重叠及无附加槽 RTL 的 Compose 自检存在像素不稳定，
+其余三例的重复采集与额外被动截图稳定。该结论只覆盖 DrawerItem 交互源，不扩展到抽屉容器的手势或预测返回。
 
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：
 

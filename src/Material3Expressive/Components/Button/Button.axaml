@@ -60,7 +60,7 @@
       </Setter>
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:ButtonLayout Width="{TemplateBinding Width}"
+          <m3:ButtonLayout CollectButtonInteractions="True" Width="{TemplateBinding Width}"
                            Height="{TemplateBinding Height}"
                            MinWidth="{TemplateBinding MinWidth}"
                            MinHeight="{TemplateBinding MinHeight}"
@@ -78,7 +78,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 TextElement.Foreground="{TemplateBinding Foreground}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
-                                PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
+                                PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" m3:ButtonSurfaceState.IsPressed="{TemplateBinding m3:ButtonInteraction.IsPressed}">
               <m3:ButtonContentRow FillContentWhenNoIcon="True"
                                    IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}"
                                    IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconLabelSpace}}">
@@ -129,6 +129,12 @@
       <Style Selector="^:disabled">
         <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContainerColor}}" />
         <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContentColor}}" />
+      </Style>
+      <Style Selector="^:disabled /template/ m3|MaterialSurface#PART_Container">
+        <!-- A hoisted source can keep a ripple alive while disabled. Compose ripple consumes
+             disabled contentColor too; use the variant's token candidate, preserving the
+             existing distinction between Material state colors and explicit Foreground. -->
+        <Setter Property="StateLayerBrush" Value="{Binding Path=(m3:ButtonThemeProperties.Foreground), RelativeSource={RelativeSource TemplatedParent}}" />
       </Style>
 
       <!-- Size axis. Metrics come from each size table; outlinedButtonBorder uses the small width. -->

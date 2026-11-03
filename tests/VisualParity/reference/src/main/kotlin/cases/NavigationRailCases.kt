@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.ui.InternalComposeUiApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -102,7 +104,8 @@ class NavigationRailCases {
         }
     }
 
-    private class RailScene(val config:NavigationRailConfig) {
+    internal class RailScene(val config:NavigationRailConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -147,7 +150,7 @@ class NavigationRailCases {
             ) else NavigationRailItemDefaults.colors()
             NavigationRailItem(selected,{ clicks++; selected=true },
                 icon={ Marker(icon,config.iconWidth,config.iconHeight,true,"icon") },
-                modifier=modifier, enabled=enabled,
+                modifier=modifier, enabled=enabled, interactionSource=interactions,
                 label=if(config.labels=="none") null else ({ Marker(label,config.labelWidth,config.labelHeight,false,"label") }),
                 alwaysShowLabel=config.labels=="always",colors=colors)
         }

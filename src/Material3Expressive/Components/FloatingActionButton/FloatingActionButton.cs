@@ -2,7 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.VisualTree;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -11,6 +13,8 @@ public enum FloatingActionButtonSize { Default, Small, Medium, Large }
 /// <summary>A Material FAB. Content is centered without imposing an icon size.</summary>
 public class FloatingActionButton : Button
 {
+    public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.Register<FloatingActionButton, MaterialInteractionSource?>(nameof(InteractionSource));
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<FloatingActionButton, object?>(nameof(Icon));
     public static readonly StyledProperty<IDataTemplate?> IconTemplateProperty = AvaloniaProperty.Register<FloatingActionButton, IDataTemplate?>(nameof(IconTemplate));
     public static readonly StyledProperty<FloatingActionButtonSize> SizeProperty = AvaloniaProperty.Register<FloatingActionButton, FloatingActionButtonSize>(nameof(Size));
@@ -22,6 +26,11 @@ public class FloatingActionButton : Button
     public static readonly StyledProperty<IFiniteAnimationSpec<float>?> VisibilityAlphaSpecProperty = AvaloniaProperty.Register<FloatingActionButton, IFiniteAnimationSpec<float>?>(nameof(VisibilityAlphaSpec));
 
     private FabIconContentLayout? _iconContentLayout;
+    private readonly MaterialInteractionSource _localSource = new();
+    private MaterialInteractionSource? _source;
+
+    /// <summary>Optional shared input/feedback stream. External events do not invoke Click.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
 
     /// <summary>The icon content shown instead of Content when set.</summary>
     public object? Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
@@ -39,6 +48,36 @@ public class FloatingActionButton : Button
     public IFiniteAnimationSpec<float>? VisibilityAlphaSpec { get => GetValue(VisibilityAlphaSpecProperty); set => SetValue(VisibilityAlphaSpecProperty, value); }
     internal bool HasIcon => Icon is not null || IconTemplate is not null;
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ConnectSource();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        MaterialInteraction.GetOrCreate(this).ConnectSource(null);
+        _source = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ConnectSource()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        var source = InteractionSource ?? _localSource;
+        if (ReferenceEquals(_source, source)) return;
+        var replacing = _source is not null;
+        _source = source;
+        var controller = MaterialInteraction.GetOrCreate(this);
+        controller.ConnectSource(source);
+        if (replacing)
+        {
+            // FAB remembers its elevation animatable by source, unlike ordinary Button.
+            controller.ResetSourceIndication();
+            controller.NotifyInteractionChanged();
+        }
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
@@ -49,6 +88,7 @@ public class FloatingActionButton : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == InteractionSourceProperty) ConnectSource();
         if (change.Property == IconProperty || change.Property == IconTemplateProperty)
             _iconContentLayout?.InvalidateMeasure();
         if (change.Property == SizeProperty)

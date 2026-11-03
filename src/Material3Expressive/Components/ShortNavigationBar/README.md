@@ -79,11 +79,24 @@ Bar 的 Foreground 默认来自 SurfaceContainer 对应的 OnSurface；自定义
 `WindowInsets` 是宿主提供的物理 Thickness，默认零，RTL 不交换边；没有嵌套 inset 消费。
 内嵌 Surface 继承环境的累积 tonal elevation，但 Short Bar 没有独立的 TonalElevation 参数。
 
+`ShortNavigationBarItem.InteractionSource` 接受 `MaterialInteractionSource`，null 使用内部源。可以与 TooltipLabel 共享：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+item.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+这里 item 和 label 是视图中现有的导航项和 TooltipLabel。外部 Press 使用导航项自身坐标；
+组件按上游规则映射到反馈胶囊。Release/Cancel、Exit/Unfocus 必须引用对应的开始对象。
+外部交互不执行 Click/Command 或修改 IsSelected；禁用只取消原生输入，不结束调用方发出的按压。
+更换源清除旧反馈且不重放事件。Catalog 的 Tooltip 示例提供三种导航项接入。
+
 ## 使用边界
 
 显式 Width 使用 Avalonia 的容器宽度语义，各项仍按排列分配；与固定 Compose 直接 width 修饰的边界行为
-存在已接受差异。旧验证在按压中切换 IconPosition 后观察到额外 hover；当前已有反馈节点重挂路径，
-但该场景是否消除差异尚缺新的双端核验，不能由代码变化推断已对齐。
+存在已接受差异。IconPosition 切换重建反馈层并保留原生按压；
+逐帧验证仍有已记录的边界，见维护说明。
 真实文字、图标栅格和桌面辅助技术仍需单独验证。
 
 Catalog 入口在 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)；

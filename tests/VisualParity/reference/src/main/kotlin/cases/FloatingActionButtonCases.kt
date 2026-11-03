@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -93,8 +95,9 @@ class FloatingActionButtonCases {
             }
         }
     }
-    private class FabScene(val config:FloatingActionButtonConfig) {
-        val probe=Probe();val itemProbe=Probe()
+    internal class FabScene(val config:FloatingActionButtonConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
+        val probe=Probe();val itemProbe=Probe();val buttonProbe=Probe()
         val itemProbes=List(config.count+1) {Probe()}
         var expanded by mutableStateOf(config.expanded)
         var checked by mutableStateOf(config.checked)
@@ -102,6 +105,7 @@ class FloatingActionButtonCases {
         var dark by mutableStateOf(config.dark)
         var count by mutableStateOf(config.count)
         var replacedElevation by mutableStateOf(false)
+        var sourceElevations by mutableStateOf<List<Float>?>(null)
         var clicks=0
         var progressReader:()->Float={if(config.checked)1f else 0f}
         fun toggle() {if(config.kind=="toggle")checked=!checked else expanded=!expanded}
@@ -124,10 +128,10 @@ class FloatingActionButtonCases {
             }
         }
         @Composable fun ButtonContent() {
-            var modifier:Modifier=Modifier
+            var modifier:Modifier=buttonProbe.modifier()
             if(config.kind !in listOf("toggle","menu"))modifier=modifier.animateFloatingActionButton(visible,Alignment.BottomEnd)
             val container=when(config.color) {"primary"->Color(0xFF6750A4);"surface"->Color(0xFFFEF7FF);"transparent"->Color.Transparent;"ambient"->Color(0xFF126E60);else->FloatingActionButtonDefaults.containerColor}
-            val elevation=if(replacedElevation)FloatingActionButtonDefaults.elevation(2.dp,3.dp,4.dp,5.dp)else when(config.elevation) {
+            val elevation=sourceElevations?.let {FloatingActionButtonDefaults.elevation(it[0].dp,it[1].dp,it[2].dp,it[3].dp)} ?: if(replacedElevation)FloatingActionButtonDefaults.elevation(2.dp,3.dp,4.dp,5.dp)else when(config.elevation) {
                 "lowered"->FloatingActionButtonDefaults.loweredElevation();"flat"->FloatingActionButtonDefaults.bottomAppBarFabElevation();"custom"->FloatingActionButtonDefaults.elevation(2.dp,4.dp,6.dp,9.dp);else->FloatingActionButtonDefaults.elevation()
             }
             val icon:@Composable ()->Unit={glyph(config.iconWidth,config.iconHeight)}
@@ -156,22 +160,22 @@ class FloatingActionButtonCases {
                     }
                 }
                 "extended" -> when(config.size) {
-                    "small"->SmallExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation)
-                    "medium"->MediumExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation)
-                    "large"->LargeExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation)
-                    else->ExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation)
+                    "small"->SmallExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    "medium"->MediumExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    "large"->LargeExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    else->ExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
                 }
                 "content" -> when(config.size) {
-                    "small"->SmallExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation){text()}
-                    "medium"->MediumExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation){text()}
-                    "large"->LargeExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation){text()}
-                    else->ExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation){text()}
+                    "small"->SmallExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    "medium"->MediumExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    "large"->LargeExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    else->ExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
                 }
                 else -> when(config.size) {
-                    "small"->SmallFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,content=icon)
-                    "medium"->MediumFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,content=icon)
-                    "large"->LargeFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,content=icon)
-                    else->FloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,content=icon)
+                    "small"->SmallFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    "medium"->MediumFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    "large"->LargeFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    else->FloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
                 }
             }
         }

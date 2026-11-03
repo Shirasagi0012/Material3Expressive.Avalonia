@@ -134,7 +134,7 @@ public sealed class FloatingActionButtonCases
         }
         host.AdvanceTo(900000); Sample("passive-idle", false);
     }
-    sealed class FabScene
+    internal sealed class FabScene
     {
         readonly AvaloniaHost host;
         readonly FloatingActionButtonConfig config;

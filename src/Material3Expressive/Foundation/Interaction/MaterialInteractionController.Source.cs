@@ -72,7 +72,8 @@ internal sealed partial class MaterialInteractionController
         if (_source is not null)
         {
             _source.Interaction += ReceiveInteraction;
-            if (_owner.IsFocused && IsEnabled) EmitNative(InteractionState.Focused, true);
+            // FocusableNode.update disposes the old interaction without replaying focus
+            // into the new source. Only a subsequent native focus change emits a start.
         }
     }
 
@@ -165,7 +166,7 @@ internal sealed partial class MaterialInteractionController
                 }, "Disabled source focus indication exit");
             else PublishIndication(interaction);
             if (!_deferSourceStateLayer) UpdateStateLayer();
-            NotifyInteractionChanged();
+            NotifyInteractionChanged(sourceEvent: true);
         }
         finally { _receivingSource = wasReceiving; }
     }

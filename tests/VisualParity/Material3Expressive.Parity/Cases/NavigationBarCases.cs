@@ -139,7 +139,7 @@ public sealed class NavigationBarCases
         }
     }
 
-    sealed class BarScene
+    internal sealed class BarScene
     {
         readonly AvaloniaHost host;
         readonly NavigationBarConfig config;

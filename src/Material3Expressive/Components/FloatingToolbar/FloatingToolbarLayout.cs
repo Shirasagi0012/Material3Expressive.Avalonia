@@ -143,7 +143,7 @@ internal sealed class FloatingToolbarLayout : Panel
             var elevation = ElevationAnimation;
             _progress.Update(expanded => expanded ? 1f : 0f, _ => animationSpec);
             _transition.UpdateTarget(_owner.EffectiveExpanded);
-            if (_owner.FloatingActionButton is null)
+            if (!_owner.HasFloatingActionButton)
                 await _elevation.AnimateToAsync(scope, (float)ElevationTarget,
                     new SpringSpec<float>((float)elevation.DampingRatio, (float)elevation.Stiffness, .01f), cancellationToken: ct);
         }, "Floating toolbar target");
@@ -207,7 +207,7 @@ internal sealed class FloatingToolbarLayout : Panel
         if (_owner is null || Children.Count == 0) return default;
         var scale = LayoutHelper.GetLayoutScale(this);
         double Px(double value) => MathUtils.DipToPx(value, scale) / scale;
-        if (_owner.FloatingActionButton is null)
+        if (!_owner.HasFloatingActionButton)
         {
             Surface.Measure(available);
             var size = Surface.DesiredSize;
@@ -232,7 +232,7 @@ internal sealed class FloatingToolbarLayout : Panel
         if (_owner is null || Children.Count == 0) return final;
         var scale = LayoutHelper.GetLayoutScale(this);
         double Center(double outer, double inner) => Math.Truncate((outer - inner) * scale / 2) / scale;
-        if (_owner.FloatingActionButton is null) Surface.Arrange(new Rect(final));
+        if (!_owner.HasFloatingActionButton) Surface.Arrange(new Rect(final));
         else
         {
             var horizontal = _owner.Horizontal;

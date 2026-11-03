@@ -72,6 +72,12 @@ Avalonia 属性身份；新代码建议使用共享名称。两种写法不要�
 Small 默认按压角 6 DIP。普通用户 Style、局部值或绑定优先于尺寸默认值；若需完全固定圆角，将静止和选中设为相同值，
 并将 `PressedCornerRadius` 设为 `{x:Null}`。
 
+使用 `MaterialButton.SetInteractionSource(button, source)` 将动作按钮连接到已有
+`MaterialInteractionSource`；XAML 可绑定 `m3:MaterialButton.InteractionSource`。
+源可与 TooltipLabel 共享，外部事件只驱动波纹、形状和高度，不执行点击或改变选中值。
+
+具体配对和禁用规则见 [Button 的共享交互源](../Button/README.md#命令事件与状态)。
+
 ## 颜色与使用边界
 
 `Background`/`Foreground`、`BorderBrush`/`BorderThickness`、`Padding` 和内容对齐可按原生属性定制。
@@ -94,7 +100,7 @@ Padding 和形状，选中/禁用或尺寸变化不会替换这些设置；需�
 清除局部值后恢复剩余样式或当前状态、尺寸和资源下的主题默认值。`ToggleButtonColors` 与
 `MaterialButton.Elevation` 的完整 `ButtonElevation` 配置仍可使用；形状和描边的动效默认可覆盖
 `Comp.ToggleButton.ShapeAnimation`、`BorderWidthAnimation`、`BorderColorAnimation` Token。
-当前形状只支持圆角矩形，没有任意 `Shape` 或外部 MutableInteractionSource 对象映射。
+当前形状只支持圆角矩形，没有任意 `Shape` 映射。
 模板内部 Surface 裁剪背景、内容与反馈；替换模板需自行保留这些接入。
 当前无字形回归不能证明真实字体、屏幕阅读器或桌面体验一致。
 四种外观和尺寸见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

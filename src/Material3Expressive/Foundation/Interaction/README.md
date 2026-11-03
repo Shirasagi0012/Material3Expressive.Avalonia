@@ -37,6 +37,8 @@ MaterialInteraction.SetFocusRingInnerColor(panel, Colors.White);
 进入使用 SpatialFast，退出使用 EffectsFast。一个进度同时缩放线宽和内缩量，保留 spring
 过冲和中断速度；每帧按物理像素执行上游取整，并非透明度淡入淡出。
 首次订阅只观察后续交互，不回放外部 InteractionSource 的旧 starts。
+替换源会结束本控件在旧源上发出的原生交互；保持实际焦点时不向新源补发 Focus，
+后续真正失焦再聚焦才产生新的配对。这对应固定 AndroidX/Core `FocusableNode.update`，不改变实际焦点或输入模式。
 Desktop 焦点过滤计数属于各次订阅，重建或卸载时清除。固定 Core 收到订阅前 Focus 的
 Unfocus 时仍直接递减计数；因此新订阅先收到旧 Unfocus 后，第一个新 Focus 可能被过滤。
 这是固定上游的边界行为，由 `source-old-end` 双端用例保留，不把旧计数带入新订阅来补偿。

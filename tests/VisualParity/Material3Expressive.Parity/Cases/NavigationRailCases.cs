@@ -135,7 +135,7 @@ public sealed class NavigationRailCases
         }
     }
 
-    sealed class RailScene
+    internal sealed class RailScene
     {
         readonly AvaloniaHost host;
         readonly NavigationRailConfig config;

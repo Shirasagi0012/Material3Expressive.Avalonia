@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -100,7 +102,8 @@ class TabRowCases {
             advance(1100000); host.draw(); sample("passive-late",false)
         }
     }
-    private class TabScene(val config:TabRowConfig) {
+    internal class TabScene(val config:TabRowConfig) {
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var selected by mutableStateOf(config.selected)
         var width by mutableStateOf(config.width)
         var dark by mutableStateOf(config.dark)
@@ -164,12 +167,13 @@ class TabRowCases {
             val color=if(config.customColors) active else LocalContentColor.current
             val unselected=if(config.customColors) inactive else color
             val click:()->Unit={ clicks++; selected=index }
+            val interactionSource=if(index==minOf(1,config.count-1)) interactions else null
             val itemEnabled=if(index==minOf(1,config.count-1)) enabled else config.enabled
             when(config.content) {
-                "custom" -> Tab(selected==index,click,modifier,itemEnabled,color,unselected) { label() }
-                "leading" -> LeadingIconTab(selected==index,click,label,icon,modifier,itemEnabled,color,unselected)
+                "custom" -> Tab(selected==index,click,modifier,itemEnabled,color,unselected,interactionSource) { label() }
+                "leading" -> LeadingIconTab(selected==index,click,label,icon,modifier,itemEnabled,color,unselected,interactionSource)
                 else -> Tab(selected==index,click,modifier,itemEnabled,if(config.content=="icon") null else label,
-                    if(config.content in listOf("icon","stacked")) icon else null,color,unselected)
+                    if(config.content in listOf("icon","stacked")) icon else null,color,unselected,interactionSource)
             }
         }
         @Composable

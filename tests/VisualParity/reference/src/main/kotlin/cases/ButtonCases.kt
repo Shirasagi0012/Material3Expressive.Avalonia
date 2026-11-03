@@ -159,7 +159,7 @@ class ButtonCases {
         }
     }
 
-    private class ButtonScene(val writer:CaptureWriter,val config:ButtonConfig) {
+    internal class ButtonScene(val writer:CaptureWriter,val config:ButtonConfig) {
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
         var size by mutableStateOf(config.size)
@@ -174,7 +174,7 @@ class ButtonCases {
         var pressed=false
         var hovered=false
         var clicks=0
-        val interactions=MutableInteractionSource()
+        var interactions by mutableStateOf(MutableInteractionSource())
 
         @Composable
         fun Content() {

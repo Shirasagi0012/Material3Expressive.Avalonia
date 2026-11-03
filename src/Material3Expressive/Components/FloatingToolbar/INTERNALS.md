@@ -8,7 +8,11 @@
 
 .vibrant 背景和 FAB 模板/高度只切换内部候选，应用普通 Style、Binding、LocalValue 具有正常优先级。两侧显隐运动在每个新目标读取当前有效规格，运行结果不写回配置。滚动 behavior 的 null spec 参数仍表示使用已挂载 owner 的主题配置，density 相关 decay 工厂不 Token 化。
 
-本轮不改变 FAB 入口内容存在规则：既有实现仅按 FloatingActionButton 非 null 选择，FloatingActionButtonTemplate 单独非 null 的场景仍待独立修正。
+FAB 分支以 FloatingActionButton 或 FloatingActionButtonTemplate 任一非空为条件，模板-only 同样代表上游非空 FAB 内容 lambda。
+pseudoclass、elevation、测量及排列使用同一 presence 规则；收起保留内容分配，移除模板后回到普通三槽分支。
+`TemplateOnlyFab_SelectsFabLayoutAndRetainsAllocation` 覆盖两方向及模板移除；双端 `floating-toolbar-template`
+补充方向、FAB 位置、展开/收起、vibrant、RTL 和动画反向。Catalog 的 vibrant 横向例使用 template-only 入口。
+该 suite 的 44 个双端用例均在既定 raster 容差内，重复捕获与额外被动截图稳定；结构化事实相等。
 
 使用方法见 [README](README.md)。普通入口和 FAB 入口共用公开 ContentControl API，
 但各自保持上游布局、占位和动画分支。

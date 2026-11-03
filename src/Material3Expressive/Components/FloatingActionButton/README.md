@@ -66,6 +66,18 @@ fab.AnimatedVisible = false;
 6/6/6/8 DIP，主题从各状态 Token 动态组装；上述显式配置把它整组替换为 1/1/1/3。
 使用 `fab.ClearValue(FloatingActionButton.ElevationProperty)` 恢复主题配置。阴影状态与 tonal elevation 的具体关联见维护说明。
 
+普通与 Extended FAB 的 `InteractionSource` 可连接共享交互源，例如与 TooltipLabel 共用：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+fab.InteractionSource = source;
+label.InteractionSource = source;
+```
+
+这里 fab 和 label 是现有控件。null 使用内部源，外部事件只驱动波纹、状态层和高度，不执行点击。
+结束事件需引用对应的开始对象；替换源重新初始化反馈与高度，不重放旧事件。Toggle FAB 与菜单项不提供此入口。
+Catalog 的 Tooltip 示例包含 Extended FAB 接入。
+
 ## 受控 Toggle 与菜单
 
 `ToggleFloatingActionButton` 激活时发送 `CheckedChangeRequested`，不自行改写 IsChecked。

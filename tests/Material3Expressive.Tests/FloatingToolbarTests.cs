@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -18,6 +19,40 @@ namespace Material3Expressive.Tests;
 
 public sealed class FloatingToolbarTests
 {
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TemplateOnlyFab_SelectsFabLayoutAndRetainsAllocation(bool horizontal)
+    {
+        using var clock = new MotionTestClockScope();
+        FloatingToolbar toolbar = horizontal ? new HorizontalFloatingToolbar() : new VerticalFloatingToolbar();
+        toolbar.Content = new Border { Width = 48, Height = 48 };
+        toolbar.LeadingContent = new Border { Width = 100, Height = 100 };
+        toolbar.TrailingContent = new Border { Width = 100, Height = 100 };
+        var window = Show(toolbar);
+        FloatingActionButton? fab = null;
+        toolbar.FloatingActionButtonTemplate = new FuncDataTemplate<object?>((_, _) => fab = new FloatingActionButton
+        {
+            Content = new Border { Width = 24, Height = 24 },
+            Theme = (ControlTheme)window.FindResource("MaterialStandardFloatingToolbarFabTheme")!
+        });
+        window.UpdateLayout();
+        Assert.Null(toolbar.FloatingActionButton); Assert.NotNull(fab);
+        Assert.True(toolbar.HasFloatingActionButton); Assert.Equal(1, toolbar.ExpandedShadowElevation);
+        var allocation = toolbar.Bounds.Size;
+        Assert.Equal(horizontal ? new Size(128, 80) : new Size(80, 128), allocation);
+        Assert.Equal(new Size(56, 56), fab.Bounds.Size);
+        toolbar.Expanded = false;
+        for (var i = 0; i < 80; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); await Task.Yield(); }
+        Assert.Equal(allocation, toolbar.Bounds.Size); Assert.Equal(new Size(80, 80), fab.Bounds.Size);
+        var oldFab = fab;
+        toolbar.FloatingActionButtonTemplate = null; window.UpdateLayout();
+        Assert.False(toolbar.HasFloatingActionButton); Assert.Equal(0, toolbar.ExpandedShadowElevation);
+        Assert.False(oldFab.IsAttachedToVisualTree());
+        Assert.DoesNotContain(toolbar.GetVisualDescendants(), c => c.Name == "PART_FabPresenter");
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
+    }
+
     [AvaloniaFact]
     public void NativeScrollObservesActualConsumptionAndUnsubscribes()
     {

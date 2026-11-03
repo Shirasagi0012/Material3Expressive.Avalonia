@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 data class FloatingToolbarConfig(val horizontal:Boolean=true,val fab:String="none",val expanded:Boolean=true,
     val vibrant:Boolean=false,val dark:Boolean=false,val rtl:Boolean=false,val leading:Boolean=true,val trailing:Boolean=true,
     val contentWidth:Double=48.0,val contentHeight:Double=48.0,val maxWidth:Double?=null,val maxHeight:Double?=null,
-    val content:String="glyph",val custom:String="none",val action:String="none",val exit:String="bottom")
+    val content:String="glyph",val custom:String="none",val action:String="none",val exit:String="bottom",val fabTemplateOnly:Boolean=false)
 
 @ParitySuite("floating-toolbar")
 class FloatingToolbarCases {

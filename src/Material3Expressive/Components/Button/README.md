@@ -86,6 +86,20 @@
 - Enter 按下时激活，重复 KeyDown 沿用原生处理；Space 遵循原生 `ClickMode`。已执行的命令不会因随后失焦或禁用而撤回，按压反馈则会清理
 - 程序化 `Focus()` 的视觉焦点反馈取决于当前输入模式；需要表达键盘导航焦点时，可在 C# 中调用 `button.Focus(NavigationMethod.Tab)`（`Avalonia.Input`）
 
+`MaterialButton.InteractionSource` 可附加到使用本库主题的原生 Button、ToggleButton 及 SplitButton 两个动作按钮。
+null 使用内部源；同一源可交给 TooltipLabel 或订阅者观察真实输入。外部发出的交互只驱动反馈，不执行 Click、Command 或切换选中状态。
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+MaterialButton.SetInteractionSource(saveButton, source);
+label.InteractionSource = source;
+```
+
+`saveButton` 和 `label` 是现有视图控件。Press / Release、HoverEnter / HoverExit、Focus / Unfocus
+必须用同一个开始对象配对。禁用只取消控件自己的输入；外部发出的按压仍由发送者结束。
+替换源不重放旧事件；已记住的形状和高度状态按上游各自收集器的生命周期处理，详见维护说明。
+Catalog 的 Tooltip 示例展示普通、Toggle 和 Split 按钮共用提示标签。
+
 ## RepeatButton
 
 原生 `RepeatButton` 派生自 `Button`，未指定 `Theme` 时同样是 Filled 按钮；上面的五个 `Theme` 资源、
