@@ -32,6 +32,7 @@
                     <m3:IconToggleButtonTokenSource />
                     <m3:NavigationRailTokenSource />
                     <m3:NavigationDrawerTokenSource />
+                    <m3:BottomSheetTokenSource />
                     <m3:NavigationBarTokenSource />
                     <m3:CommandBarTokenSource />
                     <m3:ShortNavigationBarTokenSource />
@@ -100,6 +101,7 @@
     <StyleInclude Source="/Components/ButtonGroup/ButtonGroup.axaml" />
     <StyleInclude Source="/Components/NavigationRail/NavigationRail.axaml" />
     <StyleInclude Source="/Components/NavigationDrawer/NavigationDrawer.axaml" />
+    <StyleInclude Source="/Components/BottomSheet/BottomSheet.axaml" />
     <StyleInclude Source="/Components/SwipeToDismissBox/SwipeToDismissBox.axaml" />
     <StyleInclude Source="/Components/NavigationBar/NavigationBar.axaml" />
     <StyleInclude Source="/Components/CommandBar/CommandBar.axaml" />

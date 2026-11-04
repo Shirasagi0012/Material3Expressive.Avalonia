@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 51 个组件的全局索引全景图。
+本文为系统全部 52 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：51 个
+- **已纳管组件总数**：52 个
 
 ---
 
@@ -83,6 +83,7 @@
 | --- | --- | --- | --- | --- |
 | `Menu` | 独立下拉菜单、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
 | `AlertDialog` | 标准确认对话框与自定义内容弹窗 | [README](../src/Material3Expressive/Components/AlertDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md) | |
+| `BottomSheet` | 树内三态面板与常驻面板脚手架 | [README](../src/Material3Expressive/Components/BottomSheet/README.md) | [INTERNALS](../src/Material3Expressive/Components/BottomSheet/INTERNALS.md) | 模态变体尚未实现 |
 | `DatePickerDialog` | 日期选择器专用对话框容器 | [README](../src/Material3Expressive/Components/DatePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePickerDialog/INTERNALS.md) | |
 | `TimePickerDialog` | 时间选择器专用对话框容器 | [README](../src/Material3Expressive/Components/TimePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePickerDialog/INTERNALS.md) | |
 | `Tooltip` | 简单与富内容提示、悬浮提示框与交互标签 TooltipLabel | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |

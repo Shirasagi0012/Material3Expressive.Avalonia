@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.BottomSheetDemo" Title="Bottom sheet" Width="840" Height="720">
+  <Grid ClipToBounds="True">
+    <StackPanel Margin="32" Spacing="16">
+      <TextBlock Text="Bottom sheet" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Show a sheet inside this window. Drag the sheet or click its handle; Escape collapses it before dismissing." TextWrapping="Wrap" />
+      <WrapPanel>
+        <Button Content="Show" Click="OnShow" Margin="0,0,8,8" />
+        <Button Content="Expand" Click="OnExpand" Margin="0,0,8,8" />
+        <Button Content="Partial" Click="OnPartial" Margin="0,0,8,8" />
+        <Button Content="Hide" Click="OnHide" Margin="0,0,8,8" />
+      </WrapPanel>
+      <CheckBox Content="Allow dragging" IsChecked="{Binding GesturesEnabled, ElementName=Sheet, Mode=TwoWay}" />
+      <CheckBox Content="Short content" IsCheckedChanged="OnShortContent" />
+      <TextBlock x:Name="Status" Text="Hidden" TextWrapping="Wrap" />
+    </StackPanel>
+    <m3:BottomSheet x:Name="Sheet" DismissRequested="OnDismissed">
+      <Border x:Name="SheetContent" Height="400" Padding="24,8,24,24">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Your next destination" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+          <TextBlock Text="The content stays in the main visual tree. There is no modal scrim and the page remains interactive outside the sheet." TextWrapping="Wrap" />
+          <Button Content="Done" Click="OnHide" HorizontalAlignment="Left" />
+        </StackPanel>
+      </Border>
+    </m3:BottomSheet>
+  </Grid>
+</Window>

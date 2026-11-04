@@ -17,6 +17,10 @@ public partial class App : Application
         {
             desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--app-bars") >= 0
                 ? new AppBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--bottom-sheet") >= 0
+                ? new BottomSheetDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--bottom-sheet-scaffold") >= 0
+                ? new BottomSheetScaffoldDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--swipe-to-dismiss") >= 0
                 ? new SwipeToDismissDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--drag-handles") >= 0

@@ -1,0 +1,78 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+        <DataTemplate x:Key="BottomSheetDefaultDragHandle">
+          <Border Margin="0,22" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleWidth}}"
+                  Height="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleHeight}}"
+                  Background="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleColor}}"
+                  CornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleShape}}" />
+        </DataTemplate>
+    <ControlTheme x:Key="{x:Type m3:BottomSheet}" TargetType="m3:BottomSheet">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerShape}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.TonalElevation}}" />
+      <Setter Property="SheetMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.MaxWidth}}" />
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.WindowInsets}}" />
+      <Setter Property="ShowAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ShowAnimation}}" />
+      <Setter Property="HideAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.HideAnimation}}" />
+      <Setter Property="DragHandleTemplate" Value="{StaticResource BottomSheetDefaultDragHandle}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:BottomSheetLayout x:Name="PART_Layout">
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
+              <Border>
+                <StackPanel>
+                  <m3:TooltipBox x:Name="PART_Tooltip" HorizontalAlignment="Center">
+                    <m3:BottomSheetHandle x:Name="PART_HandleButton" HorizontalAlignment="Center" Padding="0" MinWidth="0" MinHeight="0" Background="Transparent" FocusAdorner="{x:Null}" m3:MaterialInteraction.IsInteractive="True">
+                      <Button.Template>
+                        <ControlTemplate>
+                        <m3:MaterialSurface Background="Transparent" StateLayerBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=m3:BottomSheet}}">
+                          <ContentPresenter x:Name="PART_DragHandle" Content="{Binding DragHandle, RelativeSource={RelativeSource AncestorType=m3:BottomSheet}}"
+                            ContentTemplate="{Binding DragHandleTemplate, RelativeSource={RelativeSource AncestorType=m3:BottomSheet}}" />
+                        </m3:MaterialSurface>
+                        </ControlTemplate>
+                      </Button.Template>
+                    </m3:BottomSheetHandle>
+                  </m3:TooltipBox>
+                  <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+                </StackPanel>
+              </Border>
+            </m3:MaterialSurface>
+          </m3:BottomSheetLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:BottomSheetScaffold}" TargetType="m3:BottomSheetScaffold">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="SheetBackground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerColor}}" />
+      <Setter Property="SheetForeground" Value="{m3:ContentColorFor BackgroundProperty=SheetBackground}" />
+      <Setter Property="SheetCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerShape}}" />
+      <Setter Property="SheetMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.MaxWidth}}" />
+      <Setter Property="SheetPeekHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.PeekHeight}}" />
+      <Setter Property="SheetShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.TonalElevation}}" />
+      <Setter Property="SheetDragHandleTemplate" Value="{StaticResource BottomSheetDefaultDragHandle}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:BottomSheetScaffoldLayout x:Name="PART_Layout" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+            <ContentPresenter x:Name="PART_TopBar" Content="{TemplateBinding TopBar}" ContentTemplate="{TemplateBinding TopBarTemplate}"
+                              HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+            <m3:BottomSheet x:Name="PART_Sheet" State="{Binding State.BottomSheetState, RelativeSource={RelativeSource TemplatedParent}}"
+                StandardPeekHeight="{TemplateBinding SheetPeekHeight}" Content="{TemplateBinding SheetContent}" ContentTemplate="{TemplateBinding SheetContentTemplate}"
+                SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding SheetSwipeEnabled}" BackHandlerEnabled="False"
+                DragHandle="{TemplateBinding SheetDragHandle}" DragHandleTemplate="{TemplateBinding SheetDragHandleTemplate}"
+                Background="{TemplateBinding SheetBackground}" Foreground="{TemplateBinding SheetForeground}" CornerRadius="{TemplateBinding SheetCornerRadius}"
+                TonalElevation="{TemplateBinding SheetTonalElevation}" ShadowElevation="{TemplateBinding SheetShadowElevation}" />
+            <ContentPresenter x:Name="PART_SnackbarHost" Content="{TemplateBinding SnackbarHost}" ContentTemplate="{TemplateBinding SnackbarHostTemplate}"
+                              HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+          </m3:BottomSheetScaffoldLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

@@ -50,6 +50,7 @@
     <ItemGroup>
         <EmbeddedResource Include="Components/DateTimePicker/DateTimeStrings.json" />
         <EmbeddedResource Include="Components/SearchBar/SearchBarStrings.json" />
+        <EmbeddedResource Include="Components/BottomSheet/BottomSheetStrings.json" />
     </ItemGroup>
 
 </Project>
