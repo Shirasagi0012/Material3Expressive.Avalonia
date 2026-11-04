@@ -65,6 +65,26 @@ public class CrossfadeTest
         => host.GetVisualDescendants().OfType<ContentSlot>().ToList();
 
     [Fact]
+    public Task Reverse_PreservesPaintOrderAndTargetsTheExistingSlot() => OnUi(() =>
+    {
+        using var fixture = new Fixture(Host());
+        fixture.Finish();
+        var host = fixture.Host;
+        host.Content = "B"; fixture.Step(16); fixture.Step(48);
+        var original = Slots(host).ToArray();
+        host.Content = "A"; fixture.Layout();
+        Assert.Equal(new object?[] { "A", "B" }, Slots(host).Select(slot => slot.State));
+        Assert.Same(original[0], Slots(host)[0]);
+        Assert.True(Slots(host)[0].IsTarget);
+        Assert.False(Slots(host)[1].IsTarget);
+        Assert.Same(Slots(host)[0].Scope, host.TargetScope);
+        host.Content = "C"; fixture.Step(16);
+        Assert.Equal(new object?[] { "A", "B", "C" }, Slots(host).Select(slot => slot.State));
+        fixture.Finish();
+        Assert.Equal("C", Assert.Single(Slots(host)).State);
+    });
+
+    [Fact]
     public Task Reverse_UsesCrossfadeSpecForBothSlotsInsteadOfVisibilityFallback() => OnUi(() =>
     {
         var host = Host();

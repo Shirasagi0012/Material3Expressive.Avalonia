@@ -100,6 +100,10 @@ public partial class MainWindow : Window
 
 ### Crossfade：同时淡入淡出
 
+快速反向回到仍存活的内容时，Crossfade 保留原先的绘制顺序；只有新出现的键追加到最上层。
+目标槽位和 `TargetScope` 仍指向当前目标，不以视觉子项的最后一项代替目标。该规则对应固定上游
+`Crossfade.kt` 的 `currentlyVisible`，与 AnimatedContent 的目标重排规则分别处理。
+
 取自 demo 的 Alpha/Beta 切换：
 
 ```xml

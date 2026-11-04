@@ -370,7 +370,9 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
         {
             if (!ReferenceEquals(_currentlyVisible[id].State, target))
                 _currentlyVisible[id].ReplaceState(target, KeyOf(target));
-            if (id != _currentlyVisible.Count - 1)
+            // Crossfade keeps its remembered visible-list order when reversing to a
+            // still-present key. AnimatedContent instead puts the incoming target last.
+            if (this is not Crossfade && id != _currentlyVisible.Count - 1)
             {
                 var slot = _currentlyVisible[id];
                 _currentlyVisible.RemoveAt(id);
@@ -378,12 +380,13 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
                 var visualIndex = _panel!.Children.IndexOf(slot);
                 if (visualIndex >= 0 && visualIndex != _panel.Children.Count - 1)
                     _panel.Children.Move(visualIndex, _panel.Children.Count - 1);
+                id = _currentlyVisible.Count - 1;
             }
         }
 
         for (var i = 0; i < _currentlyVisible.Count; i++)
-            _currentlyVisible[i].IsTarget = i == _currentlyVisible.Count - 1;
-        var incoming = _currentlyVisible[^1];
+            _currentlyVisible[i].IsTarget = i == id;
+        var incoming = _currentlyVisible[id];
         incoming.ApplyZIndex(_resolvedTransform?.TargetContentZIndex ?? 0f);
     }
 
@@ -498,7 +501,7 @@ public class AnimatedContent : ContentControl, IAnimationScopeHost
         return -1;
     }
 
-    private ContentSlot? TargetSlot() => _currentlyVisible.Count == 0 ? null : _currentlyVisible[^1];
+    private ContentSlot? TargetSlot() => _currentlyVisible.FirstOrDefault(slot => slot.IsTarget);
 
     private void Disconnect()
     {
