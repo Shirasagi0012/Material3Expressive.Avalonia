@@ -10,6 +10,8 @@ public static partial class MaterialTokens
     {
         public static class BottomSheet
         {
+            public static readonly MaterialTokenKey<Color> ScrimColor = new("md.comp.bottom-sheet.scrim.color");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ScrimAnimation = new("md.comp.bottom-sheet.scrim.animation");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.bottom-sheet.container.color");
             public static readonly MaterialTokenKey<CornerRadius> ContainerShape = new("md.comp.bottom-sheet.container.shape");
             public static readonly MaterialTokenKey<double> TonalElevation = new("md.comp.bottom-sheet.tonal-elevation");

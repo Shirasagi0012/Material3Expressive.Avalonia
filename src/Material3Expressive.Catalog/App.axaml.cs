@@ -17,6 +17,8 @@ public partial class App : Application
         {
             desktop.MainWindow = System.Array.IndexOf(desktop.Args ?? [], "--app-bars") >= 0
                 ? new AppBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--modal-bottom-sheet") >= 0
+                ? new ModalBottomSheetDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--bottom-sheet") >= 0
                 ? new BottomSheetDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--bottom-sheet-scaffold") >= 0

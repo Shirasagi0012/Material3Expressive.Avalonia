@@ -1,6 +1,6 @@
 # BottomSheet
 
-树内底部面板，提供隐藏、部分展开和展开三个状态；`BottomSheetScaffold` 将常驻面板、页面、顶部栏和 Snackbar 组合布局。两者都不创建模态窗口或遮罩。
+底部面板提供隐藏、部分展开和展开三个状态。`BottomSheet` 在树内呈现，`BottomSheetScaffold` 组合常驻面板与页面，`ModalBottomSheet` 在窗口覆盖层中提供模态面板、遮罩与焦点约束。
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)，窗口需要动画作用域。
 
 ## 基础用法
@@ -22,6 +22,35 @@
 在挂载和首次布局后调用 `await Sheet.State.ShowAsync()` 显示面板。
 
 ## 变体与属性
+
+模态面板的声明不占布局空间。设置 `IsOpen=True` 后自动显示到部分展开（禁用该状态时完全展开）；
+恢复为可见状态时保留该状态。`DismissRequested` 在用户隐藏完成后通知，应用负责将 `IsOpen` 设为 false：
+
+```xml
+<m3:ModalBottomSheet xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+    x:Name="Modal" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsOpen="{Binding IsSheetOpen, Mode=TwoWay}" DismissRequested="OnModalDismissed">
+  <Border xmlns="https://github.com/avaloniaui" Height="400" Padding="24">
+    <TextBlock Text="选择一个目的地" />
+  </Border>
+</m3:ModalBottomSheet>
+```
+
+```csharp
+private void OnModalDismissed(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    => Modal.IsOpen = false;
+
+// 程序化关闭先等待隐藏，然后移除模态呈现。
+await Modal.State.HideAsync();
+if (!Modal.State.IsVisible) Modal.IsOpen = false;
+```
+
+`IsPresented` 表示模态层仍存在；单独 HideAsync 不移除该层，也不触发关闭请求。
+直接设置 `IsOpen=False` 会立即移除并取消正在运行的动画。
+`ShouldDismissOnBackPress` 和 `ShouldDismissOnClickOutside` 分别控制返回/Escape 与遮罩点击。
+Escape 在完全展开时先部分收起，再次按下才隐藏；禁用部分展开时直接隐藏。
+`ScrimColor` 定制遮罩颜色，设为 null 同时去除遮罩绘制与点击动作；透明颜色仍保留点击动作。
+模态变体默认 `TonalElevation=0`，其余面板外观与内容槽沿用下文用法。
 
 默认每个控件独立持有 `SheetState`，也可绑定应用持有的状态。类型位于 `Material3Expressive.Components`。
 
@@ -88,6 +117,8 @@ await Sheet.State.HideAsync();
 
 内含滚动内容时，应用需把嵌套滚动的前置、剩余位移和速度交给 `OnPreScroll`、`OnPostScroll`、
 `OnPreFlingAsync`、`OnPostFlingAsync`（DIP 与 DIP/s）；目前没有自动 ScrollViewer 接线。
-这些树内组件不提供模态遮罩。Catalog 用 `--bottom-sheet` 或 `--bottom-sheet-scaffold` 启动。
+模态面板要求 Window 模板包含 `PART_VisualLayerManager`，默认 Material 窗口主题已提供；
+面板使用当前客户区，不创建独立窗口。系统/IME 安全边距仍需应用通过 `WindowInsets` 提供。
+Catalog 用 `--bottom-sheet`、`--bottom-sheet-scaffold` 或 `--modal-bottom-sheet` 启动。
 
 内部机制与验证范围见 [INTERNALS.md](INTERNALS.md)。

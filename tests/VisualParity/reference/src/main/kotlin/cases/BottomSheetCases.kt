@@ -24,7 +24,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BottomSheetConfig(val initial:String="Expanded",val contentHeight:Double=320.0,val handle:Boolean=true,
     val partial:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,val insets:Boolean=false,val gestures:Boolean=true,
-    val veto:Boolean=false,val maxWidth:Double=640.0,val action:String="none",val scaffold:Boolean=false,val peek:Double=56.0)
+    val veto:Boolean=false,val maxWidth:Double=640.0,val action:String="none",val scaffold:Boolean=false,val peek:Double=56.0,
+    val modal:Boolean=false,val outside:Boolean=true,val scrim:Boolean=true)
 
 @ParitySuite("bottom-sheet")
 class BottomSheetCases {
@@ -53,7 +54,11 @@ class BottomSheetCases {
             fun mutate(t:Long,id:String,sampleNow:Boolean=true,action:()->Unit) { advance(t); action(); writer.record(t,"mutation",id); host.scheduler.runCurrent(); host.draw(); if(sampleNow) sample(id) }
             fun input(t:Long,action:String,p:Offset) { advance(t); host.input(action,p); host.draw() }
             sample("initial")
-            if(c.action=="zero-peek-hidden") {
+            if(c.action=="auto-show") times(16000,64000,96000,192000,416000,800000)
+            else if(c.action.startsWith("outside")) {
+                input(1000,"move",Offset(10f,10f)); input(2000,"down",Offset(10f,10f))
+                input(18000,"up",Offset(10f,10f)); times(32000,96000,192000,416000,800000)
+            } else if(c.action=="zero-peek-hidden") {
                 mutate(1000,"settle-hidden",false) { scene.scope.launch { scene.state.anchoredDrag(scene.fling,0f) } }; times(16000)
                 mutate(17000,"restore-peek",false) { scene.peek=56.0 }; times(32000)
                 mutate(33000,"show") { scene.scope.launch { scene.state.show() } }; times(48000,96000,192000,416000,800000)
@@ -117,7 +122,13 @@ class BottomSheetCases {
                             }
                         }
                         val handle: @Composable (()->Unit)? = if(c.handle) { { BottomSheetDefaults.DragHandle() } } else null
-                        if(c.scaffold) {
+                        if(c.modal) {
+                            ModalBottomSheet(onDismissRequest={dismissals++},modifier=sheet.modifier(),sheetState=state,
+                                sheetMaxWidth=c.maxWidth.toFloat().dp,sheetGesturesEnabled=gestures,dragHandle=handle,
+                                properties=ModalBottomSheetProperties(shouldDismissOnBackPress=c.action!="escape-disabled",shouldDismissOnClickOutside=c.outside),
+                                scrimColor=if(c.scrim)BottomSheetDefaults.ScrimColor else Color.Unspecified,
+                                contentWindowInsets={if(c.insets)WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp)else WindowInsets(0)},content=sheetContent)
+                        } else if(c.scaffold) {
                             BottomSheetScaffold(scaffoldState=rememberBottomSheetScaffoldState(bottomSheetState=state),
                                 sheetContent=sheetContent,sheetPeekHeight=peek.toFloat().dp,sheetMaxWidth=c.maxWidth.toFloat().dp,
                                 sheetSwipeEnabled=gestures,sheetDragHandle=handle,

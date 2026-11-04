@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.ModalBottomSheetDemo" Title="Modal bottom sheet" Width="840" Height="720">
+  <Grid>
+    <StackPanel Margin="32" Spacing="16">
+      <TextBlock Text="Modal bottom sheet" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Open the sheet, drag it, or press Escape to collapse and dismiss. Focus returns to the page when it closes." TextWrapping="Wrap" />
+      <Button Content="Open sheet" Click="OnOpen" HorizontalAlignment="Left" />
+      <CheckBox Content="Allow outside click" IsChecked="{Binding ShouldDismissOnClickOutside, ElementName=Sheet, Mode=TwoWay}" />
+      <CheckBox Content="Allow Escape" IsChecked="{Binding ShouldDismissOnBackPress, ElementName=Sheet, Mode=TwoWay}" />
+      <CheckBox Content="Allow dragging" IsChecked="{Binding GesturesEnabled, ElementName=Sheet, Mode=TwoWay}" />
+      <TextBox PlaceholderText="Page input (blocked while the sheet is open)" />
+      <TextBlock Text="Standalone scrim preview — click to open the sheet" />
+      <Grid Height="80">
+        <Border Background="#FFD166" />
+        <m3:Scrim Alpha="{Binding Value, ElementName=ScrimAlpha}" Click="OnOpen" AutomationProperties.Name="Open sheet" />
+      </Grid>
+      <Slider x:Name="ScrimAlpha" Minimum="0" Maximum="1" Value="1" />
+    </StackPanel>
+    <m3:ModalBottomSheet x:Name="Sheet" DismissRequested="OnDismissed">
+      <Border Height="400" Padding="24,8,24,24">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Save a destination" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+          <TextBox PlaceholderText="Destination name" />
+          <TextBlock Text="The sheet opens at half height. Expand it to see all content; the page stays behind the scrim." TextWrapping="Wrap" />
+          <WrapPanel>
+            <Button Content="Expand" Click="OnExpand" Margin="0,0,8,8" />
+            <Button Content="Done" Click="OnDone" Margin="0,0,8,8" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+    </m3:ModalBottomSheet>
+  </Grid>
+</Window>

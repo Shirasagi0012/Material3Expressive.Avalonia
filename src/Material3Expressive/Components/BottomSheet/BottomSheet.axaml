@@ -1,6 +1,30 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:ModalBottomSheet}" TargetType="m3:ModalBottomSheet">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ContainerShape}}" />
+      <Setter Property="SheetMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.MaxWidth}}" />
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.WindowInsets}}" />
+      <Setter Property="ScrimColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ScrimColor}}" />
+      <Setter Property="ScrimAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.ScrimAnimation}}" />
+      <Setter Property="DragHandleTemplate" Value="{DynamicResource BottomSheetDefaultDragHandle}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid x:Name="PART_Root">
+            <m3:ModalBottomSheetPresenter x:Name="PART_Presentation" ClipToBounds="True">
+              <m3:Scrim x:Name="PART_Scrim" />
+              <m3:BottomSheet x:Name="PART_Sheet" State="{TemplateBinding State}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                  SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding GesturesEnabled}" BackHandlerEnabled="False"
+                  DragHandle="{TemplateBinding DragHandle}" DragHandleTemplate="{TemplateBinding DragHandleTemplate}" WindowInsets="{TemplateBinding WindowInsets}"
+                  Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}"
+                  TonalElevation="{TemplateBinding TonalElevation}" />
+            </m3:ModalBottomSheetPresenter>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
         <DataTemplate x:Key="BottomSheetDefaultDragHandle">
           <Border Margin="0,22" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleWidth}}"
                   Height="{m3:Token {x:Static m3:MaterialTokens+Comp+BottomSheet.DragHandleHeight}}"

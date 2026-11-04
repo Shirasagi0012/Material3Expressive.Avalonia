@@ -13,13 +13,23 @@ namespace Material3Expressive.Parity;
 
 public sealed record BottomSheetConfig(string Initial = "Expanded", double ContentHeight = 320, bool Handle = true,
     bool Partial = true, bool Dark = false, bool Rtl = false, bool Insets = false, bool Gestures = true, bool Veto = false,
-    double MaxWidth = 640, string Action = "none", bool Scaffold = false, double Peek = 56);
+    double MaxWidth = 640, string Action = "none", bool Scaffold = false, double Peek = 56,
+    bool Modal = false, bool Outside = true, bool Scrim = true);
 
 [ParitySuite("bottom-sheet")]
 public sealed class BottomSheetCases
 {
     public static IEnumerable<CaseData<BottomSheetConfig>> StaticConfigurations()
     {
+        foreach (var initial in new[] { "Expanded", "PartiallyExpanded" })
+        foreach (var height in new[] { 80d, 320d })
+        foreach (var handle in new[] { false, true })
+        foreach (var dark in new[] { false, true })
+            yield return Data($"static.modal.{initial.ToLowerInvariant()}.{height}.{(handle ? "handle" : "plain")}.{(dark ? "dark" : "light")}", new(Initial: initial, ContentHeight: height, Handle: handle, Dark: dark, Modal: true));
+        yield return Data("static.modal.insets", new(Insets: true, Modal: true));
+        yield return Data("static.modal.rtl-insets", new(Insets: true, Rtl: true, Modal: true));
+        yield return Data("static.modal.narrow", new(MaxWidth: 360, Modal: true));
+        yield return Data("static.modal.no-scrim", new(Scrim: false, Modal: true));
         foreach (var initial in Enum.GetNames<SheetValue>())
         foreach (var height in new[] { 80d, 320d })
             yield return Data($"static.{initial.ToLowerInvariant()}.{height}", new(Initial: initial, ContentHeight: height));
@@ -39,6 +49,10 @@ public sealed class BottomSheetCases
     }
     public static IEnumerable<CaseData<BottomSheetConfig>> DynamicConfigurations()
     {
+        foreach (var action in new[] { "auto-show", "expand", "hide", "reverse", "outside", "outside-veto", "outside-disabled", "escape-expanded", "escape-partial", "escape-veto", "escape-disabled", "drag-dismiss" })
+            yield return Data($"dynamic.modal.{action}", new(Initial: action is "auto-show" or "reverse" ? "Hidden" : action == "escape-expanded" ? "Expanded" : "PartiallyExpanded",
+                Veto: action.EndsWith("veto"), Outside: action != "outside-disabled", Modal: true, Action: action));
+        yield return Data("dynamic.modal.auto-show-no-partial", new(Initial: "Hidden", Partial: false, Modal: true, Action: "auto-show"));
         foreach (var action in new[] { "show", "expand", "hide", "partial", "reverse", "resize", "grow", "veto", "drag-down", "drag-up", "drag-return", "drag-fast", "drag-disabled", "disable-during-drag", "handle" })
             yield return Data($"dynamic.{action}", new(Initial: action is "show" or "reverse" or "resize" ? "Hidden" : action is "expand" or "grow" or "drag-up" or "handle" ? "PartiallyExpanded" : "Expanded",
                 ContentHeight: action == "grow" ? 80 : 320, Veto: action == "veto", Gestures: action != "drag-disabled", Action: action));
@@ -76,7 +90,13 @@ public sealed class BottomSheetCases
         void Mutate(long t, string id, Action action, bool sample = true) { Advance(t); action(); writer.Record(t, "mutation", id); host.Draw(); if (sample) Sample(id); }
         void Input(long t, string action, Point p) { Advance(t); scene.Input(action, p); host.Draw(); }
         Sample("initial");
-        if (c.Action == "zero-peek-hidden")
+        if (c.Action == "auto-show") Times(16000, 64000, 96000, 192000, 416000, 800000);
+        else if (c.Action.StartsWith("outside"))
+        {
+            Input(1000, "move", new Point(10, 10)); Input(2000, "down", new Point(10, 10));
+            Input(18000, "up", new Point(10, 10)); Times(32000, 96000, 192000, 416000, 800000);
+        }
+        else if (c.Action == "zero-peek-hidden")
         {
             Mutate(1000, "settle-hidden", () => { _ = scene.Scaffold!.OnPostFlingAsync(0); }, false); Times(16000);
             Mutate(17000, "restore-peek", () => scene.Scaffold!.SheetPeekHeight = 56, false); Times(32000);
@@ -124,7 +144,8 @@ public sealed class BottomSheetCases
     {
         private readonly AvaloniaHost _host; private readonly IMouseDevice _mouse; private bool _pressed; private int _dismissals;
         private readonly BottomSheet? _sheet;
-        public BottomSheet Sheet => _sheet ?? Scaffold!.GetVisualDescendants().OfType<BottomSheet>().Single();
+        public BottomSheet Sheet => _sheet ?? Modal?.PresentedSheet ?? Scaffold!.GetVisualDescendants().OfType<BottomSheet>().Single();
+        public ModalBottomSheet? Modal { get; }
         public BottomSheetScaffold? Scaffold { get; }
         private readonly Border _body = new() { Background = Brush.Parse("#F3EDF7") };
         private readonly Border _top = new() { Height = 56, Background = Brush.Parse("#E8DEF8") };
@@ -139,7 +160,17 @@ public sealed class BottomSheetCases
             // Compose size(24.dp) obeys the zero-height Box's maximum constraint. Avalonia's
             // explicit child Height can overflow its Border, so give the marker the same bound.
             Content = new Border { Height = c.ContentHeight, Background = Brush.Parse("#336699"), Child = new Border { Width = 24, Height = Math.Min(24, c.ContentHeight), Background = Brush.Parse("#FFD166"), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top } };
-            if (c.Scaffold)
+            if (c.Modal)
+            {
+                Modal = new ModalBottomSheet { IsOpen = true, State = new(Enum.Parse<SheetValue>(c.Initial), c.Partial ? null : [SheetValue.Hidden, SheetValue.Expanded], v => !c.Veto || v != SheetValue.Hidden),
+                    Content = Content, SheetMaxWidth = c.MaxWidth, GesturesEnabled = c.Gestures,
+                    ShouldDismissOnBackPress = c.Action != "escape-disabled", ShouldDismissOnClickOutside = c.Outside };
+                if (!c.Handle) Modal.DragHandle = null;
+                if (c.Insets) Modal.WindowInsets = new Thickness(13, 7, 5, 11);
+                if (!c.Scrim) Modal.ScrimColor = null;
+                Modal.DismissRequested += (_, _) => _dismissals++;
+            }
+            else if (c.Scaffold)
             {
                 Scaffold = new BottomSheetScaffold { State = new(new SheetState(Enum.Parse<SheetValue>(c.Initial), [SheetValue.PartiallyExpanded, SheetValue.Expanded]), new SnackbarHostState()),
                     SheetContent = Content, SheetPeekHeight = c.Peek, SheetMaxWidth = c.MaxWidth, SheetSwipeEnabled = c.Gestures, TopBar = _top, Content = _body, SnackbarHost = _snack };
@@ -153,7 +184,7 @@ public sealed class BottomSheetCases
                 if (c.Insets) Sheet.WindowInsets = new Thickness(13, 7, 5, 11);
                 Sheet.DismissRequested += (_, _) => _dismissals++;
             }
-            Root = new Border { Background = Brushes.White, Child = (Control?)Scaffold ?? Sheet, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+            Root = new Border { Background = Brushes.White, Child = (Control?)Modal ?? (Control?)Scaffold ?? Sheet, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
         public void Input(string action, Point p)
         {

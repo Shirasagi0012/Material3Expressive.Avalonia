@@ -9,6 +9,7 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 | --- | --- |
 | `BottomSheet` / `BottomSheetImpl` | `BottomSheet`、模板、`BottomSheetLayout` |
 | `BottomSheetScaffold.kt` / `StandardBottomSheet` | `BottomSheetScaffold`、布局及 BottomSheet 的内部 standard 分支 |
+| `ModalBottomSheet.kt` / Core `ModalBottomSheet.skiko.kt` | `ModalBottomSheet`、既有 `ModalPresenter` 与 `Scrim` |
 | `SheetDefaults.kt` / `SheetState` | `SheetState`、`BottomSheetTokenSource` |
 | Core Foundation `AnchoredDraggable.kt` / `SnapFlingBehavior.kt` | `SheetState` 私有锚点与 fling 算法 |
 | Core 桌面 `Draggable.kt`、backhandler | 鼠标/触屏输入、窗口 Escape |
@@ -40,10 +41,22 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 - Standard 手柄在 Expanded 时按 Hidden 是否启用选择隐藏或 partial；直接拖动不受 CurrentValue==Hidden 禁止，
   fling 不应用树内面板的底边衰减，也不发出 DismissRequested。标准面板不安装返回键处理。
 
+- Modal 复用零布局声明、窗口内 overlay Popup 与 ModalPresenter；后者隔离焦点、仲裁最上层返回并恢复原焦点。
+  内层 BottomSheet 不再单独接收窗口返回，避免同次 Escape 同时收起与隐藏。展开且有 partial 时先收起，其余可见状态请求隐藏。
+  IsOpen 对应是否保留上游 composition：程序 HideAsync 和 DismissRequested 均不擅自写回它，应用在关闭通知中设 false。
+  首次出现 expanded 锚点后在下一帧调用 ShowAsync；已恢复的可见目标保留，随后程序隐藏不会重新触发自动显示。
+  状态替换、模板替换和卸载结束本次呈现及动画；owner 动画作用域重建时重新连接呈现与遮罩。
+  模板完成 attach/detach 后再将内容移入 Popup。
+- 模态内容预消费的 top inset 是 offset 物理像素取整数，再与祖先已消费值逐侧取最大；默认 TonalElevation 为 0。
+  ScrimColor=null 省略遮罩绘制与点击，透明色仍可点击。点击开关不影响 Escape；CloseSheet 来自固定 Core 的 86 份本地化表。
+- 遮罩目标在状态写入后的下一重组帧合并，使用 DefaultEffects。固定两端 `AnimateAsState.kt` 的
+  `restartAnimation` 先取消旧 job 再 animateTo，旧任务会清除速度和 LastFrameTime；本地使用既有 Animatable 的
+  StopAsync → AnimateToAsync 保留此顺序，不能用保留中断速度的 AnimatedState 等价替换。
+
 ## 3. 已确认决定与已知差异
 
 - 本次任务授权非破坏性组件 API、内部适配与已有能力复用；不据此宣称所有上游差异已批准。
-- 尚未实现 ModalBottomSheet 及 Android 连续预测返回形变。树内 BottomSheet / BottomSheetScaffold 不包含模态行为。
+- 尚未实现 Android 连续预测返回形变。树内 BottomSheet / BottomSheetScaffold 不包含模态行为。
 - 自动嵌套滚动桥接尚未实现。推荐由现有滚动基础能力统一提供 pre/post scroll 和 fling 分发，再接组件已有入口；
   例如父层先调用 `sheet.OnPreScroll(deltaY)`，子层消费余量后交 `sheet.OnPostScroll(remainingY)`。
   这需要新的公共共享协议，影响 ScrollViewer、AppBar、PullToRefresh 等，待维护者决定；未在组件内复制框架。
@@ -58,18 +71,21 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 
 ## 4. 验证入口
 
-- `BottomSheetTests` / `BottomSheetScaffoldTests`：锚点、程序化与拖动、拒绝、中断、卸载、嵌套滚动消费。
+- `BottomSheetTests` / `BottomSheetScaffoldTests` / `ModalBottomSheetTests`：锚点、程序化与拖动、拒绝、中断、卸载、嵌套滚动消费，及模态自动显示、恢复状态、返回/外部点击策略、焦点恢复、换状态、Inset 预消费与遮罩反转。
 - 双端 `BottomSheetCases.cs` / `BottomSheetCases.kt`，族名 `bottom-sheet`。
 - Catalog：`dotnet run --project src/Material3Expressive.Catalog -- --bottom-sheet`。
-  常驻面板使用 `--bottom-sheet-scaffold`。
+  常驻面板使用 `--bottom-sheet-scaffold`，模态面板及独立遮罩使用 `--modal-bottom-sheet`。
 
-当前验证（2026-11-04）：解决方案构建 0 错误；组件行为测试 30 项通过，整库 2095 项通过。
-双端 50 场景、272 个采样：14 equal、30 withinTolerance、6 different，执行错误为 0。
-严格差异保留在 expand、resize、handle、handle-disabled、scaffold.expand、scaffold.handle；
+当前双端验证（2026-11-04）：83 场景、394 个采样：34 equal、40 withinTolerance、9 different，执行错误为 0。
+其中新增模态 33 场景、122 个采样为 20 equal、10 withinTolerance、3 different；新增行为测试 10 项通过。
+严格差异保留在 expand、resize、handle、handle-disabled、scaffold.expand、scaffold.handle，
+以及 modal.auto-show、modal.auto-show-no-partial、modal.expand；
 几何与 offset 最大差值均为 0.000030517578125 DIP，状态属性一致。
 三个 handle 场景另有 32ms / 96ms 的 Tooltip 光栅差异，适用上节已确认时序差异。
 零 peek 隐藏再恢复用例通过容差检查且重复运行稳定；resize、scaffold.expand、handle 的重复性检查也稳定。
-完整报告位于 `artifacts/visual-parity/runs/20261104-145837-6030f816/summary.md`，这不是所有严格一致性检查均通过的声明。
+模态反转的遮罩任务取消顺序已修正，反转场景图像通过现有容差；自检 `20261104-154746-243ee3d8` 重复及额外截图稳定。
+没有修改参考源码版本、容差或采样读数。锁定模式还原与解决方案构建成功；整库 2115 项通过。
+完整报告位于 `artifacts/visual-parity/runs/20261104-154125-449d4ad8/summary.md`，这不是所有严格一致性检查均通过的声明。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~BottomSheet

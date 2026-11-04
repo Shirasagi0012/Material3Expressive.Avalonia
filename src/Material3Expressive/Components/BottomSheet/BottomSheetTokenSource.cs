@@ -10,6 +10,8 @@ public sealed class BottomSheetTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.BottomSheet.ScrimColor] = new TokenRef(Comp.Scrim.ContainerColor),
+        [Comp.BottomSheet.ScrimAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.BottomSheet.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerLow),
         [Comp.BottomSheet.ContainerShape] = new TokenRef(Sys.Shape.ExtraLargeTop),
         [Comp.BottomSheet.TonalElevation] = new TokenRef(Sys.Elevation.Level1),

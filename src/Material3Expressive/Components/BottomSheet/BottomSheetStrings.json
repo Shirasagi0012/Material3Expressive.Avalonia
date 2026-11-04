@@ -4,601 +4,687 @@
     "BottomSheetDragHandleDescription": "Drag handle",
     "BottomSheetPartialExpandDescription": "Collapse bottom sheet",
     "BottomSheetDismissDescription": "Dismiss bottom sheet",
-    "BottomSheetExpandDescription": "Expand bottom sheet"
+    "BottomSheetExpandDescription": "Expand bottom sheet",
+    "CloseSheet": "Close sheet"
   },
   "en-au": {
     "BottomSheetPaneTitle": "Bottom sheet",
     "BottomSheetDragHandleDescription": "Drag handle",
     "BottomSheetPartialExpandDescription": "Collapse bottom sheet",
     "BottomSheetDismissDescription": "Dismiss bottom sheet",
-    "BottomSheetExpandDescription": "Expand bottom sheet"
+    "BottomSheetExpandDescription": "Expand bottom sheet",
+    "CloseSheet": "Close sheet"
   },
   "en-ca": {
     "BottomSheetPaneTitle": "Bottom Sheet",
     "BottomSheetDragHandleDescription": "Drag handle",
     "BottomSheetPartialExpandDescription": "Collapse bottom sheet",
     "BottomSheetDismissDescription": "Dismiss bottom sheet",
-    "BottomSheetExpandDescription": "Expand bottom sheet"
+    "BottomSheetExpandDescription": "Expand bottom sheet",
+    "CloseSheet": "Close sheet"
   },
   "en-gb": {
     "BottomSheetPaneTitle": "Bottom sheet",
     "BottomSheetDragHandleDescription": "Drag handle",
     "BottomSheetPartialExpandDescription": "Collapse bottom sheet",
     "BottomSheetDismissDescription": "Dismiss bottom sheet",
-    "BottomSheetExpandDescription": "Expand bottom sheet"
+    "BottomSheetExpandDescription": "Expand bottom sheet",
+    "CloseSheet": "Close sheet"
   },
   "en-in": {
     "BottomSheetPaneTitle": "Bottom sheet",
     "BottomSheetDragHandleDescription": "Drag handle",
     "BottomSheetPartialExpandDescription": "Collapse bottom sheet",
     "BottomSheetDismissDescription": "Dismiss bottom sheet",
-    "BottomSheetExpandDescription": "Expand bottom sheet"
+    "BottomSheetExpandDescription": "Expand bottom sheet",
+    "CloseSheet": "Close sheet"
   },
   "af": {
     "BottomSheetPaneTitle": "Onderste blad",
     "BottomSheetDragHandleDescription": "Sleephandvatsel",
     "BottomSheetPartialExpandDescription": "Vou onderste blad in",
     "BottomSheetDismissDescription": "Maak onderste blad toe",
-    "BottomSheetExpandDescription": "Vou onderste blad uit"
+    "BottomSheetExpandDescription": "Vou onderste blad uit",
+    "CloseSheet": "Maak sigblad toe"
   },
   "am": {
     "BottomSheetPaneTitle": "የግርጌ ሉህ",
     "BottomSheetDragHandleDescription": "መያዣ ይጎትቱ",
     "BottomSheetPartialExpandDescription": "የግርጌ ሉህን ይሰብስቡ",
     "BottomSheetDismissDescription": "የግርጌ ሉህን ያሰናብቱ",
-    "BottomSheetExpandDescription": "የግርጌ ሉህ ይዘርጉ"
+    "BottomSheetExpandDescription": "የግርጌ ሉህ ይዘርጉ",
+    "CloseSheet": "ሉህን ዝጋ"
   },
   "ar": {
     "BottomSheetPaneTitle": "بطاقة سفلية",
     "BottomSheetDragHandleDescription": "مقبض السحب",
     "BottomSheetPartialExpandDescription": "تصغير البطاقة السفلية",
     "BottomSheetDismissDescription": "إغلاق البطاقة السفلية",
-    "BottomSheetExpandDescription": "توسيع البطاقة السفلية"
+    "BottomSheetExpandDescription": "توسيع البطاقة السفلية",
+    "CloseSheet": "إغلاق الورقة"
   },
   "as": {
     "BottomSheetPaneTitle": "তলৰ শ্বীট",
     "BottomSheetDragHandleDescription": "ড্ৰেগ হেণ্ডেল",
     "BottomSheetPartialExpandDescription": "তলৰ শ্বীটখন সংকোচন কৰক",
     "BottomSheetDismissDescription": "তলৰ শ্বীটখন অগ্ৰাহ্য কৰক",
-    "BottomSheetExpandDescription": "তলৰ শ্বীটখন বিস্তাৰ কৰক"
+    "BottomSheetExpandDescription": "তলৰ শ্বীটখন বিস্তাৰ কৰক",
+    "CloseSheet": "শ্বীট বন্ধ কৰক"
   },
   "az": {
     "BottomSheetPaneTitle": "Aşağıdakı vərəq",
     "BottomSheetDragHandleDescription": "Dəstəyi çəkin",
     "BottomSheetPartialExpandDescription": "Aşağıdakı vərəqi yığcamlaşdırın",
     "BottomSheetDismissDescription": "Aşağıdakı vərəqi rədd edin",
-    "BottomSheetExpandDescription": "Aşağıdakı vərəqi genişləndirin"
+    "BottomSheetExpandDescription": "Aşağıdakı vərəqi genişləndirin",
+    "CloseSheet": "Səhifəni bağlayın"
   },
   "be": {
     "BottomSheetPaneTitle": "Ніжні аркуш",
     "BottomSheetDragHandleDescription": "Маркер перацягвання",
     "BottomSheetPartialExpandDescription": "Згарнуць ніжні аркуш",
     "BottomSheetDismissDescription": "Закрыць ніжні аркуш",
-    "BottomSheetExpandDescription": "Разгарнуць ніжні аркуш"
+    "BottomSheetExpandDescription": "Разгарнуць ніжні аркуш",
+    "CloseSheet": "Закрыць аркуш"
   },
   "bg": {
     "BottomSheetPaneTitle": "Долен лист",
     "BottomSheetDragHandleDescription": "Манипулатор за преместване с плъзгане",
     "BottomSheetPartialExpandDescription": "Свиване на долния лист",
     "BottomSheetDismissDescription": "Отхвърляне на долния лист",
-    "BottomSheetExpandDescription": "Разгъване на долния лист"
+    "BottomSheetExpandDescription": "Разгъване на долния лист",
+    "CloseSheet": "Затваряне на таблицата"
   },
   "bn": {
     "BottomSheetPaneTitle": "স্ক্রিনের নিচে অ্যাটাচ করা শিট",
     "BottomSheetDragHandleDescription": "টেনে আনার হ্যান্ডেল",
     "BottomSheetPartialExpandDescription": "স্ক্রিনের নিচে অ্যাটাচ করা শিট আড়াল করুন",
     "BottomSheetDismissDescription": "স্ক্রিনের নিচে অ্যাটাচ করা শিট বাতিল করুন",
-    "BottomSheetExpandDescription": "স্ক্রিনের নিচে অ্যাটাচ করা শিট বড় করুন"
+    "BottomSheetExpandDescription": "স্ক্রিনের নিচে অ্যাটাচ করা শিট বড় করুন",
+    "CloseSheet": "শিট বন্ধ করুন"
   },
   "bs": {
     "BottomSheetPaneTitle": "Donja tabela",
     "BottomSheetDragHandleDescription": "Ručica za prevlačenje",
     "BottomSheetPartialExpandDescription": "Sužavanje donje tabele",
     "BottomSheetDismissDescription": "Odbacivanje donje tabele",
-    "BottomSheetExpandDescription": "Proširivanje donje tabele"
+    "BottomSheetExpandDescription": "Proširivanje donje tabele",
+    "CloseSheet": "Zatvaranje tabele"
   },
   "ca": {
     "BottomSheetPaneTitle": "Full inferior",
     "BottomSheetDragHandleDescription": "Ansa de posicionament",
     "BottomSheetPartialExpandDescription": "Replega el full inferior",
     "BottomSheetDismissDescription": "Ignora el full inferior",
-    "BottomSheetExpandDescription": "Desplega el full inferior"
+    "BottomSheetExpandDescription": "Desplega el full inferior",
+    "CloseSheet": "Tanca el full"
   },
   "cs": {
     "BottomSheetPaneTitle": "Spodní panel",
     "BottomSheetDragHandleDescription": "Úchyt pro přetažení",
     "BottomSheetPartialExpandDescription": "Sbalit spodní panel",
     "BottomSheetDismissDescription": "Zavřít spodní panel",
-    "BottomSheetExpandDescription": "Rozbalit spodní panel"
+    "BottomSheetExpandDescription": "Rozbalit spodní panel",
+    "CloseSheet": "Zavřít sešit"
   },
   "da": {
     "BottomSheetPaneTitle": "Felt i bunden",
     "BottomSheetDragHandleDescription": "Håndtag",
     "BottomSheetPartialExpandDescription": "Skjul felt i bunden",
     "BottomSheetDismissDescription": "Luk felt i bunden",
-    "BottomSheetExpandDescription": "Udvid felt i bunden"
+    "BottomSheetExpandDescription": "Udvid felt i bunden",
+    "CloseSheet": "Luk arket"
   },
   "de": {
     "BottomSheetPaneTitle": "Ansicht am unteren Rand",
     "BottomSheetDragHandleDescription": "Ziehpunkt",
     "BottomSheetPartialExpandDescription": "Ansicht am unteren Rand minimieren",
     "BottomSheetDismissDescription": "Ansicht am unteren Rand schließen",
-    "BottomSheetExpandDescription": "Ansicht am unteren Rand maximieren"
+    "BottomSheetExpandDescription": "Ansicht am unteren Rand maximieren",
+    "CloseSheet": "Tabelle schließen"
   },
   "el": {
     "BottomSheetPaneTitle": "Φύλλο κάτω μέρους",
     "BottomSheetDragHandleDescription": "Λαβή μεταφοράς",
     "BottomSheetPartialExpandDescription": "Σύμπτυξη φύλλου κάτω μέρους",
     "BottomSheetDismissDescription": "Παράβλεψη φύλλου κάτω μέρους",
-    "BottomSheetExpandDescription": "Ανάπτυξη φύλλου κάτω μέρους"
+    "BottomSheetExpandDescription": "Ανάπτυξη φύλλου κάτω μέρους",
+    "CloseSheet": "Κλείσιμο φύλλου"
   },
   "es": {
     "BottomSheetPaneTitle": "Hoja inferior",
     "BottomSheetDragHandleDescription": "Controlador de arrastre",
     "BottomSheetPartialExpandDescription": "Contrae la hoja inferior",
     "BottomSheetDismissDescription": "Cierra la hoja inferior",
-    "BottomSheetExpandDescription": "Despliega la hoja inferior"
+    "BottomSheetExpandDescription": "Despliega la hoja inferior",
+    "CloseSheet": "Cerrar hoja"
   },
   "es-us": {
     "BottomSheetPaneTitle": "Hoja inferior",
     "BottomSheetDragHandleDescription": "Controlador de arrastre",
     "BottomSheetPartialExpandDescription": "Contraer la hoja inferior",
     "BottomSheetDismissDescription": "Descartar la hoja inferior",
-    "BottomSheetExpandDescription": "Expandir la hoja inferior"
+    "BottomSheetExpandDescription": "Expandir la hoja inferior",
+    "CloseSheet": "Cerrar hoja"
   },
   "et": {
     "BottomSheetPaneTitle": "Alumine leht",
     "BottomSheetDragHandleDescription": "Lohistamispide",
     "BottomSheetPartialExpandDescription": "Alumise lehe ahendamine",
     "BottomSheetDismissDescription": "Alumisest lehest loobumine",
-    "BottomSheetExpandDescription": "Alumise lehe laiendamine"
+    "BottomSheetExpandDescription": "Alumise lehe laiendamine",
+    "CloseSheet": "Sule leht"
   },
   "eu": {
     "BottomSheetPaneTitle": "Pantailaren behealdean ainguratutako orria",
     "BottomSheetDragHandleDescription": "Arrastatzeko kontrol-puntua",
     "BottomSheetPartialExpandDescription": "Tolestu pantailaren behealdean ainguratutako orria",
     "BottomSheetDismissDescription": "Baztertu pantailaren behealdean ainguratutako orria",
-    "BottomSheetExpandDescription": "Zabaldu pantailaren behealdean ainguratutako orria"
+    "BottomSheetExpandDescription": "Zabaldu pantailaren behealdean ainguratutako orria",
+    "CloseSheet": "Itxi orria"
   },
   "fa": {
     "BottomSheetPaneTitle": "برگ زیرین",
     "BottomSheetDragHandleDescription": "دستگیره کشاندن",
     "BottomSheetPartialExpandDescription": "جمع کردن برگ زیرین",
     "BottomSheetDismissDescription": "بستن برگ زیرین",
-    "BottomSheetExpandDescription": "ازهم باز کردن برگ زیرین"
+    "BottomSheetExpandDescription": "ازهم باز کردن برگ زیرین",
+    "CloseSheet": "بستن برگ"
   },
   "fi": {
     "BottomSheetPaneTitle": "Alapaneeli",
     "BottomSheetDragHandleDescription": "Vetokahva",
     "BottomSheetPartialExpandDescription": "Tiivistä alapaneeli",
     "BottomSheetDismissDescription": "Hylkää alapaneeli",
-    "BottomSheetExpandDescription": "Laajenna alapaneeli"
+    "BottomSheetExpandDescription": "Laajenna alapaneeli",
+    "CloseSheet": "Sulje taulukko"
   },
   "fr": {
     "BottomSheetPaneTitle": "Bottom sheet",
     "BottomSheetDragHandleDescription": "Poignée de déplacement",
     "BottomSheetPartialExpandDescription": "Réduire la bottom sheet",
     "BottomSheetDismissDescription": "Fermer la bottom sheet",
-    "BottomSheetExpandDescription": "Développer la bottom sheet"
+    "BottomSheetExpandDescription": "Développer la bottom sheet",
+    "CloseSheet": "Fermer la feuille"
   },
   "fr-ca": {
     "BottomSheetPaneTitle": "Zone de contenu dans le bas de l'écran",
     "BottomSheetDragHandleDescription": "Poignée de déplacement",
     "BottomSheetPartialExpandDescription": "Réduire la zone de contenu dans le bas de l'écran",
     "BottomSheetDismissDescription": "Fermer la zone de contenu dans le bas de l'écran",
-    "BottomSheetExpandDescription": "Développer la zone de contenu dans le bas de l'écran"
+    "BottomSheetExpandDescription": "Développer la zone de contenu dans le bas de l'écran",
+    "CloseSheet": "Fermer la feuille"
   },
   "gl": {
     "BottomSheetPaneTitle": "Panel inferior",
     "BottomSheetDragHandleDescription": "Controlador de arrastre",
     "BottomSheetPartialExpandDescription": "Contrae o panel inferior",
     "BottomSheetDismissDescription": "Pecha o panel inferior",
-    "BottomSheetExpandDescription": "Desprega o panel inferior"
+    "BottomSheetExpandDescription": "Desprega o panel inferior",
+    "CloseSheet": "Pechar folla"
   },
   "gu": {
     "BottomSheetPaneTitle": "બોટમ શીટ",
     "BottomSheetDragHandleDescription": "ઑબ્જેક્ટ ખેંચવાનું હૅન્ડલ",
     "BottomSheetPartialExpandDescription": "બોટમ શીટ નાની કરો",
     "BottomSheetDismissDescription": "બોટમ શીટ છોડી દો",
-    "BottomSheetExpandDescription": "બોટમ શીટ મોટી કરો"
+    "BottomSheetExpandDescription": "બોટમ શીટ મોટી કરો",
+    "CloseSheet": "શીટ બંધ કરો"
   },
   "hi": {
     "BottomSheetPaneTitle": "बॉटम शीट",
     "BottomSheetDragHandleDescription": "खींचकर छोड़ने वाला हैंडल",
     "BottomSheetPartialExpandDescription": "बॉटम शीट को छोटा करें",
     "BottomSheetDismissDescription": "बॉटम शीट को खारिज करें",
-    "BottomSheetExpandDescription": "बॉटम शीट को बड़ा करें"
+    "BottomSheetExpandDescription": "बॉटम शीट को बड़ा करें",
+    "CloseSheet": "शीट बंद करें"
   },
   "hr": {
     "BottomSheetPaneTitle": "Donja tablica",
     "BottomSheetDragHandleDescription": "Marker za povlačenje",
     "BottomSheetPartialExpandDescription": "Sažimanje donje tablice",
     "BottomSheetDismissDescription": "Odbacivanje donje tablice",
-    "BottomSheetExpandDescription": "Proširivanje donje tablice"
+    "BottomSheetExpandDescription": "Proširivanje donje tablice",
+    "CloseSheet": "Zatvaranje lista"
   },
   "hu": {
     "BottomSheetPaneTitle": "Alsó lap",
     "BottomSheetDragHandleDescription": "Fogópont",
     "BottomSheetPartialExpandDescription": "Az alsó lap összecsukása",
     "BottomSheetDismissDescription": "Az alsó lap elvetése",
-    "BottomSheetExpandDescription": "Az alsó lap kibontása"
+    "BottomSheetExpandDescription": "Az alsó lap kibontása",
+    "CloseSheet": "Munkalap bezárása"
   },
   "hy": {
     "BottomSheetPaneTitle": "Ներքևի էկրան",
     "BottomSheetDragHandleDescription": "Տեղափոխման նշիչ",
     "BottomSheetPartialExpandDescription": "Ծալել ներքևի էկրանը",
     "BottomSheetDismissDescription": "Փակել ներքևի էկրանը",
-    "BottomSheetExpandDescription": "Ծավալել ներքևի էկրանը"
+    "BottomSheetExpandDescription": "Ծավալել ներքևի էկրանը",
+    "CloseSheet": "Փակել թերթը"
   },
   "in": {
     "BottomSheetPaneTitle": "Sheet Bawah",
     "BottomSheetDragHandleDescription": "Handel geser",
     "BottomSheetPartialExpandDescription": "Menciutkan sheet bawah",
     "BottomSheetDismissDescription": "Menutup sheet bawah",
-    "BottomSheetExpandDescription": "Meluaskan sheet bawah"
+    "BottomSheetExpandDescription": "Meluaskan sheet bawah",
+    "CloseSheet": "Tutup sheet"
   },
   "id": {
     "BottomSheetPaneTitle": "Sheet Bawah",
     "BottomSheetDragHandleDescription": "Handel geser",
     "BottomSheetPartialExpandDescription": "Menciutkan sheet bawah",
     "BottomSheetDismissDescription": "Menutup sheet bawah",
-    "BottomSheetExpandDescription": "Meluaskan sheet bawah"
+    "BottomSheetExpandDescription": "Meluaskan sheet bawah",
+    "CloseSheet": "Tutup sheet"
   },
   "is": {
     "BottomSheetPaneTitle": "Blað neðst",
     "BottomSheetDragHandleDescription": "Dragkló",
     "BottomSheetPartialExpandDescription": "Minnka blað neðst",
     "BottomSheetDismissDescription": "Hunsa blað neðst",
-    "BottomSheetExpandDescription": "Stækka blað neðst"
+    "BottomSheetExpandDescription": "Stækka blað neðst",
+    "CloseSheet": "Loka blaði"
   },
   "it": {
     "BottomSheetPaneTitle": "Riquadro inferiore",
     "BottomSheetDragHandleDescription": "Punto di trascinamento",
     "BottomSheetPartialExpandDescription": "Comprimi il riquadro inferiore",
     "BottomSheetDismissDescription": "Chiudi il riquadro inferiore",
-    "BottomSheetExpandDescription": "Espandi il riquadro inferiore"
+    "BottomSheetExpandDescription": "Espandi il riquadro inferiore",
+    "CloseSheet": "Chiudi il foglio"
   },
   "iw": {
     "BottomSheetPaneTitle": "גיליון תחתון",
     "BottomSheetDragHandleDescription": "נקודת אחיזה לגרירה",
     "BottomSheetPartialExpandDescription": "כיווץ הגיליון התחתון",
     "BottomSheetDismissDescription": "סגירת הגיליון התחתון",
-    "BottomSheetExpandDescription": "הרחבת הגיליון התחתון"
+    "BottomSheetExpandDescription": "הרחבת הגיליון התחתון",
+    "CloseSheet": "סגירת הגיליון"
   },
   "he": {
     "BottomSheetPaneTitle": "גיליון תחתון",
     "BottomSheetDragHandleDescription": "נקודת אחיזה לגרירה",
     "BottomSheetPartialExpandDescription": "כיווץ הגיליון התחתון",
     "BottomSheetDismissDescription": "סגירת הגיליון התחתון",
-    "BottomSheetExpandDescription": "הרחבת הגיליון התחתון"
+    "BottomSheetExpandDescription": "הרחבת הגיליון התחתון",
+    "CloseSheet": "סגירת הגיליון"
   },
   "ja": {
     "BottomSheetPaneTitle": "ボトムシート",
     "BottomSheetDragHandleDescription": "ドラッグ ハンドル",
     "BottomSheetPartialExpandDescription": "ボトムシートを折りたたみます",
     "BottomSheetDismissDescription": "ボトムシートを閉じます",
-    "BottomSheetExpandDescription": "ボトムシートを開きます"
+    "BottomSheetExpandDescription": "ボトムシートを開きます",
+    "CloseSheet": "シートを閉じる"
   },
   "ka": {
     "BottomSheetPaneTitle": "ქვედა ფურცელი",
     "BottomSheetDragHandleDescription": "სახელური ჩავლებისთვის",
     "BottomSheetPartialExpandDescription": "ქვედა ფურცლის ჩაკეცვა",
     "BottomSheetDismissDescription": "ქვედა ფურცლის უარყოფა",
-    "BottomSheetExpandDescription": "ქვედა ფურცლის გაშლა"
+    "BottomSheetExpandDescription": "ქვედა ფურცლის გაშლა",
+    "CloseSheet": "ფურცლის დახურვა"
   },
   "kk": {
     "BottomSheetPaneTitle": "Төменгі парақша",
     "BottomSheetDragHandleDescription": "Сүйрейтін тетік",
     "BottomSheetPartialExpandDescription": "Төменгі парақшаны жию",
     "BottomSheetDismissDescription": "Төменгі парақшаны жабу",
-    "BottomSheetExpandDescription": "Төменгі парақшаны жаю"
+    "BottomSheetExpandDescription": "Төменгі парақшаны жаю",
+    "CloseSheet": "Парақты жабу"
   },
   "km": {
     "BottomSheetPaneTitle": "សន្លឹក​ខាងក្រោម",
     "BottomSheetDragHandleDescription": "ដង​អូស",
     "BottomSheetPartialExpandDescription": "បង្រួម​សន្លឹកខាងក្រោម",
     "BottomSheetDismissDescription": "ច្រានចោល​សន្លឹកខាងក្រោម",
-    "BottomSheetExpandDescription": "ពង្រីក​សន្លឹកខាងក្រោម"
+    "BottomSheetExpandDescription": "ពង្រីក​សន្លឹកខាងក្រោម",
+    "CloseSheet": "បិទសន្លឹក"
   },
   "kn": {
     "BottomSheetPaneTitle": "ಕೆಳಭಾಗದ ಶೀಟ್",
     "BottomSheetDragHandleDescription": "ಹ್ಯಾಂಡಲ್ ಡ್ರ್ಯಾಗ್ ಮಾಡಿ",
     "BottomSheetPartialExpandDescription": "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ಕುಗ್ಗಿಸಿ",
     "BottomSheetDismissDescription": "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ವಜಾಗೊಳಿಸಿ",
-    "BottomSheetExpandDescription": "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ವಿಸ್ತರಿಸಿ"
+    "BottomSheetExpandDescription": "ಕೆಳಭಾಗದ ಶೀಟ್ ಅನ್ನು ವಿಸ್ತರಿಸಿ",
+    "CloseSheet": "ಶೀಟ್ ಮುಚ್ಚಿರಿ"
   },
   "ko": {
     "BottomSheetPaneTitle": "하단 시트",
     "BottomSheetDragHandleDescription": "드래그 핸들",
     "BottomSheetPartialExpandDescription": "하단 시트 접기",
     "BottomSheetDismissDescription": "하단 시트 닫기",
-    "BottomSheetExpandDescription": "하단 시트 펼치기"
+    "BottomSheetExpandDescription": "하단 시트 펼치기",
+    "CloseSheet": "시트 닫기"
   },
   "ky": {
     "BottomSheetPaneTitle": "Ылдыйкы экран",
     "BottomSheetDragHandleDescription": "Сүйрөө маркери",
     "BottomSheetPartialExpandDescription": "Ылдыйкы экранды жыйыштыруу",
     "BottomSheetDismissDescription": "Ылдыйкы экранды жабуу",
-    "BottomSheetExpandDescription": "Ылдыйкы экранды жайып көрсөтүү"
+    "BottomSheetExpandDescription": "Ылдыйкы экранды жайып көрсөтүү",
+    "CloseSheet": "Баракты жабуу"
   },
   "lo": {
     "BottomSheetPaneTitle": "ຊີດລຸ່ມສຸດ",
     "BottomSheetDragHandleDescription": "ບ່ອນຈັບລາກ",
     "BottomSheetPartialExpandDescription": "ຫຍໍ້ຊີດລຸ່ມສຸດລົງ",
     "BottomSheetDismissDescription": "ປິດຊີດລຸ່ມສຸດໄວ້",
-    "BottomSheetExpandDescription": "ຂະຫຍາຍຊີດລຸ່ມສຸດ"
+    "BottomSheetExpandDescription": "ຂະຫຍາຍຊີດລຸ່ມສຸດ",
+    "CloseSheet": "ປິດຊີດ"
   },
   "lt": {
     "BottomSheetPaneTitle": "Apatinis lapas",
     "BottomSheetDragHandleDescription": "Vilkimo rankenėlė",
     "BottomSheetPartialExpandDescription": "Sutraukti apatinį lapą",
     "BottomSheetDismissDescription": "Atsisakyti apatinio lapo",
-    "BottomSheetExpandDescription": "Išskleisti apatinį lapą"
+    "BottomSheetExpandDescription": "Išskleisti apatinį lapą",
+    "CloseSheet": "Uždaryti lapą"
   },
   "lv": {
     "BottomSheetPaneTitle": "Ekrāna apakšdaļas lapa",
     "BottomSheetDragHandleDescription": "Vilkšanas turis",
     "BottomSheetPartialExpandDescription": "Sakļaut ekrāna apakšdaļas lapu",
     "BottomSheetDismissDescription": "Noraidīt ekrāna apakšdaļas lapu",
-    "BottomSheetExpandDescription": "Izvērst ekrāna apakšdaļas lapu"
+    "BottomSheetExpandDescription": "Izvērst ekrāna apakšdaļas lapu",
+    "CloseSheet": "Aizvērt izklājlapu"
   },
   "mk": {
     "BottomSheetPaneTitle": "Долен лист",
     "BottomSheetDragHandleDescription": "Рачка за влечење",
     "BottomSheetPartialExpandDescription": "Собери го долниот лист",
     "BottomSheetDismissDescription": "Отфрли го долниот лист",
-    "BottomSheetExpandDescription": "Прошири го долниот лист"
+    "BottomSheetExpandDescription": "Прошири го долниот лист",
+    "CloseSheet": "Затворете го листот"
   },
   "ml": {
     "BottomSheetPaneTitle": "ബോട്ടം ഷീറ്റ്",
     "BottomSheetDragHandleDescription": "വലിച്ചിടുന്നതിനുള്ള ഹാൻഡിൽ",
     "BottomSheetPartialExpandDescription": "ബോട്ടം ഷീറ്റ് ചുരുക്കുക",
     "BottomSheetDismissDescription": "ബോട്ടം ഷീറ്റ് ഡിസ്മിസ് ചെയ്യുക",
-    "BottomSheetExpandDescription": "ബോട്ടം ഷീറ്റ് വികസിപ്പിക്കുക"
+    "BottomSheetExpandDescription": "ബോട്ടം ഷീറ്റ് വികസിപ്പിക്കുക",
+    "CloseSheet": "ഷീറ്റ് അടയ്ക്കുക"
   },
   "mn": {
     "BottomSheetPaneTitle": "Доод хүснэгт",
     "BottomSheetDragHandleDescription": "Чирэх бариул",
     "BottomSheetPartialExpandDescription": "Доод хүснэгтийг хураах",
     "BottomSheetDismissDescription": "Доод хүснэгтийг хаах",
-    "BottomSheetExpandDescription": "Доод хүснэгтийг дэлгэх"
+    "BottomSheetExpandDescription": "Доод хүснэгтийг дэлгэх",
+    "CloseSheet": "Хүснэгтийг хаах"
   },
   "mr": {
     "BottomSheetPaneTitle": "तळाशी असलेली शीट",
     "BottomSheetDragHandleDescription": "ड्रॅग हॅंडल",
     "BottomSheetPartialExpandDescription": "तळाशी असलेली शीट कोलॅप्स करा",
     "BottomSheetDismissDescription": "तळाशी असलेली शीट डिसमिस करा",
-    "BottomSheetExpandDescription": "तळाशी असलेली शीट विस्तारीत करा"
+    "BottomSheetExpandDescription": "तळाशी असलेली शीट विस्तारीत करा",
+    "CloseSheet": "शीट बंद करा"
   },
   "ms": {
     "BottomSheetPaneTitle": "Helaian Bawah",
     "BottomSheetDragHandleDescription": "Pemegang seret",
     "BottomSheetPartialExpandDescription": "Kuncupkan helaian bawah",
     "BottomSheetDismissDescription": "Ketepikan helaian bawah",
-    "BottomSheetExpandDescription": "Kembangkan helaian bawah"
+    "BottomSheetExpandDescription": "Kembangkan helaian bawah",
+    "CloseSheet": "Tutup helaian"
   },
   "my": {
     "BottomSheetPaneTitle": "အောက်ခြေအပိုဆောင်း စာမျက်နှာ",
     "BottomSheetDragHandleDescription": "ဖိဆွဲအထိန်း",
     "BottomSheetPartialExpandDescription": "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ချုံ့သည်",
     "BottomSheetDismissDescription": "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ပယ်သည်",
-    "BottomSheetExpandDescription": "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ချဲ့သည်"
+    "BottomSheetExpandDescription": "အောက်ခြေအပိုဆောင်း စာမျက်နှာကို ချဲ့သည်",
+    "CloseSheet": "စာမျက်နှာ ပိတ်ရန်"
   },
   "nb": {
     "BottomSheetPaneTitle": "Felt nederst",
     "BottomSheetDragHandleDescription": "Håndtak",
     "BottomSheetPartialExpandDescription": "Skjul feltet nederst",
     "BottomSheetDismissDescription": "Lukk feltet nederst",
-    "BottomSheetExpandDescription": "Vis feltet nederst"
+    "BottomSheetExpandDescription": "Vis feltet nederst",
+    "CloseSheet": "Lukk arket"
   },
   "ne": {
     "BottomSheetPaneTitle": "पुछारको पाना",
     "BottomSheetDragHandleDescription": "ड्र्याग ह्यान्डल",
     "BottomSheetPartialExpandDescription": "पुछारको पाना कोल्याप्स गर्नुहोस्",
     "BottomSheetDismissDescription": "पुछारको पाना हटाउनुहोस्",
-    "BottomSheetExpandDescription": "पुछारको पाना एक्स्पान्ड गर्नुहोस्"
+    "BottomSheetExpandDescription": "पुछारको पाना एक्स्पान्ड गर्नुहोस्",
+    "CloseSheet": "पाना बन्द गर्नुहोस्"
   },
   "nl": {
     "BottomSheetPaneTitle": "Blad onderaan",
     "BottomSheetDragHandleDescription": "Handgreep voor slepen",
     "BottomSheetPartialExpandDescription": "Blad onderaan samenvouwen",
     "BottomSheetDismissDescription": "Blad onderaan sluiten",
-    "BottomSheetExpandDescription": "Blad onderaan uitvouwen"
+    "BottomSheetExpandDescription": "Blad onderaan uitvouwen",
+    "CloseSheet": "Blad sluiten"
   },
   "or": {
     "BottomSheetPaneTitle": "ବଟମ ସିଟ",
     "BottomSheetDragHandleDescription": "ଡ୍ରାଗ ହେଣ୍ଡେଲ",
     "BottomSheetPartialExpandDescription": "ବଟମ ସିଟକୁ ସଙ୍କୁଚିତ କରନ୍ତୁ",
     "BottomSheetDismissDescription": "ବଟମ ସିଟକୁ ଖାରଜ କରନ୍ତୁ",
-    "BottomSheetExpandDescription": "ବଟମ ସିଟକୁ ବିସ୍ତାର କରନ୍ତୁ"
+    "BottomSheetExpandDescription": "ବଟମ ସିଟକୁ ବିସ୍ତାର କରନ୍ତୁ",
+    "CloseSheet": "ସିଟ୍ ବନ୍ଦ କରନ୍ତୁ"
   },
   "pa": {
     "BottomSheetPaneTitle": "ਹੇਠਲੀ ਸ਼ੀਟ",
     "BottomSheetDragHandleDescription": "ਘਸੀਟਣ ਵਾਲਾ ਹੈਂਡਲ",
     "BottomSheetPartialExpandDescription": "ਹੇਠਲੀ ਸ਼ੀਟ ਨੂੰ ਸਮੇਟੋ",
     "BottomSheetDismissDescription": "ਹੇਠਲੀ ਸ਼ੀਟ ਨੂੰ ਖਾਰਜ ਕਰੋ",
-    "BottomSheetExpandDescription": "ਹੇਠਲੀ ਸ਼ੀਟ ਦਾ ਵਿਸਤਾਰ ਕਰੋ"
+    "BottomSheetExpandDescription": "ਹੇਠਲੀ ਸ਼ੀਟ ਦਾ ਵਿਸਤਾਰ ਕਰੋ",
+    "CloseSheet": "ਸ਼ੀਟ ਬੰਦ ਕਰੋ"
   },
   "pl": {
     "BottomSheetPaneTitle": "Plansza dolna",
     "BottomSheetDragHandleDescription": "Uchwyt do przeciągania",
     "BottomSheetPartialExpandDescription": "Zwiń planszę dolną",
     "BottomSheetDismissDescription": "Zamknij planszę dolną",
-    "BottomSheetExpandDescription": "Rozwiń planszę dolną"
+    "BottomSheetExpandDescription": "Rozwiń planszę dolną",
+    "CloseSheet": "Zamknij arkusz"
   },
   "pt": {
     "BottomSheetPaneTitle": "Página inferior",
     "BottomSheetDragHandleDescription": "Alça de arrastar",
     "BottomSheetPartialExpandDescription": "Fechar página inferior",
     "BottomSheetDismissDescription": "Dispensar página inferior",
-    "BottomSheetExpandDescription": "Abrir página inferior"
+    "BottomSheetExpandDescription": "Abrir página inferior",
+    "CloseSheet": "Fechar planilha"
   },
   "pt-br": {
     "BottomSheetPaneTitle": "Página inferior",
     "BottomSheetDragHandleDescription": "Alça de arrastar",
     "BottomSheetPartialExpandDescription": "Fechar página inferior",
     "BottomSheetDismissDescription": "Dispensar página inferior",
-    "BottomSheetExpandDescription": "Abrir página inferior"
+    "BottomSheetExpandDescription": "Abrir página inferior",
+    "CloseSheet": "Fechar planilha"
   },
   "pt-pt": {
     "BottomSheetPaneTitle": "Secção inferior",
     "BottomSheetDragHandleDescription": "Indicador para arrastar",
     "BottomSheetPartialExpandDescription": "Reduza a secção inferior",
     "BottomSheetDismissDescription": "Ignore a secção inferior",
-    "BottomSheetExpandDescription": "Expanda a secção inferior"
+    "BottomSheetExpandDescription": "Expanda a secção inferior",
+    "CloseSheet": "Fechar folha"
   },
   "ro": {
     "BottomSheetPaneTitle": "Foaia din partea de jos",
     "BottomSheetDragHandleDescription": "Ghidaj de tragere",
     "BottomSheetPartialExpandDescription": "Restrânge foaia din partea de jos",
     "BottomSheetDismissDescription": "Închide foaia din partea de jos",
-    "BottomSheetExpandDescription": "Extinde foaia din partea de jos"
+    "BottomSheetExpandDescription": "Extinde foaia din partea de jos",
+    "CloseSheet": "Închide foaia"
   },
   "ru": {
     "BottomSheetPaneTitle": "Нижний экран",
     "BottomSheetDragHandleDescription": "Маркер перемещения",
     "BottomSheetPartialExpandDescription": "Свернуть нижний экран",
     "BottomSheetDismissDescription": "Закрыть нижний экран",
-    "BottomSheetExpandDescription": "Развернуть нижний экран"
+    "BottomSheetExpandDescription": "Развернуть нижний экран",
+    "CloseSheet": "Закрыть лист"
   },
   "si": {
     "BottomSheetPaneTitle": "පහළම පත්‍රය",
     "BottomSheetDragHandleDescription": "ඇදීම් හැඬලය",
     "BottomSheetPartialExpandDescription": "පහළම පත්‍රය හකුළන්න",
     "BottomSheetDismissDescription": "පහළම පත්‍රය අස් කරන්න",
-    "BottomSheetExpandDescription": "පහළම පත්‍රය දිග හරින්න"
+    "BottomSheetExpandDescription": "පහළම පත්‍රය දිග හරින්න",
+    "CloseSheet": "පත්‍රය වසන්න"
   },
   "sk": {
     "BottomSheetPaneTitle": "Dolný hárok",
     "BottomSheetDragHandleDescription": "Presúvadlo",
     "BottomSheetPartialExpandDescription": "Zbaliť dolný hárok",
     "BottomSheetDismissDescription": "Zavrieť dolný hárok",
-    "BottomSheetExpandDescription": "Rozbaliť dolný hárok"
+    "BottomSheetExpandDescription": "Rozbaliť dolný hárok",
+    "CloseSheet": "Zavrieť hárok"
   },
   "sl": {
     "BottomSheetPaneTitle": "Razdelek na dnu zaslona",
     "BottomSheetDragHandleDescription": "Ročica za vlečenje",
     "BottomSheetPartialExpandDescription": "Strnitev razdelka na dnu zaslona",
     "BottomSheetDismissDescription": "Opustitev razdelka na dnu zaslona",
-    "BottomSheetExpandDescription": "Razširitev razdelka na dnu zaslona"
+    "BottomSheetExpandDescription": "Razširitev razdelka na dnu zaslona",
+    "CloseSheet": "Zapri list"
   },
   "sq": {
     "BottomSheetPaneTitle": "Fleta e poshtme",
     "BottomSheetDragHandleDescription": "Doreza e zvarritjes",
     "BottomSheetPartialExpandDescription": "Palos fletën e poshtme",
     "BottomSheetDismissDescription": "Hiq fletën e poshtme",
-    "BottomSheetExpandDescription": "Zgjero fletën e poshtme"
+    "BottomSheetExpandDescription": "Zgjero fletën e poshtme",
+    "CloseSheet": "Mbyll fletën"
   },
   "sr": {
     "BottomSheetPaneTitle": "Доња табела",
     "BottomSheetDragHandleDescription": "Идентификатор за превлачење",
     "BottomSheetPartialExpandDescription": "Скупите доњу табелу",
     "BottomSheetDismissDescription": "Одбаците доњу табелу",
-    "BottomSheetExpandDescription": "Проширите доњу табелу"
+    "BottomSheetExpandDescription": "Проширите доњу табелу",
+    "CloseSheet": "Затворите табелу"
   },
   "sv": {
     "BottomSheetPaneTitle": "Ark på nedre delen av skärmen",
     "BottomSheetDragHandleDescription": "Handtag",
     "BottomSheetPartialExpandDescription": "Komprimera arket på nedre delen av skärmen",
     "BottomSheetDismissDescription": "Stäng arket på nedre delen av skärmen",
-    "BottomSheetExpandDescription": "Utöka arket på nedre delen av skärmen"
+    "BottomSheetExpandDescription": "Utöka arket på nedre delen av skärmen",
+    "CloseSheet": "Stäng kalkylarket"
   },
   "sw": {
     "BottomSheetPaneTitle": "Safu ya Chini",
     "BottomSheetDragHandleDescription": "Aikoni ya buruta",
     "BottomSheetPartialExpandDescription": "Kunja safu ya chini",
     "BottomSheetDismissDescription": "Ondoa safu ya chini",
-    "BottomSheetExpandDescription": "Panua safu ya chini"
+    "BottomSheetExpandDescription": "Panua safu ya chini",
+    "CloseSheet": "Funga laha"
   },
   "ta": {
     "BottomSheetPaneTitle": "கீழ்ப்புற ஷீட்",
     "BottomSheetDragHandleDescription": "இழுப்பதற்கான ஹேண்டில்",
     "BottomSheetPartialExpandDescription": "கீழ்ப்புற ஷீட்டைச் சுருக்கும்",
     "BottomSheetDismissDescription": "கீழ்ப்புற ஷீட்டை நிராகரிக்கும்",
-    "BottomSheetExpandDescription": "கீழ்ப்புற ஷீட்டை விரிவாக்கும்"
+    "BottomSheetExpandDescription": "கீழ்ப்புற ஷீட்டை விரிவாக்கும்",
+    "CloseSheet": "ஷீட்டை மூடும்"
   },
   "te": {
     "BottomSheetPaneTitle": "దిగువున ఉన్న షీట్",
     "BottomSheetDragHandleDescription": "లాగే హ్యాండిల్",
     "BottomSheetPartialExpandDescription": "దిగువున ఉన్న షీట్‌ను కుదిస్తుంది",
     "BottomSheetDismissDescription": "దిగువున ఉన్న షీట్‌ను విస్మరిస్తుంది",
-    "BottomSheetExpandDescription": "దిగువున ఉన్న షీట్‌ను విస్తరిస్తుంది"
+    "BottomSheetExpandDescription": "దిగువున ఉన్న షీట్‌ను విస్తరిస్తుంది",
+    "CloseSheet": "షీట్‌ను మూసివేయండి"
   },
   "th": {
     "BottomSheetPaneTitle": "Bottom Sheet",
     "BottomSheetDragHandleDescription": "แฮนเดิลการลาก",
     "BottomSheetPartialExpandDescription": "ยุบ Bottom Sheet",
     "BottomSheetDismissDescription": "ปิด Bottom Sheet",
-    "BottomSheetExpandDescription": "ขยาย Bottom Sheet"
+    "BottomSheetExpandDescription": "ขยาย Bottom Sheet",
+    "CloseSheet": "ปิดชีต"
   },
   "tl": {
     "BottomSheetPaneTitle": "Bottom Sheet",
     "BottomSheetDragHandleDescription": "Handle sa pag-drag",
     "BottomSheetPartialExpandDescription": "I-collapse ang bottom sheet",
     "BottomSheetDismissDescription": "I-dismiss ang bottom sheet",
-    "BottomSheetExpandDescription": "Palawakin ang bottom sheet"
+    "BottomSheetExpandDescription": "Palawakin ang bottom sheet",
+    "CloseSheet": "Isara ang sheet"
   },
   "tr": {
     "BottomSheetPaneTitle": "Alt Sayfa",
     "BottomSheetDragHandleDescription": "Sürükleme tutamacı",
     "BottomSheetPartialExpandDescription": "Alt sayfayı daralt",
     "BottomSheetDismissDescription": "Alt sayfayı kapat",
-    "BottomSheetExpandDescription": "Alt sayfayı genişlet"
+    "BottomSheetExpandDescription": "Alt sayfayı genişlet",
+    "CloseSheet": "Sayfayı kapat"
   },
   "uk": {
     "BottomSheetPaneTitle": "Нижній екран",
     "BottomSheetDragHandleDescription": "Маркер переміщення",
     "BottomSheetPartialExpandDescription": "Згорнути нижній екран",
     "BottomSheetDismissDescription": "Закрити нижній екран",
-    "BottomSheetExpandDescription": "Розгорнути нижній екран"
+    "BottomSheetExpandDescription": "Розгорнути нижній екран",
+    "CloseSheet": "Закрити аркуш"
   },
   "ur": {
     "BottomSheetPaneTitle": "نیچے کی شیٹ",
     "BottomSheetDragHandleDescription": "گھسیٹنے کا ہینڈل",
     "BottomSheetPartialExpandDescription": "نیچے کی شیٹ کو سکیڑیں",
     "BottomSheetDismissDescription": "نیچے کی شیٹ کو برخاست کریں",
-    "BottomSheetExpandDescription": "نیچے کی شیٹ کو پھیلائیں"
+    "BottomSheetExpandDescription": "نیچے کی شیٹ کو پھیلائیں",
+    "CloseSheet": "شیٹ بند کریں"
   },
   "uz": {
     "BottomSheetPaneTitle": "Quyi ekran",
     "BottomSheetDragHandleDescription": "Surish dastagi",
     "BottomSheetPartialExpandDescription": "Quyi ekranni yigʻish",
     "BottomSheetDismissDescription": "Quyi ekranni yopish",
-    "BottomSheetExpandDescription": "Quyi ekranni yoyish"
+    "BottomSheetExpandDescription": "Quyi ekranni yoyish",
+    "CloseSheet": "Varaqni yopish"
   },
   "vi": {
     "BottomSheetPaneTitle": "Bảng dưới cùng",
     "BottomSheetDragHandleDescription": "Nút kéo",
     "BottomSheetPartialExpandDescription": "Thu gọn bảng dưới cùng",
     "BottomSheetDismissDescription": "Đóng bảng dưới cùng",
-    "BottomSheetExpandDescription": "Mở rộng bảng dưới cùng"
+    "BottomSheetExpandDescription": "Mở rộng bảng dưới cùng",
+    "CloseSheet": "Đóng trang tính"
   },
   "zh-cn": {
     "BottomSheetPaneTitle": "底部动作条",
     "BottomSheetDragHandleDescription": "拖动手柄",
     "BottomSheetPartialExpandDescription": "收起底部动作条",
     "BottomSheetDismissDescription": "关闭底部动作条",
-    "BottomSheetExpandDescription": "展开底部动作条"
+    "BottomSheetExpandDescription": "展开底部动作条",
+    "CloseSheet": "关闭工作表"
   },
   "zh-hk": {
     "BottomSheetPaneTitle": "頁底面板",
     "BottomSheetDragHandleDescription": "拖曳控點",
     "BottomSheetPartialExpandDescription": "收合頁底面板",
     "BottomSheetDismissDescription": "關閉頁底面板",
-    "BottomSheetExpandDescription": "展開頁底面板"
+    "BottomSheetExpandDescription": "展開頁底面板",
+    "CloseSheet": "閂表單"
   },
   "zh-tw": {
     "BottomSheetPaneTitle": "底部功能表",
     "BottomSheetDragHandleDescription": "拖曳控點",
     "BottomSheetPartialExpandDescription": "收合底部功能表",
     "BottomSheetDismissDescription": "關閉底部功能表",
-    "BottomSheetExpandDescription": "展開底部功能表"
+    "BottomSheetExpandDescription": "展開底部功能表",
+    "CloseSheet": "關閉功能表"
   },
   "zu": {
     "BottomSheetPaneTitle": "Ishidi Eliphansi",
     "BottomSheetDragHandleDescription": "Hudula isibambi",
     "BottomSheetPartialExpandDescription": "Goqa ishidi eliphansi",
     "BottomSheetDismissDescription": "Chitha ishidi eliphansi",
-    "BottomSheetExpandDescription": "Nweba ishidi eliphansi"
+    "BottomSheetExpandDescription": "Nweba ishidi eliphansi",
+    "CloseSheet": "Vala ishidi"
   }
 }
