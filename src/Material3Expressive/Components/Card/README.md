@@ -105,6 +105,7 @@ Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard
 ## 使用限制与注意事项
 
 形状配置使用四角 CornerRadius。可在条目或祖先设置 `MaterialInteraction.FocusFeedback="InsetRing"`。
+Catalog **Inset focus ring** 提供三种可点击卡片的键盘焦点示例；普通卡片不会显示自身焦点环。
 普通卡片记住首次挂载的默认阴影高度，模式切换或重挂后重新读取。
 半透明 ElevatedCard 的阴影仍有已知视觉差异。
 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)展示三种外观，Drag handle demo 展示共享拖动反馈。

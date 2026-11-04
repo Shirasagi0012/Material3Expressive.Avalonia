@@ -6,6 +6,7 @@
         Title="ButtonGroup" Width="840" Height="900">
   <Window.Resources>
     <local:CheckedFillConverter x:Key="CheckedFill" />
+    <m3:MaterialInteractionSource x:Key="SharedWidthSource" />
   </Window.Resources>
   <ScrollViewer>
     <StackPanel Margin="24" Spacing="28">
@@ -87,6 +88,21 @@
             </m3:ButtonGroupCustomItem.MenuContent>
           </m3:ButtonGroupCustomItem>
         </m3:ButtonGroup>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Text="Shared interaction source" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock Text="Hold the center button or the Preview button. Both share the center item's width animation." TextWrapping="Wrap" />
+        <m3:ButtonGroup ExpandedRatio="0.5">
+          <m3:ButtonGroupAction Label="Previous" />
+          <m3:ButtonGroupCustomItem InteractionSource="{StaticResource SharedWidthSource}">
+            <Button Content="Select" HorizontalAlignment="Stretch"
+                    m3:MaterialButton.InteractionSource="{StaticResource SharedWidthSource}" />
+            <m3:ButtonGroupCustomItem.MenuContent><m3:DropdownMenuItem Content="Select" /></m3:ButtonGroupCustomItem.MenuContent>
+          </m3:ButtonGroupCustomItem>
+          <m3:ButtonGroupAction Label="Next" />
+        </m3:ButtonGroup>
+        <Button Content="Preview" m3:MaterialButton.InteractionSource="{StaticResource SharedWidthSource}" />
       </StackPanel>
 
       <StackPanel Spacing="8">

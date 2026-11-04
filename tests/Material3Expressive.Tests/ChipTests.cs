@@ -24,6 +24,52 @@ public class ChipTests
 {
     [AvaloniaTheory]
     [InlineData("assist")]
+    [InlineData("elevated-assist")]
+    [InlineData("suggestion")]
+    [InlineData("elevated-suggestion")]
+    [InlineData("filter")]
+    [InlineData("elevated-filter")]
+    [InlineData("input")]
+    public void FocusRingTracksShapeAndSourceLifetimeWithoutActivating(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        Chip chip = kind switch
+        {
+            "assist" => new AssistChip(), "elevated-assist" => new AssistChip { IsElevated = true },
+            "suggestion" => new SuggestionChip(), "elevated-suggestion" => new SuggestionChip { IsElevated = true },
+            "filter" => new FilterChip(), "elevated-filter" => new FilterChip { IsElevated = true }, _ => new InputChip()
+        };
+        chip.Content = new Border { Width = 32, Height = 16 };
+        var source = new MaterialInteractionSource(); chip.InteractionSource = source;
+        MaterialInteraction.SetFocusFeedback(chip, FocusFeedback.InsetRing);
+        var window = Show(chip); var clicks = 0; chip.Click += (_, _) => clicks++;
+        InsetFocusRingPresenter Ring() => Assert.Single(chip.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        void Frames(int count = 60)
+        {
+            for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
+        }
+        try
+        {
+            Assert.True(chip.Focus(NavigationMethod.Tab)); Frames(); Assert.Equal(1f, Ring().Progress);
+            if (chip is SelectableChip selectable) { selectable.IsSelected = true; Frames(); }
+            Assert.Equal(Part<MaterialSurface>(chip, "PART_Container").EffectiveCornerRadius, Ring().Corners);
+            var replacement = new MaterialInteractionSource(); chip.InteractionSource = replacement; Frames();
+            Assert.Equal(0f, Ring().Progress); Assert.True(chip.IsFocused);
+            source.Emit(new MaterialInteractionEvent.Focus()); Frames(); Assert.Equal(0f, Ring().Progress);
+            var focus = new MaterialInteractionEvent.Focus(); replacement.Emit(focus); Frames(); Assert.Equal(1f, Ring().Progress);
+            replacement.Emit(new MaterialInteractionEvent.Unfocus(focus)); Frames(); Assert.Equal(0f, Ring().Progress);
+            var content = window.Content; window.Content = null; Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, clock.PendingFrameCount);
+            window.Content = content; window.UpdateLayout();
+            Assert.True(chip.Focus(NavigationMethod.Tab)); Frames(); Assert.Equal(1f, Ring().Progress);
+            Assert.Equal(0, clicks); Assert.Null(MotionTestClockScope.Error(chip));
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("assist")]
     [InlineData("suggestion")]
     [InlineData("filter")]
     [InlineData("input")]

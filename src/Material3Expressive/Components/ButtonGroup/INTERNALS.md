@@ -81,8 +81,9 @@ VisualParity AUTHORING 的范围暂不纳入，不能从这些行为测试推断
 [Compose cases](../../../../tests/VisualParity/reference/src/main/kotlin/cases/ButtonGroupCases.kt)。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter FullyQualifiedName~ButtonGroupTests
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c Release --filter 'FullyQualifiedName~ButtonGroupTests|FullyQualifiedName~ButtonGroupInteractionSourceTests'
 ./tests/VisualParity/parity.ps1 self-test --family button-group
+./tests/VisualParity/parity.ps1 self-test --family button-group-source
 ```
 
 用例覆盖固有尺寸、有限约束、权重、全部排列、逻辑间距对齐、RTL、connected 状态，以及按压、快速释放、
@@ -91,12 +92,26 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 动态项目两端用普通外层内容宿主观察实际分配，避免把 Compose Button 内部未受限的最小交互节点尺寸
 当成外层分配；颜色输入固定为相同 ColorScheme，排除配色生成器差异。
 
-尚未提供通用可注入 MutableInteractionSource；PressSource 使用真实控件的共享输入状态。
+`ButtonGroupCustomItem.InteractionSource` 对应 `ButtonGroupScope.animateWidth(InteractionSource)`，
+复用 Foundation 的 MaterialInteractionSource。显式源优先于 PressSource，后者保留真实控件状态的既有入口。
+每次订阅持有独立 Press 列表，按对象身份移除一个匹配开始；每个事件都映射到列表是否非空，再去重。
+因此换源后的第一个 Hover / 未匹配结束也会提交 false，遵循上游，而非只处理 Press 事件。
+外部源替换复用现有 NextFrameAsync + 组合阶段调度：旧动画先采样提交帧，再取消运行与等待、
+更换订阅并保留 Animatable 值。连续替换只提交最后一个源，待提交时卸载会取消任务；
+首次接入与原有 PressSource 控件桥仍直接连接。该非破坏性组件 API 在剩余移植任务授权范围内，未新增共享机制。
+
+行为入口 `ButtonGroupInteractionSourceTests` 覆盖多按压、快速释放/重按、换源、禁用、PressSource 回退与重挂。
+双端 `button-group-source` 的最终运行 `20261104-082324-0e8ea2b7`：12 例全部完全相等、无执行错误、
+重复稳定。首轮发现的 65ms 换源旧动画停在 64ms 的问题已按 EnlargeOnPressElement.update 的提交
+顺序修复，没有加入固定时间补偿；该修复仅涉及本组件的新外部源路径，不扩大为其他源消费者的结论。
+
 任意多指交互源、任意 Compose Shape、文字栅格、OS 屏幕阅读器及实际桌面双端体验未经完整验证。
 公开 Action 使用现有原生 Button 键盘入口；原生 Enter 与 Compose 的激活时机边界见 Button 的维护说明，
 不能用本套件的指针用例证明键盘完全一致。
 
 `self-test` 的执行、重复性和双端比较是不同结论；本次结果及剩余采样在任务交付中按真实产物报告。
+原有 80 例最终回归 `20261104-082716-feb94049`：54 例完全相等、12 例容差内、14 例不同，
+执行错误 0；本轮仅 RTL repress 的 Core 额外被动截图不稳定，其余 79 例稳定。
 
 当前保留的观测：动态 `content-0` / `content-2` 有居中取整差异，组和项目的分配几何、回调状态一致。
 `connected` 在 release / time-96000、`disable` 在 disabled 至 time-400000 仍有像素差异，

@@ -79,7 +79,7 @@ Card 的数值适配范围以组件确认记录为准。
 [Core 焦点](../../../../docs/DECISIONS.md)与
 [Surface 描边](../../../../docs/DECISIONS.md)，不在组件内建立另一套规则。
 
-尚未实现任意路径/切角 Shape 和完整 ColumnScope。共享焦点环已接入，Card 自身的双端焦点环矩阵、文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
+尚未实现任意路径/切角 Shape 和完整 ColumnScope。文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
 
 ## 4. 验证入口
 
@@ -87,8 +87,13 @@ Card 的数值适配范围以组件确认记录为准。
 - `ElevationSourceLifetimeTests` 与 `StateLayerTests` 覆盖独立 collector 生命周期和重叠交互中断。
 - 双端 `CardCases.cs` / `CardCases.kt` 的族名为 `card`，包括三种变体的 source-drag、source-replace、source-disable 和 source-mode。
 - 已有结果仍包含精确高度、Enter 时机和半透明阴影差异，复验应分别读取状态、截图与稳定性结果。
+- 2026-11-04 焦点矩阵 `focus-ring` 运行 `20261104-080938-55d3d95b` 的 Card 子集 39 例均稳定、
+  执行错误 0：21 例完全相等、18 例容差内。覆盖三变体的进入/退出/反向、悬浮叠加、尺寸、禁用、
+  Opacity/InsetRing 切换、换源、普通/可点击切换、卸载重挂、深色和自定义环。全族 81 例无超差。
+  `CardTests` 增加焦点与源生命周期行为断言；Catalog **Inset focus ring** 展示三变体。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter "FullyQualifiedName~CardTests|FullyQualifiedName~ElevationSourceLifetimeTests"
 ./tests/VisualParity/parity.ps1 self-test --family card
+./tests/VisualParity/parity.ps1 self-test --family focus-ring
 ```

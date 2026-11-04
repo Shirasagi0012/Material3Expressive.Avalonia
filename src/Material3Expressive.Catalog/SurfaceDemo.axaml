@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.SurfaceDemo" Title="Interactive surfaces" Width="680" Height="620">
+  <Window.Styles>
+    <Style Selector="m3|SelectableSurface:selected, m3|ToggleableSurface:checked">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SecondaryContainer}}" />
+      <Setter Property="BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+    </Style>
+  </Window.Styles>
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20">
+      <TextBlock Text="Interactive surfaces" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Surfaces provide a shape, content color and interaction feedback. This example supplies the selection colors and writes selection requests back to the controls." TextWrapping="Wrap" />
+      <m3:ClickableSurface CornerRadius="20" Padding="24" TonalElevation="3" Click="OnOpen">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Open workspace" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+          <TextBlock Text="Click, Enter or Space" />
+        </StackPanel>
+      </m3:ClickableSurface>
+      <TextBlock x:Name="Status" Text="No action yet" />
+      <TextBlock Text="Choose a view" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel x:Name="Views" Orientation="Horizontal" Spacing="16">
+        <m3:SelectableSurface IsSelected="True" CornerRadius="16" Padding="24" BorderThickness="1" Click="OnSelect" Content="List" />
+        <m3:SelectableSurface CornerRadius="16" Padding="24" BorderThickness="1" Click="OnSelect" Content="Board" />
+        <m3:SelectableSurface CornerRadius="16" Padding="24" BorderThickness="1" Click="OnSelect" Content="Calendar" />
+      </StackPanel>
+      <m3:ToggleableSurface CornerRadius="16" Padding="24" BorderThickness="1" CheckedChangeRequested="OnToggle">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Pin workspace" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+          <TextBlock Text="The application owns the checked state" />
+        </StackPanel>
+      </m3:ToggleableSurface>
+      <CheckBox x:Name="Enable" Content="Enable surfaces" IsChecked="True" />
+      <m3:ClickableSurface IsEnabled="{Binding #Enable.IsChecked}" CornerRadius="12" Padding="16" TonalElevation="1" Click="OnOpen" Content="Enabled state keeps the same colors" />
+    </StackPanel>
+  </ScrollViewer>
+</Window>

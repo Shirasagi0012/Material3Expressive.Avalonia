@@ -6,6 +6,8 @@
   <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="24" Spacing="24">
       <TextBlock Text="Inset focus ring" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <TextBlock Text="Use Tab and Shift+Tab to move focus. Compare the ring with mouse focus and pressed feedback."
+                 TextWrapping="Wrap" />
 
       <StackPanel Spacing="12" m3:MaterialInteraction.FocusFeedback="InsetRing">
         <TextBlock Text="Buttons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
@@ -22,6 +24,19 @@
           <RadioButton Content="First" GroupName="FocusRingDemo" IsChecked="True" Margin="0,0,16,8" />
           <RadioButton Content="Second" GroupName="FocusRingDemo" Margin="0,0,24,8" />
           <ToggleSwitch OnContent="Switch on" OffContent="Switch off" Margin="0,0,0,8" />
+        </WrapPanel>
+        <TextBlock Text="Clickable cards" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <WrapPanel>
+          <m3:Card IsClickable="True" Padding="16" Content="Filled card" Margin="0,0,12,8" />
+          <m3:ElevatedCard IsClickable="True" Padding="16" Content="Elevated card" Margin="0,0,12,8" />
+          <m3:OutlinedCard IsClickable="True" Padding="16" Content="Outlined card" Margin="0,0,12,8" />
+        </WrapPanel>
+        <TextBlock Text="Chips" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <WrapPanel>
+          <m3:AssistChip Content="Assist" Margin="0,0,12,8" />
+          <m3:SuggestionChip Content="Suggestion" Margin="0,0,12,8" />
+          <m3:FilterChip Content="Selected filter" IsSelected="True" Margin="0,0,12,8" />
+          <m3:InputChip Content="Input" Margin="0,0,12,8" />
         </WrapPanel>
       </StackPanel>
 

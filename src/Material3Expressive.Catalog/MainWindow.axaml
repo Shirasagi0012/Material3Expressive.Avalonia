@@ -61,6 +61,7 @@
                 <Button Content="HyperlinkButton demo" Click="OnHyperlinkButtonDemo" HorizontalAlignment="Left" />
                 <Button Content="DropDownButton demo" Click="OnDropDownButtonDemo" HorizontalAlignment="Left" />
                 <Button Content="ButtonGroup demo" Click="OnButtonGroupDemo" HorizontalAlignment="Left" />
+                <Button Content="Interactive surfaces" Click="OnSurfaceDemo" HorizontalAlignment="Left" />
                 <Button Content="GroupBox demo" Click="OnGroupBoxDemo" HorizontalAlignment="Left" />
                 <Button Content="Expander demo" Click="OnExpanderDemo" HorizontalAlignment="Left" />
                 <Button Content="Menu bar demo" Click="OnMenuBarDemo" HorizontalAlignment="Left" />

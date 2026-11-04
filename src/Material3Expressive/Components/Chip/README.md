@@ -59,6 +59,8 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 
 重叠事件按开始对象身份配对。更换源前应结束外部交互，旧外部交互仍可能影响高度，按压外观在新源下一事件时更新。外部 `Press.Position` 是 Chip 本地 DIP 坐标，包含最小交互布局留白。
 Catalog **Drag handle demo** 展示拖动源同时驱动 Card、Chip 和 Handle。
+Catalog **Inset focus ring** 展示四类 Chip 的键盘焦点。给 Chip 或其祖先设置
+`MaterialInteraction.FocusFeedback="InsetRing"` 可启用内缩焦点环；环跟随当前容器形状，不占标签布局空间。
 
 ## 内容槽与定制
 

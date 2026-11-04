@@ -119,7 +119,7 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 - [Core Desktop 焦点](../../../../docs/DECISIONS.md)：真实焦点影响 elevation，indication 单独过滤首次鼠标聚焦
 - [共享键盘职责](../../../../docs/DECISIONS.md)：保留原生 Enter 按下激活
 
-尚未实现任意路径/切角 Shape 和通用 Arrangement。共享焦点环已接入，但 Chip 专属双端焦点环矩阵、文字栅格和真实辅助技术未经验证。
+尚未实现任意路径/切角 Shape 和通用 Arrangement。文字栅格和真实辅助技术未经验证。
 
 未解决且未接受的 `morph.source-disable` 阴影差异涉及 Filter、ElevatedFilter 和 Input。
 复现使用 `new ChipElevation(2, 3, 4, 5, 9, 1)`，外部 Press 后 65ms 禁用，在 160ms 捕获。
@@ -132,8 +132,21 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 - `ElevationSourceLifetimeTests` 检查 source、模板和卸载的状态归属。
 - 双端 `ChipCases.cs` / `ChipCases.kt` 的族名为 `chip`，包含 source 的重叠、替换、禁用与重挂场景。
 - 透明 Chip 的测试环境需匹配 Core 外层默认黑色 content color，注入 Press 按两端同一 Surface 局部原点换算。
+- 2026-11-04 `chip-focus` 运行 `20261104-081632-75d70692`：76 例均稳定、执行错误 0，
+  45 例完全相等、30 例容差内、1 例不同。覆盖七种外观、固定/形变入口、深色、选中、焦点反向、
+  禁用、反馈模式切换、换源与重挂。`ChipTests` 增加七种外观的焦点/轮廓/源生命周期断言；
+  Catalog **Inset focus ring** 提供四类 Chip 示例。
+- 唯一超差的 `filter-chip.morph.press-to-ring` 保留真实上游默认 hover。追加高度观测的运行
+  `20261104-082531-63164a55` 显示 160ms Core 为 1 DIP、本地为 0，图像差异位于阴影；
+  400ms 起两端恢复像素相等。它对应上文已确认的平面 Filter hover 高度决定，没有修改参考或扩展豁免。
+- 三个形变 `press-to-ring` 用例追加精确高度数值后，ElevatedFilter 的运行 `20261104-083529-2d0011c6`
+  仍然重复稳定、像素容差内，但五个动画采样数值不同：例如 208ms Core 为 2.9001383781433105，
+  本地为 2.9001383861416996 DIP。保留该精度差异，不修改数值比较规则。
+  Input 的运行 `20261104-083549-5de21c91` 数值/像素完全相等且稳定；因此当前新增高度观测后的套件
+  有两个 different 用例，不能沿用追加观测前的单一失败结论。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter "FullyQualifiedName~ChipTests|FullyQualifiedName~ChipTokenConfigurationTests|FullyQualifiedName~ElevationSourceLifetimeTests"
 ./tests/VisualParity/parity.ps1 self-test --family chip
+./tests/VisualParity/parity.ps1 self-test --family chip-focus
 ```

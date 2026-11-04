@@ -13,9 +13,10 @@
 | `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Border.kt`：`drawRoundRectBorder` / `createRoundRectPath` | [SurfaceOutline.cs](SurfaceOutline.cs)：物理像素描边与圆角内缩 |
 | `internal/AnimatedShape.kt` 与共享 indication / ripple | [AnimatedCornerRadius](../../Foundation/Interaction/AnimatedCornerRadius.cs)、[MaterialInteractionController](../../Foundation/Interaction/MaterialInteractionController.cs)，Surface 只呈现其结果 |
 | Material 表面与内容颜色默认值 | [Surface.axaml](Surface.axaml)：隐式主题使用 Surface / OnSurface；组件模板的绑定优先 |
+| `Surface(onClick)` / `Surface(selected, onClick)` / `Surface(checked, onCheckedChange)` | `ClickableSurface` / `SelectableSurface` / `ToggleableSurface`；复用 MaterialSurface、ButtonLayout 与共享输入事件流 |
 
-这里说明职责，不代表独立 Surface 已涵盖 Compose 所有 clickable / selectable / toggleable 重载。
-交互输入、语义及点击执行属于外部 owner。
+静态 MaterialSurface 的交互输入、语义及点击执行仍属于外部 owner；三个交互组件作为独立 owner
+消费相同绘制能力。固定 AndroidX 与 Core 的 Surface.kt 内容相同。
 
 ## 2. 关键机制与架构契约
 
@@ -82,7 +83,23 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
 
 共享的轮廓求值、背景裁剪、描边、交互激活和阴影坐标选择见 [DECISIONS.md](../../../../docs/DECISIONS.md)，适用范围随各条决定维护。
 
-- 尚未实现任意 Shape、独立 Surface 的点击/选择/切换 API，以及完整 Compose semantics。
+- 剩余移植任务授权范围内新增三个非破坏性组件入口，不改变静态 MaterialSurface。
+  点击/选择/切换各自保留语义：普通 Click/Command、IsSelected + Click、IsChecked + CheckedChangeRequested。
+  不建立共享交互控件基类；ClickableSurface 的两个派生类仅表达 Surface 自身重载。
+- 三个入口的内容色复用 ContentColorFor；禁用保留颜色和最小交互留白。48 DIP 来自上游
+  LocalMinimumInteractiveComponentSize 默认值，继承环境可覆盖；Surface 没有独立的组件 Token 表。
+  Surface 的两个 elevation 直接绑定，不引入 Button/Card 按交互改变高度或形状的行为。
+- 组件负责 Enter/Space 的按键释放激活，保留原生指针捕获和 Command.CanExecute。
+  固定 Core `foundation/Clickable.kt` 按 keyCode 独立记录 press；本地按键集合保留双键重叠、重复抑制、
+  未匹配释放不激活，换源/禁用/失焦/卸载清理。共享 controller 继续负责每个键的事件配对和波纹。
+  原生输入连到一个私有或外部 MaterialInteractionSource，换源取消旧的自身输入并重建 indication，
+  卸载断开源；外部事件不产生业务操作。模板绘制部分继续由 MaterialSurface 自身释放。
+- 尚未实现任意 Shape 及完整 Compose semantics。UIA 通过 Custom 类型和 Invoke/SelectionItem/Toggle
+  表达上游未指定 role 的语义；屏幕阅读器实际表现未经验证。
+- 原生 ContentPresenter 可以传播 Stretch 分配，但不能令任意显式 Width/Height 子控件服从 Compose
+  Box 的最小约束。该边界不是已接受的语义等价：推荐先明确全库父级最小约束传递能力，
+  不在 Surface 内改写调用者的尺寸属性。例如 Width=120 的 Surface 内部 Width=32 的子节点，
+  Avalonia 保留 32，Compose Modifier.size(32.dp) 在紧约束下可成为 120；变更会影响其他内容容器，待维护者决定。
 - 非均匀 Thickness 描边沿用原生绘制。
 - 既有阴影坐标与栅格差异按共享决定的特定范围保留。
 - 各真实桌面后端、设备 DPI 切换和全部调用方组合的视觉一致性未经验证。
@@ -90,10 +107,22 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
 ## 4. 验证入口
 
 - `MaterialSurfaceTests` 覆盖主题、模板优先级、描边布局、tonal gate、嵌套累积及重挂。
+- `InteractiveSurfaceTests` 覆盖三个交互入口的自然尺寸、最小留白、描边、内容色、键盘释放/取消、
+  受控绑定、automation、命令禁用、源替换与重挂；Catalog `SurfaceDemo` 提供完整接线。
 - `MaterialSurfaceRenderTests` 用 Skia headless 渲染检查阴影、覆盖、圆角和 hairline，`InsetFocusRingTests` 检查反馈缓存与形状重绘。
 - 双端 `SurfaceCases.cs` / `SurfaceCases.kt` 的族名为 `surface`。共享修改还应选择 Button、Chip、Toggle/Split、ListItem 等实际调用方回归。
+- 2026-11-04 `interactive-surface` 最终运行 `20261104-081657-a2237b4f`：111 例执行错误 0，
+  92 例像素完全相等、19 例容差内、超差 0；覆盖三个入口的静态颜色/尺寸/描边/阴影与输入/换源/重挂。
+  105 例稳定，6 例 Core 波纹重叠时不稳定：click.keys / keys-reverse、select.keys-reverse、toggle.keys
+  的额外被动截图，以及 click.source / toggle.source 的普通重复捕获，最大单通道变化均为 1。
+  Avalonia 自检均稳定；保留原始截图及不稳定门禁，不以两端比较相等替代重复性通过。
+  Windows Catalog 实际点击、Enter、Space、选择与切换回写已冒烟验证；这不扩大为全部辅助技术验证。
+- `surface-focus` 运行 `20261104-082659-0562d80c`：30 例均稳定、执行错误 0，27 例完全相等、
+  3 例容差内、超差 0；覆盖三个入口的深色/自定义焦点环、反向、禁用、模式切换、换源与重挂。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~MaterialSurface|FullyQualifiedName~InsetFocusRingTests'
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~MaterialSurface|FullyQualifiedName~InteractiveSurfaceTests|FullyQualifiedName~InsetFocusRingTests'
 ./tests/VisualParity/parity.ps1 self-test --family surface
+./tests/VisualParity/parity.ps1 self-test --family interactive-surface
+./tests/VisualParity/parity.ps1 self-test --family surface-focus
 ```

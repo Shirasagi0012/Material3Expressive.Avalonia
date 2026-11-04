@@ -12,7 +12,7 @@ using static Material3Expressive.Tokens.MaterialTokens;
 namespace Material3Expressive.Parity;
 
 public sealed record FocusRingConfig(string Kind = "button", string Shape = "round", string Action = "focus",
-    bool Dark = false, bool Custom = false, bool Checked = false);
+    bool Dark = false, bool Custom = false, bool Checked = false, bool Morph = false);
 
 [ParitySuite("focus-ring")]
 public sealed class FocusRingCases
@@ -31,6 +31,13 @@ public sealed class FocusRingCases
                 yield return new($"dynamic.{kind}.{action}", "Focus-theme changes keep the existing indication", new(Kind: kind, Action: action));
         }
         yield return new("dynamic.button.source-old-end", "Recreated collector receives an old source end", new(Action: "source-old-end"));
+        foreach (var kind in new[] { "card", "elevated-card", "outlined-card" })
+        {
+            foreach (var action in new[] { "focus", "reverse", "hover-blur", "resize", "disable", "focus-mode", "press-to-ring", "press-to-opacity", "source-replace", "passive", "detach" })
+                yield return new($"dynamic.{kind}.{action}", "Card focus indication and owner lifecycle", new(Kind: kind, Action: action));
+            yield return new($"dynamic.{kind}.dark", "Card focus ring in dark theme", new(Kind: kind, Dark: true));
+            yield return new($"dynamic.{kind}.custom", "Card custom ring colors and metrics", new(Kind: kind, Custom: true));
+        }
         foreach (var kind in new[] { "list-item", "segmented-list-item" })
         {
             foreach (var action in new[] { "focus", "reverse", "hover-blur", "disable", "mode", "press-to-ring", "press-to-opacity", "theme" })
@@ -58,6 +65,7 @@ public sealed class FocusRingCases
             host.Window.Resources[Sys.Color.Outline] = Color.Parse(dark ? "#938F99" : "#79747E");
             host.Window.Resources[Sys.Color.SurfaceContainerHighest] = Color.Parse(dark ? "#36343B" : "#E6E0E9");
             host.Window.Resources[Sys.Color.OnPrimaryContainer] = Color.Parse(dark ? "#EADDFF" : "#21005D");
+            host.Window.Resources[Sys.Color.SurfaceContainerLow] = Color.Parse(dark ? "#1D1B20" : "#F7F2FA");
         }
         SetTheme(config.Dark);
         Control control = config.Kind switch
@@ -65,6 +73,19 @@ public sealed class FocusRingCases
             "switch" => new ToggleSwitch { IsChecked = config.Checked },
             "checkbox" => new CheckBox(),
             "radio" => new RadioButton(),
+            "card" => new Card { IsClickable = true, Width = 100, Height = 50 },
+            "elevated-card" => new ElevatedCard { IsClickable = true, Width = 100, Height = 50 },
+            "outlined-card" => new OutlinedCard { IsClickable = true, Width = 100, Height = 50 },
+            "click-surface" => new ClickableSurface { Width = 100, Height = 50, CornerRadius = new(16) },
+            "select-surface" => new SelectableSurface { Width = 100, Height = 50, CornerRadius = new(16), IsSelected = true },
+            "toggle-surface" => new ToggleableSurface { Width = 100, Height = 50, CornerRadius = new(16), IsChecked = true },
+            "assist-chip" => new AssistChip(),
+            "elevated-assist-chip" => new AssistChip { IsElevated = true },
+            "suggestion-chip" => new SuggestionChip(),
+            "elevated-suggestion-chip" => new SuggestionChip { IsElevated = true },
+            "filter-chip" => new FilterChip(),
+            "elevated-filter-chip" => new FilterChip { IsElevated = true },
+            "input-chip" => new InputChip(),
             "list-item" => new ListItem { Width = 180, InteractionMode = ListItemInteractionMode.Click,
                 Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue } },
             "segmented-list-item" => new SegmentedListItem { Width = 180, GroupIndex = 0, GroupCount = 3,
@@ -75,6 +96,16 @@ public sealed class FocusRingCases
                 BorderBrush = Brushes.Red, BorderThickness = new Thickness(1.1),
                 Theme = (ControlTheme)host.Window.FindResource("MaterialOutlinedButtonTheme")! }
         };
+        if (control is Chip chip)
+        {
+            host.Window.Foreground = Brushes.Black;
+            chip.Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue };
+            if (chip is SelectableChip selectable)
+            {
+                selectable.IsSelected = config.Checked;
+                if (!config.Morph) selectable.Shapes = null;
+            }
+        }
         MaterialInteraction.SetFocusFeedback(control, config.Action == "press-to-ring" ? FocusFeedback.Opacity : FocusFeedback.InsetRing);
         if (config.Custom)
         {
@@ -82,16 +113,23 @@ public sealed class FocusRingCases
             MaterialInteraction.SetFocusRingOuterColor(control, Color.Parse("#806600CC"));
             MaterialInteraction.SetFocusRingInnerColor(control, Color.Parse("#C000CC66"));
         }
-        host.Mount(new Grid { Background = Brushes.White, Children = { new Border
-            { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = control } } });
+        var mount = new Border { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = control };
+        host.Mount(new Grid { Background = Brushes.White, Children = { mount } });
         host.Frame(-1000); host.Frame(0);
         var source = new MaterialInteractionSource();
+        if (control is Card card) card.InteractionSource = source;
+        if (control is Chip sourceChip) sourceChip.InteractionSource = source;
+        if (control is ClickableSurface sourceSurface) sourceSurface.InteractionSource = source;
         if (config.Action == "source-old-end") MaterialInteraction.GetOrCreate(control).ConnectSource(source);
         var next = 16000L;
         void Advance(long time) { while (next <= time) { host.Frame(next); next += 16000; } host.AdvanceTo(time); }
         void Sample(string id)
         {
+            if (mount.Child is null) { writer.Submit(host.Snapshot(id, id, [])); return; }
             var measurements = AvaloniaMeasurements.Geometry(control, host.Window).Where(m => m.Name is "box" or "size").ToList();
+            if (control is Chip && config.Action == "press-to-ring")
+                measurements.Add(Measurement.Numeric("shadowElevation", control.GetVisualDescendants().OfType<MaterialSurface>().Single().ShadowElevation,
+                    "dip", category: "motion", definition: "chip.shadow-elevation", source: "Surface.ShadowElevation"));
             if (config.Action == "theme")
             {
                 var ring = control.GetVisualDescendants().OfType<InsetFocusRingPresenter>().Single();
@@ -106,7 +144,7 @@ public sealed class FocusRingCases
             Advance(time); change(); writer.Record(time, "mutation", id); host.Draw();
             // These mutations invalidate Compose composition. Send the same explicit frame on
             // both sides before observing the configured component (not a stale composition).
-            if (id is "resize" or "disable" or "opacity" or "inset" or "theme") host.Frame(time);
+            if (id is "resize" or "disable" or "opacity" or "inset" or "theme" or "replace" or "passive" or "clickable" or "detach" or "remount") host.Frame(time);
             Sample(id);
         }
         Sample("initial");
@@ -163,6 +201,28 @@ public sealed class FocusRingCases
                 Mutate(1201000, "final-blur", () => host.Window.FocusManager!.Focus(null));
                 Times(1216000, 1248000, 1328000, 1600000);
                 return;
+            case "source-replace":
+                var replacement = new MaterialInteractionSource();
+                Mutate(801000, "replace", () =>
+                {
+                    if (control is Chip replacingChip) replacingChip.InteractionSource = replacement;
+                    else if (control is ClickableSurface replacingSurface) replacingSurface.InteractionSource = replacement;
+                    else ((Card)control).InteractionSource = replacement;
+                });
+                Times(816000, 960000);
+                // A replacement indication has no event replay. Explicitly send a new focus.
+                var focus = new MaterialInteractionEvent.Focus();
+                Mutate(961000, "source-focus", () => replacement.Emit(focus)); Times(976000, 1200000);
+                Mutate(1201000, "source-unfocus", () => replacement.Emit(new MaterialInteractionEvent.Unfocus(focus)));
+                Times(1216000, 1248000, 1328000, 1600000); return;
+            case "passive":
+                Mutate(801000, "passive", () => ((Card)control).IsClickable = false); Times(816000, 960000);
+                Mutate(961000, "clickable", () => ((Card)control).IsClickable = true); Times(976000);
+                Mutate(977000, "refocus", () => control.Focus(NavigationMethod.Tab)); Times(992000, 1200000, 1600000); return;
+            case "detach":
+                Mutate(801000, "detach", () => mount.Child = null); Times(816000, 960000);
+                Mutate(961000, "remount", () => mount.Child = control); Times(976000);
+                Mutate(977000, "refocus", () => control.Focus(NavigationMethod.Tab)); Times(992000, 1200000, 1600000); return;
             case "theme": Mutate(801000, "theme", () => SetTheme(true)); break;
         }
         Times(816000, 960000, 1200000);

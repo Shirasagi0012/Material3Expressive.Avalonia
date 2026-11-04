@@ -24,6 +24,74 @@ public class CardTests
     [InlineData("filled")]
     [InlineData("elevated")]
     [InlineData("outlined")]
+    public void FocusRingFollowsShapeAndRestartsAfterModeChangeAndRemount(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var card = Create(kind); card.IsClickable = true; card.CornerRadius = new(20, 8, 0, 12);
+        MaterialInteraction.SetFocusFeedback(card, FocusFeedback.InsetRing);
+        var window = Show(card); var clicks = 0; card.Click += (_, _) => clicks++;
+        void Frames(int count = 60)
+        {
+            for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
+        }
+        InsetFocusRingPresenter Ring() => Assert.Single(card.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        try
+        {
+            Assert.True(card.Focus(NavigationMethod.Tab)); Frames();
+            Assert.Equal(1f, Ring().Progress); Assert.Equal(Surface(card).EffectiveCornerRadius, Ring().Corners);
+            card.CornerRadius = new(4, 10, 16, 0); card.Width = 140; window.UpdateLayout(); Frames();
+            Assert.Equal(Surface(card).EffectiveCornerRadius, Ring().Corners);
+            card.IsClickable = false; window.UpdateLayout(); Frames();
+            Assert.False(card.IsFocused); Assert.Empty(card.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+            card.IsClickable = true; window.UpdateLayout();
+            Assert.True(card.Focus(NavigationMethod.Tab)); Frames(); Assert.Equal(1f, Ring().Progress);
+            card.IsEnabled = false; Frames(); Assert.Equal(0f, Ring().Progress);
+            var originalContent = window.Content;
+            window.Content = null; Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, clock.PendingFrameCount);
+            card.IsEnabled = true; window.Content = originalContent; window.UpdateLayout();
+            Assert.True(card.Focus(NavigationMethod.Tab)); Frames(); Assert.Equal(1f, Ring().Progress);
+            window.FocusManager!.Focus(null); Frames(); Assert.Equal(0f, Ring().Progress);
+            Assert.Equal(0, clicks); Assert.Null(MotionTestClockScope.Error(card));
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("filled")]
+    [InlineData("elevated")]
+    [InlineData("outlined")]
+    public void ReplacingSourceRecreatesFocusIndicationWithoutReplayingFocus(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource(); var replacement = new MaterialInteractionSource();
+        var card = Create(kind); card.IsClickable = true; card.InteractionSource = source;
+        MaterialInteraction.SetFocusFeedback(card, FocusFeedback.InsetRing);
+        var window = Show(card);
+        void Frames(int count = 60)
+        {
+            for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
+        }
+        InsetFocusRingPresenter Ring() => Assert.Single(card.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        try
+        {
+            Assert.True(card.Focus(NavigationMethod.Tab)); Frames(); Assert.Equal(1f, Ring().Progress);
+            card.InteractionSource = replacement; Frames();
+            Assert.True(card.IsFocused); Assert.Equal(0f, Ring().Progress);
+            source.Emit(new MaterialInteractionEvent.Focus()); Frames(); Assert.Equal(0f, Ring().Progress);
+            var focus = new MaterialInteractionEvent.Focus(); replacement.Emit(focus); Frames(); Assert.Equal(1f, Ring().Progress);
+            replacement.Emit(new MaterialInteractionEvent.Unfocus(focus)); Frames(); Assert.Equal(0f, Ring().Progress);
+            Assert.Null(MotionTestClockScope.Error(card));
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("filled")]
+    [InlineData("elevated")]
+    [InlineData("outlined")]
     public void ExternalSource_OrdersOverlappingInteractions_AndPreservesCollectorAcrossReplacement(string kind)
     {
         using var clock = new MotionTestClockScope();

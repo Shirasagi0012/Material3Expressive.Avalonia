@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -46,23 +47,27 @@ public abstract class ButtonGroupItem : ContentControl
 
     internal Button? ActionButton { get; set; }
     internal float PressProgress => _widthMotion?.Progress ?? 0;
-    internal virtual double ResolvedCompressionLimit => PressSource is null ? 0 : CompressionLimit;
+    internal virtual MaterialInteractionSource? WidthInteractionSource => null;
+    internal virtual double ResolvedCompressionLimit => PressSource is null && WidthInteractionSource is null ? 0 : CompressionLimit;
     internal abstract Control CreateMenuContent(ButtonGroupMenuState state);
 
     internal void ReconnectPress()
     {
-        if (this.IsAttachedToVisualTree() && (PressSource ?? ActionButton) is { } source)
+        var source = WidthInteractionSource;
+        var control = source is null ? PressSource ?? ActionButton : null;
+        if (this.IsAttachedToVisualTree() && (source is not null || control is not null))
         {
             if (_widthMotion is null)
-                _widthMotion = new ButtonGroupWidthMotion(this, source);
+                _widthMotion = new ButtonGroupWidthMotion(this, control, source);
             else
-                _widthMotion.SetSource(source);
+                _widthMotion.SetSource(control, source);
         }
         else
         {
             _widthMotion?.Dispose();
             _widthMotion = null;
         }
+        this.FindAncestorOfType<ButtonGroupLayout>()?.InvalidateItemsMeasure();
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)

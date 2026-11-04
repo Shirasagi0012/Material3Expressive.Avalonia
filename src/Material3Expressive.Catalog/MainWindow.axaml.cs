@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private void OnHyperlinkButtonDemo(object? sender, RoutedEventArgs e) => new HyperlinkButtonDemo().Show(this);
     private void OnDropDownButtonDemo(object? sender, RoutedEventArgs e) => new DropDownButtonDemo().Show(this);
     private void OnButtonGroupDemo(object? sender, RoutedEventArgs e) => new ButtonGroupDemo().Show(this);
+    private void OnSurfaceDemo(object? sender, RoutedEventArgs e) => new SurfaceDemo().Show(this);
     private void OnGroupBoxDemo(object? sender, RoutedEventArgs e) => new GroupBoxDemo().Show(this);
     private void OnExpanderDemo(object? sender, RoutedEventArgs e) => new ExpanderDemo().Show(this);
     private void OnMenuBarDemo(object? sender, RoutedEventArgs e) => new MenuBarDemo().Show(this);

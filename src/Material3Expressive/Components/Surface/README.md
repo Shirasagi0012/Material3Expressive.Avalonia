@@ -1,8 +1,9 @@
 # Surface
 
 `MaterialSurface` 是带 Material 背景、圆角、描边及高度效果的单子元素容器。
-它适合承载自定义面板，也用于组件内部绘制；可点击内容优先使用 [Button](../Button/README.md)
-或 [Card](../Card/README.md) 的相应入口。先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
+它适合承载自定义面板，也用于组件内部绘制。`ClickableSurface`、`SelectableSurface` 和
+`ToggleableSurface` 提供点击、单选和切换入口，适合不需要 Button/Card 默认尺寸、颜色和排版的自定义内容。
+先完成[公共接入](../../../../docs/GETTING_STARTED.md)。
 内部绘制和共享交互约束见 [INTERNALS.md](INTERNALS.md)。
 
 ## 基础用法
@@ -29,6 +30,27 @@
 - `TonalElevation` 改变表面色，并在嵌套 Surface 中累积；只有背景为当前主题精确 Surface 颜色的纯色画刷才着色，SurfaceContainer 或自定义颜色不变
 - tonal elevation 与 shadow elevation 相互独立；增加其中一个不会自动增加另一个
 
+三个交互组件继承原生 Button 的 `Content` / `ContentTemplate`、`Click`、`Command`、`CommandParameter`
+和 `IsEnabled`，默认无 Padding、无圆角、无高度效果。它们保留 48 DIP 最小交互布局留白，
+可通过继承的 `MaterialInteractiveSize.Minimum` 调整；留白不扩大绘制表面。禁用不自动改变表面色或内容色。
+
+`SelectableSurface.IsSelected` 和 `ToggleableSurface.IsChecked` 均由应用管理。
+点击不自动写回；切换组件通过 `CheckedChangeRequested` 提供目标值。状态不附带默认颜色或形状变化，
+可用 `:selected` / `:checked` 样式配置。Enter / Space 在松开时激活，失焦或禁用取消尚未完成的键盘操作。
+同时按住两个激活键时，各自释放各发起一次操作；重复 KeyDown 不增加次数。换源也会取消未释放的键盘操作。
+
+```xml
+<m3:ClickableSurface CornerRadius="16" Padding="24" TonalElevation="3"
+                     Command="{Binding OpenWorkspace}" Content="打开工作区" />
+<m3:SelectableSurface IsSelected="{Binding IsSelected}" Click="SelectWorkspace"
+                      CornerRadius="16" Padding="24" Content="工作区" />
+<m3:ToggleableSurface IsChecked="{Binding IsPinned}" CheckedChangeRequested="PinWorkspace"
+                      CornerRadius="16" Padding="24" Content="固定工作区" />
+```
+
+例如 `PinWorkspace` 将 `SurfaceCheckedChangeEventArgs.Value` 写回视图模型的 `IsPinned`。
+完整的选择、切换和禁用示例见 Catalog 的 **Interactive surfaces**。
+
 若描边需要与内容留出距离，请显式加 Padding。阴影绘制在布局边界之外，父容器裁剪可能截断它；
 需要时在外层安排空间。颜色、Token 与主题覆盖规则见[接入指南](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
@@ -36,6 +58,10 @@
 
 后续片段沿用以上命名空间。自定义背景时也应显式选择合适的内容色；Surface 不会根据任意
 `Background` 自动推导对比色。内容色通过 `TextElement.Foreground` 继承，子控件自己的值仍优先。
+
+上述说明针对静态 `MaterialSurface`。三个交互组件的 `Foreground` 会根据 `Background` 匹配主题颜色角色，
+非主题颜色继承父级内容色；显式 `Foreground` 优先。交互组件的 `InteractionSource` 可与其他反馈共享，
+null 使用私有源。外部事件只驱动反馈，不点击、不更改选择；换源结束自身旧输入且不重放先前事件。
 
 ```xml
 <m3:MaterialSurface Background="#EADDFF" TextElement.Foreground="#21005D"
@@ -51,9 +77,14 @@
 
 ## 使用限制与注意事项
 
-独立 Surface 不提供 `Click`、`Command`、选中状态或按钮 automation，也不会因为设置
+静态 `MaterialSurface` 不提供 `Click`、`Command`、选中状态或按钮 automation，也不会因为设置
 `StateLayerBrush` / `PressedCornerRadius` 自动成为交互控件。这两个属性服务于组件模板中的
 共享反馈接入；应用无需为普通面板设置它们。
+
+交互组件提供 Invoke，单选/切换分别提供 SelectionItem/Toggle automation pattern，但不默认指定
+Button/RadioButton/CheckBox 角色；请给自定义内容设置有意义的 `AutomationProperties.Name`。
+应用负责组内互斥，组件不自动寻找或修改相邻项。内容布局沿用 Avalonia 原生尺寸与对齐属性，
+子控件显式 Width/Height 仍按原生约束处理。
 
 用于交互模板时，可继承 `MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环；
 支持四角不等圆角并跟随当前形变，不增加 Padding 或期望尺寸。默认仍为 Opacity。
