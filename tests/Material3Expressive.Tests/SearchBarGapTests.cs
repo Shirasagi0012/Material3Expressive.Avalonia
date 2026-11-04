@@ -19,6 +19,54 @@ namespace Material3Expressive.Tests;
 public class SearchBarGapTests
 {
     [AvaloniaFact]
+    public void GapFactoryDelaysContentAndReversesWithoutResettingProgress()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = SearchBarState.CreateWithGap();
+        var (_, popup, root) = Create(state);
+        var window = Show(root); clock.SendFrame(TimeSpan.Zero);
+        var opening = state.AnimateToExpandedAsync(); clock.Track(opening);
+        Frames(clock, window, 16, 48);
+        Assert.True(state.Progress > 0);
+        Assert.Equal(0, state.ContentProgress);
+        Frames(clock, window, 64, 96);
+        Assert.InRange(state.ContentProgress, .001f, .999f);
+        var progress = state.Progress;
+        var content = state.ContentProgress;
+        var closing = state.AnimateToCollapsedAsync(); clock.Track(closing);
+        Assert.Equal(progress, state.Progress);
+        Assert.Equal(content, state.ContentProgress);
+        Frames(clock, window, 112, 1008);
+        Assert.True(opening.IsCanceled);
+        Assert.True(closing.IsCompletedSuccessfully);
+        Assert.Equal(0, state.Progress);
+        Assert.Equal(0, state.ContentProgress);
+        Assert.False(popup.IsPresented);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void GapFactoryResolvesItsOwnLiveThemeMotionAndPreservesSeededContent()
+    {
+        var state = SearchBarState.CreateWithGap(SearchBarValue.Expanded);
+        Assert.Equal(1, state.ContentProgress);
+        var (bar, _, root) = Create(state);
+        var window = Show(root);
+        var expand = new Material3Expressive.Foundation.Motion.SpringSpec(.8, 321);
+        var collapse = new Material3Expressive.Foundation.Motion.SpringSpec(.9, 654);
+        root.Resources[Comp.SearchBar.GapExpandAnimation] = expand;
+        root.Resources[Comp.SearchBar.GapCollapseAnimation] = collapse;
+        Flush(window);
+        Assert.Equal(321, Assert.IsType<SpringSpec<float>>(state.AnimationSpec(true)).Stiffness);
+        Assert.Equal(654, Assert.IsType<SpringSpec<float>>(state.AnimationSpec(false)).Stiffness);
+        Assert.NotEqual(expand, bar.ExpandAnimation);
+        root.Resources[Comp.SearchBar.GapExpandAnimation] = new Material3Expressive.Foundation.Motion.SpringSpec(.8, 432);
+        Flush(window);
+        Assert.Equal(432, Assert.IsType<SpringSpec<float>>(state.AnimationSpec(true)).Stiffness);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void ScrimFeedbackUsesLiveAmbientForegroundOutsideTheSearchSurfaceColorScope()
     {
         var (_, popup, root) = Create(new SearchBarState(SearchBarValue.Expanded));

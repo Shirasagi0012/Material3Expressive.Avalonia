@@ -34,6 +34,11 @@ public partial class ExpandedSearchBarDemo : Window
                 CollapsedSearch.State = State;
                 Query.Classes.Add("contained");
             }
+            if (presentation == SearchPresentation.Gap)
+            {
+                Resources["SearchState"] = SearchBarState.CreateWithGap();
+                CollapsedSearch.State = State;
+            }
             Title = presentation == SearchPresentation.Gap ? "Search popup with gap" : $"{presentation} search";
             Heading.Text = $"SearchBar + {popup.GetType().Name}";
             if (popup is ExpandedFullScreenSearchBar)

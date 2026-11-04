@@ -15,6 +15,10 @@ public class SearchBar : ContentControl
     internal static readonly StyledProperty<MotionSpring?> ExpandAnimationProperty = AvaloniaProperty.Register<SearchBar, MotionSpring?>(nameof(ExpandAnimation));
     internal static readonly StyledProperty<MotionSpring?> CollapseAnimationProperty = AvaloniaProperty.Register<SearchBar, MotionSpring?>(nameof(CollapseAnimation));
     internal static readonly StyledProperty<MotionSpring?> ContainedAnimationProperty = AvaloniaProperty.Register<SearchBar, MotionSpring?>(nameof(ContainedAnimation));
+    internal static readonly StyledProperty<MotionSpring?> GapExpandAnimationProperty = AvaloniaProperty.Register<SearchBar, MotionSpring?>(nameof(GapExpandAnimation));
+    internal static readonly StyledProperty<MotionSpring?> GapCollapseAnimationProperty = AvaloniaProperty.Register<SearchBar, MotionSpring?>(nameof(GapCollapseAnimation));
+    internal MotionSpring? GapExpandAnimation { get => GetValue(GapExpandAnimationProperty); set => SetValue(GapExpandAnimationProperty, value); }
+    internal MotionSpring? GapCollapseAnimation { get => GetValue(GapCollapseAnimationProperty); set => SetValue(GapCollapseAnimationProperty, value); }
     internal MotionSpring? ContainedAnimation { get => GetValue(ContainedAnimationProperty); set => SetValue(ContainedAnimationProperty, value); }
     internal MotionSpring? ExpandAnimation { get => GetValue(ExpandAnimationProperty); set => SetValue(ExpandAnimationProperty, value); }
     internal MotionSpring? CollapseAnimation { get => GetValue(CollapseAnimationProperty); set => SetValue(CollapseAnimationProperty, value); }

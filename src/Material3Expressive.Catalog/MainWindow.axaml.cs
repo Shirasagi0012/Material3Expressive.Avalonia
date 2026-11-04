@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private void OnExpandedSearchBarDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo().Show(this);
     private void OnSearchBarGapDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo(SearchPresentation.Gap).Show(this);
     private void OnFullScreenSearchDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo(SearchPresentation.FullScreen).Show(this);
+    private void OnSearchAppBarDemo(object? sender, RoutedEventArgs e) => new SearchAppBarDemo().Show(this);
     private void OnContainedSearchDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo(SearchPresentation.Contained).Show(this);
     private void OnCommandBarDemo(object? sender, RoutedEventArgs e) => new CommandBarDemo().Show(this);
     private void OnMenuDemo(object? sender, RoutedEventArgs e) => new MenuDemo().Show(this);

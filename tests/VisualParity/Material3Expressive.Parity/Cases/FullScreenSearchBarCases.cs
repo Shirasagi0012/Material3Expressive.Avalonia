@@ -27,6 +27,7 @@ public sealed class FullScreenSearchBarCases
         yield return new("dynamic.insets", "animated inset padding", new(Expanded: false, Action: "open-close", FullScreen: true, Insets: true));
         yield return new("dynamic.custom-shape", "custom corners switch at half progress", new(Expanded: false, Custom: true, Action: "open-close", FullScreen: true));
         yield return new("dynamic.rtl", "physical interpolation with RTL content", new(Expanded: false, Rtl: true, Action: "open-close", FullScreen: true));
+        yield return new("dynamic.remove-anchor", "remaining full-screen search retains its state", new(Expanded: false, Action: "remove-anchor", FullScreen: true));
     }
 
     [ParityScenario("presentation", Data = nameof(Configurations))]

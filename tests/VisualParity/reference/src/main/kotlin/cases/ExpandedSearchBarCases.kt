@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ExpandedSearchBarConfig(val expanded:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val hostWidth:Int=420,val hostHeight:Int=600,val contentHeight:Double=40.0,val inputWidth:Double=360.0,
     val inputHeight:Double=56.0,val custom:Boolean=false,val action:String="none",val motion:String="default",val anchor:Boolean=true,
-    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0,val gap:Boolean=false,val noScrim:Boolean=false,val fullScreen:Boolean=false,val insets:Boolean=false,val contained:Boolean=false,val filledInput:Boolean=false)
+    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0,val gap:Boolean=false,val noScrim:Boolean=false,val fullScreen:Boolean=false,val insets:Boolean=false,val contained:Boolean=false,val filledInput:Boolean=false,val appBar:Boolean=false)
 
 @ParitySuite("expanded-search-bar")
 class ExpandedSearchBarCases {
@@ -39,6 +39,7 @@ class ExpandedSearchBarCases {
         var x by mutableStateOf(16); var y by mutableStateOf(24)
         var inputWidth by mutableStateOf(c.inputWidth)
         var contentHeight by mutableStateOf(c.contentHeight)
+        var anchor by mutableStateOf(c.anchor)
         val bar=Probe(); val popup=Probe(); val input=Probe(); val results=Probe()
         ComposeHost(writer,c.hostWidth,c.hostHeight,context).use { host ->
             val navigation=BackNavigationEventInput()
@@ -49,7 +50,7 @@ class ExpandedSearchBarCases {
                     MaterialTheme(colorScheme=if(c.dark)darkColorScheme()else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                         CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl)LayoutDirection.Rtl else LayoutDirection.Ltr) {
                             val initial=if(c.expanded)SearchBarValue.Expanded else SearchBarValue.Collapsed
-                            val defaultState=if(c.contained)rememberContainedSearchBarState(initial)else rememberSearchBarState(initial)
+                            val defaultState=if(c.motion=="gap-default")rememberSearchBarWithGapState(initial)else if(c.contained)rememberContainedSearchBarState(initial)else rememberSearchBarState(initial)
                             state=remember { when(c.motion) {
                                 "tween"->SearchBarState(initial,tween(400,50,LinearEasing),tween(300,easing=LinearEasing),tween(200,100,LinearEasing),tween(150,easing=LinearEasing))
                                 "overshoot"->SearchBarState(initial,spring(.4f,120f),spring(.4f,120f))
@@ -59,8 +60,12 @@ class ExpandedSearchBarCases {
                             scope=rememberCoroutineScope()
                             val colors=if(c.custom)SearchBarDefaults.colors(containerColor=Color.Yellow,dividerColor=Color.Red)else SearchBarDefaults.colors()
                             Box(Modifier.fillMaxSize().background(Color.White)) {
-                                if(c.anchor)Box(Modifier.padding(start=x.dp,top=y.dp)) {
-                                    SearchBar(state=state,inputField={ Marker(Modifier,inputWidth,c.inputHeight) },modifier=bar.modifier(),
+                                if(anchor)Box(Modifier.padding(start=x.dp,top=y.dp)) {
+                                    if(c.appBar) AppBarWithSearch(
+                                        state=state,inputField={ Marker(Modifier,inputWidth,c.inputHeight) },
+                                        navigationIcon={Box(Modifier.size(48.dp).background(Color.Red))},
+                                        actions={Box(Modifier.size(48.dp).background(Color.Red))},windowInsets=WindowInsets(0)
+                                    ) else SearchBar(state=state,inputField={ Marker(Modifier,inputWidth,c.inputHeight) },modifier=bar.modifier(),
                                         shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=colors,
                                         tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp)
                                 }
@@ -91,6 +96,7 @@ class ExpandedSearchBarCases {
                     }
                 }; host.frame(-1000); host.frame(0)
                 fun sample(id:String) {
+                    if(c.appBar) bar.coordinates=state.collapsedCoords
                     val presented=popup.coordinates?.isAttached==true
                     val points=mutableListOf(ProbePoint("state","search-state",null,listOf(
                         number("progress",state.progress.toDouble(),"fraction",definition="search-state.progress"),
@@ -99,7 +105,11 @@ class ExpandedSearchBarCases {
                         text("target",state.targetValue.toString(),definition="search-state.target"),
                         flag("animating",state.isAnimating,definition="search-state.animating"),
                         flag("presented",presented,definition="search-state.presented"))),
-                        ProbePoint("bar","collapsed-search-bar","state",if(c.anchor)bar.geometry()else emptyList()))
+                        ProbePoint("bar","collapsed-search-bar","state",if(bar.coordinates?.isAttached==true)bar.geometry()else emptyList()))
+                    if(c.appBar) points.add(ProbePoint("app-bar-state","search-app-bar-state","state",listOf(
+                        flag("full-screen",state.expandsToFullScreen),
+                        flag("search-visible",!state.expandsToFullScreen || state.currentValue==SearchBarValue.Collapsed || state.targetValue==SearchBarValue.Expanded,
+                            definition="search.visibility.requested", source="AppBarWithSearch isVisible expression (not retained raster alpha)"))))
                     if(presented) {
                         points.add(ProbePoint("popup","expanded-search-bar","state",popup.geometry()))
                         points.add(ProbePoint("input","input-slot","popup",input.geometry()))
@@ -138,6 +148,7 @@ class ExpandedSearchBarCases {
                 change(1000,"expand"){scope.launch{state.animateToExpanded()}}
                 at(16000,32000,64000,96000)
                 if(c.action=="reverse")change(97000,"reverse"){scope.launch{state.animateToCollapsed()}}
+                if(c.action=="remove-anchor")change(97000,"remove-anchor"){anchor=false}
                 if(c.action=="content")change(97000,"grow-results"){contentHeight=700.0}
                 at(128000,192000,320000,512000,1024000)
                 change(1025000,"collapse"){scope.launch{state.animateToCollapsed()}}

@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record ExpandedSearchBarConfig(bool Expanded = true, bool Dark = false, bool Rtl = false,
     int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, double InputWidth = 360,
     double InputHeight = 56, bool Custom = false, string Action = "none", string Motion = "default", bool Anchor = true,
-    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false);
+    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false, bool AppBar = false);
 
 [ParitySuite("expanded-search-bar")]
 public sealed class ExpandedSearchBarCases
@@ -37,6 +37,7 @@ public sealed class ExpandedSearchBarCases
             yield return new($"dynamic.motion-{motion}", "independent progress and content animation specifications", new(Expanded: false, Action: "open-close", Motion: motion));
         foreach (var action in new[] { "open-close", "reverse", "snap", "anchor", "content", "escape", "outside" })
             yield return new($"dynamic.{action}", "state progress, lifecycle and desktop dismissal", new(Expanded: action is "anchor" or "escape" or "outside", Action: action));
+        yield return new("dynamic.remove-anchor", "remaining popup retains the application-owned state", new(Expanded: false, Action: "remove-anchor"));
     }
 
     [ParityScenario("presentation", Data = nameof(Configurations))]
@@ -47,9 +48,11 @@ public sealed class ExpandedSearchBarCases
         CaseDefaults.SetThemeColors(host, c.Dark);
         host.Window.Resources[Sys.Color.SurfaceContainerHigh] = Color.Parse(c.Dark ? "#2B2930" : "#ECE6F0");
         host.Window.Resources[Sys.Color.Outline] = Color.Parse(c.Dark ? "#938F99" : "#79747E");
+        if (c.AppBar) host.Window.Resources[Sys.Color.Surface] = Color.Parse(c.Dark ? "#141218" : "#FEF7FF");
         var initial = c.Expanded ? SearchBarValue.Expanded : SearchBarValue.Collapsed;
         var state = c.Motion switch
         {
+            "gap-default" => SearchBarState.CreateWithGap(initial),
             "tween" => new SearchBarState(initial, new TweenSpec<float>(TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(50), new LinearEasing()),
                 new TweenSpec<float>(TimeSpan.FromMilliseconds(300), easing: new LinearEasing()),
                 new TweenSpec<float>(TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(100), new LinearEasing()),
@@ -64,6 +67,17 @@ public sealed class ExpandedSearchBarCases
         var input = new InputMarker { PreferredWidth = c.InputWidth, PreferredHeight = c.InputHeight, Filled = c.FilledInput };
         var results = new ResultsMarker { PreferredHeight = c.ContentHeight };
         var bar = new SearchBar { State = state, Content = collapsed, Margin = new(16, 24, 0, 0) };
+        AppBarWithSearch? appBar = null;
+        if (c.AppBar)
+        {
+            bar.Content = null;
+            appBar = new AppBarWithSearch
+            {
+                State = state, InputField = collapsed, Margin = new(16, 24, 0, 0),
+                NavigationIcon = new Border { Width = 48, Height = 48, Background = Brushes.Red }
+            };
+            appBar.Items.Add(new Border { Width = 48, Height = 48, Background = Brushes.Red });
+        }
         ExpandedDockedSearchBar popup = c.Contained ? new ExpandedFullScreenContainedSearchBar() : c.FullScreen ? new ExpandedFullScreenSearchBar() : c.Gap ? new ExpandedDockedSearchBarWithGap() : new ExpandedDockedSearchBar();
         popup.State = state; popup.InputField = input; popup.Content = results;
         if (popup is ExpandedFullScreenSearchBar full && c.Insets) full.WindowInsets = new(12, 20, 24, 16);
@@ -78,7 +92,7 @@ public sealed class ExpandedSearchBarCases
         // Core's surrounding Box has LocalContentColor's Black default (it is not a Surface).
         // A themed Avalonia Window supplies OnSurface; make the fixture's ambient scope explicit.
         root.SetValue(Avalonia.Controls.Documents.TextElement.ForegroundProperty, Brushes.Black);
-        if (c.Anchor) root.Children.Add(bar);
+        if (c.Anchor) root.Children.Add(appBar is not null ? appBar : bar);
         root.Children.Add(popup);
         if (c.Custom)
         {
@@ -87,6 +101,7 @@ public sealed class ExpandedSearchBarCases
             popup.DividerColor = Colors.Red;
         }
         host.Mount(root); host.Frame(-1000); host.Frame(0);
+        if (appBar is not null) bar = appBar.CollapsedBar!;
         void Sample(string id)
         {
             var points = new List<ProbePoint> { new("state", "search-state", null, [
@@ -96,7 +111,12 @@ public sealed class ExpandedSearchBarCases
                 Measurement.Text("target", state.TargetValue.ToString(), definition: "search-state.target"),
                 Measurement.Flag("animating", state.IsAnimating, definition: "search-state.animating"),
                 Measurement.Flag("presented", popup.IsPresented, definition: "search-state.presented")]),
-                new("bar", "collapsed-search-bar", "state", c.Anchor ? AvaloniaMeasurements.Geometry(bar, host.Window).ToArray() : []) };
+                new("bar", "collapsed-search-bar", "state", bar.IsAttachedToVisualTree() ? AvaloniaMeasurements.Geometry(bar, host.Window).ToArray() : []) };
+            if (appBar is not null)
+                points.Add(new("app-bar-state", "search-app-bar-state", "state", [
+                    Measurement.Flag("full-screen", state.ExpandsToFullScreen),
+                    Measurement.Flag("search-visible", bar.Opacity != 0, definition: "search.visibility.requested",
+                        source: "SearchBar.Opacity != 0 (not retained raster alpha)")]));
             if (popup.IsPresented)
             {
                 points.Add(new("popup", "expanded-search-bar", "state", AvaloniaMeasurements.Geometry((c.FullScreen ? popup.PresentationLayout : popup.Presentation)!, host.Window).ToArray()));
@@ -137,6 +157,7 @@ public sealed class ExpandedSearchBarCases
         Change(1000, "expand", () => _ = state.AnimateToExpandedAsync());
         At(16000, 32000, 64000, 96000);
         if (c.Action == "reverse") Change(97000, "reverse", () => _ = state.AnimateToCollapsedAsync());
+        if (c.Action == "remove-anchor") Change(97000, "remove-anchor", () => root.Children.Remove(bar));
         if (c.Action == "content") Change(97000, "grow-results", () => results.PreferredHeight = 700);
         At(128000, 192000, 320000, 512000, 1024000);
         Change(1025000, "collapse", () => _ = state.AnimateToCollapsedAsync());

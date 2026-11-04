@@ -29,6 +29,10 @@ public class ExpandedDockedSearchBar : ContentControl
     internal static readonly StyledProperty<MotionSpring?> ExpandAnimationProperty = SearchBar.ExpandAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
     internal static readonly StyledProperty<MotionSpring?> CollapseAnimationProperty = SearchBar.CollapseAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
     internal static readonly StyledProperty<MotionSpring?> ContainedAnimationProperty = SearchBar.ContainedAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
+    internal static readonly StyledProperty<MotionSpring?> GapExpandAnimationProperty = SearchBar.GapExpandAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
+    internal static readonly StyledProperty<MotionSpring?> GapCollapseAnimationProperty = SearchBar.GapCollapseAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
+    internal MotionSpring? GapExpandAnimation { get => GetValue(GapExpandAnimationProperty); set => SetValue(GapExpandAnimationProperty, value); }
+    internal MotionSpring? GapCollapseAnimation { get => GetValue(GapCollapseAnimationProperty); set => SetValue(GapCollapseAnimationProperty, value); }
     internal MotionSpring? ContainedAnimation { get => GetValue(ContainedAnimationProperty); set => SetValue(ContainedAnimationProperty, value); }
     internal MotionSpring? ExpandAnimation { get => GetValue(ExpandAnimationProperty); set => SetValue(ExpandAnimationProperty, value); }
     internal MotionSpring? CollapseAnimation { get => GetValue(CollapseAnimationProperty); set => SetValue(CollapseAnimationProperty, value); }
@@ -132,6 +136,7 @@ public class ExpandedDockedSearchBar : ContentControl
         _activeState = State;
         if (_activeState is not null)
         {
+            if (this is ExpandedFullScreenSearchBar) _activeState.MarkFullScreen();
             _activeState.Attach(this);
             _activeState.PropertyChanged += StateChanged;
             _activeState.LayoutChanged += LayoutChanged;

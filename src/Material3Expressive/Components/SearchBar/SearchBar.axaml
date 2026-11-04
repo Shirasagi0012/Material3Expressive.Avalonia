@@ -2,12 +2,52 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" xmlns:input="using:Avalonia.Input.TextInput">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:AppBarWithSearch}" TargetType="m3:AppBarWithSearch">
+      <Setter Property="HorizontalAlignment" Value="Stretch" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarContainerColor}}" />
+      <Setter Property="SearchBarContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}" />
+      <Setter Property="ScrolledContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarScrolledContainerColor}}" />
+      <Setter Property="ScrolledSearchBarContainerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarScrolledSearchBarContainerColor}}" />
+      <Setter Property="NavigationIconContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarNavigationIconColor}}" />
+      <Setter Property="ActionIconContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarActionIconColor}}" />
+      <Setter Property="ContentPadding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarContentPadding}}" />
+      <Setter Property="WindowInsets" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarWindowInsets}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
+      <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputContainerShape}}" />
+      <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarActionsPanel /></ItemsPanelTemplate></Setter>
+      <Setter Property="Template"><ControlTemplate>
+        <m3:AppBarWithSearchLayout Name="PART_Layout"
+            ContainerColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarContainerColorAnimation}}"
+            ScrollSnapAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarScrollSnapAnimation}}">
+          <m3:MaterialSurface>
+            <Border Padding="{TemplateBinding ContentPadding}">
+              <m3:AppBarWithSearchRow SearchHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarSearchHorizontalPadding}}"
+                  SearchVerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarSearchVerticalPadding}}"
+                  IconEdgePadding="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AppBarIconEdgePadding}}"
+                  SearchMinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DefaultWidth}}"
+                  SearchMaximumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputMaximumWidth}}">
+                <ContentPresenter Content="{TemplateBinding NavigationIcon}" ContentTemplate="{TemplateBinding NavigationIconTemplate}"
+                                  Foreground="{TemplateBinding NavigationIconContentColor, Converter={x:Static m3:AppBarWithSearchRow.Brush}}" />
+                <m3:SearchBar Name="PART_SearchBar" State="{TemplateBinding State}" Content="{TemplateBinding InputField}"
+                              ContentTemplate="{TemplateBinding InputFieldTemplate}" CornerRadius="{TemplateBinding CornerRadius}" />
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"
+                                TextElement.Foreground="{TemplateBinding ActionIconContentColor, Converter={x:Static m3:AppBarWithSearchRow.Brush}}" />
+              </m3:AppBarWithSearchRow>
+            </Border>
+          </m3:MaterialSurface>
+        </m3:AppBarWithSearchLayout>
+      </ControlTemplate></Setter>
+    </ControlTheme>
+
     <ControlTheme x:Key="{x:Type m3:SearchBar}" TargetType="m3:SearchBar">
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputContainerShape}}" />
       <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
       <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="GapExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapExpandAnimation}}" />
+      <Setter Property="GapCollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapCollapseAnimation}}" />
       <Setter Property="ContainedAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainedAnimation}}" />
       <Setter Property="ExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ExpandAnimation}}" />
       <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />
@@ -27,6 +67,8 @@
       <Setter Property="DividerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DividerColor}}" />
       <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
       <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="GapExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapExpandAnimation}}" />
+      <Setter Property="GapCollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapCollapseAnimation}}" />
       <Setter Property="ContainedAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainedAnimation}}" />
       <Setter Property="ExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ExpandAnimation}}" />
       <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />

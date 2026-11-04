@@ -10,6 +10,18 @@ public static partial class MaterialTokens
     {
         public static class SearchBar
         {
+            public static readonly MaterialTokenKey<Color> AppBarContainerColor = new("md.comp.search-bar.app-bar.container.color");
+            public static readonly MaterialTokenKey<Color> AppBarScrolledContainerColor = new("md.comp.search-bar.app-bar.scrolled.container.color");
+            public static readonly MaterialTokenKey<Color> AppBarScrolledSearchBarContainerColor = new("md.comp.search-bar.app-bar.scrolled.search-bar.container.color");
+            public static readonly MaterialTokenKey<Color> AppBarNavigationIconColor = new("md.comp.search-bar.app-bar.navigation-icon.color");
+            public static readonly MaterialTokenKey<Color> AppBarActionIconColor = new("md.comp.search-bar.app-bar.action-icon.color");
+            public static readonly MaterialTokenKey<Thickness> AppBarContentPadding = new("md.comp.search-bar.app-bar.content-padding");
+            public static readonly MaterialTokenKey<Thickness> AppBarWindowInsets = new("md.comp.search-bar.app-bar.window-insets");
+            public static readonly MaterialTokenKey<double> AppBarSearchHorizontalPadding = new("md.comp.search-bar.app-bar.search.horizontal-padding");
+            public static readonly MaterialTokenKey<double> AppBarSearchVerticalPadding = new("md.comp.search-bar.app-bar.search.vertical-padding");
+            public static readonly MaterialTokenKey<double> AppBarIconEdgePadding = new("md.comp.search-bar.app-bar.icon.edge-padding");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> AppBarContainerColorAnimation = new("md.comp.search-bar.app-bar.container.colorAnimation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> AppBarScrollSnapAnimation = new("md.comp.search-bar.app-bar.scroll.snap.animation");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.search-bar.container.color");
             public static readonly MaterialTokenKey<CornerRadius> DockedContainerShape = new("md.comp.search-view.docked.container.shape");
             public static readonly MaterialTokenKey<CornerRadius> DropdownContainerShape = new("md.comp.search-view.dropdown.container.shape");
@@ -20,6 +32,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> ContainedInputHorizontalPadding = new("md.comp.search-view.contained.input.horizontal-padding");
             public static readonly MaterialTokenKey<double> ContainedInputTopPadding = new("md.comp.search-view.contained.input.top-padding");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ContainedAnimation = new("md.comp.search-view.contained.animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> GapExpandAnimation = new("md.comp.search-view.dropdown.expand.animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> GapCollapseAnimation = new("md.comp.search-view.dropdown.collapse.animation");
             public static readonly MaterialTokenKey<Color> DividerColor = new("md.comp.search-view.divider.color");
             public static readonly MaterialTokenKey<double> TonalElevation = new("md.comp.search-bar.tonal-elevation");
             public static readonly MaterialTokenKey<double> ShadowElevation = new("md.comp.search-bar.shadow-elevation");

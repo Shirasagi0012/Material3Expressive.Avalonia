@@ -22,10 +22,14 @@ public sealed class SearchBarState : AvaloniaObject
     private readonly IAnimationSpec<float> _contentInSpec, _contentOutSpec;
     private readonly HashSet<Control> _owners = [];
     private AnimationChildScope? _scope;
+    private TopLevel? _topLevel;
     private float _progress;
     private SearchBarValue _current, _target;
     private bool _running;
-    private bool _containedDefaults;
+    private enum DefaultMotion { Standard, Contained, WithGap }
+    private DefaultMotion _defaultMotion;
+    internal bool ExpandsToFullScreen { get; private set; }
+    internal void MarkFullScreen() { if (ExpandsToFullScreen) return; ExpandsToFullScreen = true; NotifyLayoutChanged(); }
     internal SearchBar? CollapsedBar { get; set; }
     internal event EventHandler? LayoutChanged;
     internal void NotifyLayoutChanged() => LayoutChanged?.Invoke(this, EventArgs.Empty);
@@ -35,9 +39,12 @@ public sealed class SearchBarState : AvaloniaObject
 
     public SearchBarState() : this(SearchBarValue.Collapsed) { }
     /// <summary>Creates the contained variant's FastSpatial motion and 50/100ms content fade defaults.</summary>
-    public static SearchBarState CreateContained(SearchBarValue initialValue = SearchBarValue.Collapsed) => new(initialValue,
+    public static SearchBarState CreateContained(SearchBarValue initialValue = SearchBarValue.Collapsed) => CreateWithContentFade(initialValue, DefaultMotion.Contained);
+    /// <summary>Creates the gap variant's DefaultSpatial expansion, FastSpatial collapse and delayed content fade.</summary>
+    public static SearchBarState CreateWithGap(SearchBarValue initialValue = SearchBarValue.Collapsed) => CreateWithContentFade(initialValue, DefaultMotion.WithGap);
+    private static SearchBarState CreateWithContentFade(SearchBarValue initialValue, DefaultMotion motion) => new(initialValue,
         animationSpecForContentFadeIn: new TweenSpec<float>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50), new CubicBezierEasing(.3, 0, 1, 1)),
-        animationSpecForContentFadeOut: new TweenSpec<float>(TimeSpan.FromMilliseconds(100), easing: new CubicBezierEasing(0, 0, 0, 1))) { _containedDefaults = true };
+        animationSpecForContentFadeOut: new TweenSpec<float>(TimeSpan.FromMilliseconds(100), easing: new CubicBezierEasing(0, 0, 0, 1))) { _defaultMotion = motion };
     public SearchBarState(SearchBarValue initialValue, IAnimationSpec<float>? animationSpecForExpand = null,
         IAnimationSpec<float>? animationSpecForCollapse = null, IAnimationSpec<float>? animationSpecForContentFadeIn = null,
         IAnimationSpec<float>? animationSpecForContentFadeOut = null)
@@ -70,13 +77,19 @@ public sealed class SearchBarState : AvaloniaObject
 
     internal void Attach(Control owner)
     {
+        var topLevel = TopLevel.GetTopLevel(owner) ?? throw new InvalidOperationException("The search bar must be mounted.");
+        if (_topLevel is not null && !ReferenceEquals(_topLevel, topLevel))
+            throw new InvalidOperationException("A SearchBarState cannot animate in multiple windows at the same time.");
         if (!_owners.Add(owner)) return;
-        _scope ??= AnimationScope.Get(owner).CreateChild("Search bar state");
+        _topLevel = topLevel;
+        // The application-owned state outlives either individual consumer (anchor or popup).
+        _scope ??= AnimationScope.GetRoot(topLevel).CreateChild("Search bar state");
     }
     internal void Detach(Control owner)
     {
         if (!_owners.Remove(owner) || _owners.Count != 0) return;
         _scope?.Dispose(); _scope = null;
+        _topLevel = null;
     }
 
     private Task Animate(bool expanded, CancellationToken cancellationToken)
@@ -105,7 +118,12 @@ public sealed class SearchBarState : AvaloniaObject
         var spec = expanded ? _expandSpec : _collapseSpec;
         if (spec is null)
         {
-            var property = _containedDefaults ? SearchBar.ContainedAnimationProperty : expanded ? SearchBar.ExpandAnimationProperty : SearchBar.CollapseAnimationProperty;
+            var property = _defaultMotion switch
+            {
+                DefaultMotion.Contained => SearchBar.ContainedAnimationProperty,
+                DefaultMotion.WithGap => expanded ? SearchBar.GapExpandAnimationProperty : SearchBar.GapCollapseAnimationProperty,
+                _ => expanded ? SearchBar.ExpandAnimationProperty : SearchBar.CollapseAnimationProperty
+            };
             var configured = _owners.Select(owner => owner.GetValue(property)).FirstOrDefault(value => value is not null)
                 ?? throw new InvalidOperationException("The search bar motion theme is not ready.");
             spec = new SpringSpec<float>(configured.DampingRatio, configured.Stiffness);

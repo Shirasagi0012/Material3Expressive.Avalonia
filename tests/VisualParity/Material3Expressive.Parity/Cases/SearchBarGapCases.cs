@@ -19,9 +19,12 @@ public sealed class SearchBarGapCases
         yield return new("static.elevation", "tonal elevation does not tint inner backgrounds", new(TonalElevation: 3, ShadowElevation: 3, Gap: true));
         foreach (var motion in new[] { "default", "tween", "overshoot", "content" })
             yield return new($"dynamic.motion-{motion}", "independent progress, slide and content alpha", new(Expanded: false, Action: "open-close", Motion: motion, Gap: true));
+        foreach (var action in new[] { "open-close", "reverse", "escape", "outside" })
+            yield return new($"dynamic.gap-default.{action}", "gap state factory motion and content fade", new(Expanded: action is "escape" or "outside", Action: action, Motion: "gap-default", Gap: true));
         foreach (var action in new[] { "reverse", "snap", "anchor", "content", "escape", "outside" })
             yield return new($"dynamic.{action}", "progress thresholds and popup lifecycle", new(Expanded: action is "anchor" or "escape" or "outside", Action: action, Gap: true));
         yield return new("dynamic.outside-no-scrim", "no-scrim dismissal happens on press", new(Action: "outside", Gap: true, NoScrim: true));
+        yield return new("dynamic.remove-anchor", "remaining popup retains the gap state animation", new(Expanded: false, Action: "remove-anchor", Motion: "gap-default", Gap: true));
     }
 
     [ParityScenario("presentation", Data = nameof(Configurations))]

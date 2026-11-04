@@ -48,7 +48,7 @@
 
 `OpenSearchPopup` 调用 `await state.AnimateToExpandedAsync()`，选中结果后调用 `await state.AnimateToCollapsedAsync()`。Escape 和弹层外按下自动收起；结束后恢复之前的焦点。弹层声明本身不占布局空间。Catalog 的 **Search popup** 展示过滤、选中、主题及 RTL 切换，可用 `--search-popup` 单独启动。
 
-带间隙弹层可将上例的 `ExpandedDockedSearchBar` 替换为 `ExpandedDockedSearchBarWithGap`，两个插槽的写法相同：
+带间隙弹层使用 `SearchBarState.CreateWithGap()` 创建共享状态，再将上例的 `ExpandedDockedSearchBar` 替换为 `ExpandedDockedSearchBarWithGap`，两个插槽的写法相同：
 
 ```xml
 <m3:ExpandedDockedSearchBarWithGap State="{StaticResource SearchState}"
@@ -84,6 +84,23 @@ FullScreenSearch.State = state;
 
 普通全屏使用 `new SearchBarState()`；contained 工厂使用 FastSpatial 和独立的延迟内容淡入。需要自定义规格时仍使用 `SearchBarState` 的完整构造函数。返回按钮或选择结果后调用 `AnimateToCollapsedAsync()`。Catalog 的 **Search popup with gap**、**Full-screen search**、**Contained search** 提供完整示例，对应启动参数 `--search-gap`、`--search-full-screen`、`--search-contained`。
 
+搜索顶栏可代替上述收起表面，继续和独立展开弹层共享状态：
+
+```xml
+<m3:AppBarWithSearch x:Name="SearchAppBar" State="{StaticResource SearchState}">
+  <m3:AppBarWithSearch.NavigationIcon>
+    <m3:IconButton Symbol="Menu" AutomationProperties.Name="导航" />
+  </m3:AppBarWithSearch.NavigationIcon>
+  <m3:AppBarWithSearch.InputField>
+    <Button Content="搜索" Height="56" Click="OpenSearchPopup"
+            Theme="{StaticResource MaterialTextButtonTheme}" />
+  </m3:AppBarWithSearch.InputField>
+  <m3:IconButton Symbol="Settings" AutomationProperties.Name="设置" />
+</m3:AppBarWithSearch>
+```
+
+`NavigationIcon` 是起始插槽，直接子项是末尾操作。Catalog 的 **Search app bar** 展示搜索过滤、主题/RTL、直接拖动和显式滚动策略，使用 `--search-app-bar` 启动。
+
 ## 变体与属性
 
 - `IsExpanded` 控制结果显隐；中途反向保留当前动画值。
@@ -106,6 +123,23 @@ FullScreenSearch.State = state;
 
 `new SearchBarState(SearchBarValue.Expanded)` 可初始化展开状态；`SnapToAsync(fraction)` 可在挂载前设定进度。动画需要挂载到已初始化动画作用域的窗口。默认展开采用 SlowSpatial，收起采用 DefaultSpatial；构造函数也可接收 ComposeAnimation 的自定义动画规格。
 
+`CreateWithGap(initialValue)` 改用 DefaultSpatial 展开、FastSpatial 收起，内容进入为 50ms 延迟后的 100ms 淡入，退出为 100ms 淡出；`CreateContained(initialValue)` 的主进度两个方向均为 FastSpatial。两个工厂的运动配置继续响应主题 Token。
+
+`AppBarWithSearch` 的 `Background` 必须为纯色或 null，`SearchBarContainerColor` 单独配置内部搜索表面。两个 nullable 的 `ScrolledContainerColor` / `ScrolledSearchBarContainerColor` 为 null 时保留对应基础色。导航/操作颜色通过各自 `*ContentColor` 配置；子控件显式前景色优先。基础应用栏背景为透明哨兵时，elevation 应用在搜索表面，否则应用在外层。`CornerRadius` 只配置搜索形状，`ContentPadding` 为逻辑方向，`WindowInsets` 为物理方向并排除祖先消费。
+
+可选 `SearchBarScrollBehavior` 提供 enter-always 策略，挂载后支持直接拖动栏区域。嵌套滚动宿主显式接入：
+
+```csharp
+var scrolling = new SearchBarScrollBehavior();
+SearchAppBar.ScrollBehavior = scrolling;
+float preConsumed = scrolling.OnPreScroll(availableY);
+// 宿主将 availableY - preConsumed 交给内容滚动，然后报告实际结果。
+float postConsumed = scrolling.OnPostScroll(contentConsumedY, remainingY);
+float remainingVelocity = await scrolling.OnPostFlingAsync(availableVelocityY, cancellationToken);
+```
+
+距离以 DIP、速度以 DIP/s 表达，向下为正。`State` 保留 scroll offset、limit 和 content offset；limit 随完整栏高更新，修改 limit 不主动重新夹取现有 offset。`CanScroll=false` 门控新嵌套滚动回调，已启动的吸附继续运行；直接拖动使用 behavior 首次挂载时的 CanScroll 值，后续修改不会改变它。需要改变直接拖动开关时替换 behavior，可复用同一个 `SearchBarScrollState`。`ReverseLayout` 控制反向布局的消费分支。末端无需吸附时返回零；其他情况下 fling 方法返回衰减剩余速度，不能把它当作已消费速度。一个 behavior 仅绑定一个挂载顶栏，替换、卸载或新的直接拖动取消已有吸附。
+
 `IsAnimating` 只反映主进度动画；使用较长的自定义内容动画时，它可能先变为 false，而展开/收起方法返回的任务仍未完成。`SnapToAsync` 不改变内容动画，目标进度恰为 1 时 `TargetValue` 才为 Expanded。内部关闭在弹层移除时取消剩余动画，`Progress` 可能保留不大于 .02 的小正值；需要等待完整归零时，由应用调用并等待 `AnimateToCollapsedAsync()`。
 
 ## 内容槽与定制
@@ -118,7 +152,7 @@ FullScreenSearch.State = state;
 
 ## 使用限制与注意事项
 
-`SearchBarInputField` 仍使用布尔展开状态，不接受 `SearchBarState`。上例以按钮打开弹层，展开输入只负责查询。搜索应用栏尚未提供。输入字段用于无标签、无错误状态的单行搜索。
+`SearchBarInputField` 仍使用布尔展开状态，不接受 `SearchBarState`。上例以按钮打开弹层，展开输入只负责查询。输入字段用于无标签、无错误状态的单行搜索。`AppBarWithSearch` 尚未自动连接普通 `ScrollViewer` / SmoothScroll；上述显式回调需要宿主按真实嵌套滚动顺序调用。
 
 独立弹层采用可聚焦的窗口内桌面弹层，形状通过 `CornerRadius` 配置；目前不提供移动端软键盘抑制、自动键盘避让和预测返回手势。一个状态应配对同一窗口内一个收起表面和一个展开弹层。仅移动已存在的收起表面不会立即重定位静止弹层；重新打开或进度/窗口尺寸更新时读取最新位置。结果模板在弹层移除时释放，业务状态应保存在视图模型中。
 

@@ -100,6 +100,40 @@ public class ExpandedDockedSearchBarTests
         window.Close(); Assert.Equal(0, clock.PendingFrameCount);
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemovingTheFirstStateConsumerDoesNotEndTheRemainingConsumersAnimationLifetime(bool popupFirst)
+    {
+        using var clock = new MotionTestClockScope();
+        var state = SearchBarState.CreateWithGap();
+        var (bar, popup, root) = Create(state);
+        if (popupFirst)
+        {
+            root.Children.Clear();
+            root.Children.Add(popup);
+            root.Children.Add(bar);
+        }
+        var window = Show(root);
+        clock.SendFrame(TimeSpan.Zero);
+        var expand = state.AnimateToExpandedAsync();
+        clock.Track(expand);
+        Frames(clock, window, 16, 96);
+        root.Children.Remove(popupFirst ? popup : bar);
+        Flush(window);
+        Frames(clock, window, 112, 1008);
+        Assert.True(expand.IsCompletedSuccessfully);
+        Assert.Equal(1, state.Progress);
+        Assert.Equal(!popupFirst, popup.IsPresented);
+        var collapse = state.AnimateToCollapsedAsync();
+        clock.Track(collapse);
+        Frames(clock, window, 1024, 2016);
+        Assert.True(collapse.IsCompletedSuccessfully);
+        Assert.False(popup.IsPresented);
+        window.Close();
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void EscapeAndOutsidePressCollapseAndRestoreFocusAfterExit()
     {

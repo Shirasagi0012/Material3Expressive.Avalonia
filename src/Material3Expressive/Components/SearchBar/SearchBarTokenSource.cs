@@ -9,6 +9,18 @@ namespace Material3Expressive.Components;
 public sealed class SearchBarTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object> {
+        [Comp.SearchBar.AppBarContainerColor] = new TokenRef(Comp.AppBar.ContainerColor),
+        [Comp.SearchBar.AppBarScrolledContainerColor] = new TokenRef(Comp.AppBar.ScrolledContainerColor),
+        [Comp.SearchBar.AppBarScrolledSearchBarContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHighest),
+        [Comp.SearchBar.AppBarNavigationIconColor] = new TokenRef(Comp.AppBar.NavigationIconColor),
+        [Comp.SearchBar.AppBarActionIconColor] = new TokenRef(Comp.AppBar.ActionIconColor),
+        [Comp.SearchBar.AppBarContentPadding] = default(Avalonia.Thickness),
+        [Comp.SearchBar.AppBarWindowInsets] = default(Avalonia.Thickness),
+        [Comp.SearchBar.AppBarSearchHorizontalPadding] = 8d,
+        [Comp.SearchBar.AppBarSearchVerticalPadding] = 4d,
+        [Comp.SearchBar.AppBarIconEdgePadding] = 4d,
+        [Comp.SearchBar.AppBarContainerColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
+        [Comp.SearchBar.AppBarScrollSnapAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.SearchBar.ContainerColor] = new TokenRef(Sys.Color.SurfaceContainerHigh),
         [Comp.SearchBar.DockedContainerShape] = new TokenRef(Sys.Shape.ExtraLarge),
         [Comp.SearchBar.DropdownContainerShape] = new Avalonia.CornerRadius(12),
@@ -19,6 +31,8 @@ public sealed class SearchBarTokenSource : ITokenSource
         [Comp.SearchBar.ContainedInputHorizontalPadding] = 8d,
         [Comp.SearchBar.ContainedInputTopPadding] = 4d,
         [Comp.SearchBar.ContainedAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
+        [Comp.SearchBar.GapExpandAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault),
+        [Comp.SearchBar.GapCollapseAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
         [Comp.SearchBar.DividerColor] = new TokenRef(Sys.Color.Outline),
         [Comp.SearchBar.TonalElevation] = new TokenRef(Sys.Elevation.Level0),
         [Comp.SearchBar.ShadowElevation] = new TokenRef(Sys.Elevation.Level0),

@@ -51,6 +51,8 @@ public partial class App : Application
                 ? new ExpandedSearchBarDemo(SearchPresentation.Gap)
                 : System.Array.IndexOf(desktop.Args ?? [], "--search-full-screen") >= 0
                 ? new ExpandedSearchBarDemo(SearchPresentation.FullScreen)
+                : System.Array.IndexOf(desktop.Args ?? [], "--search-app-bar") >= 0
+                ? new SearchAppBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--search-contained") >= 0
                 ? new ExpandedSearchBarDemo(SearchPresentation.Contained)
                 : new MainWindow();
