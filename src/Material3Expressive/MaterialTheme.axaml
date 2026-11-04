@@ -75,6 +75,7 @@
                     <m3:TimeInputTokenSource />
                     <m3:TimeScrollTokenSource />
                     <m3:SearchBarTokenSource />
+                    <m3:PullToRefreshTokenSource />
                     <m3:TimePickerDialogTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
@@ -82,6 +83,7 @@
     </Styles.Resources>
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/PullToRefresh/PullToRefresh.axaml" />
     <StyleInclude Source="/Components/ListItem/ListItem.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />
     <StyleInclude Source="/Components/AppBar/AppBar.axaml" />

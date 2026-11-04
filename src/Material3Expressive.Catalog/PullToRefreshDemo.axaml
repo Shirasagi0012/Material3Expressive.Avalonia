@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.PullToRefreshDemo" Title="Pull to refresh indicators" Width="760" Height="800">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Margin="24" Spacing="16">
+    <TextBlock Text="Pull to refresh" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="拖动距离滑块观察箭头和形状变化。超过 1 是越过阈值；刷新、停止与快速反向均保留过渡。"
+               TextWrapping="Wrap" />
+    <Slider x:Name="Distance" Minimum="0" Maximum="3" Value="1" ValueChanged="DistanceChanged" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="开始刷新" Click="StartRefresh" />
+      <Button Content="停止 / 隐藏" Click="StopRefresh" />
+      <Button Content="明 / 暗" Click="ToggleTheme" />
+    </StackPanel>
+    <Grid ColumnDefinitions="*,*" Height="260">
+      <Border BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" BorderThickness="1" Margin="0,0,8,0">
+        <Grid><TextBlock Text="Circular" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" />
+          <m3:PullToRefreshIndicator x:Name="Circular" />
+        </Grid>
+      </Border>
+      <Border Grid.Column="1" BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" BorderThickness="1" Margin="8,0,0,0">
+        <Grid><TextBlock Text="Expressive" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" />
+          <m3:PullToRefreshLoadingIndicator x:Name="Expressive" />
+        </Grid>
+      </Border>
+    </Grid>
+    <TextBlock Text="本页由宿主显式驱动距离和刷新状态。指示器本身不接管 ScrollViewer 的滚动与刷新请求。"
+               TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
+    <TextBlock Text="显式 nested-scroll 宿主示例" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="下拉 80 DIP" Click="Pull" />
+      <Button Content="上推 40 DIP" Click="Push" />
+      <Button Content="释放（速度 0）" Click="Release" />
+      <Button Content="完成刷新" Click="CompleteRefresh" />
+    </StackPanel>
+    <Grid Height="160"><m3:PullToRefreshIndicator x:Name="Gesture" /></Grid>
+    <TextBlock Text="两个下拉刚好到阈值，第三次下拉后释放才请求刷新。按钮模拟宿主的 pre/post 输入；释放示例显式传入零速度。"
+               TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
+  </StackPanel>
+  </ScrollViewer>
+</Window>

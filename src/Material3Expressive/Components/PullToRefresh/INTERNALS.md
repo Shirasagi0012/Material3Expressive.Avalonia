@@ -1,0 +1,74 @@
+# Pull to refresh 内部机制与维护说明
+
+## 1. 上游基线与职责映射
+
+AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e` 的
+`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt` 内容相同。
+
+| 上游符号 / 职责 | 本地类型 / 成员 | 对应说明 |
+| --- | --- | --- |
+| `PullToRefreshStateImpl` | `PullToRefreshState` | Float Animatable、默认弹簧、距离与运行状态 |
+| `PullToRefreshDefaults.IndicatorBox` | `PullToRefreshIndicatorBox` / 内部 Layout | 软尺寸、仅顶部裁剪、图层平移、条件阴影 |
+| `Indicator` / `CircularArrowProgressIndicator` | `PullToRefreshIndicator` / `PullToRefreshArrow` | 箭头与现有 CircularProgressIndicator Crossfade |
+| `LoadingIndicator` | `PullToRefreshLoadingIndicator` | 现有 ContainedLoadingIndicator 的确定/不确定重载 Crossfade |
+| `ArrowValues` / `drawArrow` | 同名内部计算和 Skia 绘制 | Float 运算、超阈值张力和物理像素箭头 |
+| `PullToRefreshModifierNode` | `PullToRefreshScrollBehavior` | 显式 pre/post scroll、pre-fling、刷新请求及回弹 |
+
+## 2. 关键机制与架构契约
+
+State 保存原始 Float，不额外钳制到 0–1。两个动画方法使用 Animatable 的默认弹簧，保持速度和取消语义；
+它们不是 Material MotionScheme 动画。显式 Snap 可在未挂载时执行。消费方共享窗口根下的子作用域，最后一个消费者离开时取消运行，保留值，重挂后可继续操作。
+
+图层位移为 `fraction * round(maxDistance * density) - measuredHeightPx`，再转换到 DIP。布局尺寸保持不变；
+裁剪只限制 y≥0，不能使用 ClipToBounds 把下方内容和侧边阴影裁掉。背景不应用 Surface 的 tonal elevation。
+Compose 的 LTRB 极值转换成 Avalonia 的 xywh 时需为宽度和变换留下浮点余量，避免 Skia 溢出后整层消失。
+尺寸、默认圆角、颜色、高度和 Effects spring 从主题提供，不在属性元数据复制默认值；Expressive 尺寸和颜色引用 LoadingIndicator Token。
+
+刷新 Crossfade 与箭头阈值透明度复用 ComposeAnimation。透明度目标在 fraction≥1 时为 1，否则为 .3；同一侧连续改变距离不能重启动画。
+箭头按 `animateFloatAsState` 的 SideEffect 提交顺序，在旧动画当帧采样后取最新目标；帧间多次跨越阈值只提交最终目标。
+旧内容保留到 Crossfade 结束才卸载，取消其持续动画。动画对 Avalonia 属性以 Animation 优先级绑定，释放恢复底层属性源。
+Expressive 确定模式在 fraction>1 时整体额外旋转 `-(fraction-1)*180°`，模式切换创建各自的 LoadingIndicator 状态。
+其内部画布保持 LoadingIndicator Token 的 requiredSize，在小父约束内居中溢出，由外层形状裁剪。
+Crossfade 启用 Avalonia 完整图层透明度合成；内容仅在透明度小于 1 时按图层尺寸裁剪，复现 Compose Auto 离屏层。
+卸载先隐藏并断开拥有的 Crossfade，再移除子树，避免子动画在已释放的作用域上继续启动。
+
+滚动 behavior 在实际密度中累计 Float 像素，threshold 取整后计算 .5 拖动倍率和张力，公开入参/返回值为 DIP 与 DIP/s。
+pre 仅消费向上的 UserInput，post 消费剩余输入并发布比例；side effect、禁用或 State 动画中不消费。
+释放不检查 enabled，严格 `adjustedDistance > threshold` 才发出请求；向上速度或未拉动时消费为零。
+刷新状态变化按重组提交边界合并，旧帧先采样，随后执行阈值/隐藏动画；finally 保留上游清零和阈值赋值顺序。
+behavior 是组件专属显式适配，不注册 ScrollViewer，不改变既有 AppBar 合成参与者协议。
+
+箭头保留上游不寻常的两个运算：外层 rotate 的参数是未乘 360 的 rotation；箭头局部角度为 endAngle 减物理像素 strokeWidth。
+不能因视觉直觉将它们改为其他角度。Skia 图元在实际密度的物理像素中构造，并消费合成层 CurrentOpacity。
+
+## 3. 已确认决定与已知差异
+
+- **授权范围**：本次任务授权上游语义内新增组件及非破坏性组件 API；未新增公共共享框架。
+- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox`；自定义 State 接口与保存/恢复适配；任意路径容器 Shape。
+- **未经验证**：实际触摸、屏幕阅读器客户端和非 Windows 平台。State 的消费者生命周期是现有作用域模式的组件接入，不代表自动滚动已实现。
+- **已接受差异**：没有为本组件新增像素或时序容差；共享适配仅在已有决定的适用范围内复用。
+
+**未解决观测**：回弹途中在 209ms 卸载，Compose 在该帧采样后重组移除，保留 fraction `0.44828412`；
+Avalonia 立即卸载，保留最后 208ms 的 `0.45967421`。两端任务均取消、停止动画、无剩余图片或捕获错误。
+`pull-refresh-scroll.detach` 保留该精确差异，未删除卸载帧、延迟所有事件或修改比较规则；这不是已接受差异。
+
+**待维护者决定的自动接入**：原生 ScrollViewer 不提供 Compose 的异步 pre-fling 剩余速度协议；
+现有 SmoothScroll/AppBar 参与者在合成线程处理位移，不能从 UI 的 ScrollChanged 可靠重建释放消费。
+推荐在既有参与者协议中明确释放事务、UI 刷新回调与合成状态的边界，再提供形如
+`<m3:PullToRefreshBox IsRefreshing="{Binding IsRefreshing}" RefreshRequested="Refresh"><ScrollViewer ... /></m3:PullToRefreshBox>`
+的容器入口（仅提议，未实现/未批准）。影响包括与 AppBar 的消费次序、嵌套所有权和跨线程取消。
+卸载末帧问题也需明确重组提交与原生立即卸载之间的契约，不以组件私自延长已卸载控件的生命期解决。
+
+## 4. 验证入口
+
+- `tests/Material3Expressive.Tests/PullToRefreshTests.cs`：距离、动画中断、共享消费者、换源、透明度、Crossfade、资源更新、尺寸约束及卸载。
+- `PullToRefreshCases.cs` / `.kt`：传统/Expressive、距离阶段、明暗、RTL、受限空间、颜色与距离覆盖、自定义内容及刷新/反向/卸载；含半透明绘制和帧内目标合并。
+- `./tests/VisualParity/parity.ps1 self-test --family pull-to-refresh`；实际结果以生成报告为准。
+- Catalog：`PullToRefreshDemo`，示范宿主显式控制距离与刷新状态。
+
+Windows Skia 双端 `20261104-070918-1b23c57b`：指示器 53/53 用例在既有容差内，结构读数相等，重复捕获稳定、错误为零。
+显式滚动 `20261104-070928-773f13b1`：13/14 用例在容差内；剩下的卸载保留值差异见上文，14 个均稳定且无捕获错误。
+Windows Catalog 已实际操作阈值处释放、越阈值刷新、完成隐藏、明暗切换和小窗口滚动；按钮模拟 nested-scroll 输入，不代表真实触摸验证。
+Release 整仓构建通过；控件库 1958/1958（其中本组件 26 项）、ComposeAnimation 935/935、VisualParity 基础设施 124/124 通过。
+Crossfade 绘制顺序修正另检查既有消费者：SegmentedButton 的反向切换通过；TimePicker `selection-reverse.ltr` 在修正前后均存在差异，未将其记为通过。
+未通过改变参考提交、依赖锁或像素容差获取这些结果。
