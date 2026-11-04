@@ -22,16 +22,48 @@ internal sealed partial class ClockFace
     {
         if (SelectorBrush is not ISolidColorBrush selector || SelectedTextBrush is not ISolidColorBrush text) return;
         context.Custom(new SelectorDrawOperation(Bounds.Size, Density, SelectorPosition, SelectorRadius,
-            (float)CenterSize / 2, (float)TrackWidth, _position, selector.Color, text.Color, beforeContent));
+            (float)CenterSize / 2, (float)TrackWidth, _position, selector.Color, selector.Opacity, text.Color, text.Opacity, beforeContent));
     }
 
-    private sealed class ClockSelectorOverlay(ClockFace owner) : Control
+    private sealed class ClockSelectorOverlay : Control
     {
-        public override void Render(DrawingContext context) => owner.DrawSelector(context, beforeContent: false);
+        private readonly ClockFace _owner;
+        private AvaloniaObject[] _brushes = [];
+        private bool _attached;
+        static ClockSelectorOverlay() => AffectsRender<ClockSelectorOverlay>(SelectorBrushProperty, SelectedTextBrushProperty,
+            CenterSizeProperty, HandleSizeProperty, TrackWidthProperty);
+        public ClockSelectorOverlay(ClockFace owner)
+        {
+            _owner = owner;
+            // The post-content pass has its own retained render list. Forward its inputs so
+            // replacement AND mutable brush changes invalidate that list while the clock is idle.
+            foreach (var property in new AvaloniaProperty[] { SelectorBrushProperty, SelectedTextBrushProperty, CenterSizeProperty, HandleSizeProperty, TrackWidthProperty })
+                this.Bind(property, owner.GetObservable(property));
+        }
+        public override void Render(DrawingContext context) => _owner.DrawSelector(context, beforeContent: false);
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        { base.OnAttachedToVisualTree(e); _attached = true; ObserveBrushes(); }
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        { _attached = false; ObserveBrushes(); base.OnDetachedFromVisualTree(e); }
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == SelectorBrushProperty || change.Property == SelectedTextBrushProperty) ObserveBrushes();
+        }
+        private void ObserveBrushes()
+        {
+            foreach (var brush in _brushes) brush.PropertyChanged -= BrushChanged;
+            // Mutable brushes are compositor resources in Avalonia. Our draw operation stores
+            // scalar snapshots, so those resource updates must also invalidate its render list.
+            _brushes = _attached ? new[] { GetValue(SelectorBrushProperty), GetValue(SelectedTextBrushProperty) }
+                .OfType<AvaloniaObject>().Distinct().ToArray() : [];
+            foreach (var brush in _brushes) brush.PropertyChanged += BrushChanged;
+        }
+        private void BrushChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => InvalidateVisual();
     }
 
     private sealed class SelectorDrawOperation(Size size, float scale, Point position, float radius,
-        float centerRadius, float trackWidth, float angle, Color selector, Color text, bool beforeContent) : ICustomDrawOperation
+        float centerRadius, float trackWidth, float angle, Color selector, double selectorOpacity, Color text, double textOpacity, bool beforeContent) : ICustomDrawOperation
     {
         public Rect Bounds { get; } = new Rect(size);
         public bool HitTest(Point point) => false;
@@ -48,7 +80,7 @@ internal sealed partial class ClockFace
                 canvas.Scale(1 / scale);
                 var x = (float)position.X * scale; var y = (float)position.Y * scale;
                 var r = radius * scale;
-                using var paint = new SKPaint { IsAntialias = true, Color = Ink(selector),
+                using var paint = new SKPaint { IsAntialias = true, Color = Ink(selector, selectorOpacity * lease.CurrentOpacity),
                     BlendMode = beforeContent ? SKBlendMode.Clear : SKBlendMode.Xor };
                 canvas.DrawCircle(x, y, r, paint);
                 if (beforeContent) return;
@@ -57,11 +89,12 @@ internal sealed partial class ClockFace
                 var centerX = (float)size.Width * scale / 2; var centerY = (float)size.Height * scale / 2;
                 canvas.DrawLine(centerX, centerY, x - r * MathF.Cos(angle), y - r * MathF.Sin(angle), paint);
                 canvas.DrawCircle(centerX, centerY, centerRadius * scale, paint);
-                paint.Color = Ink(text); paint.BlendMode = SKBlendMode.DstOver;
+                paint.Color = Ink(text, textOpacity * lease.CurrentOpacity); paint.BlendMode = SKBlendMode.DstOver;
                 canvas.DrawCircle(x, y, r, paint);
             }
             finally { canvas.Restore(); }
         }
-        private static SKColor Ink(Color color) => new(color.R, color.G, color.B, color.A);
+        private static SKColor Ink(Color color, double opacity) => new(color.R, color.G, color.B,
+            (byte)Math.Clamp(Math.Round(color.A * opacity, MidpointRounding.AwayFromZero), 0, 255));
     }
 }

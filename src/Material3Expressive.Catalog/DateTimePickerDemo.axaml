@@ -19,8 +19,12 @@
         <TextBlock Text="Keyboard: activate an hour/minute selector, use arrows to move around the dial, Enter/Space to choose, and Tab or Shift+Tab to leave. In 24-hour mode, arrows connect both rings." TextWrapping="Wrap" />
         <TextBlock Text="Pointer: tap a five-minute mark or drag to any minute. Choosing an hour advances after the selector animation; drag release advances immediately. Switch fields during the transition to try interruption." TextWrapping="Wrap" />
         <CheckBox Name="TouchExploration" Content="Touch exploration enabled — keep the hour selected on the dial and during text entry" />
+        <TextBlock Text="Dial opacity — the selector track follows the same opacity as the labels" />
+        <Slider Name="DialOpacity" Minimum="0.1" Maximum="1" Value="1" MaxWidth="320" HorizontalAlignment="Left" />
         <WrapPanel>
-          <m3:TimePicker TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" Name="Dial" Layout="Vertical" Margin="0,0,32,0" />
+          <Border RenderOptions.RequiresFullOpacityHandling="True">
+            <m3:TimePicker TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" Name="Dial" Layout="Vertical" Margin="0,0,32,0" Opacity="{Binding #DialOpacity.Value}" />
+          </Border>
           <StackPanel Spacing="24">
             <m3:TimeInput Name="Input" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
             <TextBlock Text="Scroll entry: select a neighbouring number, then reverse while its size and colour are changing. The selected number uses emphasized display typography." TextWrapping="Wrap" MaxWidth="340" />

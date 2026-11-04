@@ -132,8 +132,17 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
   字段数字基线及焦点描边差异仍保留证据。分隔符沿用上游 -4dp 偏移。
 - `Automatic` 在钟面上比较 TopLevel 客户区的宽高，并在客户区尺寸变化后，仅当横竖结果改变时重建。初次套用模板时如果还没有 TopLevel，会保持纵向，直到控件进入窗口。
 - 秒、分钟步长只存在于原生 `TimePicker` 主题。
-- `ClockFace` 混合绘制依赖 Avalonia.Skia，与本库其他自绘 Material 控件一致；当前仅消费实色画笔的 Color，未单独接入画笔 Opacity / Skia 租约 CurrentOpacity，非实色 selector 不绘制。
-  非 Skia 后端、非默认父级 Opacity、半透明画笔和分数缩放未完成验证。
+- `ClockFace` 混合绘制依赖 Avalonia.Skia，与本库其他自绘 Material 控件一致；消费实色画笔的 Color × Brush.Opacity × Skia 租约 CurrentOpacity，非实色 selector 不绘制。
+  后内容绘制层独立绑定画笔和尺寸，附着期间监听可变画笔，卸载取消监听，避免静止时保留旧显示列表。
+  非 Skia 后端及分数缩放未完成验证；父级逐次绘制的透明度与 Compose 整层 alpha 仍有合成差异，调用方可用已有 RenderOptions.RequiresFullOpacityHandling 显式选择整层合成，未改全库默认值。
+
+`ClockDrawingTests` 的 5 项真实 Skia 像素测试通过，覆盖画笔/祖先透明度相乘、可变颜色和透明度、替换画笔、轨道宽度及选中文字色的静止重绘。
+新增 `time-picker-alpha` 自检 `20261104-155644-a400d926`：10 场景、14 采样，无执行错误，重复及额外截图稳定；几何全部相等，整图仍全部 different。
+显式整层合成的两例中，已检查的轨道与手柄内部像素分别精确对齐；默认逐次绘制模式仍保留合成差异，未改用例输入或容差来消除它。
+两画笔各 .5、没有父级 alpha 时，手柄空白点 Core 为 (0,0,85,192)，本地 PNG 为 (0,0,64,255)，后者符合预乘 RGB 被按不透明输出的特征。
+本机 Avalonia 源码 `HeadlessWindowImpl.GetLastRenderedFrame` 以 Opaque 构造副本；仍需核验锁定包及原 framebuffer，以区分捕获与组件混合层。
+推荐维护者决定共享捕获入口是否改为保留原 framebuffer 的 AlphaFormat（被动复制，不追加 Draw/Frame），这会影响所有含透明像素的 VisualParity 产物与比较；本次未更改测试宿主、基准或规范。
+字体布局、标签 Crossfade 及上文既有状态/输入差异不因本次画笔修复而消除。
 
 逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs` 和 `ClockKeyboardTests.cs`。
 双端用例是 `tests/VisualParity/Material3Expressive.Parity/Cases/TimePickerCases.cs` 与 reference 侧同名 Kotlin。

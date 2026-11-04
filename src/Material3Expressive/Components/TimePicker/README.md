@@ -81,6 +81,20 @@ Catalog 的时间页面提供该状态开关，并展示绑定到同一时间的
 
 ## 限制
 
+钟面选择器使用实色画笔的颜色和透明度；修改画笔或相关颜色资源时，静止钟面也会刷新。
+需要将整个控件作为一层淡出时，可在父容器启用 Avalonia 的完整透明度合成：
+
+```xml
+<Border xmlns="https://github.com/avaloniaui"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        RenderOptions.RequiresFullOpacityHandling="True">
+  <m3:TimePicker Opacity="0.5" />
+</Border>
+```
+
+默认逐次绘制的透明度不等价于整层合成，尤其影响手柄与文字的混合；非实色 selector 仍未支持。
+Catalog 的钟面透明度滑块使用上述父容器配置。双端透明像素和字体仍存在差异，详见维护说明。
+
 滚动列使用 Avalonia 的循环选择面板，不是 Compose `VerticalPager`。拖动和惯性不保证相同。
 滚动数字在选中时从 DisplayMedium 过渡到 DisplayLargeEmphasized，颜色从 Outline 过渡到 OnSurface；切换途中可以反向。
 可覆盖对应的 Typography、颜色和 FastSpatial 动效 Token。滚动项默认高度为 `200 / 3` DIP，可通过 `Comp.TimeScroll.ItemHeight` 覆盖，改变高度不会改变所选时间。
