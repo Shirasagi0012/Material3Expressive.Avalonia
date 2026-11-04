@@ -45,6 +45,8 @@ public partial class App : Application
                 ? new DateTimePickerDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--combo-box") >= 0
                 ? new ComboBoxDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--search-popup") >= 0
+                ? new ExpandedSearchBarDemo()
                 : new MainWindow();
         }
 

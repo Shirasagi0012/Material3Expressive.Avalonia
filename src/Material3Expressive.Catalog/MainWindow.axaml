@@ -53,6 +53,7 @@
                 <Button Content="TextField demo" Click="OnTextFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="Date / time pickers" Click="OnDateTimePickerDemo" HorizontalAlignment="Left" />
                 <Button Content="Docked search" Click="OnSearchBarDemo" HorizontalAlignment="Left" />
+                <Button Content="Search popup" Click="OnExpandedSearchBarDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
                 <Button Content="Swipe to dismiss" Click="OnSwipeToDismissDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />

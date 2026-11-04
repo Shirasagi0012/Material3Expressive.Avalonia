@@ -9,6 +9,8 @@ namespace Material3Expressive.Components;
 
 internal sealed class SearchBarMotion(bool entering) : IMultiValueConverter
 {
+    public static IMultiValueConverter Present { get; } = new FuncMultiValueConverter<object?, object?>(
+        values => { var items = values.ToArray(); return items.Length == 2 && items[0] is true ? items[1] : null; });
     public static IMultiValueConverter Enter { get; } = new SearchBarMotion(true);
     public static IMultiValueConverter Exit { get; } = new SearchBarMotion(false);
     public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)

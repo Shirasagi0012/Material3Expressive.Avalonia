@@ -27,6 +27,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<TimeSpan> EnterDuration = new("md.comp.search-bar.enter.duration");
             public static readonly MaterialTokenKey<TimeSpan> ExitDuration = new("md.comp.search-bar.exit.duration");
             public static readonly MaterialTokenKey<TimeSpan> AnimationDelay = new("md.comp.search-bar.animation.delay");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ExpandAnimation = new("md.comp.search-bar.expand.animation");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> CollapseAnimation = new("md.comp.search-bar.collapse.animation");
         }
     }
 }

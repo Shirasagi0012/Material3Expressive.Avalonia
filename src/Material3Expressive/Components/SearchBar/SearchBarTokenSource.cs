@@ -25,7 +25,9 @@ public sealed class SearchBarTokenSource : ITokenSource
         [Comp.SearchBar.MaximumWindowHeightFraction] = (double)(2f / 3f),
         [Comp.SearchBar.EnterDuration] = new TokenRef(Sys.Motion.Duration.Long4),
         [Comp.SearchBar.ExitDuration] = new TokenRef(Sys.Motion.Duration.Medium3),
-        [Comp.SearchBar.AnimationDelay] = new TokenRef(Sys.Motion.Duration.Short2)
+        [Comp.SearchBar.AnimationDelay] = new TokenRef(Sys.Motion.Duration.Short2),
+        [Comp.SearchBar.ExpandAnimation] = new TokenRef(Sys.Motion.Spring.SpatialSlow),
+        [Comp.SearchBar.CollapseAnimation] = new TokenRef(Sys.Motion.Spring.SpatialDefault)
     }.ToFrozenDictionary();
     public bool TryGetToken(MaterialTokenKey key, ThemeVariant? theme, out object value) => Values.TryGetValue(key, out value!);
     public event EventHandler? Changed { add { } remove { } }

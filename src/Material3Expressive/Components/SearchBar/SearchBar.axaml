@@ -2,6 +2,73 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" xmlns:input="using:Avalonia.Input.TextInput">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:SearchBar}" TargetType="m3:SearchBar">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputContainerShape}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
+      <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="ExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ExpandAnimation}}" />
+      <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Template"><ControlTemplate>
+        <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                            TextElement.Foreground="{TemplateBinding Foreground}" TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </m3:MaterialSurface>
+      </ControlTemplate></Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:ExpandedDockedSearchBar}" TargetType="m3:ExpandedDockedSearchBar">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DockedContainerShape}}" />
+      <Setter Property="DividerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DividerColor}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
+      <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="ExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ExpandAnimation}}" />
+      <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />
+      <Setter Property="Template"><ControlTemplate>
+        <Grid Name="PART_Root">
+          <m3:SearchBarPopupPresenter Name="PART_Presentation" IsVisible="False">
+            <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                                TextElement.Foreground="{TemplateBinding Foreground}" TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}"
+                                Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                                MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">
+              <m3:ExpandedSearchBarLayout Name="PART_Layout"
+                  MinimumResultsHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.MinimumResultsHeight}}"
+                  MaximumWindowHeightFraction="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.MaximumWindowHeightFraction}}">
+                <ContentPresenter Name="PART_InputField"
+                                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" >
+                  <ContentPresenter.Content><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
+                    <Binding Path="IsPresented" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="InputField" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding></ContentPresenter.Content>
+                  <ContentPresenter.ContentTemplate><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
+                    <Binding Path="IsPresented" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="InputFieldTemplate" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding></ContentPresenter.ContentTemplate>
+                </ContentPresenter>
+                <m3:SearchResultsColumn>
+                  <Separator Name="PART_Divider" HorizontalAlignment="Stretch" m3:MaterialDivider.Color="{TemplateBinding DividerColor}" />
+                  <ContentPresenter Name="PART_ContentPresenter"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="Top" >
+                  <ContentPresenter.Content><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
+                    <Binding Path="IsPresented" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="Content" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding></ContentPresenter.Content>
+                  <ContentPresenter.ContentTemplate><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
+                    <Binding Path="IsPresented" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <Binding Path="ContentTemplate" RelativeSource="{RelativeSource TemplatedParent}" />
+                  </MultiBinding></ContentPresenter.ContentTemplate>
+                </ContentPresenter>
+                </m3:SearchResultsColumn>
+              </m3:ExpandedSearchBarLayout>
+            </m3:MaterialSurface>
+          </m3:SearchBarPopupPresenter>
+        </Grid>
+      </ControlTemplate></Setter>
+    </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:SearchBarInputField}" TargetType="m3:SearchBarInputField" BasedOn="{StaticResource MaterialTextFieldBaseTheme}">
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
