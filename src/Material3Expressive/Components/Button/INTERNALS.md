@@ -197,6 +197,13 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
   将 Small MinHeight 设为 36 DIP、垂直 Padding 设为 8 DIP、图标侧水平 Padding 设为 12 DIP，
   当前不可变 TokenSource 未表达这些选择
 
+固定 Core `skikoMain/.../PrecisionPointer.skiko.kt` 的 `EnsurePrecisionPointerListenersRegistered`
+只调用 content，没有注册精确指针监听；不能依据 Avalonia 当前鼠标设备自动开启 Android 的紧凑分支。
+该开关在上游同时影响 Button、ToggleButton、Menu、ListItem 和 AlertDialog，组件局部 bool 会拆散同一环境语义。
+推荐先由维护者决定共享输入配置的范围，例如作用域显式选择 `MaterialPrecisionPointer.SetIsEnabled(window, true)`
+（仅调用提议，未提供此 API），再通过各组件的 Token 候选映射实现尺寸/Padding 选择。影响包含运行时重新测量、
+图标侧 Padding、继承与局部覆盖优先级，以及桌面默认是否继续与 Core 一致；该公共共享能力未获批准、未实施。
+
 ### 未决差异与未经验证项
 
 - `button-source` 的 disable/enable、换源和原生 release 事件采样仍保留 Avalonia 属性即时更新与 Core 下一重组帧的差异。

@@ -6,6 +6,8 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using ComposeAnimation.TestSupport;
+using Avalonia.Threading;
 
 namespace Material3Expressive.Parity;
 
@@ -17,7 +19,7 @@ public sealed class SnackbarHostCases
     public static IEnumerable<CaseData<SnackbarHostConfig>> Configurations()
     {
         // Host motion/queue ownership is independent of surface colors and Snackbar layout.
-        foreach (var action in new[] { "dismiss", "interrupt", "action-queue", "cancel-current", "cancel-queued", "state", "template", "detach" })
+        foreach (var action in new[] { "dismiss", "interrupt", "action-queue", "cancel-current", "cancel-queued", "state", "template", "detach", "timeout-short", "timeout-long", "timeout-queue", "timeout-detach", "timeout-state", "timeout-template" })
             yield return new($"dynamic.{action}", action, new(action));
         yield return new("dynamic.interrupt.rtl", "interrupt RTL", new("interrupt", true));
         yield return new("dynamic.dismiss.overlap", "overlapping content opacity", new("dismiss", Overlap: true));
@@ -27,7 +29,7 @@ public sealed class SnackbarHostCases
     public async Task Dynamic(CaptureWriter writer)
     {
         var config = writer.Metadata.ReadConfig<SnackbarHostConfig>();
-        await using var host = new AvaloniaHost(writer, 192, 128);
+        await using var host = new AvaloniaHost(writer, 192, 128, new ManualTimeProvider(Dispatcher.UIThread.VerifyAccess));
         using var firstCancellation = new CancellationTokenSource();
         using var secondCancellation = new CancellationTokenSource();
         var tasks = new List<Task<SnackbarResult>>();
@@ -63,13 +65,54 @@ public sealed class SnackbarHostCases
         }
         void Change(long time, string id, Action action) { Advance(time); action(); writer.Record(time, "mutation", id); host.Draw(); Sample(id); }
         void Times(params long[] times) { foreach (var time in times) { Advance(time); host.Draw(); Sample($"time-{time}"); } }
+        void Wait(long time, string id)
+        {
+            host.AdvanceTo(time); host.Draw(); Sample(id);
+            nextFrame = (time / 16000 + 1) * 16000;
+        }
         void Show(string message, CancellationToken token) => tasks.Add(snackbarHost.State.ShowSnackbarAsync(message,
-            "action", duration: SnackbarDuration.Indefinite, cancellationToken: token));
+            "action", duration: config.Action.StartsWith("timeout")
+                ? config.Action == "timeout-long" ? SnackbarDuration.Long : SnackbarDuration.Short
+                : SnackbarDuration.Indefinite, cancellationToken: token));
         Sample("initial");
         try
         {
             Change(1000, "show-first", () => Show("first", firstCancellation.Token));
-            if (config.Action == "interrupt")
+            if (config.Action.StartsWith("timeout"))
+            {
+                if (config.Action == "timeout-queue") Change(2000, "queue-second", () => Show("second", secondCancellation.Token));
+                Times(16000, 32000, 64000, 400000);
+                var deadline = config.Action == "timeout-long" ? 10016000L : 4016000L;
+                if (config.Action == "timeout-detach")
+                {
+                    Change(401000, "detach", () => root.Children.Remove(snackbarHost));
+                    Wait(5000000, "detached-past-deadline");
+                    Change(5001000, "reattach", () => root.Children.Add(snackbarHost));
+                    deadline = 9001000;
+                }
+                if (config.Action == "timeout-state")
+                {
+                    Change(401000, "replace-state", () => { snackbarHost.State = new(); Show("second", secondCancellation.Token); });
+                    Times(416000, 800000); deadline = 4416000;
+                    Wait(4016000, "old-deadline");
+                }
+                if (config.Action == "timeout-template")
+                {
+                    Change(401000, "replace-template", () => snackbarHost.SnackbarTemplate = Template(80));
+                    Times(416000, 800000);
+                }
+                Wait(deadline - 1000, "before-deadline");
+                Wait(deadline, "deadline-no-frame");
+                var commit = nextFrame;
+                Times(commit, commit + 16000, commit + 64000, commit + 400000);
+                if (config.Action == "timeout-queue")
+                {
+                    Wait(commit + 3999000, "second-before-deadline");
+                    Wait(commit + 4000000, "second-deadline-no-frame");
+                    Times(nextFrame, nextFrame + 400000);
+                }
+            }
+            else if (config.Action == "interrupt")
             {
                 Times(16000, 32000, 64000);
                 Change(65000, "dismiss-early", () => snackbarHost.State.CurrentSnackbarData!.Dismiss());

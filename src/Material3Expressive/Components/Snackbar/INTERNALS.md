@@ -65,6 +65,8 @@ MaterialVibrantIconButtonTheme，保留既有 DismissActionForeground 候选与�
 ShowSnackbarAsync 公平 FIFO 排队。动作/关闭使任务立即完成，退出动画可能仍在运行；
 调用方取消会移除当前项或排队项。没有 Host 时，请求等待明确结果或取消。
 Host 分离只结束自身计时和动画，不结束应用持有的请求；重挂显示当前项并重新计时。
+普通超时经已有 AnimationScope.DelayAsync 使用根 TimeProvider，Short/Long 的 4/10 秒不受动画帧或 DurationScale 影响。
+更换当前数据取消旧计时；只替换模板不重置期限。对应固定 SnackbarHost.kt 的 LaunchedEffect(currentSnackbarData) 与 delay。
 应用按所属页面/任务的生命周期取消请求，状态入口与其他 Avalonia 内容状态一样通常在 UI 线程使用。
 
 State 立即变化；Host 在下一动画帧提交新呈现，保留固定 Compose 先采样旧动画、再重组的顺序。
@@ -90,6 +92,7 @@ Avalonia 没有 Compose 的 dismiss 语义入口，当前项 Pane AutomationPeer
 体验未经验证。文字像素、实体桌面、其他操作系统也未经验证。
 
 - [SnackbarHostStateTests](../../../../tests/Material3Expressive.Tests/SnackbarHostStateTests.cs)：默认时长、FIFO、当前/排队取消、自定义数据与幂等结果
+- `SnackbarTimeoutTests` 用现有 ManualTimeProvider 检查精确期限、动画速度独立性、队列、状态/模板替换、卸载和重挂；默认系统时间仍由 SnackbarHostTests 覆盖。
 - [SnackbarHostTests](../../../../tests/Material3Expressive.Tests/SnackbarHostTests.cs)：退出保留、状态/模板替换、真实 4/10 秒超时、卸载/重挂与 automation
 - [SnackbarButtonThemeTests](../../../../tests/Material3Expressive.Tests/SnackbarButtonThemeTests.cs)：动作度量、字体、Core Close 路径、交互布局与颜色
 - [SnackbarTests](../../../../tests/Material3Expressive.Tests/SnackbarTests.cs)：硬/软换行与基线、同行/换行、RTL、Token、槽替换、默认动作/关闭的 Headless 点击
@@ -110,3 +113,9 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 ```
 
 参考环境与报告解释见 [VisualParity](../../../../tests/VisualParity/README.md)。
+
+`snackbar-host` 的 16 个双端用例执行错误为零、重复和额外截图稳定；15 withinTolerance、1 different。
+新增 timeout-* 六例的全部状态、队列计数、alpha/scale 和尺寸读数相等。timeout-queue 在 4096000µs
+两层交接时的上下边缘有图像差异，固定容差未通过；这不是已接受差异，也不影响超时状态一致的结论。
+两层 scale 分别为 0.900037407875061 / 0.8999626040458679，双端数值相等；尚需核验变换后的层边缘栅格化。
+结果：`artifacts/visual-parity/runs/20261104-181018-f2fed506`。真实桌面及文字栅格未由这些几何场景验证。

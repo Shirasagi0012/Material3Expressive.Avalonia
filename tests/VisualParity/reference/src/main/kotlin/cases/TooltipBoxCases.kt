@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
@@ -24,10 +26,11 @@ import kotlinx.serialization.Serializable
 @Serializable data class TooltipBoxConfig(val position:String="Above",val x:Int=112,val y:Int=80,val rtl:Boolean=false,
     val dark:Boolean=false,val spacing:Double=4.0,val contentWidth:Double=64.0,val contentHeight:Double=8.0,
     val action:String="none",val persistent:Boolean=false,val enabled:Boolean=true,val hasAction:Boolean=false,val elevation:Double=0.0,
-    val anchorScale:Double=1.0,val rich:Boolean=false)
+    val anchorScale:Double=1.0,val rich:Boolean=false,val pointerKind:String="Touch",val longPressMilliseconds:Int=500)
 @ParitySuite("tooltip-box") class TooltipBoxCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
+    @ParityScenario("long-press") suspend fun longPress(writer:CaptureWriter)=capture(writer,true)
     private suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
         val config=writer.readConfig<TooltipBoxConfig>()
         ComposeHost(writer,256,192).use {host ->
@@ -41,10 +44,43 @@ import kotlinx.serialization.Serializable
             fun times(vararg times:Long){times.forEach{advance(it);host.draw();sample("time-$it")}}
             fun show(){scene.scope.launch {scene.state.show(MutatePriority.UserInput)}}
             val center=checkNotNull(scene.anchor.coordinates).localToWindow(Offset(12f,12f)*ComposeHost.RenderScale.toFloat())/ComposeHost.RenderScale.toFloat()
+            fun touch(down:Boolean) {
+                host.scene.sendPointerEvent(if(down)PointerEventType.Press else PointerEventType.Release,
+                    center*ComposeHost.RenderScale.toFloat(),timeMillis=1000+host.timeUs/1000,
+                    type=if(config.pointerKind=="Pen")PointerType.Stylus else PointerType.Touch)
+                host.scheduler.runCurrent()
+            }
             when(config.action) {
+                "long-press","short-press","long-press-disable" -> {
+                    change(1000,"touch-down"){touch(true)}
+                    if(config.action=="short-press") change(250000,"short-release"){touch(false)}
+                    val shift=(config.longPressMilliseconds-500L)*1000
+                    times(500000+shift,501000+shift,512000+shift,544000+shift,640000+shift,800000+shift)
+                    if(config.action=="long-press") change(801000+shift,"touch-release"){touch(false)}
+                    if(config.action=="long-press-disable") {
+                        change(801000,"disable-input"){scene.enabled=false}
+                        change(802000,"touch-release"){touch(false)}
+                        change(803000,"application-default"){scene.scope.launch {
+                            try {scene.state.show()} catch (_:CancellationException) {scene.applicationCancelled=true}
+                        }}
+                    }
+                    times(816000+shift,960000+shift)
+                }
+                "timeout" -> {
+                    change(1000,"show-default"){scene.scope.launch {scene.state.show()}}
+                    times(16000,64000,400000,1500000,1501000,1520000,1584000,1904000)
+                }
                 "show" -> {change(1000,"show",::show);times(16000,32000,64000,112000,224000,400000);change(401000,"dismiss"){scene.state.dismiss()};times(416000,448000,512000,800000)}
                 "interrupt" -> {change(1000,"show",::show);times(16000,32000,64000);change(65000,"dismiss"){scene.state.dismiss()};times(80000,96000);change(97000,"reopen",::show);times(112000,128000,224000,400000)}
                 "hover" -> {change(1000,"enter"){host.input("move",center)};times(16000,64000,224000,400000);change(401000,"exit"){host.input("move",Offset(250f,185f))};times(416000,448000,512000,800000)}
+                "hover-disable", "hover-disable-application" -> {
+                    change(1000,"enter"){host.input("move",center)};times(16000,64000,224000,400000)
+                    if(config.action=="hover-disable-application") change(401000,"application-show",::show)
+                    change(402000,"disable-input"){scene.enabled=false};times(416000,448000,512000,800000)
+                    change(801000,"enable-input"){scene.enabled=true}
+                    change(802000,"exit"){host.input("move",Offset(250f,185f))}
+                    change(803000,"reenter"){host.input("move",center)};times(816000,880000,1200000)
+                }
                 "focus","escape" -> {
                     change(1000,"focus"){scene.focus.requestFocus()};times(16000,64000,224000,400000)
                     if(config.hasAction) change(401000,"tab"){host.scene.sendKeyEvent(KeyEvent(Key.Tab,KeyEventType.KeyDown))}
@@ -74,16 +110,25 @@ import kotlinx.serialization.Serializable
         var x by mutableStateOf(config.x);var y by mutableStateOf(config.y)
         var anchorWidth by mutableStateOf(24);var contentWidth by mutableStateOf(config.contentWidth)
         var position by mutableStateOf(config.position)
-        var requests=0;var presses=0;var painted=Color.Transparent
+        var enabled by mutableStateOf(config.enabled)
+        var requests=0;var presses=0;var painted=Color.Transparent;var applicationCancelled=false
         @Composable fun Content() {
             scope=rememberCoroutineScope()
             MaterialTheme(colorScheme=if(config.dark)darkColorScheme()else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl)LayoutDirection.Rtl else LayoutDirection.Ltr) {
+                val platformViewConfiguration=LocalViewConfiguration.current
+                CompositionLocalProvider(
+                    LocalViewConfiguration provides object:ViewConfiguration by platformViewConfiguration {
+                        override val longPressTimeoutMillis=config.longPressMilliseconds.toLong()
+                    },
+                    LocalLayoutDirection provides if(config.rtl)LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=AbsoluteAlignment.TopLeft) {
                         val anchorPosition=when(position){"Above"->TooltipAnchorPosition.Above;"Below"->TooltipAnchorPosition.Below;"Left"->TooltipAnchorPosition.Left;"Right"->TooltipAnchorPosition.Right;"Start"->TooltipAnchorPosition.Start;"End"->TooltipAnchorPosition.End;else->error(position)}
-                        Box(Modifier.absoluteOffset(x.dp,y.dp).graphicsLayer(scaleX=config.anchorScale.toFloat(),scaleY=config.anchorScale.toFloat())) {
-                        TooltipBox(positionProvider=TooltipDefaults.rememberTooltipPositionProvider(anchorPosition,config.spacing.toFloat().dp),state=state,
-                            enableUserInput=dynamic&&config.enabled&&config.action !in setOf("outside","request","resize"),hasAction=config.hasAction,
+                        Box(Modifier.absoluteOffset(x.dp,y.dp)) {
+                        // AnchorScale is the anchor's own modifier, matching TooltipBox.RenderTransform.
+                        // A graphicsLayer on the enclosing Box instead transforms the popup anchor's ancestor.
+                        TooltipBox(modifier=Modifier.graphicsLayer(scaleX=config.anchorScale.toFloat(),scaleY=config.anchorScale.toFloat()),
+                            positionProvider=TooltipDefaults.rememberTooltipPositionProvider(anchorPosition,config.spacing.toFloat().dp),state=state,
+                            enableUserInput=dynamic&&enabled&&config.action !in setOf("outside","request","resize"),hasAction=config.hasAction,
                             onDismissRequest=if(config.action=="request")({requests++})else null,tooltip={
                                 val body:@Composable ()->Unit={
                                     val color=LocalContentColor.current
@@ -93,7 +138,7 @@ import kotlinx.serialization.Serializable
                                     title={val color=LocalContentColor.current;Canvas(Modifier.size(32.dp,10.dp)){drawRect(color)}},
                                     action={val color=LocalContentColor.current;Canvas(Modifier.size(24.dp,12.dp)){drawRect(color)}},text=body)
                                 else PlainTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp,content=body)
-                            }) {Canvas(anchor.modifier().size(anchorWidth.dp,24.dp).focusRequester(focus).focusable()){drawRect(Color.Blue)}}
+                            }) {Canvas(anchor.modifier().size(anchorWidth.dp,24.dp).focusRequester(focus).focusable(enabled=config.action !in setOf("long-press","short-press","long-press-disable"))){drawRect(Color.Blue)}}
                         }
                         Box(Modifier.absoluteOffset(16.dp,72.dp)) {
                         Canvas(outside.modifier().size(16.dp).focusRequester(outsideFocus).focusable()
@@ -114,7 +159,9 @@ import kotlinx.serialization.Serializable
                     vector("size","point",listOf(c.size.width.toDouble()/d,c.size.height.toDouble()/d),"dip","local","geometry","layout.box.local-size","LayoutCoordinates.size / density",listOf("width","height")))
             }
             val points=mutableListOf(ProbePoint("state","state",null,listOf(flag("visible",state.isVisible,definition="tooltip.state.is-visible"),flag("current",state.transition.currentState,definition="tooltip.transition.current-state"),
-                flag("target",state.transition.targetState,definition="tooltip.transition.target-state"),number("requests",requests.toDouble(),"count",definition="tooltip.dismiss-request-count"),number("presses",presses.toDouble(),"count",definition="tooltip.underlying-press-count"))),ProbePoint("anchor","anchor",null,geometry(checkNotNull(anchor.coordinates))))
+                flag("target",state.transition.targetState,definition="tooltip.transition.target-state"),number("requests",requests.toDouble(),"count",definition="tooltip.dismiss-request-count"),
+                flag("applicationShowCancelled",applicationCancelled,definition="tooltip.application-show.cancelled"),
+                number("presses",presses.toDouble(),"count",definition="tooltip.underlying-press-count"))),ProbePoint("anchor","anchor",null,geometry(checkNotNull(anchor.coordinates))))
             if(tooltip.coordinates?.isAttached==true) {
                 // The outer TooltipBox content Box is outside its graphicsLayer Box.
                 // Compare popup layout and local sizes, and use pixels for animated appearance.

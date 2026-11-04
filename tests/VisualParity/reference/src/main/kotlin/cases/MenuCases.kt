@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MenuConfig(val variant:String="standard", val selected:Boolean=false, val enabled:Boolean=true,
     val dark:Boolean=false, val rtl:Boolean=false, val icon:Boolean=true, val width:Double=200.0,
-    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none")
+    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false)
 
 @ParitySuite("menu")
 class MenuCases {
@@ -38,6 +38,12 @@ class MenuCases {
             val outside=Offset(8f,8f)
             fun event(time:Long,action:String,point:Offset) { advance(time);host.input(action,point);host.draw();host.frame(time) }
             when(config.action) {
+                "icon-enter", "icon-exit" -> {
+                    change(1000,"toggle-selection") {scene.selected=!config.selected};times(16000,32000,64000)
+                    change(65000,"add-leading") {scene.hasIcon=true};times(80000,96000,160000,400000)
+                    change(401000,"remove-leading") {scene.selected=false;scene.hasIcon=false};times(416000)
+                    change(450000,"select-again") {scene.selected=true};times(464000,512000,800000)
+                }
                 "selection","reverse" -> {
                     change(1000,"selected") {scene.selected=true};times(16000,32000,64000)
                     if(config.action=="reverse") change(65000,"reversed") {scene.selected=false}
@@ -60,6 +66,7 @@ class MenuCases {
     }
     private class Scene(val config:MenuConfig) {
         var selected by mutableStateOf(config.selected)
+        var hasIcon by mutableStateOf(config.icon)
         var dark by mutableStateOf(config.dark)
         var clicks=0
         val itemProbe=Probe()
@@ -72,7 +79,7 @@ class MenuCases {
                             val content:@Composable ()->Unit={
                                 Box(contentProbe.modifier().size(config.contentWidth.toFloat().dp,config.contentHeight.toFloat().dp).background(LocalContentColor.current))
                             }
-                            val icon:@Composable (() -> Unit)?=if(config.icon) ({
+                            val icon:@Composable (() -> Unit)?=if(hasIcon) ({
                                 val size=if(config.variant=="baseline") 24.dp else 20.dp
                                 Box(Modifier.size(size).background(LocalContentColor.current))
                             }) else null
@@ -86,6 +93,7 @@ class MenuCases {
                             }
                             else SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,
                                 shapes=MenuDefaults.itemShapes(),modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
+                                selectedLeadingIcon=if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
                                 colors=if(config.variant=="vibrant") MenuDefaults.selectableItemVibrantColors() else MenuDefaults.selectableItemColors())
                         }
                     }

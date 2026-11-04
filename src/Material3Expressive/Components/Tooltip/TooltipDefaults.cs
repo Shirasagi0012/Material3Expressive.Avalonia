@@ -15,6 +15,8 @@ public static class TooltipDefaults
 {
     public static readonly MutatorMutex GlobalMutatorMutex = new();
     public static readonly TimeSpan TooltipDuration = TimeSpan.FromMilliseconds(1500);
+    // Fixed Core PlatformContext.DefaultViewConfiguration.longPressTimeoutMillis.
+    public static readonly TimeSpan LongPressDuration = TimeSpan.FromMilliseconds(500);
     public const double Spacing = 4;
 
     public static ITooltipPositionProvider CreatePositionProvider(TooltipAnchorPosition position = TooltipAnchorPosition.Above,

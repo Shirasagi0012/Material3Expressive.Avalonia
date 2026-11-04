@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using ComposeAnimation;
 using ComposeAnimation.Runtime;
 
 namespace Material3Expressive.Components;
@@ -14,6 +15,9 @@ public sealed class TooltipState : ObservableObject, IDisposable
 {
     private readonly MutatorMutex _mutatorMutex;
     private CancellationTokenSource? _job;
+    // A mounted Box supplies its existing coroutine lifetime/time source. A state used before
+    // mounting still supports ShowAsync with ordinary system time, as it did previously.
+    internal AnimationScope? DelayScope { get; set; }
 
     public TooltipState(bool initialIsVisible = false, bool isPersistent = true, MutatorMutex? mutatorMutex = null)
     {
@@ -35,13 +39,17 @@ public sealed class TooltipState : ObservableObject, IDisposable
         _mutatorMutex.MutateAsync(async ct =>
         {
             using var job = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            if (!IsPersistent && priority != MutatePriority.UserInput)
-                job.CancelAfter(TooltipDefaults.TooltipDuration);
+            var duration = !IsPersistent && priority != MutatePriority.UserInput
+                ? TooltipDefaults.TooltipDuration : Timeout.InfiniteTimeSpan;
             _job = job;
             try
             {
                 Transition.TargetState = true;
-                await Task.Delay(Timeout.InfiniteTimeSpan, job.Token);
+                if (DelayScope is { } scope) await scope.DelayAsync(duration, job.Token);
+                else await Task.Delay(duration, job.Token);
+                // withTimeout cancels the show operation; it is not a successful return.
+                job.Cancel();
+                job.Token.ThrowIfCancellationRequested();
                 return true;
             }
             finally

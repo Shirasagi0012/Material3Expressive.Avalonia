@@ -32,6 +32,13 @@
         <m3:IconButton Symbol="Settings" />
       </m3:TooltipBox>
     </StackPanel>
+    <CheckBox Content="Enable hover and long-press input" IsChecked="{Binding #HoldArea.EnableUserInput, Mode=TwoWay}" />
+    <m3:TooltipBox x:Name="HoldArea" HorizontalAlignment="Left" LongPressDuration="0:0:0.75">
+      <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Shown after a 750 ms touch or pen hold" /></m3:TooltipBox.Tooltip>
+      <Border Padding="16" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}" CornerRadius="12">
+        <TextBlock Text="Touch or pen: hold here for 750 ms" />
+      </Border>
+    </m3:TooltipBox>
     <m3:TooltipBox x:Name="Programmatic" EnableUserInput="False">
       <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="This tooltip was shown from code" /></m3:TooltipBox.Tooltip>
       <Button Content="Show tooltip" Click="OnShow" />

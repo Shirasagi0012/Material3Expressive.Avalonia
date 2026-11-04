@@ -28,11 +28,40 @@ import kotlinx.serialization.Serializable
             fun advance(time:Long) {while(nextFrame<=time) {host.frame(nextFrame);nextFrame+=16000};host.advanceTo(time)}
             fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure()))
             fun change(time:Long,id:String,action:()->Unit) {advance(time);action();writer.record(time,"mutation",id);host.draw();sample(id)}
+            fun wait(time:Long,id:String) {host.advanceTo(time);host.draw();sample(id);nextFrame=(time/16000+1)*16000}
             fun times(vararg times:Long) {times.forEach {advance(it);host.draw();sample("time-$it")}}
             sample("initial")
             try {
                 change(1000,"show-first") {scene.show("first")}
-                if(config.action=="interrupt") {
+                if(config.action.startsWith("timeout")) {
+                    if(config.action=="timeout-queue") change(2000,"queue-second") {scene.show("second")}
+                    times(16000,32000,64000,400000)
+                    var deadline=if(config.action=="timeout-long") 10016000L else 4016000L
+                    if(config.action=="timeout-detach") {
+                        change(401000,"detach") {host.mount {scene.Content(showHost=false)}}
+                        wait(5000000,"detached-past-deadline")
+                        change(5001000,"reattach") {host.mount {scene.Content()}}
+                        deadline=9001000
+                    }
+                    if(config.action=="timeout-state") {
+                        change(401000,"replace-state") {scene.state=SnackbarHostState();scene.show("second")}
+                        times(416000,800000);deadline=4416000
+                        wait(4016000,"old-deadline")
+                    }
+                    if(config.action=="timeout-template") {
+                        change(401000,"replace-template") {scene.width=80}
+                        times(416000,800000)
+                    }
+                    wait(deadline-1000,"before-deadline")
+                    wait(deadline,"deadline-no-frame")
+                    val commit=nextFrame
+                    times(commit,commit+16000,commit+64000,commit+400000)
+                    if(config.action=="timeout-queue") {
+                        wait(commit+3999000,"second-before-deadline")
+                        wait(commit+4000000,"second-deadline-no-frame")
+                        times(nextFrame,nextFrame+400000)
+                    }
+                } else if(config.action=="interrupt") {
                     times(16000,32000,64000)
                     change(65000,"dismiss-early") {scene.state.currentSnackbarData!!.dismiss()}
                     times(80000,96000)
@@ -69,7 +98,7 @@ import kotlinx.serialization.Serializable
         val jobs=mutableListOf<Job>()
         val layers=linkedMapOf<SnackbarData,Probe>()
         var completed=0
-        fun show(message:String) {jobs+=scope.launch {state.showSnackbar(message,"action",duration=SnackbarDuration.Indefinite);completed++}}
+        fun show(message:String) {jobs+=scope.launch {state.showSnackbar(message,"action",duration=if(config.action.startsWith("timeout")) {if(config.action=="timeout-long") SnackbarDuration.Long else SnackbarDuration.Short} else SnackbarDuration.Indefinite);completed++}}
         @Composable fun Content(showHost:Boolean=true) {
             MaterialTheme(motionScheme=MotionScheme.expressive()) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

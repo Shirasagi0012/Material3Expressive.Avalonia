@@ -13,7 +13,7 @@ namespace Material3Expressive.Parity;
 
 public sealed record MenuConfig(string Variant = "standard", bool Selected = false, bool Enabled = true,
     bool Dark = false, bool Rtl = false, bool Icon = true, double Width = 200,
-    double ContentWidth = 48, double ContentHeight = 16, string Action = "none");
+    double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false);
 
 [ParitySuite("menu")]
 public sealed class MenuCases
@@ -63,12 +63,13 @@ public sealed class MenuCases
         Func<bool> selected;
         Action<bool> select;
         var iconSize = config.Variant == "baseline" ? 24 : 20;
-        var icon = config.Icon ? new MenuMarker(new Size(iconSize, iconSize)) : null;
+        var icon = new MenuMarker(new Size(iconSize, iconSize));
         if (independent)
         {
             DropdownMenuItem dropdown = config.Variant == "baseline" ? new DropdownMenuItem()
                 : new SelectableDropdownMenuItem { IsSelected = config.Selected };
-            dropdown.Content = marker; dropdown.LeadingIcon = icon;
+            dropdown.Content = marker; dropdown.LeadingIcon = config.Icon ? icon : null;
+            if (config.SelectedIcon) dropdown.SelectedLeadingIcon = new MenuMarker(new Size(iconSize, iconSize));
             dropdown.Click += (_, _) => clicks++;
             selected = () => dropdown is SelectableDropdownMenuItem { IsSelected: true };
             select = value => ((SelectableDropdownMenuItem)dropdown).IsSelected = value;
@@ -76,7 +77,7 @@ public sealed class MenuCases
         }
         else
         {
-            var native = new MenuItem { Header = marker, IsChecked = config.Selected, Icon = icon,
+            var native = new MenuItem { Header = marker, IsChecked = config.Selected, Icon = config.Icon ? icon : null,
                 Theme = (ControlTheme)host.Window.FindResource(config.Variant == "baseline" ? "MaterialBaselineMenuItemTheme" : "MaterialVerticalMenuItemTheme")! };
             native.Click += (_, _) => clicks++;
             selected = () => native.IsChecked; select = value => native.IsChecked = value;
@@ -114,6 +115,14 @@ public sealed class MenuCases
         void Event(long time, string action, Point point) { Advance(time); host.Input(action, point); host.Draw(); host.Frame(time); }
         switch (config.Action)
         {
+            case "icon-enter": case "icon-exit":
+                Change(1000, "toggle-selection", () => select(!config.Selected)); Times(16000, 32000, 64000);
+                Change(65000, "add-leading", () => ((DropdownMenuItem)item).LeadingIcon = icon);
+                Times(80000, 96000, 160000, 400000);
+                Change(401000, "remove-leading", () => { select(false); ((DropdownMenuItem)item).LeadingIcon = null; });
+                Times(416000);
+                Change(450000, "select-again", () => select(true)); Times(464000, 512000, 800000);
+                break;
             case "selection": case "reverse":
                 Change(1000, "selected", () => select(true)); Times(16000, 32000, 64000);
                 if (config.Action == "reverse") Change(65000, "reversed", () => select(false));

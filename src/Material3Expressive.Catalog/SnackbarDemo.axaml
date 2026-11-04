@@ -5,6 +5,7 @@
     <ScrollViewer>
       <StackPanel Margin="32" Spacing="20">
         <TextBlock Text="SnackbarHost" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock Text="Display duration is independent of animation speed. Cancelling a request also cancels its display timer." TextWrapping="Wrap" />
         <WrapPanel>
           <Button Content="Short · 4 s" Click="OnShort" Margin="0,0,12,12" />
           <Button Content="Long · 10 s" Click="OnLong" Margin="0,0,12,12" />

@@ -38,6 +38,8 @@ public class TooltipBox : ContentControl
     public static readonly StyledProperty<double> SpacingProperty = AvaloniaProperty.Register<TooltipBox, double>(nameof(Spacing));
     public static readonly StyledProperty<ITooltipPositionProvider?> PositionProviderProperty = AvaloniaProperty.Register<TooltipBox, ITooltipPositionProvider?>(nameof(PositionProvider));
     public static readonly StyledProperty<bool> EnableUserInputProperty = AvaloniaProperty.Register<TooltipBox, bool>(nameof(EnableUserInput), true);
+    public static readonly StyledProperty<TimeSpan> LongPressDurationProperty = AvaloniaProperty.Register<TooltipBox, TimeSpan>(
+        nameof(LongPressDuration), TooltipDefaults.LongPressDuration, validate: value => value >= TimeSpan.Zero);
     public static readonly StyledProperty<bool> HasActionProperty = AvaloniaProperty.Register<TooltipBox, bool>(nameof(HasAction));
 
     public object? Tooltip { get => GetValue(TooltipProperty); set => SetValue(TooltipProperty, value); }
@@ -47,6 +49,8 @@ public class TooltipBox : ContentControl
     public double Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
     public ITooltipPositionProvider? PositionProvider { get => GetValue(PositionProviderProperty); set => SetValue(PositionProviderProperty, value); }
     public bool EnableUserInput { get => GetValue(EnableUserInputProperty); set => SetValue(EnableUserInputProperty, value); }
+    /// <summary>Touch/pen hold time, captured at the start of each gesture. Defaults to the Core desktop 500ms.</summary>
+    public TimeSpan LongPressDuration { get => GetValue(LongPressDurationProperty); set => SetValue(LongPressDurationProperty, value); }
     public bool HasAction { get => GetValue(HasActionProperty); set => SetValue(HasActionProperty, value); }
 
     /// <summary>An outside click requests dismissal. With a handler, the application owns dismissal.</summary>
@@ -59,6 +63,8 @@ public class TooltipBox : ContentControl
     private Grid? _root;
     private TopLevel? _topLevel;
     private AnimationChildScope? _stateScope;
+    private AnimationChildScope? _hoverScope;
+    private AnimationChildScope? _gestureScope;
     private TooltipState? _activeState;
     private Transition<bool>? _transition;
     private Transition<bool>.DeferredAnimation<float>? _scaleAnimation, _opacityAnimation;
@@ -100,7 +106,7 @@ public class TooltipBox : ContentControl
         _presenter.Bind(ContentPresenter.ContentTemplateProperty, this.GetObservable(TooltipTemplateProperty));
         AddHandler(PointerPressedEvent, OnAnchorPressed, RoutingStrategies.Tunnel, true);
         AddHandler(PointerReleasedEvent, OnAnchorReleased, RoutingStrategies.Tunnel, true);
-        AddHandler(PointerCaptureLostEvent, OnAnchorCaptureLost, RoutingStrategies.Bubble, true);
+        AddHandler(PointerCaptureLostEvent, OnAnchorCaptureLost, RoutingStrategies.Direct, true);
         AddHandler(GotFocusEvent, OnAnchorFocused, RoutingStrategies.Bubble, true);
         AddHandler(LostFocusEvent, OnAnchorLostFocus, RoutingStrategies.Bubble, true);
         AddHandler(KeyDownEvent, OnAnchorKey, RoutingStrategies.Tunnel);
@@ -153,7 +159,12 @@ public class TooltipBox : ContentControl
             ReleasePointer(); DetachState(); AttachState();
         }
         if (change.Property == ScaleAnimationProperty || change.Property == OpacityAnimationProperty) ConfigureMotion();
-        if (change.Property == EnableUserInputProperty && !EnableUserInput) ReleasePointer();
+        if (change.Property == EnableUserInputProperty && !EnableUserInput)
+        {
+            ReleasePointer();
+            _hoverScope?.Dispose(); _hoverScope = null;
+            _gestureScope?.Dispose(); _gestureScope = null;
+        }
         if (change.Property == AnchorPositionProperty || change.Property == SpacingProperty || change.Property == PositionProviderProperty
             || change.Property == FlowDirectionProperty) UpdatePosition(force: true);
     }
@@ -164,6 +175,7 @@ public class TooltipBox : ContentControl
         _activeState.PropertyChanged += OnStateChanged;
         var motion = AnimationScope.Get(this);
         var scope = _stateScope = motion.CreateChild("Tooltip state");
+        _activeState.DelayScope = scope;
         var transition = _transition = new Transition<bool>(_activeState.Transition, "Tooltip appearance");
         ConfigureMotion();
         _ = scope.Launch(ct => transition.RunAsync(scope, ct), "Tooltip transition");
@@ -209,7 +221,14 @@ public class TooltipBox : ContentControl
 
     private void DetachState()
     {
-        if (_activeState is not null) { _activeState.PropertyChanged -= OnStateChanged; _activeState.OnDispose(); }
+        _hoverScope?.Dispose(); _hoverScope = null;
+        _gestureScope?.Dispose(); _gestureScope = null;
+        if (_activeState is not null)
+        {
+            _activeState.PropertyChanged -= OnStateChanged;
+            _activeState.OnDispose();
+            _activeState.DelayScope = null;
+        }
         _stateScope?.Dispose(); _stateScope = null;
         _transition?.Dispose(); _transition = null;
         _configurationPending = null;
@@ -282,7 +301,14 @@ public class TooltipBox : ContentControl
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);
-        if (EnableUserInput && e.Pointer.Type == PointerType.Mouse) ShowFromInput(MutatePriority.UserInput);
+        if (EnableUserInput && e.Pointer.Type == PointerType.Mouse && _stateScope is { } parent
+            && !parent.Lifetime.IsCancellationRequested)
+        {
+            // Core owns hover shows inside the mouse pointerInput coroutineScope. Disabling
+            // that modifier cancels these requests without cancelling application/focus shows.
+            var scope = _hoverScope ??= parent.CreateChild("Tooltip hover input");
+            _ = scope.Launch(ct => State.ShowAsync(MutatePriority.UserInput, ct), "Tooltip hover");
+        }
     }
     protected override void OnPointerExited(PointerEventArgs e)
     {
@@ -320,7 +346,8 @@ public class TooltipBox : ContentControl
     private void OnAnchorPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!EnableUserInput || e.Pointer.Type is not (PointerType.Touch or PointerType.Pen) || _heldPointer is not null
-            || _stateScope is not { } scope || scope.Lifetime.IsCancellationRequested) return;
+            || _stateScope is not { } parent || parent.Lifetime.IsCancellationRequested) return;
+        var scope = _gestureScope ??= parent.CreateChild("Tooltip touch input");
         _heldPointer = e.Pointer;
         var press = _press = new CancellationTokenSource();
         var release = _release = new TaskCompletionSource();
@@ -328,13 +355,16 @@ public class TooltipBox : ContentControl
         _ = scope.Launch(async ct =>
         {
             using var delay = CancellationTokenSource.CreateLinkedTokenSource(ct, press.Token);
-            await Task.Delay(this.GetPlatformSettings()?.HoldWaitDuration ?? TimeSpan.FromMilliseconds(500), delay.Token);
+            await scope.DelayAsync(LongPressDuration, delay.Token);
             _longPressed = true;
             try { await state.ShowAsync(MutatePriority.PreventUserInput, ct); }
             finally
             {
                 if (state.IsVisible)
                 {
+                    // A removed pointerInput cancels its flow collector. PreventUserInput's
+                    // state cleanup does not dismiss; keep that distinction from an ordinary up.
+                    ct.ThrowIfCancellationRequested();
                     await release.Task.WaitAsync(ct);
                     state.Dismiss();
                 }

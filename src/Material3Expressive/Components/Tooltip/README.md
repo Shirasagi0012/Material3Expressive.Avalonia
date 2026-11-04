@@ -31,8 +31,11 @@ TooltipBox 未指定 State 时使用独立非持续状态，直接 `new TooltipS
 同一互斥组内，相同或更高优先级的请求会打断旧请求，调用方应处理取消。自定义组可传入 TooltipState 构造器的 mutatorMutex 参数。
 
 鼠标进入、焦点和长按可显示提示，鼠标离开关闭非持续提示。Escape 关闭，`EnableUserInput="False"` 可仅保留程序控制。
+关闭 EnableUserInput 会取消当前悬停显示并释放其互斥请求；不会取消应用随后接管的 ShowAsync。重新启用后可再次通过鼠标进入显示。
+若长按已经触发，关闭输入会释放长按的优先级请求，但按固定 Core 规则保留当前可见状态；需要隐藏时显式调用 State.Dismiss()。
 外部按下默认隐藏，订阅 DismissRequested 后由应用调用 Dismiss 决定关闭。IsVisible 包含退出阶段，提示在动画结束后移除。
 非持续 Default / PreventUserInput 请求默认 1500ms 超时，非持续 UserInput 请求隐藏后仍可等待取消、抢占或卸载。
+超时以取消结束 ShowAsync；挂载后的显示等待与长按等待均不随动画速度缩放，卸载或更换 State 会取消旧请求。
 
 ## 内容槽与定制
 
@@ -92,5 +95,8 @@ PlainTooltip/RichTooltip 的 caret 限制仍适用；不把它当作交互式弹
 
 窗口模板需提供原生 popup layer，相关要求见 [Overlays](../../Foundation/Overlays/README.md)。两类提示表面均可独立放入普通布局，当前外形为无尖角矩形。
 TooltipBox 显示时保持原焦点，HasAction=True 且可见时会消费 Tab，动作按钮的完整键盘导航尚未提供。需要完整键盘操作时使用合适的弹层组件。
+触摸或笔长按默认等待 500ms，可用 `LongPressDuration="0:0:0.75"` 设置为 750ms；时长在按下时确定，修改只影响下一手势。
+短按、捕获丢失、关闭 EnableUserInput 或卸载会取消尚未触发的长按。
+等待时间不随动画速度改变。Catalog 的无焦点长按区域可单独体验这一交互。
 文字像素、物理触摸/笔和屏幕阅读器播报仍需专项验证。
 [Catalog 示例](../../../Material3Expressive.Catalog/TooltipDemo.axaml)展示原生、简单和富内容提示。内部机制与已确认差异见 [INTERNALS.md](INTERNALS.md)。

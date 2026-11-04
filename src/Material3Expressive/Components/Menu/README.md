@@ -87,6 +87,7 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 
 独立项目支持 Content、LeadingIcon、SelectedLeadingIcon、TrailingContent、SupportingText 及对应模板。
 仅选中图标存在时使用展开和淡入效果。MenuDefaults.ItemShape / GroupShape 按调用方提供的 index、count 生成首尾形状，组间距由容器设置，默认参考 MenuDefaults.GroupSpacing。
+同时提供普通和选中图标时按选择状态直接替换；运行中添加普通图标会结束选中图标的展开/淡入淡出，移除后重新按当前选择状态建立动画分支。内容或模板均适用，Catalog 提供可切换示例。
 DropdownMenuPopup 可组合 StackPanel 和多个 DropdownMenuGroup，内容需要滚动时显式放置 ScrollViewer。
 
 MenuAppearance.ColorStyle 可从 Popup 传到组和项目。Padding、CornerRadius、颜色及 `Comp.Menu` Token 可局部覆盖，MenuItemShapes / MenuGroupShapes 的 null 字段继承主题。

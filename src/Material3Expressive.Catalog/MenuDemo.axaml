@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.MenuDemo"
-        Title="M3 menus" Width="760" Height="620">
+        Title="M3 menus" Width="760" Height="720">
     <Window.Resources>
         <m3:MaterialInteractionSource x:Key="PreviewSource" />
     </Window.Resources>
@@ -117,6 +117,12 @@
             </m3:DropdownMenuGroup>
             <Button Content="Toggle feedback" Click="OnPreview" />
         </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <m3:SelectableDropdownMenuItem x:Name="IconPreview" Content="Selection icon" Width="220"
+                SelectedLeadingIcon="{m3:Symbol Check}" Click="OnIconSelection" />
+            <Button Content="Add / remove regular icon" Click="OnRegularIcon" />
+        </StackPanel>
+        <TextBlock Text="Select the item, then switch its regular icon while the selection animates." TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="12">
             <Button Content="Light / dark" Click="OnTheme" />
             <Button Content="LTR / RTL" Click="OnDirection" />

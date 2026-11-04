@@ -122,7 +122,7 @@ public class SnackbarHost : TemplatedControl
                 _ => throw new ArgumentOutOfRangeException(nameof(current.Visuals.Duration))
             };
             var timeout = _timeout = scope.CreateChild("Snackbar timeout");
-            _ = timeout.Launch(async ct => { await Task.Delay(duration, ct); current.Dismiss(); }, "Display duration");
+            _ = timeout.Launch(async ct => { await timeout.DelayAsync(duration, ct); current.Dismiss(); }, "Display duration");
             if (!_items.Any(item => ReferenceEquals(item.Data, current)))
             {
                 var itemScope = scope.CreateChild("Snackbar item");

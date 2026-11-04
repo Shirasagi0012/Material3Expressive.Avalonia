@@ -6,6 +6,8 @@ using ComposeAnimation;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
+using MaterialSymbols;
 
 namespace Material3Expressive.Catalog;
 
@@ -39,6 +41,9 @@ public partial class MenuDemo : Window
     { NameItem.IsSelected = true; DateItem.IsSelected = false; }
     private void OnSelectDate(object? sender, RoutedEventArgs e)
     { NameItem.IsSelected = false; DateItem.IsSelected = true; }
+    private void OnIconSelection(object? sender, RoutedEventArgs e) => IconPreview.IsSelected = !IconPreview.IsSelected;
+    private void OnRegularIcon(object? sender, RoutedEventArgs e) =>
+        IconPreview.LeadingIcon = IconPreview.LeadingIcon is null ? new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Info } : null;
     private void OnAction(object? sender, RoutedEventArgs e) => Status.Text = $"Executed: {((MenuItem)sender!).Header}";
     private void OnToggle(object? sender, RoutedEventArgs e)
     {

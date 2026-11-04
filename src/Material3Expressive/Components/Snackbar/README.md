@@ -42,6 +42,7 @@ if (result == SnackbarResult.ActionPerformed)
 任务完成时退出动画可能仍在运行。取消 token 会取消当前或排队请求，调用方应处理
 `OperationCanceledException`。没有 Host 的请求会一直等明确结果或取消；Host 卸载只清理自身
 计时和动画，不取消应用请求，重挂后显示当前项并重新计时。
+计时按普通经过时间执行，不随动画速度改变，也不需要持续投递动画帧；更换呈现模板不会重新计时。
 通常在 UI 线程使用状态入口，并随页面生命周期取消不再需要的请求。
 
 可以将自己的 `SnackbarHostState` 绑定到 `State`；此时 DataContext 必须提供该实例，

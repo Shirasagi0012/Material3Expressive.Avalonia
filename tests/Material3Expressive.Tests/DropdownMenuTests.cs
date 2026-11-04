@@ -243,6 +243,49 @@ public class DropdownMenuTests
         window.Close(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void SelectedIcon_LeavingAnimatedBranchStopsItsPresentationWrites(bool exiting, bool useTemplate)
+    {
+        using var clock = new MotionTestClockScope();
+        var selected = new Border { Width = 20, Height = 20 };
+        var leading = new Border { Width = 24, Height = 24 };
+        var item = new SelectableDropdownMenuItem { IsSelected = exiting,
+            Content = new Border { Width = 48, Height = 16 }, SelectedLeadingIcon = selected };
+        var menu = new DropdownMenuPopup { Items = { new DropdownMenuGroup { Items = { item } } } };
+        var (window, _) = Show(menu);
+        try
+        {
+            menu.IsOpen = true; Flush(window); Advance(clock, window, 100);
+            var slot = item.GetVisualDescendants().OfType<DropdownMenuLeadingIcon>().Single();
+            item.IsSelected = !exiting; Advance(clock, window, 4);
+            Assert.InRange(slot.Opacity, .01, .99);
+            if (useTemplate) item.LeadingIconTemplate = new FuncDataTemplate<object>((_, _) => leading);
+            else item.LeadingIcon = leading;
+            Flush(window);
+            Assert.Equal(1, slot.Opacity);
+            for (var frame = 0; frame < 40; frame++)
+            {
+                Advance(clock, window, 1);
+                Assert.Equal(1, slot.Opacity);
+                Assert.Equal(exiting ? 24 : 20, slot.Bounds.Width);
+            }
+            item.IsSelected = false; Flush(window);
+            Assert.Contains(leading, item.GetVisualDescendants());
+            item.LeadingIcon = null; item.LeadingIconTemplate = null; Flush(window);
+            Assert.Equal(0, slot.Bounds.Width);
+            item.IsSelected = true; Advance(clock, window, 100);
+            Assert.Equal(20, slot.Bounds.Width); Assert.Equal(1, slot.Opacity);
+            Assert.Contains(selected, item.GetVisualDescendants());
+        }
+        finally { window.Close(); Advance(clock, window, 1); }
+        Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+        Assert.Null(window.MotionRoot.Diagnostics.LastError);
+    }
+
     [AvaloniaFact]
     public void Group_StartsWithItsShape_AndOnlyBecomesInactiveAfterHover()
     {

@@ -39,6 +39,8 @@ Separator 按最终列宽 Stretch。小图标槽保留内容实际测量尺寸�
 
 选中图标的可见宽度按动画排列，弹层自然宽度读取保留内容的完整宽度。进入初始零宽也需使父级测量失效。
 目标在 composition 对应帧合并，宽度 spring 使用上游泛型规格的 0.01 阈值。退出完成后释放内容和模板，反向保留运行状态。
+普通 leading 槽从无变有时，上游会移除 AnimatedVisibility 分支。本地同时释放该分支的作用域、延迟目标提交、值订阅和 Transition，
+防止旧 alpha/宽度继续写入静态替换图标；再次仅有 selected-leading 槽时按当前 selected 建立新分支。作用域随分支而非整个模板存活。
 项目默认尺寸和间距由组件 Token 绑定，默认 sizeIn 的 112 / 280 在测量阶段受调用方约束限制。
 
 `DropdownMenuItem.InteractionSource` 由勾选 / 单选子类继承，null 使用内部源。替换源重置 indication，卸载取消原生按压，重挂和模板替换仅接收后续外部事件。
@@ -87,6 +89,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 ## 4. 验证入口
 
 - `DropdownMenuTests` 检查独立 Popup、受控输入、定位、滚动、反向、分组和选中图标生命周期。
+- 选中图标回归覆盖进入/退出途中添加普通内容或模板，随后移除、重进和卸载；静态分支不得再收到旧动画透明度写入。
 - `MenuTests` 检查原生 flyout、菜单栏、子菜单、主题优先级及原生行为，新增槽的排版、Token 更新、快捷键与子菜单并存和原生激活。
 - `MenuInteractionSourceTests` 检查项目和组的源替换、原生配对与模板重建，`CommandMenuDensityTokenTests` 检查尺寸覆盖。
 - 双端族为 `dropdown-menu-item`、`dropdown-menu`、`menu`、`menu-container`、`menu-source`、`menu-group-source`、`native-menu-supporting`。新增槽族覆盖 Standard / Vibrant、选中/禁用、RTL、暗色、模板独立使用、窄宽度及动态移除/恢复。Baseline 夹具需提供外层菜单表面的 content color。
@@ -98,3 +101,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family menu-group-source
 ./tests/VisualParity/parity.ps1 self-test --family native-menu-supporting --require-match
 ```
+
+独立项目族 `dropdown-menu-item` 的 54 例执行错误为零且重复/额外截图稳定（`20261104-182830-bb7e1cce`）：
+50 equal、4 withinTolerance。新增四例为进入/退出途中切换 leading 槽 × LTR/RTL，几何和状态读数全部相等；
+添加普通图标后的样本逐像素相等，动画中的少量截图最大单通道差为 1，沿用原有门禁。
