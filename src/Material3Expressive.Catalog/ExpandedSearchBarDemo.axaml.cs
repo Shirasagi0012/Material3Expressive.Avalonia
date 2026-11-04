@@ -10,14 +10,47 @@ using Material3Expressive.Components;
 
 namespace Material3Expressive.Catalog;
 
+internal enum SearchPresentation { Docked, Gap, FullScreen, Contained }
+
 public partial class ExpandedSearchBarDemo : Window
 {
     private static readonly string[] Names = ["Button", "Card", "DatePicker", "ExpandedDockedSearchBar", "ListItem", "NavigationRail", "SearchBar", "Slider", "TextField", "TimeScroll"];
     private SearchBarState State => (SearchBarState)Resources["SearchState"]!;
-    public ExpandedSearchBarDemo()
+    public ExpandedSearchBarDemo() : this(SearchPresentation.Docked) { }
+    internal ExpandedSearchBarDemo(SearchPresentation presentation)
     {
-        AnimationScope.Initialize(this); InitializeComponent(); UpdateResults();
+        AnimationScope.Initialize(this); InitializeComponent();
+        if (presentation != SearchPresentation.Docked)
+        {
+            ExpandedDockedSearchBar popup = presentation switch
+            {
+                SearchPresentation.Gap => new ExpandedDockedSearchBarWithGap(),
+                SearchPresentation.FullScreen => new ExpandedFullScreenSearchBar(),
+                _ => new ExpandedFullScreenContainedSearchBar()
+            };
+            if (presentation == SearchPresentation.Contained)
+            {
+                Resources["SearchState"] = SearchBarState.CreateContained();
+                CollapsedSearch.State = State;
+                Query.Classes.Add("contained");
+            }
+            Title = presentation == SearchPresentation.Gap ? "Search popup with gap" : $"{presentation} search";
+            Heading.Text = $"SearchBar + {popup.GetType().Name}";
+            if (popup is ExpandedFullScreenSearchBar)
+            {
+                Query.HorizontalAlignment = HorizontalAlignment.Stretch;
+                Query.VerticalAlignment = VerticalAlignment.Stretch;
+                Description.Text = "搜索覆盖客户区。Escape、输入框返回按钮或选择结果后收起；输入和结果使用独立实例。";
+            }
+            var input = SearchPopup.InputField;
+            var content = SearchPopup.Content;
+            SearchPopup.InputField = null; SearchPopup.Content = null;
+            Root.Children.Remove(SearchPopup);
+            popup.State = State; popup.InputField = input; popup.Content = content; Root.Children.Add(popup);
+        }
+        UpdateResults();
     }
+    private void CloseSearch(object? sender, RoutedEventArgs e) => _ = State.AnimateToCollapsedAsync();
     private void OpenSearch(object? sender, RoutedEventArgs e) => _ = State.AnimateToExpandedAsync();
     private void QueryChanged(object? sender, TextChangedEventArgs e) { if (Results is not null) UpdateResults(); }
     private void UpdateResults()

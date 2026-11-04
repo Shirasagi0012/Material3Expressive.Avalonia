@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record ExpandedSearchBarConfig(bool Expanded = true, bool Dark = false, bool Rtl = false,
     int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, double InputWidth = 360,
     double InputHeight = 56, bool Custom = false, string Action = "none", string Motion = "default", bool Anchor = true,
-    double TonalElevation = 0, double ShadowElevation = 0);
+    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false);
 
 [ParitySuite("expanded-search-bar")]
 public sealed class ExpandedSearchBarCases
@@ -58,16 +58,26 @@ public sealed class ExpandedSearchBarCases
             "content" => new SearchBarState(initial, new SnapSpec<float>(), new SnapSpec<float>(),
                 new TweenSpec<float>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing()),
                 new TweenSpec<float>(TimeSpan.FromMilliseconds(1000), easing: new LinearEasing())),
-            _ => new SearchBarState(initial)
+            _ => c.Contained ? SearchBarState.CreateContained(initial) : new SearchBarState(initial)
         };
         var collapsed = new InputMarker { PreferredWidth = c.InputWidth, PreferredHeight = c.InputHeight };
-        var input = new InputMarker { PreferredWidth = c.InputWidth, PreferredHeight = c.InputHeight };
+        var input = new InputMarker { PreferredWidth = c.InputWidth, PreferredHeight = c.InputHeight, Filled = c.FilledInput };
         var results = new ResultsMarker { PreferredHeight = c.ContentHeight };
         var bar = new SearchBar { State = state, Content = collapsed, Margin = new(16, 24, 0, 0) };
-        var popup = new ExpandedDockedSearchBar { State = state, InputField = input, Content = results };
+        ExpandedDockedSearchBar popup = c.Contained ? new ExpandedFullScreenContainedSearchBar() : c.FullScreen ? new ExpandedFullScreenSearchBar() : c.Gap ? new ExpandedDockedSearchBarWithGap() : new ExpandedDockedSearchBar();
+        popup.State = state; popup.InputField = input; popup.Content = results;
+        if (popup is ExpandedFullScreenSearchBar full && c.Insets) full.WindowInsets = new(12, 20, 24, 16);
+        if (popup is ExpandedDockedSearchBarWithGap gap)
+        {
+            if (c.NoScrim) gap.DropdownScrimColor = Colors.Transparent;
+            if (c.Custom) { gap.DropdownGapSize = 8; gap.DropdownCornerRadius = new(4); gap.DropdownScrimColor = Color.Parse("#400000FF"); }
+        }
         bar.TonalElevation = popup.TonalElevation = c.TonalElevation;
         bar.ShadowElevation = popup.ShadowElevation = c.ShadowElevation;
         var root = new Grid { FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        // Core's surrounding Box has LocalContentColor's Black default (it is not a Surface).
+        // A themed Avalonia Window supplies OnSurface; make the fixture's ambient scope explicit.
+        root.SetValue(Avalonia.Controls.Documents.TextElement.ForegroundProperty, Brushes.Black);
         if (c.Anchor) root.Children.Add(bar);
         root.Children.Add(popup);
         if (c.Custom)
@@ -89,9 +99,10 @@ public sealed class ExpandedSearchBarCases
                 new("bar", "collapsed-search-bar", "state", c.Anchor ? AvaloniaMeasurements.Geometry(bar, host.Window).ToArray() : []) };
             if (popup.IsPresented)
             {
-                points.Add(new("popup", "expanded-search-bar", "state", AvaloniaMeasurements.Geometry(popup.Presentation!, host.Window).ToArray()));
+                points.Add(new("popup", "expanded-search-bar", "state", AvaloniaMeasurements.Geometry((c.FullScreen ? popup.PresentationLayout : popup.Presentation)!, host.Window).ToArray()));
                 points.Add(new("input", "input-slot", "popup", AvaloniaMeasurements.Geometry(input, host.Window).ToArray()));
-                points.Add(new("results", "results-slot", "popup", AvaloniaMeasurements.Geometry(results, host.Window).ToArray()));
+                if (!c.Gap || results.IsAttachedToVisualTree())
+                    points.Add(new("results", "results-slot", "popup", AvaloniaMeasurements.Geometry(results, host.Window).ToArray()));
             }
             writer.Submit(host.Snapshot(id, id, points.ToArray()));
         }
@@ -119,7 +130,9 @@ public sealed class ExpandedSearchBarCases
                 if (c.Action == "escape") host.Window.KeyPress(Key.Escape, 0, PhysicalKey.Escape, null);
                 else { host.Input("move", new(c.HostWidth - 4, c.HostHeight - 4)); host.Input("down", new(c.HostWidth - 4, c.HostHeight - 4)); }
             });
-            At(16000, 32000, 64000, 128000, 256000, 512000, 1024000); return;
+            At(16000);
+            if (c.Gap && c.Action == "outside") Change(17000, "outside-release", () => host.Input("up", new(c.HostWidth - 4, c.HostHeight - 4)));
+            At(32000, 64000, 128000, 256000, 512000, 1024000); return;
         }
         Change(1000, "expand", () => _ = state.AnimateToExpandedAsync());
         At(16000, 32000, 64000, 96000);
@@ -135,9 +148,14 @@ public sealed class ExpandedSearchBarCases
         public static readonly StyledProperty<double> PreferredWidthProperty = AvaloniaProperty.Register<InputMarker, double>(nameof(PreferredWidth));
         public double PreferredWidth { get => GetValue(PreferredWidthProperty); set => SetValue(PreferredWidthProperty, value); }
         public double PreferredHeight { get; init; }
+        public bool Filled { get; init; }
         static InputMarker() => AffectsMeasure<InputMarker>(PreferredWidthProperty);
         protected override Size MeasureOverride(Size availableSize) => new(Math.Min(PreferredWidth, availableSize.Width), Math.Min(PreferredHeight, availableSize.Height));
-        public override void Render(DrawingContext context) => context.FillRectangle(Brushes.Magenta, new Rect(16, (Bounds.Height - 24) / 2, 24, 24));
+        public override void Render(DrawingContext context)
+        {
+            if (Filled) context.FillRectangle(Brushes.Green, new Rect(Bounds.Size));
+            context.FillRectangle(Brushes.Magenta, new Rect(16, (Bounds.Height - 24) / 2, 24, 24));
+        }
     }
     private class ResultsMarker : Control
     {

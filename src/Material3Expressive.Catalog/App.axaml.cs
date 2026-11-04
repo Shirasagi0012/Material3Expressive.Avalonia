@@ -47,6 +47,12 @@ public partial class App : Application
                 ? new ComboBoxDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--search-popup") >= 0
                 ? new ExpandedSearchBarDemo()
+                : System.Array.IndexOf(desktop.Args ?? [], "--search-gap") >= 0
+                ? new ExpandedSearchBarDemo(SearchPresentation.Gap)
+                : System.Array.IndexOf(desktop.Args ?? [], "--search-full-screen") >= 0
+                ? new ExpandedSearchBarDemo(SearchPresentation.FullScreen)
+                : System.Array.IndexOf(desktop.Args ?? [], "--search-contained") >= 0
+                ? new ExpandedSearchBarDemo(SearchPresentation.Contained)
                 : new MainWindow();
         }
 

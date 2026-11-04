@@ -25,13 +25,19 @@ public sealed class SearchBarState : AvaloniaObject
     private float _progress;
     private SearchBarValue _current, _target;
     private bool _running;
+    private bool _containedDefaults;
     internal SearchBar? CollapsedBar { get; set; }
     internal event EventHandler? LayoutChanged;
     internal void NotifyLayoutChanged() => LayoutChanged?.Invoke(this, EventArgs.Empty);
     internal float RawProgress => _animation.Value;
     internal float ContentProgress => Math.Clamp(_content.Value, 0, 1);
+    internal event EventHandler? ContentProgressChanged;
 
     public SearchBarState() : this(SearchBarValue.Collapsed) { }
+    /// <summary>Creates the contained variant's FastSpatial motion and 50/100ms content fade defaults.</summary>
+    public static SearchBarState CreateContained(SearchBarValue initialValue = SearchBarValue.Collapsed) => new(initialValue,
+        animationSpecForContentFadeIn: new TweenSpec<float>(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(50), new CubicBezierEasing(.3, 0, 1, 1)),
+        animationSpecForContentFadeOut: new TweenSpec<float>(TimeSpan.FromMilliseconds(100), easing: new CubicBezierEasing(0, 0, 0, 1))) { _containedDefaults = true };
     public SearchBarState(SearchBarValue initialValue, IAnimationSpec<float>? animationSpecForExpand = null,
         IAnimationSpec<float>? animationSpecForCollapse = null, IAnimationSpec<float>? animationSpecForContentFadeIn = null,
         IAnimationSpec<float>? animationSpecForContentFadeOut = null)
@@ -44,6 +50,10 @@ public sealed class SearchBarState : AvaloniaObject
         _contentInSpec = animationSpecForContentFadeIn ?? new SnapSpec<float>();
         _contentOutSpec = animationSpecForContentFadeOut ?? new SnapSpec<float>();
         _animation.PropertyChanged += AnimationChanged;
+        _content.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Animatable<float>.Value)) ContentProgressChanged?.Invoke(this, EventArgs.Empty);
+        };
     }
 
     /// <summary>Progress clamped to 0–1. Layout retains the underlying spring overshoot.</summary>
@@ -74,14 +84,7 @@ public sealed class SearchBarState : AvaloniaObject
         VerifyAccess();
         cancellationToken.ThrowIfCancellationRequested();
         var scope = _scope ?? throw new InvalidOperationException("Mount a SearchBar or ExpandedDockedSearchBar before animating its state. SnapToAsync can seed an unmounted state.");
-        var spec = expanded ? _expandSpec : _collapseSpec;
-        if (spec is null)
-        {
-            var property = expanded ? SearchBar.ExpandAnimationProperty : SearchBar.CollapseAnimationProperty;
-            var configured = _owners.Select(owner => owner.GetValue(property)).FirstOrDefault(value => value is not null)
-                ?? throw new InvalidOperationException("The search bar motion theme is not ready.");
-            spec = new SpringSpec<float>(configured.DampingRatio, configured.Stiffness, .01f);
-        }
+        var spec = AnimationSpec(expanded);
         return scope.Launch(async lifetime =>
         {
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
@@ -95,6 +98,19 @@ public sealed class SearchBarState : AvaloniaObject
             if (expanded) await Task.WhenAll(Run(_animation, spec), Run(_content, _contentInSpec));
             else await Task.WhenAll(Run(_content, _contentOutSpec), Run(_animation, spec));
         }, expanded ? "Expand search" : "Collapse search");
+    }
+
+    internal IAnimationSpec<float> AnimationSpec(bool expanded)
+    {
+        var spec = expanded ? _expandSpec : _collapseSpec;
+        if (spec is null)
+        {
+            var property = _containedDefaults ? SearchBar.ContainedAnimationProperty : expanded ? SearchBar.ExpandAnimationProperty : SearchBar.CollapseAnimationProperty;
+            var configured = _owners.Select(owner => owner.GetValue(property)).FirstOrDefault(value => value is not null)
+                ?? throw new InvalidOperationException("The search bar motion theme is not ready.");
+            spec = new SpringSpec<float>(configured.DampingRatio, configured.Stiffness);
+        }
+        return spec;
     }
 
     private void AnimationChanged(object? sender, PropertyChangedEventArgs e)

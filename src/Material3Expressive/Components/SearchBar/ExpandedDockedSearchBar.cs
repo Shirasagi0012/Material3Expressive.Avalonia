@@ -28,6 +28,8 @@ public class ExpandedDockedSearchBar : ContentControl
     public static readonly DirectProperty<ExpandedDockedSearchBar, bool> IsPresentedProperty = AvaloniaProperty.RegisterDirect<ExpandedDockedSearchBar, bool>(nameof(IsPresented), bar => bar.IsPresented);
     internal static readonly StyledProperty<MotionSpring?> ExpandAnimationProperty = SearchBar.ExpandAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
     internal static readonly StyledProperty<MotionSpring?> CollapseAnimationProperty = SearchBar.CollapseAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
+    internal static readonly StyledProperty<MotionSpring?> ContainedAnimationProperty = SearchBar.ContainedAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
+    internal MotionSpring? ContainedAnimation { get => GetValue(ContainedAnimationProperty); set => SetValue(ContainedAnimationProperty, value); }
     internal MotionSpring? ExpandAnimation { get => GetValue(ExpandAnimationProperty); set => SetValue(ExpandAnimationProperty, value); }
     internal MotionSpring? CollapseAnimation { get => GetValue(CollapseAnimationProperty); set => SetValue(CollapseAnimationProperty, value); }
     public SearchBarState? State { get => GetValue(StateProperty); set => SetValue(StateProperty, value); }
@@ -49,6 +51,7 @@ public class ExpandedDockedSearchBar : ContentControl
     private SearchBarState? _activeState;
     private TopLevel? _topLevel;
     internal Control? Presentation => _surface;
+    internal Control? PresentationLayout => _layout;
 
     static ExpandedDockedSearchBar()
     {
@@ -82,6 +85,7 @@ public class ExpandedDockedSearchBar : ContentControl
         base.OnApplyTemplate(e);
         _root = e.NameScope.Find<Grid>("PART_Root");
         _presenter = e.NameScope.Find<SearchBarPopupPresenter>("PART_Presentation");
+        _presenter?.SetScrimButton(e.NameScope.Find<SearchBarScrimButton>("PART_Scrim"), e.NameScope.Find<SearchBarPopupPositioner>("PART_Positioner"));
         _layout = e.NameScope.Find<ExpandedSearchBarLayout>("PART_Layout");
         _input = e.NameScope.Find<ContentPresenter>("PART_InputField");
         _results = e.NameScope.Find<ContentPresenter>("PART_ContentPresenter");
@@ -131,6 +135,7 @@ public class ExpandedDockedSearchBar : ContentControl
             _activeState.Attach(this);
             _activeState.PropertyChanged += StateChanged;
             _activeState.LayoutChanged += LayoutChanged;
+            _activeState.ContentProgressChanged += ContentProgressChanged;
         }
         UpdatePresentation();
     }
@@ -138,9 +143,14 @@ public class ExpandedDockedSearchBar : ContentControl
     {
         if (_activeState is null) return;
         _activeState.PropertyChanged -= StateChanged; _activeState.LayoutChanged -= LayoutChanged;
+        _activeState.ContentProgressChanged -= ContentProgressChanged;
         _activeState.Detach(this); _activeState = null;
     }
     private void StateChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => UpdatePresentation();
+    private void ContentProgressChanged(object? sender, EventArgs e)
+    {
+        if (_presenter is not null && _activeState is not null) UpdateVariant(_presenter, _activeState);
+    }
     private void LayoutChanged(object? sender, EventArgs e) => UpdateGeometry();
     private void WindowChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -163,11 +173,13 @@ public class ExpandedDockedSearchBar : ContentControl
         // threshold removes that composition and cancels its unfinished state animation.
         lifetime?.Cancel(); lifetime?.Dispose();
     }
-    private void UpdatePresentation()
+    internal virtual void UpdateVariant(SearchBarPopupPresenter presenter, SearchBarState state) { }
+    internal void UpdatePresentation()
     {
         if (_presenter is null || _topLevel is null) return;
         if (_activeState?.CurrentValue != SearchBarValue.Expanded) { _presenter.Close(true); return; }
         UpdateGeometry();
+        UpdateVariant(_presenter, _activeState);
         if (!_presenter.IsPresented)
         {
             _presentationLifetime = new CancellationTokenSource();
@@ -198,7 +210,7 @@ public class ExpandedDockedSearchBar : ContentControl
             var origin = bar.TranslatePoint(mirrored ? new Point(bar.Bounds.Width, 0) : default, _topLevel);
             if (origin is { } point) bounds = new Rect(point, bar.Bounds.Size);
         }
-        _presenter.SetAnchor(bounds?.Position ?? default);
-        _layout.SetInputs(bounds?.Size, _topLevel.ClientSize, _activeState?.RawProgress ?? 0);
+        _presenter.SetAnchor(_layout is FullScreenSearchBarLayout ? default : bounds?.Position ?? default);
+        _layout.SetInputs(bounds, _topLevel.ClientSize, _activeState?.RawProgress ?? 0);
     }
 }

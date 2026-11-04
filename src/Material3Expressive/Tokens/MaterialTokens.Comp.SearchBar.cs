@@ -12,10 +12,21 @@ public static partial class MaterialTokens
         {
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.search-bar.container.color");
             public static readonly MaterialTokenKey<CornerRadius> DockedContainerShape = new("md.comp.search-view.docked.container.shape");
+            public static readonly MaterialTokenKey<CornerRadius> DropdownContainerShape = new("md.comp.search-view.dropdown.container.shape");
+            public static readonly MaterialTokenKey<double> DropdownGapSize = new("md.comp.search-view.dropdown.gap-size");
+            public static readonly MaterialTokenKey<Color> DropdownScrimColor = new("md.comp.search-view.dropdown.scrim-color");
+            public static readonly MaterialTokenKey<double> DropdownMaximumWindowHeightFraction = new("md.comp.search-view.dropdown.maximum-window-height-fraction");
+            public static readonly MaterialTokenKey<Color> ContainedContainerColor = new("md.comp.search-view.contained.container.color");
+            public static readonly MaterialTokenKey<double> ContainedInputHorizontalPadding = new("md.comp.search-view.contained.input.horizontal-padding");
+            public static readonly MaterialTokenKey<double> ContainedInputTopPadding = new("md.comp.search-view.contained.input.top-padding");
+            public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ContainedAnimation = new("md.comp.search-view.contained.animation");
             public static readonly MaterialTokenKey<Color> DividerColor = new("md.comp.search-view.divider.color");
             public static readonly MaterialTokenKey<double> TonalElevation = new("md.comp.search-bar.tonal-elevation");
             public static readonly MaterialTokenKey<double> ShadowElevation = new("md.comp.search-bar.shadow-elevation");
             public static readonly MaterialTokenKey<double> DefaultWidth = new("md.comp.search-bar.default-width");
+            public static readonly MaterialTokenKey<double> InputHeight = new("md.comp.search-bar.input.height");
+            public static readonly MaterialTokenKey<double> FullScreenVerticalPadding = new("md.comp.search-view.full-screen.vertical-padding");
+            public static readonly MaterialTokenKey<Thickness> FullScreenWindowInsets = new("md.comp.search-view.full-screen.window-insets");
             public static readonly MaterialTokenKey<double> InputMaximumWidth = new("md.comp.search-bar.input.maximum-width");
             public static readonly MaterialTokenKey<CornerRadius> InputContainerShape = new("md.comp.search-bar.input.container.shape");
             public static readonly MaterialTokenKey<Color> InputTextColor = new("md.comp.search-bar.input-text.color");

@@ -9,6 +9,12 @@ namespace Material3Expressive.Components;
 
 internal sealed class SearchBarMotion(bool entering) : IMultiValueConverter
 {
+    public static IValueConverter GapPadding { get; } = new FuncValueConverter<double, Thickness>(gap => new Thickness(0, gap, 0, 0));
+    public static IMultiValueConverter ResultsVisible { get; } = new FuncMultiValueConverter<object?, bool>(values =>
+    {
+        var items = values.ToArray();
+        return items.Length == 2 && items[0] is float progress && progress > .1f && items[1] is SearchBarValue.Expanded;
+    });
     public static IMultiValueConverter Present { get; } = new FuncMultiValueConverter<object?, object?>(
         values => { var items = values.ToArray(); return items.Length == 2 && items[0] is true ? items[1] : null; });
     public static IMultiValueConverter Enter { get; } = new SearchBarMotion(true);

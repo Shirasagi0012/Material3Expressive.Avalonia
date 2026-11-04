@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ExpandedSearchBarConfig(val expanded:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val hostWidth:Int=420,val hostHeight:Int=600,val contentHeight:Double=40.0,val inputWidth:Double=360.0,
     val inputHeight:Double=56.0,val custom:Boolean=false,val action:String="none",val motion:String="default",val anchor:Boolean=true,
-    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0)
+    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0,val gap:Boolean=false,val noScrim:Boolean=false,val fullScreen:Boolean=false,val insets:Boolean=false,val contained:Boolean=false,val filledInput:Boolean=false)
 
 @ParitySuite("expanded-search-bar")
 class ExpandedSearchBarCases {
@@ -49,7 +49,7 @@ class ExpandedSearchBarCases {
                     MaterialTheme(colorScheme=if(c.dark)darkColorScheme()else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                         CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl)LayoutDirection.Rtl else LayoutDirection.Ltr) {
                             val initial=if(c.expanded)SearchBarValue.Expanded else SearchBarValue.Collapsed
-                            val defaultState=rememberSearchBarState(initial)
+                            val defaultState=if(c.contained)rememberContainedSearchBarState(initial)else rememberSearchBarState(initial)
                             state=remember { when(c.motion) {
                                 "tween"->SearchBarState(initial,tween(400,50,LinearEasing),tween(300,easing=LinearEasing),tween(200,100,LinearEasing),tween(150,easing=LinearEasing))
                                 "overshoot"->SearchBarState(initial,spring(.4f,120f),spring(.4f,120f))
@@ -64,7 +64,24 @@ class ExpandedSearchBarCases {
                                         shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=colors,
                                         tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp)
                                 }
-                                ExpandedDockedSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight) },modifier=popup.modifier(),
+                                if(c.contained) ExpandedFullScreenContainedSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
+                                    collapsedShape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=if(c.custom)colors else SearchBarDefaults.containedColors(state),
+                                    windowInsets={if(c.insets)WindowInsets(left=12.dp,top=20.dp,right=24.dp,bottom=16.dp)else WindowInsets(0)},
+                                    tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
+                                    Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
+                                } else if(c.fullScreen) ExpandedFullScreenSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
+                                    collapsedShape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=colors,
+                                    windowInsets={if(c.insets)WindowInsets(left=12.dp,top=20.dp,right=24.dp,bottom=16.dp)else WindowInsets(0)},
+                                    tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
+                                    Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
+                                } else if(c.gap) ExpandedDockedSearchBarWithGap(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
+                                    shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
+                                    dropdownShape=if(c.custom)RoundedCornerShape(4.dp)else SearchBarDefaults.dockedDropdownShape,
+                                    dropdownGapSize=if(c.custom)8.dp else SearchBarDefaults.dockedDropdownGapSize,
+                                    dropdownScrimColor=if(c.custom)Color(0x400000FF)else if(c.noScrim)Color.Transparent else SearchBarDefaults.dockedDropdownScrimColor,
+                                    tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
+                                    Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
+                                } else ExpandedDockedSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
                                     shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
                                     tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
                                     Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
@@ -86,7 +103,7 @@ class ExpandedSearchBarCases {
                     if(presented) {
                         points.add(ProbePoint("popup","expanded-search-bar","state",popup.geometry()))
                         points.add(ProbePoint("input","input-slot","popup",input.geometry()))
-                        points.add(ProbePoint("results","results-slot","popup",results.geometry()))
+                        if(!c.gap || results.coordinates?.isAttached==true) points.add(ProbePoint("results","results-slot","popup",results.geometry()))
                     }
                     writer.submit(host.snapshot(id,id,points))
                 }
@@ -114,7 +131,9 @@ class ExpandedSearchBarCases {
                             val point=Offset(c.hostWidth-4f,c.hostHeight-4f)
                             host.input("move",point);host.input("down",point)
                         }
-                    };at(16000,32000,64000,128000,256000,512000,1024000);return
+                    };at(16000)
+                    if(c.gap && c.action=="outside")change(17000,"outside-release"){host.input("up",Offset(c.hostWidth-4f,c.hostHeight-4f))}
+                    at(32000,64000,128000,256000,512000,1024000);return
                 }
                 change(1000,"expand"){scope.launch{state.animateToExpanded()}}
                 at(16000,32000,64000,96000)
@@ -126,9 +145,24 @@ class ExpandedSearchBarCases {
             } finally {dispatcher.removeInput(navigation)}
         }
     }
-    @Composable private fun Marker(modifier:Modifier,width:Double,height:Double) {
-        Box(modifier.width(width.toFloat().dp).height(height.toFloat().dp),contentAlignment=Alignment.CenterStart) {
+    @Composable private fun Marker(modifier:Modifier,width:Double,height:Double,filled:Boolean=false) {
+        Box(modifier.width(width.toFloat().dp).height(height.toFloat().dp).background(if(filled)Color(0xFF008000)else Color.Transparent),contentAlignment=Alignment.CenterStart) {
             Box(Modifier.padding(horizontal=16.dp).size(24.dp).background(Color.Magenta))
         }
     }
+}
+
+@ParitySuite("search-bar-gap")
+class SearchBarGapCases {
+    @ParityScenario("presentation") suspend fun capture(writer:CaptureWriter) = ExpandedSearchBarCases().capture(writer)
+}
+
+@ParitySuite("full-screen-search-bar")
+class FullScreenSearchBarCases {
+    @ParityScenario("presentation") suspend fun capture(writer:CaptureWriter) = ExpandedSearchBarCases().capture(writer)
+}
+
+@ParitySuite("contained-search-bar")
+class ContainedSearchBarCases {
+    @ParityScenario("presentation") suspend fun capture(writer:CaptureWriter) = ExpandedSearchBarCases().capture(writer)
 }

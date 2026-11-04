@@ -54,6 +54,9 @@
                 <Button Content="Date / time pickers" Click="OnDateTimePickerDemo" HorizontalAlignment="Left" />
                 <Button Content="Docked search" Click="OnSearchBarDemo" HorizontalAlignment="Left" />
                 <Button Content="Search popup" Click="OnExpandedSearchBarDemo" HorizontalAlignment="Left" />
+                <Button Content="Search popup with gap" Click="OnSearchBarGapDemo" HorizontalAlignment="Left" />
+                <Button Content="Full-screen search" Click="OnFullScreenSearchDemo" HorizontalAlignment="Left" />
+                <Button Content="Contained search" Click="OnContainedSearchDemo" HorizontalAlignment="Left" />
                 <Button Content="Navigation drawers" Click="OnNavigationDrawerDemo" HorizontalAlignment="Left" />
                 <Button Content="Swipe to dismiss" Click="OnSwipeToDismissDemo" HorizontalAlignment="Left" />
                 <Button Content="SecureTextField demo" Click="OnSecureTextFieldDemo" HorizontalAlignment="Left" />

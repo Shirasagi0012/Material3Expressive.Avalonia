@@ -8,6 +8,9 @@
 | --- | --- | --- |
 | `SearchBar(state, ...)`、`SearchBarState` | `SearchBar`、`SearchBarState` | 收起 Surface 与坐标身份；独立进度/内容 Animatable，保留阈值、目标判定和中断 |
 | `ExpandedDockedSearchBar`、`DockedSearchBarLayoutImpl` | `ExpandedDockedSearchBar`、`ExpandedSearchBarLayout` | 零布局声明、默认可聚焦弹层、以物理像素插值整个容器高度 |
+| `ExpandedDockedSearchBarWithGap` | 同名控件、`SearchBarPopupPresenter` | 独立输入/结果背景，间隙、遮罩点击、半内容高度滑动；整体最大窗口高度 1/2 |
+| `ExpandedFullScreenSearchBar` / `ExpandedFullScreenContainedSearchBar`、`FullScreenSearchBarLayout` | 同名控件及内部 `FullScreenSearchBarLayout` | 物理像素布局、输入与表面独立插值、安全边距消费、形状与透明度 |
+| `rememberContainedSearchBarState` | `SearchBarState.CreateContained` | FastSpatial；内容进入 50ms 延迟 + 100ms StandardAccelerate，退出 100ms StandardDecelerate |
 | `SearchBar.kt / DockedSearchBar(inputField, expanded, ...)` | `DockedSearchBar`、`SearchBar.axaml` | 双插槽、受控展开、Surface 与分隔线；这是固定版本仍保留但已弃用的布尔状态重载，不冒充新版 `SearchBarState` 组合 |
 | `Column`、`SearchBarMinWidth`、`heightIn` | 两个内部布局 Panel | 360 首选宽度，结果最小 240、最大窗口高度 2/3，服从父级约束 |
 | `DockedEnterTransition` / `DockedExitTransition` | `SearchBarMotion`、现有 `AnimatedVisibility` | 延迟 100ms；进入 600ms `(0.05,0.7,0.1,1)`，退出 300ms `(0,1,0,1)`，淡入淡出叠加底部对齐的纵向展开收缩 |
@@ -27,6 +30,14 @@
 
 仅当 CurrentValue 为 Expanded 才呈现弹层。内部关闭操作属于弹层生命周期，到 .02 阈值移除弹层并取消剩余动画，因此可能留下接近零的进度；应用直接调用的外部关闭任务仍运行至零。输入/结果模板随弹层释放，再次打开重新构造。新弹层最小 240 DIP 指整个 Surface，旧布尔容器则指结果区域；两者不能共用相同最小高度布局。上限取窗口高度 2/3，再和输入高度按 raw 进度进行整数像素插值。
 
+带间隙变体仅在 `Progress > .1 && TargetValue == Expanded` 时让 AnimatedVisibility 进入。输入背景先绘制并按外层形状裁剪；结果背景在独立内容 alpha 之前，退出结果时背景不跟随淡出。滑动规格在组件内部将 Float 规格映射到物理像素 IntOffset；采样位置取整，速度不取整，并保留 SpringSpec 身份以复用已有反向中断机制。遮罩使用现有 MaterialInteraction / Surface 波纹；其按钮是搜索内容的祖先，指示层绘制在内容之后，颜色从声明父级继承而非搜索 Surface 的 contentColorFor。按钮自身的 Click 才关闭，子按钮的冒泡 Click 不关闭搜索；无罩时按钮仅作为布局宿主。有遮罩时主按钮 Release 关闭，无遮罩时沿用 Core Popup 外部任意按钮 Press 关闭。透明色哨兵省略遮罩，其他指定颜色（即便 alpha 为零）仍保留点击语义。有罩时严格保留 Core 的 relative offset + TopStart 定位：RTL 下会与收起锚点错位；无罩使用物理锚点坐标。该上游行为由用例保留，不擅自改成视觉对齐。
+
+全屏复用相同的零布局声明、ModalPresenter 焦点隔离与生命周期。Core `BasicEdgeToEdgeDialog.skiko.kt` 强制关闭平台默认宽度、平台 Insets、软件键盘 Insets、平台 scrim 与平台动画；本地窗口内 overlay 沿用仓内已确认桌面呈现边界，不创建新的公共弹层框架。桌面 Escape 对应离散返回，预测返回手势未实现。
+
+普通全屏的表面宽高/偏移使用 clamped progress，输入宽度与中心使用 raw progress，保留过冲；输入高度使用锚点高度，零/无锚点分别回退到 360×56 DIP。默认 Full 圆角从 28 DIP 插值至矩形；自定义圆角在 .5 切换至矩形，不能擅自改成连续插值。contained 表面从一开始占满客户区并按 Progress 淡入，输入以相同中心算法移动，结果按独立 ContentProgress 淡入且无分隔线。两个全屏模板把 Insets 的 padding 放在输入 clip 外面，内容按先水平/底部 padding 再纵向 Column 的顺序测量；复用 MaterialWindowInsets 的消费协议。所有动画样式值使用 Animation 优先级贡献，分离时释放。
+
+结果与表面透明度对应 Compose 的整层 graphicsLayer；复用 Tooltip/Menu 已采用的 `RequiresFullOpacityHandling`，设置在透明度层的祖先 SearchBarPopupPresenter 上，使自定义 Skia 分隔线和重叠内容一起合成。只设置在透明度层本身会晚于 Opacity 入栈，不能满足这一语义。
+
 固定 Core 将 LayoutCoordinates 对象写入状态；同一个 anchor 的位置/宽度改变并不使静止 popup 重新布局。本地同样只通知坐标身份首次就绪，进度、窗口尺寸或重新打开时读取最新位置；不能把这个上游行为“修好”后宣称一致。
 
 应用拥有 `IsExpanded`，关闭请求不代写状态。输入槽保留自己的逻辑子节点和 ContentPresenter 注册；结果 ContentPresenter 位于稳定的 AnimatedVisibility 内，退出期间不替换 Content，动画完成才释放呈现。附加/分离负责窗口按键与尺寸订阅，重挂载按当前目标初始化。
@@ -42,8 +53,8 @@
 ## 3. 已确认决定与已知差异
 
 - **授权范围**：本次任务明确授权上游语义内新增组件及非破坏性组件 API；没有新增公共共享框架或改动既有共享决定。
-- **尚未实现**：新版状态 InputField、带间隙弹层、全屏/contained 搜索、TopSearchBar / AppBarWithSearch、任意 PopupProperties 与非圆角 Shape、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
-- **未经验证**：触摸输入、复杂多弹层返回栈及屏幕阅读器遍历顺序；桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
+- **尚未实现**：新版状态 InputField、TopSearchBar / AppBarWithSearch、任意 PopupProperties 与非圆角 Shape、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
+- **未经验证**：触摸输入、复杂多弹层返回栈、屏幕阅读器遍历顺序及带间隙滑动的任意自定义 Keyframes 等规格；已双端验证的自定义规格为 tween、spring、snap 与独立内容淡入淡出。桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
 - **共享适配**：动画尺寸沿用 ComposeAnimation 的 DIP/double 计算，Compose 的 IntSize 中间帧可能在像素取整上不同；不将检测到的视觉差异登记为新批准的近似。
 
 **待决定的状态输入接入**：固定新版 `InputField(TextFieldState, SearchBarState)` 将键盘聚焦与展开解耦，并收集 Press.Release、文字长度增长和输入模式。原生 TextBox 的焦点在鼠标按下时改变，Core 此场景在释放时改变；Core 的新版字段即使 enabled=false 也可能通过 Release 收集器展开，而 Avalonia 禁用控件不投递该事件。直接添加 State 属性的原型在双端核验中暴露了这些差异，因此该 API 暂未交付，也未把差异登记为已接受。文字长度观察还涉及 SnapshotFlow 的提交与合并：换状态后在下一重组前增长文字，不能按每次同步 TextProperty 回调直接替代。
@@ -52,22 +63,35 @@
 
 ## 4. 验证入口
 
-- `tests/Material3Expressive.Tests/DockedSearchBarTests.cs`：约束、窗口尺寸变化、模板延迟创建、插槽更换、反向动画、分离清理、Escape 与 Token 更新。
-- `SearchBarInputFieldTests.cs`：单行/宽度、受控事件、清焦时点/取消、图标偏移、显式属性优先级、原生可编辑值与本地化无障碍状态。
-- `ExpandedDockedSearchBarTests.cs`：状态阈值/目标、整个弹层约束、反向/卸载、模板释放/状态替换、焦点恢复、嵌套菜单、handled Escape 和 UIA 单一路径。
-- 同一测试类还覆盖零宽锚点与无锚点的区别、独立内容动画及调用方取消、右键/中键外部按下消费、呈现期间重新应用模板。
-- `./tests/VisualParity/parity.ps1 self-test --family expanded-search-bar`：收起/展开、主题/RTL、窗口/输入尺寸、独立动画规格、过冲、锚点、内容改变、snap、Escape 和外部按下；比较实际 Core Popup，不用旧 DockedSearchBar 代替。
-- `./tests/VisualParity/parity.ps1 self-test --family docked-search-bar`：真实 Compose 与 Avalonia 容器，静态深浅色/RTL/大内容/小窗口，以及展开收起、反向、内容尺寸改变、Escape、分离重挂载。结果以生成报告为准，不通过更改容差隐藏差异。
-- Catalog：`SearchBarDemo`（布尔原位容器）、`ExpandedSearchBarDemo`（独立弹层）。
+- `tests/Material3Expressive.Tests/DockedSearchBarTests.cs`：旧布尔容器约束、窗口变化、模板延迟创建、反向动画、卸载、Escape 与 Token。
+- `SearchBarInputFieldTests.cs`：受控展开、清焦时点/取消、图标偏移、原生编辑值与本地化无障碍状态。
+- `ExpandedDockedSearchBarTests.cs`：状态阈值/目标、布局、调用方取消、状态替换、模板释放、焦点恢复、嵌套菜单、handled Escape 和 UIA 单一路径。
+- `SearchBarGapTests.cs`：间隙/高度上限、RTL 有罩/无罩定位、主按钮 Release 与右中键、透明色哨兵、独立内容 alpha、Token 更新、状态/模板生命周期、嵌套控件事件及外层前景色更新。
+- `FullScreenSearchBarTests.cs`：输入/表面独立插值、零/无锚点回退、物理 Insets/祖先消费、RTL、窗口缩放、形状切换、contained 布局/延迟淡入、反向、Escape/焦点恢复。
+- `./tests/VisualParity/parity.ps1 self-test --family <suite>`：使用下表 suite。真实 Core Popup/Dialog 与 Avalonia overlay 双端捕获、重复和额外被动截图检查，图像均为真实 4× 渲染。
+- Catalog：`SearchBarDemo` 和 `ExpandedSearchBarDemo` 的普通停靠、带间隙、普通全屏、contained 四种组合；可使用 README 中的启动参数。
 
-2026-11-04 新版弹层双端运行 `20261104-105548-ee5e34fc`：25 例执行错误 0、重复稳定；159 个图像观测中 151 个逐像素相等、3 个容差内、5 个超差。15 个静态图像中 14 个逐像素相等，包括深浅色、RTL、小窗口、自定义尺寸/颜色、无锚点和零宽锚点；3 DIP 阴影用例超差集中于轮廓外缘，几何和结果内部颜色一致，最大通道差 22。沿用 Surface 及 [共享阴影决定](../../../../docs/DECISIONS.md#20-本次保留阴影坐标接入差异) 的接入，不据此放宽容差或将本次超差改写为通过；具体光栅误差来源尚未独立隔离。
+固定提交下本机最终核验（2026-11-04）：
 
-过冲规格与独立内容动画用例全部观测相等；普通展开/收起、反向、Escape、外部按下及 tween 图像相等，但部分属性存在约 6e-8 的 Float 尾差。锚点/内容修改、snap 的立即采样仍暴露重组与同步属性提交时点差异，保留这些样本和结果；下一帧不能替代立即采样来宣称一致。RTL 图像相等但物理角点排列不同。无锚点用例的图像、弹层和状态相等，缺失的收起锚点几何明确为 notCompared。
+| Suite / 运行 ID | 用例 | 图像：逐像素相等 / 既定容差内 / 超差 |
+| --- | --- | --- |
+| `search-bar-gap` / `20261104-120657-1c35402c` | 33 | 138 / 35 / 4 |
+| `expanded-search-bar` / `20261104-115938-fce34cf8` | 25 | 151 / 3 / 5 |
+| `full-screen-search-bar` / `20261104-114549-e4e16d15` | 31 | 231 / 14 / 5 |
+| `contained-search-bar` / `20261104-115147-6c158e10` | 31 | 241 / 3 / 6 |
 
-行为测试覆盖 16 个场景（含 theory 数据行），组件测试通过 16/16，完整控件套件通过 2023/2023；VisualParity 系统测试通过 124/124，解决方案构建成功。Windows Catalog 实测过滤、选择结果、输入自动聚焦、Escape、深色 RTL、外部右键关闭与焦点恢复；UIA 输入仅出现一次。触摸、屏幕阅读器及移动端 IME 不由这些测试证明。
+以上运行执行错误均为零，重复/额外截图检查稳定；图像计数不是组件完成率。全屏与 contained 的 16 个静态图像各自全部逐像素相等，包括深浅色、RTL、Insets、小窗口、自定义尺寸/颜色和零锚点。无锚点时缺失的收起几何为 notCompared，不补造几何字段。其余不同属性包括浮点约 6e-8 尾差和 RTL 四角顺序，保留原始读数。
 
-布尔容器回归运行 `20261104-105722-a9ca644e` 的 12 例均稳定、执行错误 0，七个静态图像（含 RTL）逐像素相等。RTL 角点顺序仍因 Avalonia 镜像不同，保留四角读数。动态进入中间帧 Avalonia 比 Core 早约 16ms，终态相等，没有加入组件延迟去拟合报告。
+带间隙的 22 个静态图像中 21 个逐像素相等、1 个在既定容差内；覆盖有罩/无罩的 RTL 位置。四个图像超差为移动锚点、增长结果后的立即样本，以及 tween 退出的两个中间帧。后者仍由既有 AnimatedVisibility 目标提交早一帧引起，位置误差保留在报告中；没有组件延迟或容差调整。遮罩 Release、波纹与 hover 层在同一外层内容色下已相等或处于既定容差内；仍有不可见的退出子节点几何与 Float 尾差，并非所有字段都相等。
 
-输入字段回归运行 `20261104-105845-78467838`：12 例执行错误 0、重复/额外截图稳定；焦点、展开、请求次数在所有采样一致。十个静态图像仍 different：空编辑行使 Core 自动高度为 58.5 DIP、本地为 56 DIP，槽位竖直中心相差 1.25 DIP，窄父级宽度与图标横向位置相等；RTL 同时保留角点顺序差异。焦点动态采样沿用 TextField 的无图像观测，以免原生光标平台定时器干扰；静态保留完整图像。布尔容器的 84 个样本及输入字段的 31 个样本，其属性、图像比较数据和结论均与本次改动前报告一致。
+普通全屏的五个图像超差分别是结果增长后的立即样本、三条 Insets/带背景裁剪用例的首次展开帧，以及 snap 后立即创建弹层。contained 的六个超差包含同类情况和立即关闭样本。后续帧一致：Core 的 `onConsumedWindowInsetsChanged` 先更新 top 的读取，再经重组把 nonTopInsets 提交到 padding；本地现有消费协议同步传播。不能把立即样本换成下一帧，或在组件内加入固定 16ms 延迟。
 
-**待维护者决定**：共享动画提交时点与原生编辑行度量的处理范围。推荐先在 ComposeAnimation 提交边界、TextField 原生度量能力内调查，而非搜索组件内补 16ms / 2.5 DIP；例如 `bar.IsExpanded = true` 在非帧时刻赋值，两端内容实现/目标提交不在同一帧。改变该共享协议会影响其他 AnimatedVisibility/TextField 调用方，需独立设计确认；上述差异没有登记为已接受。
+原有普通停靠的五个超差仍包含 3 DIP 阴影轮廓，以及锚点/内容改变、snap 的立即采样；结果与上一份核验一致。阴影继续复用 Surface 和 [共享阴影决定](../../../../docs/DECISIONS.md#20-本次保留阴影坐标接入差异)，没有为此放宽容差。旧布尔容器 `20261104-105722-a9ca644e` 的七个静态图像相等，进入中间帧仍存在约一帧提交差；旧输入字段 `20261104-105845-78467838` 保留原生编辑行 56 DIP 与 Core 58.5 DIP 的度量差异。
+
+**待维护者决定**：共享动画/属性/Insets 的提交边界与原生编辑行度量范围。推荐在 ComposeAnimation、MaterialWindowInsets 和 TextField 的现有能力内调查；例如 `state.SnapToAsync(.021f)` 在非帧时刻执行后，本地立即显示而 Core 在重组时显示，或 `WindowInsets="12,20,24,16"` 的初始传播顺序不同。改变共享协议会影响已有调用方，需要独立设计确认；不在搜索组件中补帧、补 2.5 DIP 或把差异记为已接受。新版状态 InputField 的具体推荐接入及影响见第 3 节。
+
+搜索遮罩的采集场景显式把 Avalonia 根内容色设为黑色，匹配固定 Core `LocalContentColor` 的 Black 默认；Core 参考端未改动。Avalonia Window 主题会默认注入 OnSurface，而测试中的 Core Box 不提供 Surface 的内容色；不对齐这个外层环境会把正确继承外层色的波纹误判为组件颜色差异。组件自身并未固定为黑色，行为测试验证父级 Blue/Red 的实时继承。
+
+Windows Catalog 已实测自动聚焦、查询过滤、选择结果收起及焦点恢复、返回按钮、深色/RTL、遮罩右键不关闭和主按钮关闭。输入只导出一次；触摸、屏幕阅读器遍历及移动端 IME/预测返回仍未经这些桌面测试验证。
+
+完整控件测试最终通过 **2047/2047**，VisualParity 系统测试通过 **124/124**，解决方案构建成功。过程曾出现一次既有 `ButtonTextLayoutTests.MultilineButton_KeepsContentPaddingAtEverySize` 的清理 InvalidOperationException；该类 8/8 单独重跑通过，随后两次完整套件分别 2046/2046、2047/2047 通过，未改动按钮代码或掩盖失败。保留诊断结果于本机 `artifacts/search-test-results` 与相关构建/测试日志；未复现的清理异常原因尚未确定。
