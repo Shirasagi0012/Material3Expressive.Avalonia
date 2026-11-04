@@ -70,7 +70,9 @@ public class CommandBarThemeTests
             Assert.Equal(referenceSurface.Padding, layout.MenuContentPadding);
             Assert.Equal(referenceIcon.Bounds.Width, icon.Bounds.Width);
             Assert.Equal(20, icon.Bounds.Width);
-            Assert.Equal(referenceLabel.Bounds.Left - referenceIcon.Bounds.Right, label.Bounds.Left - icon.Bounds.Right);
+            Assert.Equal(referenceLabel.TranslatePoint(default, reference)!.Value.X -
+                referenceIcon.TranslatePoint(new Point(referenceIcon.Bounds.Width, 0), reference)!.Value.X,
+                label.Bounds.Left - icon.Bounds.Right);
             Assert.Equal(8, label.Bounds.Left - icon.Bounds.Right);
             Assert.Equal(referenceText.FontSize, text.FontSize);
             Assert.Equal(referenceText.FontWeight, text.FontWeight);

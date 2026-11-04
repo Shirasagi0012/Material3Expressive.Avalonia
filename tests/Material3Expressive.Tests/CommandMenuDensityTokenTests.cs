@@ -49,7 +49,8 @@ public class CommandMenuDensityTokenTests
     public void NativeMenu_DynamicSpacingPreservesSlotDirections(bool baseline)
     {
         using var clock = new MotionTestClockScope();
-        var item = new MenuItem { Header = "Action", Icon = new Border { Width = 20, Height = 20 } };
+        var item = new MenuItem { Header = "Action", Icon = new Border { Width = 20, Height = 20 },
+            InputGesture = new Avalonia.Input.KeyGesture(Avalonia.Input.Key.A), Items = { new MenuItem { Header = "Child" } } };
         var window = DialogTests.Show(item);
         try
         {
@@ -58,10 +59,16 @@ public class CommandMenuDensityTokenTests
             var key = baseline ? MaterialTokens.Comp.Menu.BaselineContentSpacing : MaterialTokens.Comp.Menu.VerticalContentSpacing;
             window.Resources[key] = 19d;
             window.UpdateLayout();
-            Assert.Equal(new Thickness(0, 0, 19, 0), Part<Grid>(item, "PART_LeadingIcon").Margin);
-            var trailing = Part<StackPanel>(item, "PART_Trailing");
-            Assert.Equal(new Thickness(19, 0, 0, 0), trailing.Margin);
-            Assert.Equal(19, trailing.Spacing);
+            var leading = Part<Grid>(item, "PART_LeadingIcon");
+            var header = Part<Avalonia.Controls.Presenters.ContentPresenter>(item, "PART_HeaderPresenter");
+            Assert.Equal(19, header.TranslatePoint(default, item)!.Value.X -
+                leading.TranslatePoint(new Point(leading.Bounds.Width, 0), item)!.Value.X);
+            var trailing = Part<Panel>(item, "PART_Trailing");
+            var visible = trailing.Children.Where(child => child.IsVisible).ToArray();
+            Assert.Equal(2, visible.Length); // Native gesture and submenu arrow.
+            Assert.Equal(19, visible[1].Bounds.Left - visible[0].Bounds.Right);
+            Assert.True(trailing.TranslatePoint(default, item)!.Value.X -
+                header.TranslatePoint(new Point(header.Bounds.Width, 0), item)!.Value.X >= 19);
         }
         finally { window.Close(); }
     }

@@ -4,7 +4,7 @@ Material 主题为原生 `Avalonia.Controls.Primitives.ScrollBar` 提供水平/�
 范围、数值、输入及 automation 使用 Avalonia 的公开 API。先完成[公共接入](../../../../docs/GETTING_STARTED.md)，
 实现与已确认适配见 [INTERNALS.md](INTERNALS.md)。
 
-## 最小示例
+## 基础用法
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
@@ -18,7 +18,7 @@ Material 主题为原生 `Avalonia.Controls.Primitives.ScrollBar` 提供水平/�
 原生 ScrollBar 会自动使用 Material 外观，ScrollViewer / TextBox 内部滚动条也一样。
 独立 ScrollBar 只维护数值，不会自行滚动某个内容；普通应用滚动优先使用 [ScrollViewer](../ScrollViewer/README.md)。
 
-## 数值、方向与定制
+## 变体与属性
 
 后续片段使用相同命名空间。下面假设 DataContext 提供可写数值 `ScrollOffset`；
 启用编译绑定的视图还需设置对应 `x:DataType`。
@@ -48,9 +48,40 @@ Material 主题为原生 `Avalonia.Controls.Primitives.ScrollBar` 提供水平/�
 仅加载 MaterialTheme 不会创建这些基础菜单。无需滚动时的可见性和占位规则由原生
 ScrollViewer 决定，不由颜色反馈改变。
 
-## 使用边界
+## 内容槽与定制
 
-这是原生滚动交互与 Material 颜色的适配，既不是 Material3 `nonInteractiveScrollbar`，
+原生滚动条可派生 `MaterialScrollBarTheme`。只读指示使用独立的 `NonInteractiveScrollBar`，
+放在视口上方；不占用额外滚动条空间、不拦截输入，也不提供拖动操作：
+
+```xml
+<Grid Height="240">
+  <ScrollViewer Name="Viewport" VerticalScrollBarVisibility="Hidden">
+    <StackPanel><!-- 实际可滚动内容 --></StackPanel>
+  </ScrollViewer>
+  <m3:NonInteractiveScrollBar
+      ContentSize="{Binding #Viewport.Extent.Height}"
+      ViewportSize="{Binding #Viewport.Viewport.Height}"
+      ScrollOffset="{Binding #Viewport.Offset.Y}" />
+</Grid>
+```
+
+三个滚动读数均为 DIP；水平指示设置 `Orientation="Horizontal"`，分别绑定 `Extent.Width`、
+`Viewport.Width`、`Offset.X`。控件应覆盖整个视口。`IsFadeEnabled="False"` 可保持显示；
+默认仅在偏移变化时显示，停止 400ms 后用 250ms 淡出。内容能放进视口时不绘制。
+
+只读指示默认宽 4 DIP，滑块最短 24 DIP、最长为轨道的 0.9，主轴两端各留 2 DIP；
+`Thickness`、`ThumbMinLength`、`ThumbMaxLengthFraction`、`MainAxisTrackInset`、`CrossAxisTrackInset`
+控制这些值。`ThumbColor` 默认使用 Outline 并将 alpha 设为 0.7；`TrackColor` 默认透明。
+`FadeDelay` / `FadeDuration` 使用 TimeSpan，例如 `FadeDelay="0:0:0.6"`。
+普通 Style、绑定和本地值可覆盖默认配置，清除后恢复 Token。
+
+## 使用限制与注意事项
+
+原生 ScrollBar 是原生滚动交互与 Material 颜色的适配，既不是 Material3 `nonInteractiveScrollbar`，
 也不承诺 Compose 的滑块几何。没有额外禁用颜色规格。
-真实桌面、触屏/触控笔与屏幕阅读器需实际验收；本组件按维护者要求没有 Compose parity suite。
+真实桌面、触屏/触控笔与屏幕阅读器需实际验收；原生 ScrollBar 按维护者要求没有 Compose parity suite；新增只读指示有独立双端套件。
 完整示例见 [ScrollBarDemo](../../../Material3Expressive.Catalog/ScrollBarDemo.axaml)。
+
+只读指示的最大比例须在 0～1 内。轨道小于最小滑块时隐藏；若最大比例计算出的长度小于最小滑块，
+会按其范围约束报错，请同时调整最小长度和最大比例。修改颜色、方向或淡出配置会重置显隐，
+偏移/内容/视口变化则保留当前动画。真实桌面滚动与 DPI 切换仍需实际验收。

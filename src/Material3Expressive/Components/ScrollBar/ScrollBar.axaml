@@ -2,6 +2,22 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:NonInteractiveScrollBar}" TargetType="m3:NonInteractiveScrollBar">
+            <Setter Property="Thickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.Thickness}}" />
+            <Setter Property="ThumbMinLength" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.ThumbMinLength}}" />
+            <Setter Property="ThumbMaxLengthFraction" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.ThumbMaxLengthFraction}}" />
+            <Setter Property="MainAxisTrackInset" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.MainAxisTrackInset}}" />
+            <Setter Property="CrossAxisTrackInset" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.CrossAxisTrackInset}}" />
+            <Setter Property="ThumbColor">
+                <MultiBinding Converter="{x:Static m3:NonInteractiveScrollBarColorConverter.Instance}">
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.ThumbColor}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.ThumbOpacity}" />
+                </MultiBinding>
+            </Setter>
+            <Setter Property="TrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.TrackColor}}" />
+            <Setter Property="FadeDuration" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.FadeDuration}}" />
+            <Setter Property="FadeDelay" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+NonInteractiveScrollBar.FadeDelay}}" />
+        </ControlTheme>
         <ControlTheme x:Key="MaterialScrollBarPageButtonTheme" TargetType="RepeatButton">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Background" Value="Transparent" />

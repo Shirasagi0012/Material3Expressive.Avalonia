@@ -12,9 +12,11 @@
             <Button Content="Standard">
                 <Button.Flyout>
                     <MenuFlyout>
-                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
+                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C"
+                                  m3:MenuAppearance.SupportingText="Copy the current selection" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
-                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True"
+                                  m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" Click="OnToggle" />
                         <Separator />
                         <MenuItem Header="Sort by">
                             <MenuItem Header="Name" ToggleType="Radio" GroupName="StandardSort" IsChecked="True"
@@ -32,9 +34,11 @@
             <Button Content="Vibrant">
                 <Button.Flyout>
                     <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
-                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
+                        <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C"
+                                  m3:MenuAppearance.SupportingText="Copy the current selection" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
-                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True"
+                                  m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" Click="OnToggle" />
                         <Separator />
                         <MenuItem Header="Sort by">
                             <MenuItem Header="Name" ToggleType="Radio" GroupName="VibrantSort" IsChecked="True"

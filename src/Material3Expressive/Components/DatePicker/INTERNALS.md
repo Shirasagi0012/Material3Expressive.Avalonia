@@ -53,9 +53,10 @@ Foundation。
 `date-picker`
 视觉用例允许真实日期文字。这只放宽“用例不得含文字”的限制，不放宽比较容差，也不把失配收成已接受差异。见 [AUTHORING.md](../../../../tests/VisualParity/AUTHORING.md)。
 
+日期输入通过 `DisplayMode.Input` 提供，没有独立公开 `DateInput` 类型；对话框已有独立 [DatePickerDialog](../DatePickerDialog/README.md)，不属于缺失项。
+
 ## 尚未实现或未验证
 
-- 没有独立 `DateInput` 控件，也没有 `DatePickerDialog` 类型。
 - 年份和月份列表没有 Compose LazyList 的吸附、甩动和键盘分页。
 - 标题日期使用 `ddd, MMM d`，未对照 `DatePickerFormatter` 的完整 skeleton。
 - 双端像素差异按维护者要求保留证据，不在本轮继续追修。

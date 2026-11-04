@@ -1,4 +1,4 @@
-# TimePickerDialog
+# TimePickerDialog / VibrantTimePickerDialog
 
 `TimePickerDialog` 是库提供的时间编辑器对话框容器，继承 Foundation Dialog。
 标题、编辑器与动作由调用方提供。对话框不持有时间状态，也不在钟面和输入之间切换。
@@ -53,8 +53,32 @@ Background、Foreground、CornerRadius 可定制 Surface。默认 SurfaceContain
 色调高度从 Dialog.ContainerElevation（Level3）读取，无默认投影。标题和内容继承 Surface 内容色，
 按钮由自身主题提供样式，局部原生属性仍优先。
 
+## Vibrant 变体
+
+`VibrantTimePickerDialog` 同样继承 Foundation Dialog，提供 Content、ConfirmButton、DismissButton、
+ModeToggleButton 及对应 Template。它没有 Title 槽，使用 SurfaceContainer 配色和 ExtraLarge 圆角。
+确认、取消、切换按钮都由应用处理，编辑器自身仍可带标题。
+
+```xml
+<m3:VibrantTimePickerDialog x:Name="PickerDialog" DismissRequested="OnDismissRequested">
+  <m3:TimeInput SelectedTime="{Binding DraftTime, Mode=TwoWay}" />
+  <m3:VibrantTimePickerDialog.ConfirmButton>
+    <Button Content="确定" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" />
+  </m3:VibrantTimePickerDialog.ConfirmButton>
+  <m3:VibrantTimePickerDialog.DismissButton>
+    <Button Content="取消" Click="OnCancel" Theme="{StaticResource MaterialTextButtonTheme}" />
+  </m3:VibrantTimePickerDialog.DismissButton>
+</m3:VibrantTimePickerDialog>
+```
+
+处理器与上面的普通变体相同。例中 DraftTime 是应用的 TimeOnly 编辑值。
+两侧留白各 12 DIP；纵向顶部、底部和内容至动作间距均为 12 DIP。
+横向条件仍为内容宽大于高且高度至少 200 DIP；横向顶部/底部各 12、内容至动作间距 8 DIP，
+有限宿主高度下填满高度，不采用普通变体在 384 DIP 高度处的动作上移。
+`Comp.TimePickerDialog.Vibrant*` Token 可局部覆盖布局和容器色。Catalog 提供独立的打开入口。
+
 ## 使用边界
 
-Defaults 中独立的标题/带 Tooltip 切换按钮辅助组件、VibrantTimePickerDialog 不在此入口范围。
+Defaults 中独立的标题/带 Tooltip 切换按钮辅助组件尚未提供。
 系统/IME inset 和平台安全窗口选项尚未实现；文字像素、真实输入法、屏幕阅读器模态隔离、
 触屏及多显示器 DPI 切换未经桌面验收。离屏几何结果不证明这些能力。

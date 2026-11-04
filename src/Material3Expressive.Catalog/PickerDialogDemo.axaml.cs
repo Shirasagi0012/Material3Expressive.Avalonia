@@ -13,6 +13,7 @@ public partial class PickerDialogDemo : Window
     private DateRange _range;
     private TimeOnly _time = new(14, 30);
     private bool _timeInput;
+    private bool _vibrantTimeInput;
 
     public PickerDialogDemo()
     {
@@ -38,6 +39,29 @@ public partial class PickerDialogDemo : Window
     {
         DraftDial.SelectedTime = _time;
         TimeDialog.IsOpen = true;
+    }
+
+    private void OnOpenVibrantTime(object? sender, RoutedEventArgs e)
+    {
+        VibrantDraftDial.SelectedTime = _time;
+        VibrantTimeDialog.IsOpen = true;
+    }
+
+    private void OnConfirmVibrantTime(object? sender, RoutedEventArgs e)
+    {
+        _time = VibrantDraftDial.SelectedTime;
+        VibrantTimeDialog.IsOpen = false;
+        ShowCommitted();
+    }
+
+    private void OnCancelVibrantTime(object? sender, RoutedEventArgs e) => VibrantTimeDialog.IsOpen = false;
+
+    private void OnToggleVibrantTimeMode(object? sender, RoutedEventArgs e)
+    {
+        _vibrantTimeInput = !_vibrantTimeInput;
+        VibrantDraftDial.IsVisible = !_vibrantTimeInput;
+        VibrantDraftInput.IsVisible = _vibrantTimeInput;
+        VibrantTimeModeButton.Content = _vibrantTimeInput ? "Clock" : "Keyboard";
     }
 
     private void OnConfirmDate(object? sender, RoutedEventArgs e)

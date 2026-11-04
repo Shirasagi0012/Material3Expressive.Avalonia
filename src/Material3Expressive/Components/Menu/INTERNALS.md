@@ -53,6 +53,18 @@ MenuAppearance 在配色变化及 Opening 时把值传到 presenter，再向项�
 原生 IsSelected 表达导航位置，业务选中使用 IsChecked，原生 handler 保有复选 / 单选、命令及关闭顺序。
 PART_Popup / PART_ItemsPresenter 保留原生合约，子菜单使用原生平台宿主及 overlay 回退。
 
+Vertical 项的 `MenuAppearance.SupportingText / SupportingTextTemplate` 对应上游
+`LabelWithSupportingText`：LabelLarge 与 BodyMedium 纵向排列、无额外间距，内容或模板存在时选用
+SupportingItemMargin，否则使用 ItemMargin。Margin 仍是主题 Setter，普通 Style / 本地值优先。
+`TrailingContent / TrailingContentTemplate` 复用 DropdownMenuSlotPresenter 保留 Box 的最小宽度及小内容居中，
+使用 TrailingIconSize 和 trailing content 颜色。原生 InputGesture 与子菜单箭头仍单独保留，
+三者按 VerticalContentSpacing 排列；尾部容器可见性绑定为 Template 优先级，允许原生子菜单触发器显示箭头。
+内部 NativeMenuRow 按 leading → label/supporting → trailing 顺序测量，间距受剩余宽度约束；
+主行把最后的尾部槽放到末端。不能用 Auto,*,Auto Grid 先预留尾部宽度。
+尾部 presenter 的 PreferredMinWidth 只影响自身首选尺寸，不向内容传播，且受传入约束限制；
+这保留上游 defaultMinSize 的小内容居中与窄行收缩。内部行也用于组合尾部内容，不扩展公共布局框架。
+Baseline 模板不读取这四个附加属性。这是本次非破坏性组件 API 授权内的原生框架适配。
+
 原生 Background 保持目标配置，Chrome.PaintedBrush 提供呈现值。仅纯色且 Opacity=1 的画刷使用 FastEffects，其他画刷直接呈现。
 重定向先等待旧任务取消清理再启动新动画。Surface 复用 ButtonSurfaceState 选择选中形状，Chrome 桥接原生 MenuItem 的 Enter 反馈。
 卸载和模板替换释放动画、订阅及键盘处理器，PopupRoot 继承既有动画作用域。
@@ -68,20 +80,21 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
 - 菜单栏的公开 `MaterialMenuBarItemTheme` 名称仍待维护者确认，可选容器式菜单栏也处于未实现提议阶段。
-- 尚未实现任意 Shape / CutCornerShape、任意 Arrangement、系统平台 inset 与预测返回。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变、专用 supporting / trailing 槽和选中图标显隐动画。
+- 尚未实现任意 Shape / CutCornerShape、任意 Arrangement、系统平台 inset 与预测返回。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变和选中图标显隐动画。
 - `menu-source` 的部分 Core 重复及额外截图存在最大单通道 1 的不稳定像素，稳定性门禁保留失败。原生无阴影外观与上游仍有已接受差异，历史暗色圆角边缘结果不能作为当前 Surface 裁剪的隔离证据。
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
 ## 4. 验证入口
 
 - `DropdownMenuTests` 检查独立 Popup、受控输入、定位、滚动、反向、分组和选中图标生命周期。
-- `MenuTests` 检查原生 flyout、菜单栏、子菜单、主题优先级及原生行为。
+- `MenuTests` 检查原生 flyout、菜单栏、子菜单、主题优先级及原生行为，新增槽的排版、Token 更新、快捷键与子菜单并存和原生激活。
 - `MenuInteractionSourceTests` 检查项目和组的源替换、原生配对与模板重建，`CommandMenuDensityTokenTests` 检查尺寸覆盖。
-- 双端族为 `dropdown-menu-item`、`dropdown-menu`、`menu`、`menu-container`、`menu-source`、`menu-group-source`。Baseline 夹具需提供外层菜单表面的 content color。
+- 双端族为 `dropdown-menu-item`、`dropdown-menu`、`menu`、`menu-container`、`menu-source`、`menu-group-source`、`native-menu-supporting`。新增槽族覆盖 Standard / Vibrant、选中/禁用、RTL、暗色、模板独立使用、窄宽度及动态移除/恢复。Baseline 夹具需提供外层菜单表面的 content color。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~MenuTests|FullyQualifiedName~MenuInteractionSourceTests|FullyQualifiedName~CommandMenuDensityTokenTests'
 ./tests/VisualParity/parity.ps1 self-test --family dropdown-menu
 ./tests/VisualParity/parity.ps1 self-test --family menu-source
 ./tests/VisualParity/parity.ps1 self-test --family menu-group-source
+./tests/VisualParity/parity.ps1 self-test --family native-menu-supporting --require-match
 ```

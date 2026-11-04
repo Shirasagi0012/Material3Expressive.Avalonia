@@ -29,7 +29,7 @@
         <Setter Property="MinimumContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}" />
         <Setter Property="MinimumInteractiveHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" />
       </Style>
-      <Style Selector="^:not(:separator) /template/ StackPanel#PART_Trailing">
+      <Style Selector="^:not(:separator) /template/ m3|NativeMenuRow#PART_Trailing">
         <Setter Property="IsVisible" Value="False" />
       </Style>
       <Style Selector="^:not(:separator) /template/ Popup#PART_Popup">

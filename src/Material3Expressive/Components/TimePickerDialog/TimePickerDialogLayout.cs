@@ -2,11 +2,13 @@ using Avalonia;
 using static Material3Expressive.Tokens.MaterialTokens;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Overlays;
 
 namespace Material3Expressive.Components;
 
-// Direct translation of fixed TimePickerCustomLayout: content is measured before
-// title/actions; input content below the 200 DIP dial minimum always uses portrait.
+// Fixed TimePickerCustomLayout and VibrantTimePickerCustomLayout. The vibrant
+// template omits the first (title) child. Content is measured before title/actions;
+// input content below the 200 DIP dial minimum always uses portrait.
 internal sealed class TimePickerDialogLayout : Panel
 {
     public static readonly StyledProperty<double> HorizontalPaddingProperty = AvaloniaProperty.Register<TimePickerDialogLayout, double>(nameof(HorizontalPadding), 24d);
@@ -21,41 +23,43 @@ internal sealed class TimePickerDialogLayout : Panel
     public double LandscapeActionsSpacing { get => GetValue(LandscapeActionsSpacingProperty); set => SetValue(LandscapeActionsSpacingProperty, value); }
     public static readonly StyledProperty<double> LandscapeTallActionsOffsetProperty = AvaloniaProperty.Register<TimePickerDialogLayout, double>(nameof(LandscapeTallActionsOffset), 16d);
     public double LandscapeTallActionsOffset { get => GetValue(LandscapeTallActionsOffsetProperty); set => SetValue(LandscapeTallActionsOffsetProperty, value); }
-    static TimePickerDialogLayout() => AffectsMeasure<TimePickerDialogLayout>(HorizontalPaddingProperty, VerticalPaddingProperty, LandscapeAdditionalHeightProperty, LandscapeContentTopOffsetProperty, LandscapeActionsSpacingProperty, LandscapeTallActionsOffsetProperty);
+    public static readonly StyledProperty<double> PortraitActionsSpacingProperty = AvaloniaProperty.Register<TimePickerDialogLayout, double>(nameof(PortraitActionsSpacing));
+    public double PortraitActionsSpacing { get => GetValue(PortraitActionsSpacingProperty); set => SetValue(PortraitActionsSpacingProperty, value); }
+    static TimePickerDialogLayout() => AffectsMeasure<TimePickerDialogLayout>(HorizontalPaddingProperty, VerticalPaddingProperty, LandscapeAdditionalHeightProperty, LandscapeContentTopOffsetProperty, LandscapeActionsSpacingProperty, LandscapeTallActionsOffsetProperty, PortraitActionsSpacingProperty);
     private bool _landscape;
     private double _layoutWidth, _layoutHeight;
     protected override bool BypassFlowDirectionPolicies => true;
     protected override Size MeasureOverride(Size availableSize)
     {
-        var title = Children[0];
-        var content = Children[1];
-        var actions = Children[2];
+        var title = Children.Count == 3 ? Children[0] : null;
+        var content = Children[^2];
+        var actions = Children[^1];
         // Surface propagates the caller's minimum width to the content Column.
         // Avalonia Measure carries only a maximum, so preserve that minimum on
         // the template-owned Column container; its presenter still measures with minWidth=0.
-        var owner = (TimePickerDialog)TemplatedParent!;
+        var owner = (Dialog)TemplatedParent!;
         content.MinWidth = Math.Min(availableSize.Width, double.IsNaN(owner.Width) ? owner.MinWidth : Math.Max(owner.MinWidth, owner.Width));
         content.Measure(availableSize);
         var size = content.DesiredSize;
         _landscape = size.Width > size.Height && size.Height >= 200;
         _layoutWidth = size.Width + HorizontalPadding * 2;
         actions.Measure(new Size(size.Width, availableSize.Height));
-        title.Measure(new Size(size.Width, availableSize.Height));
+        title?.Measure(new Size(size.Width, availableSize.Height));
         _layoutHeight = _landscape
             ? double.IsFinite(availableSize.Height) ? availableSize.Height : size.Height + actions.DesiredSize.Height + LandscapeAdditionalHeight
-            : VerticalPadding * 2 + title.DesiredSize.Height + size.Height + actions.DesiredSize.Height;
+            : VerticalPadding * 2 + (title?.DesiredSize.Height ?? 0) + size.Height + actions.DesiredSize.Height + PortraitActionsSpacing;
         return new Size(_layoutWidth, _layoutHeight);
     }
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var title = Children[0];
-        var content = Children[1];
-        var actions = Children[2];
+        var title = Children.Count == 3 ? Children[0] : null;
+        var content = Children[^2];
+        var actions = Children[^1];
         // Compose place() uses physical coordinates, including in RTL.
         var offset = (finalSize.Width - _layoutWidth) / 2;
         var offsetY = (finalSize.Height - _layoutHeight) / 2;
-        title.Arrange(new Rect(offset + HorizontalPadding, offsetY + VerticalPadding, title.DesiredSize.Width, title.DesiredSize.Height));
-        var y = offsetY + VerticalPadding + title.DesiredSize.Height;
+        if (title is not null) title.Arrange(new Rect(offset + HorizontalPadding, offsetY + VerticalPadding, title.DesiredSize.Width, title.DesiredSize.Height));
+        var y = offsetY + VerticalPadding + (title?.DesiredSize.Height ?? 0);
         double actionsY;
         if (_landscape)
         {
@@ -63,7 +67,7 @@ internal sealed class TimePickerDialogLayout : Panel
             y = offsetY + LandscapeContentTopOffset + remaining / 2;
             actionsY = y + content.DesiredSize.Height + LandscapeActionsSpacing - (_layoutHeight >= 384 ? LandscapeTallActionsOffset : 0) + remaining / 2;
         }
-        else actionsY = y + content.DesiredSize.Height;
+        else actionsY = y + content.DesiredSize.Height + PortraitActionsSpacing;
         content.Arrange(new Rect(offset + HorizontalPadding, y, content.DesiredSize.Width, content.DesiredSize.Height));
         actions.Arrange(new Rect(offset + HorizontalPadding, actionsY, content.DesiredSize.Width, actions.DesiredSize.Height));
         return finalSize;

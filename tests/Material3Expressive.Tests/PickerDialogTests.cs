@@ -17,6 +17,38 @@ namespace Material3Expressive.Tests;
 
 public class PickerDialogTests
 {
+    [AvaloniaTheory]
+    [InlineData(199, 283)]
+    [InlineData(200, 500)]
+    public void Vibrant_UsesItsOwnInsetsAndNoTitle(double height, double expectedHeight)
+    {
+        using var clock = new MotionTestClockScope();
+        var content = new Border { Width = 400, Height = height };
+        var dialog = new VibrantTimePickerDialog { Content = content, ConfirmButton = new Border { Width = 80, Height = 48 },
+            IsOpen = true, AnimateTransition = false };
+        var window = DialogTests.Show(new Grid { Children = { dialog } }, 500);
+        try
+        {
+            var container = Part(window, "PART_Container");
+            Assert.False(dialog.UsePlatformDefaultWidth);
+            Assert.Equal(new Size(424, expectedHeight), container.Bounds.Size);
+            Assert.DoesNotContain(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "PART_Title");
+            window.Resources[Comp.Dialog.ContainerShape] = new CornerRadius(3); Flush(window);
+            Assert.Equal(new CornerRadius(28), dialog.CornerRadius);
+            window.Resources[Sys.Shape.ExtraLarge] = new CornerRadius(20); Flush(window);
+            Assert.Equal(new CornerRadius(20), dialog.CornerRadius);
+            if (height == 199) Assert.Equal(new Point(12, 12), content.TranslatePoint(default, container));
+            window.Resources[Comp.TimePickerDialog.VibrantHorizontalPadding] = 18d; Flush(window);
+            Assert.Equal(436, container.Bounds.Width);
+            window.Resources[Comp.TimePickerDialog.VibrantContainerColor] = Colors.Red; Flush(window);
+            Assert.Equal(Colors.Red, Assert.IsAssignableFrom<ISolidColorBrush>(dialog.Background).Color);
+            Avalonia.Controls.Documents.TextElement.SetForeground((Control)window.Content!, Brushes.Green);
+            dialog.Background = Brushes.Transparent; Flush(window);
+            Assert.Equal(Colors.Green, Assert.IsAssignableFrom<ISolidColorBrush>(dialog.Foreground).Color);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaFact]
     public void Date_ReservesActions_AndCollapsesWithContent()
     {
@@ -71,17 +103,20 @@ public class PickerDialogTests
     }
 
     [AvaloniaTheory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ActionsAndDismissalRemainCallerOwned_AndEmptyTemplatesOccupySlots(bool date)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void ActionsAndDismissalRemainCallerOwned_AndEmptyTemplatesOccupySlots(int kind)
     {
+        var date = kind == 0;
         using var clock = new MotionTestClockScope();
         var confirm = new Button { Content = "Confirm" };
         var dismiss = new Button { Content = "Cancel" };
         var empty = new FuncDataTemplate<object>((_, _) => new Border());
         Dialog dialog = date
             ? new DatePickerDialog { ConfirmButton = confirm, DismissButton = dismiss, DismissButtonTemplate = null }
-            : new TimePickerDialog { ConfirmButton = confirm, DismissButton = dismiss, Title = "Time", ModeToggleButtonTemplate = empty };
+            : kind == 1 ? new TimePickerDialog { ConfirmButton = confirm, DismissButton = dismiss, Title = "Time", ModeToggleButtonTemplate = empty }
+            : new VibrantTimePickerDialog { ConfirmButton = confirm, DismissButton = dismiss, ModeToggleButtonTemplate = empty };
         dialog.Content = new TextBox { Text = "Caller editor", Width = 256, Height = 100 };
         dialog.IsOpen = true; dialog.AnimateTransition = false;
         var count = 0; confirm.Click += (_, _) => count++; dismiss.Click += (_, _) => count++;

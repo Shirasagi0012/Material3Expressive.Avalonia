@@ -52,7 +52,9 @@ private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 <Button Content="原生菜单">
   <Button.Flyout>
     <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
-      <MenuItem Header="只读" ToggleType="CheckBox" IsChecked="True" StaysOpenOnClick="True" />
+      <MenuItem Header="只读" ToggleType="CheckBox" IsChecked="True" StaysOpenOnClick="True"
+                m3:MenuAppearance.SupportingText="保护文件内容"
+                m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" />
       <MenuItem Header="排序">
         <MenuItem Header="名称" ToggleType="Radio" GroupName="Sort" IsChecked="True" />
         <MenuItem Header="日期" ToggleType="Radio" GroupName="Sort" />
@@ -91,6 +93,12 @@ MenuAppearance.ColorStyle 可从 Popup 传到组和项目。Padding、CornerRadi
 Offset 使用 DIP，X 随 RTL 反向，PositionProvider 使用物理像素。AnchorPosition 的 Left / Right 与逻辑 Start / End 行为一致。
 DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
+原生 Vertical 项支持 `MenuAppearance.SupportingText` / `SupportingTextTemplate` 和
+`MenuAppearance.TrailingContent` / `TrailingContentTemplate`。辅助文字使用 BodyMedium，位于标题下方；
+尾部内容最小宽度为 20 DIP，小内容居中。只设置模板也会显示对应槽。
+尾部内容可与原生 InputGesture 和子菜单箭头并存，依次排列；辅助文字存在时项目外边距为 4×2 DIP。
+这些附加属性不改变原生点击、命令、选择和关闭逻辑，Baseline 项不呈现新增槽。
+
 原生菜单保留 ItemsSource、ItemTemplate、显式 ItemContainerTheme 和 MenuItem.Theme。
 菜单栏可直接组合原生 MenuItem，标签中的下划线定义访问键。
 
@@ -107,7 +115,7 @@ DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 ## 使用限制与注意事项
 
 独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。形状配置使用圆角，平台系统 inset 和预测返回尚未提供。
-原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。原生 flyout 的组级形变、专用辅助文字槽和开闭动画尚未提供。
+原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。原生 flyout 的组级形变和开闭动画尚未提供。
 菜单栏沿用 Alt 访问键与方向键，当前原生版本的 F10 激活尚未实现。公开菜单栏 keyed 主题仍有待确认，维护状态见内部契约。
 
 [MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml)展示独立和原生菜单，[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml)展示菜单栏。

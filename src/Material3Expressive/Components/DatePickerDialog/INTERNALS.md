@@ -38,8 +38,8 @@ Content 由实际 presenter 持有逻辑关系，使其继承 Surface 环境。
 
 ## 验证与范围
 
-维护者明确限定为两个同名 Dialog 容器入口。DatePicker、TimePicker、TimeInput 本体，
-VibrantTimePickerDialog、Defaults 标题/带 Tooltip 模式按钮辅助组件不在本次范围，也未声称已实现。
+原始移植授权限定为两个同名 Dialog 容器入口，不包括编辑器本体、Vibrant 变体或 Defaults 辅助组件。
+后续新增的 VibrantTimePickerDialog 由 [TimePickerDialog](../TimePickerDialog/INTERNALS.md) 维护；Defaults 标题/带 Tooltip 模式按钮仍未提供。
 
 - [PickerDialogTests](../../../../tests/Material3Expressive.Tests/PickerDialogTests.cs)：内容分配、按钮间距、
   槽模板、Token 更新、文字环境、真实点击、关闭请求、重开和卸载。

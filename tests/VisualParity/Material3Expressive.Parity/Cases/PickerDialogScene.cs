@@ -39,7 +39,7 @@ internal sealed class PickerDialogScene
             scope.Register(layers.Name, layers); return layers;
         });
         mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
-        Dialog = config.Date ? new DatePickerDialog() : new TimePickerDialog();
+        Dialog = config.Date ? new DatePickerDialog() : config.Vibrant ? new VibrantTimePickerDialog() : new TimePickerDialog();
         Dialog.AnimateTransition = config.Action is "transition" or "interrupt" or "immediate";
         Dialog.IsOpen = !Dialog.AnimateTransition;
         Dialog.UsePlatformDefaultWidth = config.PlatformWidth;
@@ -62,11 +62,18 @@ internal sealed class PickerDialogScene
             var toggle = Create("toggle", 40, 48);
             time.ModeToggleButton = config.Toggle ? toggle : null;
         }
+        else if (Dialog is VibrantTimePickerDialog vibrant)
+        {
+            vibrant.ConfirmButton = confirm; vibrant.DismissButton = config.Dismiss ? dismiss : null;
+            var toggle = Create("toggle", 40, 48);
+            vibrant.ModeToggleButton = config.Toggle ? toggle : null;
+        }
         if (config.Colors == "custom") { Dialog.Background = Brush.Parse("#E0F0E8"); Dialog.CornerRadius = new CornerRadius(12); }
         else if (config.Colors == "surface") Dialog.Background = Brush.Parse("#FFFBFE");
         else if (config.Colors == "transparent") Dialog.Background = Brushes.Transparent;
         else if (config.Colors == "primary") Dialog.Background = Brush.Parse("#6750A4");
         Root = new Grid { Children = { Dialog } };
+        if (config.Ambient is not null) TextElement.SetForeground(Root, Brush.Parse(config.Ambient));
     }
 
     Marker Create(string id, double width, double height, IBrush? fixedBrush = null)
@@ -92,6 +99,7 @@ internal sealed class PickerDialogScene
     {
         CaseDefaults.SetThemeColors(host, dark);
         host.Window.Resources[Sys.Color.SurfaceContainerHigh] = Color.Parse(dark ? "#2B2930" : "#ECE6F0");
+        host.Window.Resources[Sys.Color.SurfaceContainer] = Color.Parse(dark ? "#211F26" : "#F3EDF7");
         host.Window.Resources[Sys.Color.Secondary] = Color.Parse(dark ? "#CCC2DC" : "#625B71");
         host.Window.Resources[Sys.Color.Surface] = Color.Parse(dark ? "#141218" : "#FFFBFE");
     }
@@ -169,6 +177,7 @@ internal sealed class PickerDialogScene
                 void Slots(bool visible)
                 {
                     if (scene.Dialog is DatePickerDialog date) date.DismissButton = visible ? scene.markers["dismiss"] : null;
+                    if (scene.Dialog is VibrantTimePickerDialog vibrant) { vibrant.DismissButton = visible ? scene.markers["dismiss"] : null; vibrant.ModeToggleButton = visible ? scene.markers["toggle"] : null; }
                     if (scene.Dialog is TimePickerDialog time) { time.DismissButton = visible ? scene.markers["dismiss"] : null; time.ModeToggleButton = visible ? scene.markers["toggle"] : null; }
                 }
                 Change(1000, "remove-slots", () => Slots(false));

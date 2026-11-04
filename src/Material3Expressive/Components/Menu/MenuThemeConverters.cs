@@ -25,6 +25,12 @@ internal sealed class MenuColorConverter : IMultiValueConverter
 
 internal static class MenuSpacingConverters
 {
+    public static IMultiValueConverter SupportingMargin { get; } = new FuncMultiValueConverter<object?, object>(values =>
+    {
+        var inputs = values.ToArray();
+        if (inputs is not [var content, var template, Thickness normal, Thickness supporting]) return AvaloniaProperty.UnsetValue;
+        return content is not null || template is not null ? supporting : normal;
+    });
     public static IMultiValueConverter LeadingMargin { get; } = new FuncMultiValueConverter<object?, Thickness>(values =>
         values.ToArray() is [double spacing] ? new Thickness(0, 0, spacing, 0) : default);
 

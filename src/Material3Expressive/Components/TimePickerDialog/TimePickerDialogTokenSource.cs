@@ -9,6 +9,13 @@ public sealed class TimePickerDialogTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TimePickerDialog.VibrantHorizontalPadding] = 12d,
+        [Comp.TimePickerDialog.VibrantVerticalPadding] = 12d,
+        [Comp.TimePickerDialog.VibrantLandscapeAdditionalHeight] = 32d,
+        [Comp.TimePickerDialog.VibrantLandscapeContentTopOffset] = 12d,
+        [Comp.TimePickerDialog.VibrantLandscapeActionsSpacing] = 8d,
+        [Comp.TimePickerDialog.VibrantPortraitActionsSpacing] = 12d,
+        [Comp.TimePickerDialog.VibrantContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),
         [Comp.TimePickerDialog.HorizontalPadding] = 24.0d,
         [Comp.TimePickerDialog.VerticalPadding] = 24.0d,
         [Comp.TimePickerDialog.LandscapeAdditionalHeight] = 28.0d,

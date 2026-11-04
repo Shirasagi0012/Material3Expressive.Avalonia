@@ -19,6 +19,92 @@ namespace Material3Expressive.Tests;
 public class MenuTests
 {
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeTrailingContent_CentersSmallContentAndPreservesGestureAndSubmenu(bool templateOnly)
+    {
+        using var clock = new MotionTestClockScope();
+        var marker = new Border { Width = 8, Height = 12 };
+        var item = new MenuItem { Header = "Title", InputGesture = new KeyGesture(Key.C, KeyModifiers.Control),
+            Items = { new MenuItem { Header = "Child" } } };
+        if (templateOnly) MenuAppearance.SetTrailingContentTemplate(item, new FuncDataTemplate<object?>((_, _) => marker));
+        else MenuAppearance.SetTrailingContent(item, marker);
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var trailing = item.GetVisualDescendants().OfType<NativeMenuRow>().Single(p => p.Name == "PART_Trailing");
+            var slot = Assert.IsType<DropdownMenuSlotPresenter>(trailing.Children[0]);
+            Assert.Same(marker, slot.Child); Assert.Equal(20, slot.Bounds.Width);
+            Assert.Equal(6, marker.Bounds.X); Assert.Equal(new Size(8, 12), marker.Bounds.Size);
+            Assert.All(trailing.Children, child => Assert.True(child.IsVisible));
+            item.Resources[MaterialTokens.Comp.Menu.TrailingIconSize] = 24d; Flush(window);
+            Assert.Equal(24, slot.Bounds.Width); Assert.Equal(8, marker.Bounds.X);
+            MenuAppearance.SetTrailingContent(item, null); MenuAppearance.SetTrailingContentTemplate(item, null); Flush(window);
+            Assert.False(slot.IsVisible); Assert.True(trailing.IsVisible);
+            item.InputGesture = null; Flush(window); Assert.False(trailing.Children[1].IsVisible);
+            Assert.True(trailing.IsVisible); Assert.True(trailing.Children[2].IsVisible);
+            item.Items.Clear(); Flush(window); Assert.False(trailing.IsVisible);
+            MenuAppearance.SetTrailingContent(item, marker); Flush(window); Assert.True(trailing.IsVisible);
+            flyout.Hide(); flyout.ShowAt((Control)window.Content!); Flush(window);
+            Assert.Same(marker, slot.Child);
+            var clicks = 0; item.Click += (_, _) => clicks++;
+            Click(window, item); Assert.Equal(1, clicks); Assert.False(flyout.IsOpen);
+        }
+        finally { flyout.Hide(); window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeSupportingText_PreservesBodyTypographyTemplateOnlyAndNativeActivation(bool templateOnly)
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new MenuItem { Header = "Title", ToggleType = MenuItemToggleType.CheckBox, StaysOpenOnClick = true };
+        if (templateOnly) MenuAppearance.SetSupportingTextTemplate(item, new FuncDataTemplate<object?>((_, _) => new TextBlock { Text = "Description" }));
+        else MenuAppearance.SetSupportingText(item, "Description");
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var supporting = item.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>()
+                .Single(p => p.Name == "PART_SupportingPresenter");
+            var text = Assert.IsType<TextBlock>(supporting.Child);
+            Assert.Equal("Description", text.Text); Assert.Equal(14, text.FontSize);
+            Assert.Equal(new Thickness(4, 2), item.Margin);
+            var clicks = 0; item.Click += (_, _) => clicks++;
+            Click(window, item); Assert.Equal(1, clicks); Assert.True(item.IsChecked); Assert.True(flyout.IsOpen);
+            MenuAppearance.SetSupportingText(item, null); MenuAppearance.SetSupportingTextTemplate(item, null); Flush(window);
+            Assert.False(supporting.IsVisible); Assert.Equal(new Thickness(4, 0), item.Margin);
+            MenuAppearance.SetSupportingText(item, "Restored"); Flush(window);
+            Assert.True(supporting.IsVisible); Assert.Equal("Restored", Assert.IsType<TextBlock>(supporting.Child).Text);
+            flyout.Hide(); flyout.ShowAt((Control)window.Content!); Flush(window);
+            Assert.Equal("Restored", MenuAppearance.GetSupportingText(item));
+        }
+        finally { flyout.Hide(); window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void NativeSupportingText_MarginKeepsTokenAndCallerStylePriority()
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new MenuItem { Header = "Title" };
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            item.Resources[MaterialTokens.Comp.Menu.SupportingItemMargin] = new Thickness(8, 3);
+            MenuAppearance.SetSupportingText(item, new Border { Width = 80, Height = 12 }); Flush(window);
+            Assert.Equal(new Thickness(8, 3), item.Margin);
+            item.Styles.Add(new Style(s => s.OfType<MenuItem>()) { Setters = { new Setter(Control.MarginProperty, new Thickness(1)) } });
+            Flush(window); Assert.Equal(new Thickness(1), item.Margin);
+            MenuAppearance.SetSupportingText(item, null); Flush(window); Assert.Equal(new Thickness(1), item.Margin);
+            item.Styles.Clear(); Flush(window); Assert.Equal(new Thickness(4, 0), item.Margin);
+        }
+        finally { flyout.Hide(); window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData(false, false, true)]
     [InlineData(false, true, true)]
     [InlineData(true, false, true)]

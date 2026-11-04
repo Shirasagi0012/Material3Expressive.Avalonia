@@ -18,6 +18,17 @@ namespace Material3Expressive.Components;
 // non-stretched content, so small icons need their measured child size here.
 internal sealed class DropdownMenuSlotPresenter : ContentPresenter
 {
+    public static readonly StyledProperty<double> PreferredMinWidthProperty =
+        AvaloniaProperty.Register<DropdownMenuSlotPresenter, double>(nameof(PreferredMinWidth));
+    public double PreferredMinWidth { get => GetValue(PreferredMinWidthProperty); set => SetValue(PreferredMinWidthProperty, value); }
+    static DropdownMenuSlotPresenter() => AffectsMeasure<DropdownMenuSlotPresenter>(PreferredMinWidthProperty);
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var size = base.MeasureOverride(availableSize);
+        return new(Math.Min(availableSize.Width, Math.Max(PreferredMinWidth, size.Width)), size.Height);
+    }
+
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (Child is { } child)

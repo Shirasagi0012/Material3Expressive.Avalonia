@@ -24,7 +24,7 @@ data class PickerDialogConfig(val date:Boolean=false,val dismiss:Boolean=true,va
     val dark:Boolean=false,val rtl:Boolean=false,val platformWidth:Boolean=false,
     val width:Double?=null,val height:Double?=null,val hostWidth:Int=640,val hostHeight:Int=640,
     val contentWidth:Double=256.0,val contentHeight:Double=300.0,val buttonWidth:Double=80.0,
-    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true)
+    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val vibrant:Boolean=false,val ambient:String?=null)
 
 @ParitySuite("date-picker-dialog")
 class DatePickerDialogCases {
@@ -33,6 +33,12 @@ class DatePickerDialogCases {
 }
 @ParitySuite("time-picker-dialog")
 class TimePickerDialogCases {
+    @ParityScenario("static") suspend fun static(writer:CaptureWriter) = capturePickerDialog(writer,false)
+    @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter) = capturePickerDialog(writer,true)
+}
+
+@ParitySuite("vibrant-time-picker-dialog")
+class VibrantTimePickerDialogCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter) = capturePickerDialog(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter) = capturePickerDialog(writer,true)
 }
@@ -131,7 +137,8 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
     val painted=mutableMapOf<String,Color>()
     @Composable fun Content() {
         MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(surface=Color(0xFFFFFBFE))) {
-            CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                LocalContentColor provides (config.ambient?.let { Color(it.removePrefix("#").toLong(16)) } ?: LocalContentColor.current)) {
                 Box(Modifier.fillMaxSize().background(Color.White))
                 if(open) {
                     var modifier=container.modifier()
@@ -142,7 +149,7 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
                     val color=when(config.colors) {
                         "custom" -> Color(0xFFE0F0E8); "surface" -> MaterialTheme.colorScheme.surface;
                         "transparent" -> Color.Transparent; "primary" -> MaterialTheme.colorScheme.primary;
-                        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                        else -> if(config.vibrant) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
                     }
                     if(config.date) {
                         DatePickerDialog(onDismissRequest={requests++}, confirmButton={Marker("confirm",buttonWidth,40.0)},
@@ -151,6 +158,14 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
                             colors=DatePickerDefaults.colors(containerColor=color),
                             shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else DatePickerDefaults.shape,
                             tonalElevation=if(config.colors=="surface") 6.dp else DatePickerDefaults.TonalElevation) {
+                            Marker("content",config.contentWidth,contentHeight)
+                        }
+                    } else if(config.vibrant) {
+                        VibrantTimePickerDialog(onDismissRequest={requests++}, confirmButton={Marker("confirm",buttonWidth,40.0)},
+                            dismissButton=if(dismiss) ({Marker("dismiss",config.buttonWidth,40.0)}) else null,
+                            modeToggleButton=if(toggle) ({Marker("toggle",40.0,48.0)}) else null,
+                            modifier=modifier, properties=properties, containerColor=color,
+                            shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else TimePickerDialogDefaults.vibrantShape) {
                             Marker("content",config.contentWidth,contentHeight)
                         }
                     } else {

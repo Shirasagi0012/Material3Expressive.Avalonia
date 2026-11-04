@@ -335,7 +335,7 @@ public sealed class MenuBarThemeTests
         menu.Items.Add(tiny); Flush(window);
         Assert.Equal(48, tiny.Bounds.Width);
         // No gesture text or chevron on the bar, even for an item with a submenu.
-        Assert.False(Part<StackPanel>(file, "PART_Trailing").IsVisible);
+        Assert.False(Part<Control>(file, "PART_Trailing").IsVisible);
         window.Close();
     }
 
@@ -403,7 +403,7 @@ public sealed class MenuBarThemeTests
         Assert.Same(vertical, recent.Theme);
         Assert.True(open.Bounds.Width >= 112);
         // Gesture text and the submenu chevron are the vertical item's.
-        Assert.True(Part<StackPanel>(open, "PART_Trailing").IsVisible);
+        Assert.True(Part<Control>(open, "PART_Trailing").IsVisible);
         Assert.True(Part<Viewbox>(recent, "PART_Chevron").IsVisible);
         Assert.Equal(new Thickness(12, 2), file.Items.OfType<Separator>().Single().Margin);
 

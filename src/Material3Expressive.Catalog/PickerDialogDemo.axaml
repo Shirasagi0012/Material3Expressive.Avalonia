@@ -8,6 +8,7 @@
       <Button Content="Open date dialog" Click="OnOpenDate" HorizontalAlignment="Left" />
       <Button Content="Open date range dialog" Click="OnOpenRange" HorizontalAlignment="Left" />
       <Button Content="Open time dialog" Click="OnOpenTime" HorizontalAlignment="Left" />
+      <Button Content="Open vibrant time dialog" Click="OnOpenVibrantTime" HorizontalAlignment="Left" />
       <TextBlock x:Name="Result" TextWrapping="Wrap" />
     </StackPanel>
     <m3:DatePickerDialog x:Name="DateDialog" DismissRequested="OnDismissRequested">
@@ -36,5 +37,18 @@
       <m3:TimePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.ConfirmButton>
       <m3:TimePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.DismissButton>
     </m3:TimePickerDialog>
+    <m3:VibrantTimePickerDialog x:Name="VibrantTimeDialog" DismissRequested="OnDismissRequested">
+      <Grid>
+        <m3:TimePicker x:Name="VibrantDraftDial" Layout="Vertical" />
+        <m3:TimeInput x:Name="VibrantDraftInput" IsVisible="False"
+                      SelectedTime="{Binding #VibrantDraftDial.SelectedTime, Mode=TwoWay}"
+                      Is24Hour="{Binding #VibrantDraftDial.Is24Hour, Mode=TwoWay}" />
+      </Grid>
+      <m3:VibrantTimePickerDialog.ModeToggleButton>
+        <Button x:Name="VibrantTimeModeButton" Content="Keyboard" Click="OnToggleVibrantTimeMode" Theme="{StaticResource MaterialTextButtonTheme}" />
+      </m3:VibrantTimePickerDialog.ModeToggleButton>
+      <m3:VibrantTimePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmVibrantTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:VibrantTimePickerDialog.ConfirmButton>
+      <m3:VibrantTimePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelVibrantTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:VibrantTimePickerDialog.DismissButton>
+    </m3:VibrantTimePickerDialog>
   </Grid>
 </Window>
