@@ -82,6 +82,8 @@ Catalog 的时间页面提供该状态开关，并展示绑定到同一时间的
 ## 限制
 
 滚动列使用 Avalonia 的循环选择面板，不是 Compose `VerticalPager`。拖动和惯性不保证相同。
-滚动数字的上游选中排版与颜色动画尚未补齐。侧栏 48dp 是布局分配，现有输入层尚不把触摸命中扩展到 40dp 视觉外缘。
+滚动数字在选中时从 DisplayMedium 过渡到 DisplayLargeEmphasized，颜色从 Outline 过渡到 OnSurface；切换途中可以反向。
+可覆盖对应的 Typography、颜色和 FastSpatial 动效 Token。滚动项默认高度为 `200 / 3` DIP，可通过 `Comp.TimeScroll.ItemHeight` 覆盖，改变高度不会改变所选时间。
+原生滚动选中提交与参考端的动画启动仍有时序差异。侧栏 48dp 是布局分配，现有输入层尚不把触摸命中扩展到 40dp 视觉外缘。
 视觉用例包含真实时间数字；失配需要单独看，不表示外观已经被接受。维护说明见 [INTERNALS.md](INTERNALS.md)。
 Catalog 的 “Date / time pickers” 页面同时放了这三种入口。确认对话框见 “Picker dialogs”。

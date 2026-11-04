@@ -13,6 +13,7 @@
 | `TimePicker`、钟面、`AnalogTimePickerState` | [TimePicker.cs](TimePicker.cs)、[ClockFace.cs](ClockFace.cs) |
 | `TimeInput`、`timeInputOnChange`、小时/分钟合法性 | [TimeInput.cs](TimeInput.cs)、[TimeEntryController.cs](TimeEntryController.cs) |
 | `TimeScroll` | [TimeScroll.cs](TimeScroll.cs)，列用 Avalonia `DateTimePickerPanel` |
+| `ScrollField.kt` / `ScrollFieldDefaults.Item` | [TimeScrollPanel.cs](TimeScrollPanel.cs)，按页面身份保留的选中排版与颜色动画 |
 | `TimePickerTokens`、`TimeInputTokens` | [TimePickerTokenSource.cs](TimePickerTokenSource.cs)、[TimeInputTokenSource.cs](TimeInputTokenSource.cs) |
 | 布局、变体、当前字段 | [TimePickerOptions.cs](TimePickerOptions.cs) |
 | `SideControlColumn` / `SideControlItem` | [TimeSideControlLayout.cs](TimeSideControlLayout.cs)、`MaterialTimePeriodTheme.side-control` |
@@ -66,6 +67,11 @@ Vibrant 使用宿主竖向且 24 小时的 132dp 分支，否则 100dp；这是 
 `TimeScroll` 的小时列在 12 小时模式是 1 到 12 且循环，24 小时模式是 0 到 23。分钟列是 0 到 59。
 12 小时的 12 写回 0 或 12，取决于当前是 AM 还是 PM。
 初始化原生滚动承载前同时设置面板的 SelectedValue 和 ScrollViewer.Offset；否则 ScrollContentPresenter 的零偏移会覆盖初始有效时间。原生滚动适配的范围不变。
+ItemHeight 在附着或资源变化后重新解析时，同步面板重新计算的 Offset 到 ScrollViewer，避免旧像素偏移反写选中时间。
+内部 TimeScrollPanel 保留每个已实现页面的两条 AnimatedState：选中分数与颜色均使用 FastSpatial，分数钳制到 0–1 后对 DisplayMedium / DisplayLargeEmphasized 插值。
+字号、行高、字距及字重按上游插值，其余已支持排版字段按 0.5 切换；颜色独立保留弹簧和中断速度。
+原生容器改变 Tag 时转接页面状态的 Animation 优先级绑定；循环偏移重新归一化不更换页面身份，离开实现区或卸载时释放状态和绑定。
+页面高度消费 `Comp.TimeScroll.ItemHeight`，默认保留 Float `200f / 3f`；容器消费 SurfaceContainerLowest / Large，选中与未选中色分别为 OnSurface / Outline。
 
 `TimePickerTextField` 保留编辑器实例与草稿，只显示当前字段；另一字段使用 TimeSelector 按钮。选择变更在视觉树附着后请求焦点，分离后的延迟请求不再抢占焦点。
 输入路径保留 `timeInputOnChange` 的解析顺序、三字符且光标位于 1 时的覆盖分支、前导零、无效草稿、拒绝替换时的旧选区和有效小时自动推进。
@@ -101,7 +107,10 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
   推荐在共享输入层支持触摸专用的最小目标搜索，保留鼠标的 40dp 视觉边界、重叠候选的距离与绘制顺序；调用方继续使用 `MaterialInteractiveSize.Minimum="48"`，不在每个按钮内补发点击。
   这会改变现有共享决定的能力范围并影响所有小按钮，需要维护者决定，本组件没有自行接管。侧栏图像自检中仍保留部分 Avalonia 光标闪烁造成的不稳定证据。
 - RTL 侧栏的实际包围盒与尺寸一致，但原生镜像变换使四角顺序与 Core 不同；模式内容移除/恢复及按压提交存在帧前即时更新和 Compose 帧提交的时序差异，原始读数保留。
-- `TimeScroll` 仍未移植 `ScrollField.Item` 的 DisplayMedium → DisplayLargeEmphasized、FastSpatial 字号/颜色过渡及 `200dp / 3` 页面高度。原生循环面板复用位置容器，动画需要保留数字项身份，不能只对固定的中间容器加动画；本次不以静态大字替代它。
+- `TimeScroll` 的项目动画、页面高度、颜色与容器形状已实现。`time-scroll` 双端 13 例无执行错误，重复及额外截图稳定；9 个静态配置的已采集几何、字号、字重和颜色相等，全部图像仍有差异。
+  外部 SelectedTime 改变时，原生面板立即更新页面；Core 经过 TimeScroll 的 LaunchedEffect、pager 测量和后续重组后才提交项目动画，动态中间值因此不同，640ms 的选中切换终值相等。
+  该时序差异没有通过延迟本地事件或调整采样隐藏，也不由原生滚动适配自动追认为已接受。字体行布局和页面像素舍入仍需后续核验，不能宣称整项视觉一致。
+  参考夹具显式使用 `Typography(fontFamily=...)`，因为固定上游的无参旧构造函数会把强调角色初始化为普通角色；两端因此消费相同的完整角色配置。
 - 本批次在隔离 worktree 使用本机临时依赖缓存完成补充验证。伙伴更新 NuGet 源后再次执行正式 `--locked-mode` 还原仍失败：公开源缺少锁定 MaterialColorUtilities CI 版本和 MaterialSymbols.Avalonia.Rounded 包。
   临时缓存的两个 MaterialSymbols 包内容哈希又与仓库锁文件不符，故补充构建/测试不能替代固定 NuGet 身份的最终验收；仓库锁、版本及参考基线均未修改。
   补充构建包含 Catalog；全库行为/渲染测试 1902 项通过，VisualParity 系统测试 124 项通过。定向双端输入/侧栏/键盘用例分别为 28/38/4，均无执行错误；输入用例重复稳定，4 个侧栏用例和 4 个既有键盘用例仍有图像重复性问题，键盘结构化状态一致。
@@ -141,6 +150,13 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
 `TimePickerPointerCases` 双端读取真实角度、时间、字段、当前渲染标签数及 selected 语义，覆盖 LTR/RTL、12/24 小时、
 Expressive/Standard motion、连续拖动、tap 中断和字段往返。新用例显式对齐字体和相关色彩输入，另留默认平台字体/颜色分支；
 既有 time-picker 与 time-picker-keyboard 的参考配置及比较容差不变。
+
+`TimeScrollTests` 检查初始 12/24 小时时间、页面复用、循环边界、反向、排版/颜色/形状/高度资源变化、配置缺失和卸载后的属性贡献恢复；还遍历全部 60 分钟的正反向滚动及不同 ItemHeight 下的程序更新，防止原生循环 offset 回写改变时间。
+双端入口：`./tests/VisualParity/parity.ps1 self-test --family time-scroll`；案例文件为 `TimeScrollCases.cs` / `.kt`。
+
+TimeScroll 最新验证 `20261104-044242-adbed8d6`：13 例执行错误 0、重复及额外截图稳定，图像均 different。静态选中字号/字重/颜色及布局读数相等；数字和冒号在本地约低 1 DIP，非选中数字存在更小的基线差；动态选中提交的动画启动与 Core 约差 32ms，终态一致。未修改容差或增加视觉补偿。原生滚轮是已有批准的适配，不由此声称 Compose Pager 的手势/惯性一致。
+
+参考端另一次运行 `20261104-041703-d9b8493f` 在反向场景的额外截图出现 `performMeasureAndLayout called during measure layout`，栈涉及 SwingDispatcher 定时任务与 Pager.scrollToPage；随后完整重跑得到上述稳定结果。若重现，推荐调查参考宿主 UI/主协程调度隔离，影响 VisualParity 共用时钟与线程模型，须按其设计约定处理；不通过固定源升级、删除额外截图或重写门禁规避。
 
 时段切换用例覆盖 Standard/Vibrant、Horizontal/Vertical、LTR/RTL 的按压、选中形变和重复点击；相关行为由 `ClockPointerTests` 的 period theory 覆盖。
 

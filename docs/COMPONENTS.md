@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 47 个组件的全局索引全景图。
+本文为系统全部 48 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：47 个
+- **已纳管组件总数**：48 个
 
 ---
 
@@ -33,6 +33,7 @@
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
 | `TextField` | 原生文本输入框的填充与轮廓样式、浮动标签及图标槽 | [README](../src/Material3Expressive/Components/TextField/README.md) | [INTERNALS](../src/Material3Expressive/Components/TextField/INTERNALS.md) | |
+| `SearchBar` | 停靠式搜索容器、搜索输入与展开收起动画 | [README](../src/Material3Expressive/Components/SearchBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/SearchBar/INTERNALS.md) | DockedSearchBar / SearchBarInputField 对应布尔状态重载；其他搜索变体尚未实现 |
 | `SecureTextField` | 密码输入限制、显示切换与安全边界防护 | [README](../src/Material3Expressive/Components/SecureTextField/README.md) | [INTERNALS](../src/Material3Expressive/Components/SecureTextField/INTERNALS.md) | |
 | `NumericUpDown` | 数字增减微调框与内置步进按钮 | [README](../src/Material3Expressive/Components/NumericUpDown/README.md) | - | |
 | `ComboBox` | 原生下拉单选框字段装饰与单组下拉菜单 | [README](../src/Material3Expressive/Components/ComboBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/ComboBox/INTERNALS.md) | |

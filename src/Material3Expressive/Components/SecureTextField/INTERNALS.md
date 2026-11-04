@@ -15,7 +15,7 @@
 | Foundation `text/input/TextObfuscationMode.kt`；Core `skikoMain/.../BasicSecureTextField.skiko.kt` | 原生 PasswordChar / RevealPassword；未实现 RevealLastTyped 控制器 |
 | TextField 的装饰、布局与状态机 | [TextField 维护说明](../TextField/INTERNALS.md)，不在安全组件复制实现 |
 
-原生合约按 Avalonia 12.1.2 `TextBox`、`TextBoxAutomationPeer` 与 IME client 核对。
+原生合约由当前 Avalonia 12.1.5 包的行为测试核对；不以另一个本地源码 HEAD 代替依赖制品证据。
 固定 Core 的 System 模式不揭示末字符，显式 RevealLastTyped 仍揭示 1500ms；
 Material3 默认是 RevealLastTyped，因此当前 Hidden 默认值不是上游默认行为的等价实现。
 
@@ -38,7 +38,7 @@ ClearValue 的规则也一致。此次默认配置迁移不改变本节的安全
 ## 尚未实现与未解决缺口
 
 - 已接受暂缺：RevealLastTyped 的 1500ms 重置、单字符判定与失焦取消；没有公开不能实现的模式值
-- 未解决安全缺口：原生 IValueProvider.Value 仍返回原文并发送值变化事件；附加属性不能替换 peer
+- 已验证的原生行为：非零 PasswordChar 且 RevealPassword=false 时，IValueProvider.Value 与文本变化事件返回遮蔽值；改变遮蔽符也更新事件值。RevealPassword=true 时仍返回原文，附加属性不能替换 peer
 - 未解决安全缺口：原生 IME SurroundingText 仍返回原文；IsSensitive / Password 提示不改变读取合约
 - 未移植：TextFieldState、InputTransformation、keyboard action / text layout 回调、完整 InteractionSource 和非圆角 Shape，范围同普通 TextField
 
@@ -49,7 +49,7 @@ ClearValue 的规则也一致。此次默认配置迁移不改变本节的安全
 ## 验证入口与已知差异
 
 [SecureTextFieldTests](../../../../tests/Material3Expressive.Tests/SecureTextFieldTests.cs) 覆盖呈现、选区/撤销、
-直接导出/快捷键、粘贴、限制释放、绑定保持，以及原生 automation / IME 原文和补充字符遮蔽的明确复现。
+直接导出/快捷键、粘贴、限制释放、绑定保持，以及原生 automation 遮蔽/揭示和变化事件、IME 原文、补充字符遮蔽的明确复现。
 双端场景见 [Avalonia SecureTextFieldCases](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SecureTextFieldCases.cs)
 与 [Compose SecureTextFieldCases](../../../../tests/VisualParity/reference/src/main/kotlin/cases/SecureTextFieldCases.kt)。
 参考调用真正安全控件并显式选择 Hidden；非文字内容只验证装饰，不能证明安全语义。

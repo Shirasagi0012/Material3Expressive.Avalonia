@@ -63,7 +63,7 @@ SupportingText、错误与标签位置的用法见 [TextField](../TextField/READ
 ## 使用边界
 
 - 暂无最后输入字符的 1500ms 揭示；当前默认 Hidden 与 Compose Material3 默认值不同
-- automation / IME 原文读取缺口尚未解决，Password / IsSensitive 只是原生提示
+- 当前 Avalonia 在隐藏模式下向 automation 返回遮蔽值；显示模式仍返回原文。IME 周边文本读取仍返回原文，Password / IsSensitive 只是原生提示
 - 没有额外文本拖出流程；当前 Avalonia TextBox 本身没有内建文本拖出源
 - 真实系统输入法、剪贴板、拖放、触控和屏幕阅读器未经完整桌面验收
 - TextField 的原生编辑、主题替换及自动高度边界同样适用；几何 parity 不证明密码文字或安全语义一致

@@ -163,13 +163,32 @@ public class SecureTextFieldTests
         box.Text = "secret";
         Assert.Equal("Password", AutomationProperties.GetName(box));
         var peer = ControlAutomationPeer.CreatePeerForElement(box);
-        Assert.Equal("secret", Assert.IsAssignableFrom<IValueProvider>(peer).Value);
+        var valueProvider = Assert.IsAssignableFrom<IValueProvider>(peer);
+        // Avalonia 12.1.5 now exposes the displayed text, including masked value-change
+        // notifications. Keep this as a regression assertion, not an expected leak.
+        Assert.Equal("••••••", valueProvider.Value);
+        var changes = new List<AutomationPropertyChangedEventArgs>();
+        peer!.PropertyChanged += (_, e) => {
+            if (e.Property == ValuePatternIdentifiers.ValueProperty) changes.Add(e);
+        };
+        box.Text = "changed";
+        Assert.Equal("•••••••", valueProvider.Value);
+        Assert.Equal("••••••", Assert.Single(changes).OldValue);
+        Assert.Equal("•••••••", Assert.Single(changes).NewValue);
+        changes.Clear();
+        box.PasswordChar = '*';
+        Assert.Equal("*******", valueProvider.Value);
+        Assert.Equal("*******", Assert.Single(changes).NewValue);
+        box.RevealPassword = true;
+        Assert.Equal("changed", valueProvider.Value);
+        box.RevealPassword = false;
+        Assert.Equal("*******", valueProvider.Value);
         var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
         box.RaiseEvent(request);
         Assert.NotNull(request.Client);
         Assert.True(request.Client.SupportsSurroundingText);
-        Assert.Equal("secret", request.Client.SurroundingText);
-        // These are known gaps of the chosen plain TextBox API, not a secure-peer acceptance test.
+        Assert.Equal("changed", request.Client.SurroundingText);
+        // The native IME client still exposes surrounding text even while masked.
         window.Close();
     }
 

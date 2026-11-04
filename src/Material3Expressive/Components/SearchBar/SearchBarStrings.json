@@ -1,0 +1,346 @@
+{
+  "en": {
+    "SearchBarSearch": "Search",
+    "SuggestionsAvailable": "Suggestions below"
+  },
+  "en-au": {
+    "SearchBarSearch": "Search",
+    "SuggestionsAvailable": "Suggestions below"
+  },
+  "en-ca": {
+    "SearchBarSearch": "Search",
+    "SuggestionsAvailable": "Suggestions below"
+  },
+  "en-gb": {
+    "SearchBarSearch": "Search",
+    "SuggestionsAvailable": "Suggestions below"
+  },
+  "en-in": {
+    "SearchBarSearch": "Search",
+    "SuggestionsAvailable": "Suggestions below"
+  },
+  "af": {
+    "SearchBarSearch": "Soek",
+    "SuggestionsAvailable": "Voorstelle hieronder"
+  },
+  "am": {
+    "SearchBarSearch": "ፈልግ",
+    "SuggestionsAvailable": "የአስተያየት ጥቆማዎች ከታች"
+  },
+  "ar": {
+    "SearchBarSearch": "شريط بحث",
+    "SuggestionsAvailable": "إليك الاقتراحات"
+  },
+  "as": {
+    "SearchBarSearch": "সন্ধান কৰক",
+    "SuggestionsAvailable": "তলত পৰামৰ্শ দেখুওৱা হৈছে"
+  },
+  "az": {
+    "SearchBarSearch": "Axtarış",
+    "SuggestionsAvailable": "Təkliflər aşağıdadır"
+  },
+  "be": {
+    "SearchBarSearch": "Пошук",
+    "SuggestionsAvailable": "Прапановы ўнізе"
+  },
+  "bg": {
+    "SearchBarSearch": "Лента за търсене",
+    "SuggestionsAvailable": "Предложенията са по-долу"
+  },
+  "bn": {
+    "SearchBarSearch": "সার্চ করুন",
+    "SuggestionsAvailable": "নিচে দেওয়া সাজেশন"
+  },
+  "bs": {
+    "SearchBarSearch": "Pretraživanje",
+    "SuggestionsAvailable": "Prijedlozi su u nastavku"
+  },
+  "ca": {
+    "SearchBarSearch": "Cerca",
+    "SuggestionsAvailable": "Suggeriments a continuació"
+  },
+  "cs": {
+    "SearchBarSearch": "Vyhledávání",
+    "SuggestionsAvailable": "Níže jsou k dispozici návrhy"
+  },
+  "da": {
+    "SearchBarSearch": "Søg",
+    "SuggestionsAvailable": "Forslag nedenfor"
+  },
+  "de": {
+    "SearchBarSearch": "Suche",
+    "SuggestionsAvailable": "Vorschläge unten"
+  },
+  "el": {
+    "SearchBarSearch": "Αναζήτηση",
+    "SuggestionsAvailable": "Προτάσεις παρακάτω"
+  },
+  "es": {
+    "SearchBarSearch": "Buscar",
+    "SuggestionsAvailable": "Sugerencias a continuación"
+  },
+  "es-us": {
+    "SearchBarSearch": "Buscar",
+    "SuggestionsAvailable": "Sugerencias a continuación"
+  },
+  "et": {
+    "SearchBarSearch": "Otsing",
+    "SuggestionsAvailable": "Soovitused on allpool"
+  },
+  "eu": {
+    "SearchBarSearch": "Bilatu",
+    "SuggestionsAvailable": "Iradokizunak daude behean"
+  },
+  "fa": {
+    "SearchBarSearch": "جستجو",
+    "SuggestionsAvailable": "پیشنهادهای زیر"
+  },
+  "fi": {
+    "SearchBarSearch": "Hae",
+    "SuggestionsAvailable": "Ehdotuksia alla"
+  },
+  "fr": {
+    "SearchBarSearch": "Rechercher",
+    "SuggestionsAvailable": "Suggestions ci-dessous"
+  },
+  "fr-ca": {
+    "SearchBarSearch": "Recherche",
+    "SuggestionsAvailable": "Suggestions ci-dessous"
+  },
+  "gl": {
+    "SearchBarSearch": "Buscar",
+    "SuggestionsAvailable": "Hai suxestións abaixo"
+  },
+  "gu": {
+    "SearchBarSearch": "શોધો",
+    "SuggestionsAvailable": "સૂચનો નીચે છે"
+  },
+  "hi": {
+    "SearchBarSearch": "खोजें",
+    "SuggestionsAvailable": "सुझाव यहां मौजूद हैं"
+  },
+  "hr": {
+    "SearchBarSearch": "Pretraživanje",
+    "SuggestionsAvailable": "Prijedlozi su u nastavku"
+  },
+  "hu": {
+    "SearchBarSearch": "Keresés",
+    "SuggestionsAvailable": "Javaslatok alább"
+  },
+  "hy": {
+    "SearchBarSearch": "Որոնում",
+    "SuggestionsAvailable": "Առաջարկները հասանելի են ստորև"
+  },
+  "in": {
+    "SearchBarSearch": "Telusuri",
+    "SuggestionsAvailable": "Saran di bawah"
+  },
+  "id": {
+    "SearchBarSearch": "Telusuri",
+    "SuggestionsAvailable": "Saran di bawah"
+  },
+  "is": {
+    "SearchBarSearch": "Leit",
+    "SuggestionsAvailable": "Tillögur hér fyrir neðan"
+  },
+  "it": {
+    "SearchBarSearch": "Cerca",
+    "SuggestionsAvailable": "Suggerimenti sotto"
+  },
+  "iw": {
+    "SearchBarSearch": "חיפוש",
+    "SuggestionsAvailable": "הצעות מופיעות למטה"
+  },
+  "he": {
+    "SearchBarSearch": "חיפוש",
+    "SuggestionsAvailable": "הצעות מופיעות למטה"
+  },
+  "ja": {
+    "SearchBarSearch": "検索",
+    "SuggestionsAvailable": "検索候補は次のとおりです"
+  },
+  "ka": {
+    "SearchBarSearch": "ძიება",
+    "SuggestionsAvailable": "შემოთავაზებები იხილეთ ქვემოთ"
+  },
+  "kk": {
+    "SearchBarSearch": "Іздеу",
+    "SuggestionsAvailable": "Төмендегі ұсыныстар"
+  },
+  "km": {
+    "SearchBarSearch": "ស្វែងរក",
+    "SuggestionsAvailable": "ការណែនាំខាងក្រោម"
+  },
+  "kn": {
+    "SearchBarSearch": "ಹುಡುಕಿ",
+    "SuggestionsAvailable": "ಸಲಹೆಗಳನ್ನು ಕೆಳಗೆ ನೀಡಲಾಗಿದೆ"
+  },
+  "ko": {
+    "SearchBarSearch": "검색",
+    "SuggestionsAvailable": "아래의 추천 검색어"
+  },
+  "ky": {
+    "SearchBarSearch": "Издөө",
+    "SuggestionsAvailable": "Сунуштар төмөндө келтирилди"
+  },
+  "lo": {
+    "SearchBarSearch": "ຊອກຫາ",
+    "SuggestionsAvailable": "ມີຄຳແນະນຳຢູ່ຂ້າງລຸ່ມ"
+  },
+  "lt": {
+    "SearchBarSearch": "Paieška",
+    "SuggestionsAvailable": "Pasiūlymai pateikti toliau"
+  },
+  "lv": {
+    "SearchBarSearch": "Meklēšana",
+    "SuggestionsAvailable": "Tālāk ir sniegti ieteikumi"
+  },
+  "mk": {
+    "SearchBarSearch": "Пребарување",
+    "SuggestionsAvailable": "Предлозите се наведени подолу"
+  },
+  "ml": {
+    "SearchBarSearch": "തിരയുക",
+    "SuggestionsAvailable": "നിദ്ദേശങ്ങൾ ചുവടെയുണ്ട്"
+  },
+  "mn": {
+    "SearchBarSearch": "Хайх",
+    "SuggestionsAvailable": "Доорх зөвлөмжүүд"
+  },
+  "mr": {
+    "SearchBarSearch": "शोधा",
+    "SuggestionsAvailable": "सूचना खाली आहेत"
+  },
+  "ms": {
+    "SearchBarSearch": "Carian",
+    "SuggestionsAvailable": "Cadangan di bawah"
+  },
+  "my": {
+    "SearchBarSearch": "ရှာရန်",
+    "SuggestionsAvailable": "အကြံပြုချက်များသည် အောက်တွင်ရှိသည်"
+  },
+  "nb": {
+    "SearchBarSearch": "Søk",
+    "SuggestionsAvailable": "Du finner forslag nedenfor"
+  },
+  "ne": {
+    "SearchBarSearch": "खोज्नुहोस्",
+    "SuggestionsAvailable": "सुझावहरू तल दिइएका छन्"
+  },
+  "nl": {
+    "SearchBarSearch": "Zoeken",
+    "SuggestionsAvailable": "Suggesties hieronder"
+  },
+  "or": {
+    "SearchBarSearch": "ସର୍ଚ୍ଚ କରନ୍ତୁ",
+    "SuggestionsAvailable": "ପରାମର୍ଶ ତଳେ ଦିଆଯାଇଛି"
+  },
+  "pa": {
+    "SearchBarSearch": "ਖੋਜੋ",
+    "SuggestionsAvailable": "ਸੁਝਾਅ ਹੇਠਾਂ ਹਨ"
+  },
+  "pl": {
+    "SearchBarSearch": "Szukaj",
+    "SuggestionsAvailable": "Sugestie znajdziesz poniżej"
+  },
+  "pt": {
+    "SearchBarSearch": "Pesquisar",
+    "SuggestionsAvailable": "Sugestões abaixo"
+  },
+  "pt-br": {
+    "SearchBarSearch": "Pesquisar",
+    "SuggestionsAvailable": "Sugestões abaixo"
+  },
+  "pt-pt": {
+    "SearchBarSearch": "Pesquisar",
+    "SuggestionsAvailable": "Sugestões abaixo"
+  },
+  "ro": {
+    "SearchBarSearch": "Caută",
+    "SuggestionsAvailable": "Sugestii mai jos"
+  },
+  "ru": {
+    "SearchBarSearch": "Строка поиска",
+    "SuggestionsAvailable": "Подсказки показаны ниже"
+  },
+  "si": {
+    "SearchBarSearch": "සෙවීම",
+    "SuggestionsAvailable": "පහත යෝජනා"
+  },
+  "sk": {
+    "SearchBarSearch": "Hľadať",
+    "SuggestionsAvailable": "Návrhy sú nižšie"
+  },
+  "sl": {
+    "SearchBarSearch": "Iskanje",
+    "SuggestionsAvailable": "Predlogi so spodaj"
+  },
+  "sq": {
+    "SearchBarSearch": "Kërkimi",
+    "SuggestionsAvailable": "Sugjerimet më poshtë"
+  },
+  "sr": {
+    "SearchBarSearch": "Претрага",
+    "SuggestionsAvailable": "Предлози су у наставку"
+  },
+  "sv": {
+    "SearchBarSearch": "Sök",
+    "SuggestionsAvailable": "Se förslag nedan"
+  },
+  "sw": {
+    "SearchBarSearch": "Tafuta",
+    "SuggestionsAvailable": "Mapendekezo yaliyo hapa chini"
+  },
+  "ta": {
+    "SearchBarSearch": "தேடல்",
+    "SuggestionsAvailable": "பரிந்துரைகள் கீழே கிடைக்கும்"
+  },
+  "te": {
+    "SearchBarSearch": "సెర్చ్ చేయండి",
+    "SuggestionsAvailable": "సూచనలు దిగువున ఉన్నాయి"
+  },
+  "th": {
+    "SearchBarSearch": "ค้นหา",
+    "SuggestionsAvailable": "มีคำแนะนำที่ด้านล่าง"
+  },
+  "tl": {
+    "SearchBarSearch": "Maghanap",
+    "SuggestionsAvailable": "Mga suhestyon sa ibaba"
+  },
+  "tr": {
+    "SearchBarSearch": "Arama",
+    "SuggestionsAvailable": "Önerileri aşağıda bulabilirsiniz"
+  },
+  "uk": {
+    "SearchBarSearch": "Пошук",
+    "SuggestionsAvailable": "Підказки внизу"
+  },
+  "ur": {
+    "SearchBarSearch": "تلاش کریں",
+    "SuggestionsAvailable": "تلاش کی تجاویز نیچے دستیاب ہیں"
+  },
+  "uz": {
+    "SearchBarSearch": "Qidiruv",
+    "SuggestionsAvailable": "Takliflar quyida"
+  },
+  "vi": {
+    "SearchBarSearch": "Tìm kiếm",
+    "SuggestionsAvailable": "Các đề xuất ở bên dưới"
+  },
+  "zh-cn": {
+    "SearchBarSearch": "搜索",
+    "SuggestionsAvailable": "以下是搜索建议"
+  },
+  "zh-hk": {
+    "SearchBarSearch": "搜尋",
+    "SuggestionsAvailable": "建議如下"
+  },
+  "zh-tw": {
+    "SearchBarSearch": "搜尋",
+    "SuggestionsAvailable": "建議如下"
+  },
+  "zu": {
+    "SearchBarSearch": "Sesha",
+    "SuggestionsAvailable": "Iziphakamiso ngezansi"
+  }
+}

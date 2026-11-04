@@ -1,0 +1,80 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:ca="https://github.com/Shirasagi0012/ComposeAnimation" xmlns:input="using:Avalonia.Input.TextInput">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:SearchBarInputField}" TargetType="m3:SearchBarInputField" BasedOn="{StaticResource MaterialTextFieldBaseTheme}">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="PreferredMinimumWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DefaultWidth}}" />
+      <Setter Property="PreferredMaximumWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputMaximumWidth}}" />
+      <Setter Property="ClearFocusDelay" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.AnimationDelay}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputContainerShape}}" />
+      <Setter Property="input:TextInputOptions.ReturnKeyType" Value="Search" />
+      <Setter Property="m3:TextFieldThemeDefaults.Background" Value="Transparent" />
+      <Setter Property="m3:TextFieldThemeDefaults.BorderBrush" Value="Transparent" />
+      <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.InputTextColor}}" />
+      <Setter Property="m3:TextFieldThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.SupportingTextColor}}" />
+      <Setter Property="m3:TextFieldThemeDefaults.CaretBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.CursorColor}}" />
+      <Setter Property="SelectionBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.SelectionColor}}" />
+      <Style Selector="^ /template/ ContentPresenter#Leading">
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.LeadingIconColor}}" />
+        <Setter Property="RenderTransform"><TranslateTransform X="4" /></Setter>
+      </Style>
+      <Style Selector="^ /template/ ContentPresenter#Trailing">
+        <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TrailingIconColor}}" />
+        <Setter Property="RenderTransform"><TranslateTransform X="-4" /></Setter>
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledInputColor}}" />
+        <Setter Property="m3:TextFieldThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledPlaceholderColor}}" />
+      </Style>
+      <Style Selector="^:disabled /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledLeadingIconColor}}" /></Style>
+      <Style Selector="^:disabled /template/ ContentPresenter#Trailing"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledTrailingIconColor}}" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:DockedSearchBar}" TargetType="m3:DockedSearchBar">
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}" />
+      <Setter Property="Foreground" Value="{m3:ContentColorFor}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DockedContainerShape}}" />
+      <Setter Property="DividerColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DividerColor}}" />
+      <Setter Property="TonalElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.TonalElevation}}" />
+      <Setter Property="ShadowElevation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ShadowElevation}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="ZIndex" Value="1" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}"
+                              CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+                              TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
+            <m3:DockedSearchBarLayout Width="{TemplateBinding Width}" MinWidth="{TemplateBinding MinWidth}"
+                DefaultWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DefaultWidth}}">
+              <ContentPresenter Name="PART_InputField" Content="{TemplateBinding InputField}" ContentTemplate="{TemplateBinding InputFieldTemplate}"
+                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
+              <ca:AnimatedVisibility Name="PART_Results" Visible="{TemplateBinding IsExpanded}">
+                <ca:AnimatedVisibility.Enter>
+                  <MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Enter}">
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+SearchBar.EnterDuration}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+SearchBar.AnimationDelay}" />
+                  </MultiBinding>
+                </ca:AnimatedVisibility.Enter>
+                <ca:AnimatedVisibility.Exit>
+                  <MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Exit}">
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+SearchBar.ExitDuration}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+SearchBar.AnimationDelay}" />
+                  </MultiBinding>
+                </ca:AnimatedVisibility.Exit>
+                <m3:DockedSearchResultsLayout Name="PART_ResultsLayout"
+                    MinimumResultsHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.MinimumResultsHeight}}"
+                    MaximumWindowHeightFraction="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.MaximumWindowHeightFraction}}">
+                  <Separator Name="PART_Divider" HorizontalAlignment="Stretch" m3:MaterialDivider.Color="{TemplateBinding DividerColor}" />
+                  <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="Top" />
+                </m3:DockedSearchResultsLayout>
+              </ca:AnimatedVisibility>
+            </m3:DockedSearchBarLayout>
+          </m3:MaterialSurface>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

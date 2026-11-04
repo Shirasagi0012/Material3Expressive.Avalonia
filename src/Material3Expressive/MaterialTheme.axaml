@@ -74,6 +74,7 @@
                     <m3:TimePickerTokenSource />
                     <m3:TimeInputTokenSource />
                     <m3:TimeScrollTokenSource />
+                    <m3:SearchBarTokenSource />
                     <m3:TimePickerDialogTokenSource />
                 </m3:MaterialResource>
             </ResourceDictionary.MergedDictionaries>
@@ -117,6 +118,7 @@
     <StyleInclude Source="/Components/FloatingActionButton/FloatingActionButton.axaml" />
     <StyleInclude Source="/Components/FloatingToolbar/FloatingToolbar.axaml" />
     <StyleInclude Source="/Components/TextField/TextField.axaml" />
+    <StyleInclude Source="/Components/SearchBar/SearchBar.axaml" />
     <StyleInclude Source="/Components/SecureTextField/SecureTextField.axaml" />
     <StyleInclude Source="/Components/NumericUpDown/NumericUpDown.axaml" />
     <StyleInclude Source="/Components/NumericUpDown/ButtonSpinner.axaml" />

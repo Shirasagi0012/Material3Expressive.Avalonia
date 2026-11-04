@@ -23,6 +23,7 @@
           <m3:TimePicker TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" Name="Dial" Layout="Vertical" Margin="0,0,32,0" />
           <StackPanel Spacing="24">
             <m3:TimeInput Name="Input" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
+            <TextBlock Text="Scroll entry: select a neighbouring number, then reverse while its size and colour are changing. The selected number uses emphasized display typography." TextWrapping="Wrap" MaxWidth="340" />
             <m3:TimeScroll Name="Scroll" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
             <TextBlock Text="{Binding #Dial.SelectedTime}" />
             <TextBlock Text="{Binding #Input.IsInputValid, StringFormat='Input valid: {0}'}" />

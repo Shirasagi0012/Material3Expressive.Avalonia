@@ -44,7 +44,10 @@ public sealed class AvaloniaHost : IAsyncDisposable
         this.writer = writer;
         this.delayTime = delayTime;
         Window = new(clock, delayTime ?? TimeProvider.System) { Width = width, Height = height, Background = Brushes.White, RequestedThemeVariant = ThemeVariant.Light };
-        Window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
+        // Load the theme assembly even when the first case mounts only native Avalonia controls.
+        // A URI string alone does not ensure that the test runner has loaded this dependency.
+        var themeAssembly = typeof(Components.MaterialSurface).Assembly.GetName().Name;
+        Window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri($"avares://{themeAssembly}/MaterialTheme.axaml")));
         Window.AnimationRoot.DurationScale = 1;
         Window.AnimationRoot.AnimationFailed += (_, e) => writer.Errors.Add($"{e.OperationLabel}: {e.Exception}");
     }

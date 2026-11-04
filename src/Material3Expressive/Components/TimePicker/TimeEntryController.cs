@@ -266,7 +266,7 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     }
                     case TimeEntryKind.Scroll:
                     {
-                        var field = new DateTimePickerPanel {
+                        var field = new TimeScrollPanel {
                             Name = i == 0 ? "PART_HourScroll" : "PART_MinuteScroll", PanelType = DateTimePickerPanelType.Minute,
                             MinimumValue = i == 0 && !Is24Hour ? 1 : 0, MaximumValue = i == 0 ? Is24Hour ? 23 : 12 : 59,
                             ShouldLoop = true, ItemFormat = "mm"
@@ -288,9 +288,16 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                             VerticalScrollBarVisibility = ScrollBarVisibility.Hidden
                         };
+                        field.PropertyChanged += (_, change) => {
+                            // ItemHeight can resolve only after attachment, or change with a
+                            // resource. The native panel recalculates its offset in the new
+                            // units; keep the presenter from writing back the old pixel offset.
+                            if (change.Property == DateTimePickerPanel.ItemHeightProperty)
+                                scroll.Offset = field.Offset;
+                        };
                         BindDimension(scroll, Control.WidthProperty, width);
                         BindDimension(scroll, Control.HeightProperty, fieldHeight);
-                        var surface = new MaterialSurface { Child = scroll, CornerRadius = new CornerRadius(16) };
+                        var surface = new MaterialSurface { Child = scroll };
                         surface.Classes.Add("time-scroll-surface");
                         _fields[i] = field;
                         column.Children.Add(surface);
