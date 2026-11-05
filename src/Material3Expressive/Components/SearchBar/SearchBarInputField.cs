@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using ComposeAnimation;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
@@ -13,6 +14,9 @@ namespace Material3Expressive.Components;
 /// <remarks>Text, selection and editing remain native TextBox state. Applications handle requests.</remarks>
 public class SearchBarInputField : TextBox
 {
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty = MaterialTextField.InteractionSourceProperty;
+    /// <summary>Shared editing interactions. Null uses the text template's private source.</summary>
+    public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<bool> IsExpandedProperty =
         AvaloniaProperty.Register<SearchBarInputField, bool>(nameof(IsExpanded));
     public static readonly RoutedEvent<RoutedEventArgs> ExpansionRequestedEvent =
@@ -65,7 +69,7 @@ public class SearchBarInputField : TextBox
         // LaunchedEffect(expanded): focus changes alone do not restart the effect.
         if (change.Property != IsExpandedProperty) return;
         CancelClearFocus();
-        if (!IsExpanded && IsFocused && this.IsAttachedToVisualTree())
+        if (!IsExpanded && TextFieldThemeDefaults.GetIsFocused(this) && this.IsAttachedToVisualTree())
         {
             var cancellation = _clearFocus = new CancellationTokenSource();
             var scope = AnimationScope.Get(this);

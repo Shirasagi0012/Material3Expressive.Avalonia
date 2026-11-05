@@ -104,18 +104,20 @@
       <Style Selector="^ /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedPrefixColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedSuffixColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedSupportingColor}}" /></Style>
-      <Style Selector="^:focus">
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True]">
         <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedInputColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedContainerColor}}" />
-        <Setter Property="m3:TextFieldThemeDefaults.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedIndicatorColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedPlaceholderColor}}" />
       </Style>
-      <Style Selector="^:focus /template/ m3|TextFieldLayout"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLabelColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Trailing"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedTrailingIconColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedPrefixColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSuffixColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSupportingColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IndicatorFocused)=True]">
+        <Setter Property="m3:TextFieldThemeDefaults.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedIndicatorColor}}" />
+      </Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ m3|TextFieldLayout"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLabelColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLeadingIconColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Trailing"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedPrefixColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSuffixColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialTextField.IsError)=True], ^:error">
         <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorInputColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorContainerColor}}" />
@@ -158,18 +160,18 @@
       <Style Selector="^ /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedPrefixColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedSuffixColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedSupportingColor}}" /></Style>
-      <Style Selector="^:focus">
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True]">
         <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedInputColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedContainerColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedIndicatorColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedPlaceholderColor}}" />
       </Style>
-      <Style Selector="^:focus /template/ m3|TextFieldLayout"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLabelColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Trailing"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedTrailingIconColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedPrefixColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSuffixColor}}" /></Style>
-      <Style Selector="^:focus /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSupportingColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ m3|TextFieldLayout"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLabelColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLeadingIconColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Trailing"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Prefix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedPrefixColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSuffixColor}}" /></Style>
+      <Style Selector="^[(m3|TextFieldThemeDefaults.IsFocused)=True] /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialTextField.IsError)=True], ^:error">
         <Setter Property="m3:TextFieldThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorInputColor}}" />
         <Setter Property="m3:TextFieldThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorContainerColor}}" />

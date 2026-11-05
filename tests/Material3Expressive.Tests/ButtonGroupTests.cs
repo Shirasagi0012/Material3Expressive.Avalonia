@@ -19,6 +19,55 @@ namespace Material3Expressive.Tests;
 
 public class ButtonGroupTests
 {
+    [AvaloniaFact]
+    public void EmptyGroupRecomputesItsMinimumHeightWithoutChangingAvailableHeight()
+    {
+        using var clock = new MotionTestClockScope();
+        var group = new ButtonGroup();
+        var window = DialogTests.Show(new Canvas { Children = { group } });
+        try
+        {
+            Flush(window);
+            Assert.Equal(0, group.Layout!.Row.Bounds.Height);
+            group.MinHeight = 64; Flush(window);
+            Assert.Equal(64, group.Layout.Row.Bounds.Height);
+            group.MinHeight = 16; Flush(window);
+            Assert.Equal(16, group.Layout.Row.Bounds.Height);
+            group.MinHeight = 0; Flush(window);
+            Assert.Equal(0, group.Layout.Row.Bounds.Height);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ChangingMinimumWidthRecomputesArrangementWithoutChangingMaximum(bool weighted)
+    {
+        using var clock = new MotionTestClockScope();
+        var group = Blocks(400);
+        group.HorizontalArrangement = ButtonGroupArrangement.End;
+        if (weighted)
+        {
+            group.MaxWidth = double.PositiveInfinity;
+            foreach (var item in group.Items.Cast<ButtonGroupItem>()) item.Weight = 1;
+        }
+        var window = DialogTests.Show(new Canvas { Children = { group } });
+        try
+        {
+            Flush(window);
+            var first = (ButtonGroupItem)group.Items[0]!;
+            group.MinWidth = 300;
+            Flush(window);
+            Assert.Equal(300, group.Layout!.Row.Bounds.Width);
+            Assert.Equal(weighted ? 0 : 172, first.TranslatePoint(default, group.Layout.Row)!.Value.X);
+            group.MinWidth = 0;
+            Flush(window);
+            Assert.Equal(weighted ? 0 : 128, group.Layout.Row.Bounds.Width);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData("First\nSecond")]
     [InlineData("First\r\nSecond")]

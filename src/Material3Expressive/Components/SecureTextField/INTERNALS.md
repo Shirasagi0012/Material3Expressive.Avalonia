@@ -40,7 +40,7 @@ ClearValue 的规则也一致。此次默认配置迁移不改变本节的安全
 - 已接受暂缺：RevealLastTyped 的 1500ms 重置、单字符判定与失焦取消；没有公开不能实现的模式值
 - 已验证的原生行为：非零 PasswordChar 且 RevealPassword=false 时，IValueProvider.Value 与文本变化事件返回遮蔽值；改变遮蔽符也更新事件值。RevealPassword=true 时仍返回原文，附加属性不能替换 peer
 - 未解决安全缺口：原生 IME SurroundingText 仍返回原文；IsSensitive / Password 提示不改变读取合约
-- 未移植：TextFieldState、InputTransformation、keyboard action / text layout 回调、完整 InteractionSource 和非圆角 Shape，范围同普通 TextField
+- 未移植：TextFieldState、InputTransformation、keyboard action / text layout 回调和非圆角 Shape，范围同普通 TextField；交互源使用 `MaterialTextField.InteractionSource`
 
 不能通过隐藏 accessibility 树或减少验证读取掩盖安全缺口。若要修复，需要重新决定派生/组合方案。
 原生 UTF-16 遮蔽、Visible 失焦重置、粘贴首行、选区与 IME 行为不声明与 Compose 等价。

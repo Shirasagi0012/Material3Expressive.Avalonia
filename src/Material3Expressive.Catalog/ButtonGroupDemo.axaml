@@ -47,6 +47,16 @@
       </StackPanel>
 
       <StackPanel Spacing="8">
+        <TextBlock Text="Minimum width" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <TextBlock Text="Change the minimum width to move the actions toward the end of the group." TextWrapping="Wrap" />
+        <Slider x:Name="MinimumGroupWidth" Minimum="0" Maximum="600" Value="300" />
+        <m3:ButtonGroup MinWidth="{Binding #MinimumGroupWidth.Value}" HorizontalArrangement="End">
+          <m3:ButtonGroupAction Label="Back" />
+          <m3:ButtonGroupAction Label="Continue" />
+        </m3:ButtonGroup>
+      </StackPanel>
+
+      <StackPanel Spacing="8">
         <TextBlock Text="ButtonGroupWithCustomItemSample" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
         <TextBlock TextWrapping="Wrap"
                    Text="ExpandedRatio is 1. Each item is a connected toggle with icon padding 16,8,24,8 and a 24 DIP compression limit. The sample's menu rows are labels only, and their clicks do not toggle or dismiss." />

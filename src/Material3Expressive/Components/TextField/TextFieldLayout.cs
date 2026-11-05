@@ -33,7 +33,8 @@ internal sealed partial class TextFieldLayout : Panel
     private Animatable<float>? _labelProgress, _placeholderAlpha, _affixAlpha, _thickness;
     private Animatable<Color>? _labelColor, _containerColor, _indicatorColor;
     private AnimationChildScope? _attachScope;
-    private bool _pending;
+    private bool _pending, _pendingIndicatorUpdate;
+    private bool _outlinedIndicatorEnabled;
     private int _phase;
     private double _cutoutTop, _aboveHeight, _supportingHeight, _containerHeight;
     private Thickness _padding;
@@ -51,10 +52,10 @@ internal sealed partial class TextFieldLayout : Panel
     private bool Above => Position == TextFieldLabelPosition.Above && HasLabel;
     private bool SingleLine => _owner?.AcceptsReturn != true;
     private bool Outlined => _owner is { } o && MaterialTextField.GetOutlined(o);
-    private int Phase => _owner is { IsFocused: true, IsEffectivelyEnabled: true } ? 1 : string.IsNullOrEmpty(_owner?.Text) ? 0 : 2;
+    private int Phase => _sourceFocused ? 1 : string.IsNullOrEmpty(_owner?.Text) ? 0 : 2;
     private bool Expanded => HasLabel && !Above && !MaterialTextField.GetAlwaysMinimizeLabel(_owner!);
     private float LabelTarget => Phase == 0 && Expanded ? 0 : 1;
-    private float ThicknessTarget => _owner is { IsFocused: true, IsEffectivelyEnabled: true } ? 2 : 1;
+    private float ThicknessTarget => (Outlined ? _sourceFocused : _indicatorFocused) && _owner is { IsEffectivelyEnabled: true } ? 2 : 1;
     private double Scale => LayoutHelper.GetLayoutScale(this);
     private double Round(double value) => MathUtils.RoundToInt(value * Scale) / Scale;
     private double Lerp(double a, double b, double progress) => Round(a + (b - a) * progress);
@@ -63,6 +64,7 @@ internal sealed partial class TextFieldLayout : Panel
     {
         base.OnAttachedToVisualTree(e);
         _owner = (TextBox)TemplatedParent!;
+        _outlinedIndicatorEnabled = _owner.IsEffectivelyEnabled;
         _decoration = (TextFieldDecoration)Children.Single(c => c.Name == "Decoration");
         _label = (ContentPresenter)Children.Single(c => c.Name == "Label");
         _expandedLabelStyle = (ContentPresenter)Children.Single(c => c.Name == "ExpandedLabelStyle");
@@ -100,6 +102,7 @@ internal sealed partial class TextFieldLayout : Panel
         motion.SubscribeValue(_containerColor, _ => InvalidateDecoration());
         motion.SubscribeValue(_indicatorColor, _ => InvalidateDecoration());
         motion.SubscribeValue(_thickness, _ => InvalidateDecoration());
+        AttachInteractions();
         UpdateSlots();
     }
 
@@ -110,15 +113,17 @@ internal sealed partial class TextFieldLayout : Panel
         if (_leading != null) { _leading.Content = null; _leading.ContentTemplate = null; }
         if (_trailing != null) { _trailing.Content = null; _trailing.ContentTemplate = null; }
         _pending = false;
+        _pendingIndicatorUpdate = false;
+        _attachScope?.Dispose(); _attachScope = null;
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
+        DetachInteractions();
         if (_text != null) _text.PropertyChanged -= PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
-            slot.PropertyChanged -= SlotChanged;
+            if (slot is not null) slot.PropertyChanged -= SlotChanged;
         _expandedLabelStyle.PropertyChanged -= LabelEndpointChanged;
         _floatingLabelStyle.PropertyChanged -= LabelEndpointChanged;
         _nameBinding?.Dispose(); _helpBinding?.Dispose();
         _nameBinding = _helpBinding = null;
-        _attachScope?.Dispose(); _attachScope = null;
         _owner = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -135,6 +140,17 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == MaterialTextField.InteractionSourceProperty) ReplaceInteractionSource();
+        if (e.Property == InputElement.IsEffectivelyEnabledProperty && _owner?.IsEffectivelyEnabled == false)
+        {
+            EndNativePress(cancelled: true);
+            EndNativeFocus();
+        }
+        if (e.Property == InputElement.IsEffectivelyEnabledProperty || e.Property == MaterialTextField.IsErrorProperty)
+        {
+            if (_owner is { } owner && !Outlined) TextFieldThemeDefaults.SetIndicatorFocused(owner, _indicatorFocused);
+            _pendingIndicatorUpdate = true;
+        }
         // Enabled changes keep the common AndroidX transition alive. The fixed Core desktop
         // context-menu branch instead rebuilds decoration; README records the maintainer's choice.
         if (e.Property == MaterialTextField.IsErrorProperty || e.Property == MaterialTextField.ErrorMessageProperty ||
@@ -166,6 +182,8 @@ internal sealed partial class TextFieldLayout : Panel
             e.Property != ExpandedLabelMinHeightProperty && e.Property != CollapsedLabelMinHeightProperty &&
             e.Property != SpatialAnimationProperty && e.Property != FastEffectsAnimationProperty &&
             e.Property != SlowEffectsAnimationProperty && e.Property != FlowDirectionProperty)) return;
+        if (e.Property == IndicatorBrushProperty || e.Property == SpatialAnimationProperty || e.Property == FastEffectsAnimationProperty)
+            _pendingIndicatorUpdate = true;
         UpdateSlots(); Retarget(); InvalidateMeasure(); InvalidateDecoration();
     }
 
@@ -262,7 +280,11 @@ internal sealed partial class TextFieldLayout : Panel
         }
     }
 
-    private void InvalidateDecoration() => _decoration?.InvalidateVisual();
+    private IBrush? PaintedIndicator => IndicatorBrush is ISolidColorBrush
+        ? new SolidColorBrush(_indicatorColor?.Value ?? ColorOf(IndicatorBrush)) : IndicatorBrush;
+
+    private void InvalidateDecoration(Size? size = null) => _decoration?.Update(_containerBounds, _cutout, size ?? Bounds.Size,
+        Outlined, PaintedIndicator, Math.Max(0, IndicatorThickness), _owner?.CornerRadius ?? default);
     private static Color ColorOf(IBrush? brush) => (brush as ISolidColorBrush)?.Color ?? Colors.Transparent;
 
     private void Retarget()
@@ -275,16 +297,23 @@ internal sealed partial class TextFieldLayout : Panel
             await motion.NextFrameAsync(ct); _pending = false;
             if (_owner is null) return;
             if (SpatialAnimation is not { } spatial || FastEffectsAnimation is not { } fast || SlowEffectsAnimation is not { } slow) return;
+            // Node parameters arrive during recomposition; interaction collection below is
+            // immediate. Keep this update separate from IndicatorLineNode's focus collector.
+            if (_pendingIndicatorUpdate) { _pendingIndicatorUpdate = false; RetargetFilledIndicator(); }
             var previous = _phase; _phase = Phase;
+            // animateBorderStrokeAsState removes its animateAsState branches while disabled.
+            // Re-entering creates them at the current targets, independently of label motion.
+            var initializeOutline = Outlined && _owner.IsEffectivelyEnabled && !_outlinedIndicatorEnabled;
+            _outlinedIndicatorEnabled = _owner.IsEffectivelyEnabled;
             var idleColorChange = previous == _phase && !_labelProgress!.IsRunning && !_labelColor!.IsRunning;
             Animate(_labelProgress!, LabelTarget, spatial);
             Animate(_placeholderAlpha!, Phase == 1 || Phase == 0 && !Expanded ? 1 : 0,
                 previous == 0 && Phase == 1 || previous == 2 && Phase == 0 ? slow : fast);
             Animate(_affixAlpha!, Phase != 0 || !Expanded ? 1 : 0, fast);
-            Animate(_thickness!, ThicknessTarget, spatial, !_owner!.IsEffectivelyEnabled);
+            if (Outlined) Animate(_thickness!, ThicknessTarget, spatial, !_owner!.IsEffectivelyEnabled || initializeOutline);
             AnimateColor(_labelColor!, ColorOf(LabelBrush), false);
             AnimateColor(_containerColor!, ColorOf(ContainerBrush), false);
-            AnimateColor(_indicatorColor!, ColorOf(IndicatorBrush), !_owner.IsEffectivelyEnabled);
+            if (Outlined) AnimateColor(_indicatorColor!, ColorOf(IndicatorBrush), !_owner.IsEffectivelyEnabled || initializeOutline);
 
             void Animate(Animatable<float> value, float target, MotionSpring spec, bool snap = false)
             {
@@ -313,6 +342,34 @@ internal sealed partial class TextFieldLayout : Panel
                 }, "TextField color");
             }
         }, "TextField targets");
+    }
+
+    // Filled TextField.kt::IndicatorLineNode invalidates directly from its interaction collector;
+    // it is not a child of the label's Transition or Outlined's animateBorderStrokeAsState.
+    private void RetargetFilledIndicator()
+    {
+        if (Outlined || _owner is not { } owner || _attachScope is not { } scope ||
+            scope.Lifetime.IsCancellationRequested || _indicatorColor is not { } color || _thickness is not { } width ||
+            SpatialAnimation is not { } spatial || FastEffectsAnimation is not { } effects) return;
+        if (TextFieldThemeDefaults.GetIndicatorFocused(owner) != _indicatorFocused)
+            TextFieldThemeDefaults.SetIndicatorFocused(owner, _indicatorFocused);
+        var targetColor = ColorOf(IndicatorBrush);
+        var targetWidth = ThicknessTarget;
+        var enabled = owner.IsEffectivelyEnabled;
+        if (color.TargetValue != targetColor || !enabled && color.IsRunning)
+            _ = scope.Launch(async ct =>
+            {
+                if (enabled) await color.AnimateToAsync(scope, targetColor,
+                    new SpringSpec<Color>(effects.DampingRatio, effects.Stiffness), cancellationToken: ct);
+                else await color.AnimateToAsync(scope, targetColor, new SnapSpec<Color>(), cancellationToken: ct);
+            }, "TextField indicator color");
+        if (width.TargetValue != targetWidth || !enabled && width.IsRunning)
+            _ = scope.Launch(async ct =>
+            {
+                if (enabled) await width.AnimateToAsync(scope, targetWidth,
+                    new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: ct);
+                else await width.AnimateToAsync(scope, targetWidth, new SnapSpec<float>(), cancellationToken: ct);
+            }, "TextField indicator width");
     }
 
     protected override Size MeasureOverride(Size available)
@@ -383,7 +440,6 @@ internal sealed partial class TextFieldLayout : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (_owner == null) return base.ArrangeOverride(finalSize);
-        _decoration?.Arrange(new Rect(finalSize));
         var width = finalSize.Width; var p = LabelProgress;
         var yOffset = _cutoutTop + _aboveHeight;
         var height = Math.Max(0, finalSize.Height - yOffset - _supportingHeight);
@@ -434,7 +490,8 @@ internal sealed partial class TextFieldLayout : Panel
         var cutLeft = Align(MaterialTextField.GetMinimizedLabelAlignment(_owner), Round(cutWidth), width - startPad - endPad) + startPad - 4;
         _cutout = Cutout && cutWidth > 0 ? new Rect(Math.Max(0, cutLeft), yOffset - labelHeight * cutoutProgress / 2,
             Math.Max(0, Math.Min(width, cutLeft + cutWidth + 8) - Math.Max(0, cutLeft)), labelHeight * cutoutProgress) : default;
-        InvalidateDecoration();
+        InvalidateDecoration(finalSize);
+        _decoration?.Arrange(new Rect(finalSize));
         return finalSize;
     }
 
@@ -444,23 +501,10 @@ internal sealed partial class TextFieldLayout : Panel
         var radius = _owner.CornerRadius;
         var container = new RoundedRect(_containerBounds, radius);
         var background = ContainerBrush is ISolidColorBrush ? new SolidColorBrush(_containerColor?.Value ?? ColorOf(ContainerBrush)) : ContainerBrush;
-        var indicator = IndicatorBrush is ISolidColorBrush ? new SolidColorBrush(_indicatorColor?.Value ?? ColorOf(IndicatorBrush)) : IndicatorBrush;
         var width = Math.Max(0, IndicatorThickness);
-        var clip = new GeometryGroup { FillRule = FillRule.EvenOdd };
-        clip.Children.Add(new RectangleGeometry(new Rect(Bounds.Size)));
-        if (_cutout.Width > 0) clip.Children.Add(new RectangleGeometry(_cutout));
-        using (context.PushGeometryClip(clip))
-        {
-            context.DrawRectangle(background, null, container);
-            if (width == 0) return;
-            using var containerClip = context.PushClip(container);
-            if (Outlined)
-            {
-                var inset = width / 2;
-                var r = new CornerRadius(Math.Max(0, radius.TopLeft - inset), Math.Max(0, radius.TopRight - inset), Math.Max(0, radius.BottomRight - inset), Math.Max(0, radius.BottomLeft - inset));
-                context.DrawRectangle(null, new Pen(indicator, width), new RoundedRect(_containerBounds.Deflate(inset), r));
-            }
-            else context.DrawLine(new Pen(indicator, width), new Point(0, _containerBounds.Bottom - width / 2), new Point(_containerBounds.Width, _containerBounds.Bottom - width / 2));
-        }
+        context.DrawRectangle(background, null, container);
+        if (Outlined || width == 0) return;
+        using var containerClip = context.PushClip(container);
+        context.DrawLine(new Pen(PaintedIndicator, width), new Point(0, _containerBounds.Bottom - width / 2), new Point(_containerBounds.Width, _containerBounds.Bottom - width / 2));
     }
 }

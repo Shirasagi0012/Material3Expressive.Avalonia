@@ -12,7 +12,8 @@ namespace Material3Expressive.Parity;
 public sealed record ButtonGroupConfig(bool Rtl = false, int Space = 400, bool FixedWidth = false,
     string Arrangement = "SpacedBy", string Weights = "none", string Alignment = "Top",
     string Content = "blocks", string Action = "none", int PressIndex = 1,
-    double Ratio = .15, double Compression = 24, bool Checked = false, string SpacingAlignment = "Left");
+    double Ratio = .15, double Compression = 24, bool Checked = false, string SpacingAlignment = "Left",
+    int GroupHeight = -1, int MinimumHeight = 0, int MaximumHeight = -1, bool UnboundedWidth = false);
 
 [ParitySuite("button-group")]
 public sealed class ButtonGroupCases
@@ -43,6 +44,16 @@ public sealed class ButtonGroupCases
             foreach (var selected in new[] { false, true })
                 yield return new($"static.{direction}.connected-{(selected ? "on" : "off")}", "Connected leading, middle and trailing shapes",
                     new(rtl, Content: "connected", Checked: selected));
+
+            foreach (var width in new[] { 400, 100, 20 })
+            foreach (var height in new[] { 16, 64 })
+            {
+                yield return new($"static.{direction}.height-{height}.width-{width}", "Fixed height propagated to visible items and overflow",
+                    new(rtl, width, GroupHeight: height));
+                yield return new($"static.{direction}.minheight-{height}.width-{width}", "Minimum height propagated to visible items and overflow",
+                    new(rtl, width, MinimumHeight: height));
+            }
+            yield return new($"static.{direction}.maxheight-16", "Maximum height limits child measurement", new(rtl, MaximumHeight: 16));
         }
     }
 
@@ -66,6 +77,9 @@ public sealed class ButtonGroupCases
 
             foreach (var action in new[] { "menu", "outside", "reverse", "resize" })
                 yield return new($"dynamic.{direction}.{action}", "Overflow menu input and resizing", new(rtl, 100, Action: action));
+            foreach (var weighted in new[] { false, true })
+                yield return new($"dynamic.{direction}.minimum-{weighted.ToString().ToLowerInvariant()}", "Changing minimum constraints invalidates allocation",
+                    new(rtl, Arrangement: "End", Action: "minimum", Weights: weighted ? "all" : "none", UnboundedWidth: weighted));
         }
     }
 
@@ -83,8 +97,11 @@ public sealed class ButtonGroupCases
         host.Window.Resources[Tokens.MaterialTokens.Sys.Color.SurfaceContainer] = Color.Parse("#F3EDF7");
         var group = new ButtonGroup
         {
-            MaxWidth = config.Space,
+            MaxWidth = config.UnboundedWidth ? double.PositiveInfinity : config.Space,
             Width = config.FixedWidth ? config.Space : double.NaN,
+            Height = config.GroupHeight >= 0 ? config.GroupHeight : double.NaN,
+            MinHeight = config.MinimumHeight,
+            MaxHeight = config.MaximumHeight >= 0 ? config.MaximumHeight : double.PositiveInfinity,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
             HorizontalArrangement = Enum.Parse<ButtonGroupArrangement>(config.Arrangement),
             ItemVerticalAlignment = Enum.Parse<VerticalAlignment>(config.Alignment),
@@ -223,6 +240,13 @@ public sealed class ButtonGroupCases
         Sample("initial");
         if (!dynamic)
             return;
+        if (config.Action == "minimum")
+        {
+            Mutate(1000, "grow-minimum", () => group.MinWidth = 300);
+            Mutate(2000, "shrink-minimum", () => group.MinWidth = 80);
+            Mutate(3000, "reset-minimum", () => group.MinWidth = 0);
+            return;
+        }
         if (config.Action == "resize")
         {
             Mutate(1000, "all-visible", () => group.MaxWidth = 400);

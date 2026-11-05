@@ -117,5 +117,28 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `connected` 在 release / time-96000、`disable` 在 disabled 至 time-400000 仍有像素差异，
 尚未证明全部属于上述舍入范围；不把这些失败归入半像素豁免。
 两个方向的 `repress` 在 Compose 额外被动截图检查中出现最大 1 通道值变化，普通重复捕获与 Avalonia 自检稳定。
-保留不稳定标记和原始产物，不放宽门禁。显式组高度/MinHeight 的约束传递、任意自定义内容的固有尺寸查询
+保留不稳定标记和原始产物，不放宽门禁。任意自定义内容的固有尺寸查询
 尚未由当前宽度用例证明；Avalonia 以自然尺寸测量适配 Compose 固有查询，不存在通用 intrinsic 接口。
+
+2026-11-05 补充运行时最小尺寸变更：`ButtonGroupMeasurePolicy` 在每次 measure 读取 constraints.minWidth / minHeight，
+本地 Panel 读取 owner 对应属性，因此必须显式使内部测量失效。仅让 ItemsControl 自身重新测量时，
+传给模板的最大 availableSize 未变，内部 Panel 会继续复用旧行宽/高。修复只增加两项失效依赖，
+没有改变测量算法、子项配置或公共 API。`ButtonGroupTests` 新增有界无权重、无界权重和空组高度回归，
+ButtonGroup 相关测试 **32/32** 通过。Catalog 新增 Minimum width。
+
+双端动态 minimum 的 LTR/RTL × 权重/无权重四例，依次增大、减小、清除 MinWidth，
+所有实际几何、状态与图像完全相等，执行错误 0 且重复稳定。运行 ID 分别为
+`20261105-064526-05852dfa`、`20261105-064534-bc9f2d42`、`20261105-064540-a0a2ddfa`、`20261105-064545-66e9e027`。
+
+**待维护者决定：最小高度向内容传播。** 补充 26 个双端高度场景（LTR/RTL，Height / MinHeight 为 16 / 64，
+全可见 / 部分溢出 / 全溢出，MaxHeight=16）。`20261105-064104-c320a803` 中 18 例完全相等、8 例不同，
+全部重复稳定、无执行错误。Height / MinHeight=64 且存在可见项目时，上游把最小高度传给内容，
+本地只扩大外层槽：例如 `new ButtonGroup { Height = 64, MaxWidth = 100 }` 内首项自然高 24，
+两端行均为 84×64，但首项 Core 为 40×64、本地为 40×24。截图保留实际蓝色内容面积差异。
+
+推荐在现有布局能力中明确“父级最小约束”与原生控件自身 MinHeight 的传播契约，再由 ButtonGroup 传入。
+调用方仍使用现有 `Height` / `MinHeight`，不需要新组件 API；实现将影响 ButtonLayout、模板中间层及任意 CustomItem，
+必须说明局部 Height、对齐和嵌套自定义布局如何响应。直接改写子控件 MinHeight 会覆盖调用方配置且不等价于 Compose constraints，
+单纯拉伸槽也不能改变内容测量，因此未采用这些近似。此项未获批准，没有把失败用例删除或改为成功。
+同一次 106 例运行也复核原有 80 例；原有反复按压两方向的 Core 额外截图不稳定仍保留，
+不能把新增静态场景稳定推广到整个组件。

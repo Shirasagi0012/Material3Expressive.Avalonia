@@ -2,6 +2,7 @@
 package parity
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.input.*
 import androidx.compose.material3.*
@@ -75,7 +76,7 @@ class TextFieldCases {
         }
     }
 
-    private class FieldScene(val config:TextFieldConfig) {
+    class FieldScene(val config:TextFieldConfig,val legacy:Boolean=false) {
         val field=Probe()
         val probes=linkedMapOf<String,Probe>()
         val requester=FocusRequester()
@@ -84,6 +85,7 @@ class TextFieldCases {
         var error by mutableStateOf(config.error)
         var dark by mutableStateOf(config.dark)
         var progress=0f
+        var interactions by mutableStateOf<MutableInteractionSource?>(null)
 
         @Composable fun Slot(name:String,width:Double,height:Double) {
             val probe=remember(name) { Probe() }
@@ -114,12 +116,19 @@ class TextFieldCases {
                         val suffix:(@Composable ()->Unit)?=if(config.slots) ({ Slot("suffix",20.0,12.0) }) else null
                         val placeholder:(@Composable ()->Unit)?=if(config.slots) ({ Slot("placeholder",48.0,16.0) }) else null
                         val state=rememberTextFieldState()
-                        if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,
+                        val legacyLabel:(@Composable ()->Unit)?=if(config.label) ({ Slot("label",config.labelWidth,config.labelHeight) })else null
+                        if(legacy && config.outlined) OutlinedTextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,
+                            label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
+                            prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
+                        else if(legacy) TextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,
+                            label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
+                            prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
+                        else if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
-                            prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine)
+                            prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
                         else TextField(state=state,modifier=modifier,enabled=enabled,isError=error,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
-                            prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine)
+                            prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
                     }
                 }
             }
@@ -127,7 +136,7 @@ class TextFieldCases {
         fun measure():List<ProbePoint> {
             val result=mutableListOf(ProbePoint("field","field",null,field.geometry().filter { it.name=="box" || it.name=="size" }))
             probes.forEach { (name,probe) -> result.add(ProbePoint(name,name,"field",probe.geometry().filter { it.name=="box" || it.name=="size" })) }
-            if(config.label) result.add(ProbePoint("motion","motion","field",listOf(number("labelProgress",progress.toDouble(),"ratio",category="motion",definition="text-field.label-minimized-progress"))))
+            if(config.label && !legacy) result.add(ProbePoint("motion","motion","field",listOf(number("labelProgress",progress.toDouble(),"ratio",category="motion",definition="text-field.label-minimized-progress"))))
             return result
         }
     }

@@ -59,7 +59,9 @@
 
 输入字段继承现有 MaterialTextFieldBaseTheme，保留 PART_TextPresenter / PART_ScrollViewer 和原生编辑状态；不建立第二套文本引擎。两个图标复用原有 48 DIP 槽，仅加上游逻辑方向的 ±4 DIP 平移。容器透明、边线透明，默认文字与 leading 为 OnSurface，placeholder/trailing 为 OnSurfaceVariant，禁用色、选区、光标继续引用 FilledTextField Token。
 
-清焦任务只在 IsExpanded 改变时启动，对应 `LaunchedEffect(expanded)`，用根 AnimationScope.DelayAsync 的可取消延迟。收起瞬间若聚焦，100ms 后调用窗口 FocusManager.Focus(null)；期间重新展开或分离取消。按上游语义，任务启动后即使焦点转向别处，也不额外重判原输入的 IsFocused。默认 accessibility 名称使用当前 UI Culture；展开状态映射到原生 ItemStatus 并发属性变化通知，未建立完整 Compose semantics 树。
+清焦任务只在 IsExpanded 改变时启动，对应 `LaunchedEffect(expanded)`，用根 AnimationScope.DelayAsync 的可取消延迟。收起瞬间若交互源的焦点收集状态为 true，100ms 后调用窗口 FocusManager.Focus(null)；期间重新展开或分离取消。按上游语义，任务启动后即使焦点转向别处或交互源改变，也不额外重判原输入的 IsFocused。默认 accessibility 名称使用当前 UI Culture；展开状态映射到原生 ItemStatus 并发属性变化通知，未建立完整 Compose semantics 树。
+
+旧布尔 `SearchBarDefaults.InputField(query, ..., expanded, interactionSource)` 的共享源直接复用 TextField 模板观察器，公开 `InteractionSource` 与 `MaterialTextField.InteractionSourceProperty` 共用属性身份。上游 `collectIsFocusedAsState` 决定清焦任务，`onFocusChanged` 决定展开请求，两者不能混为一谈。外部 Focus 不请求展开；对真实焦点开始实例发送 Unfocus 后，原生字段即使仍聚焦，收起也不启动任务。源替换不改变以 expanded 为键的任务生命周期。新版状态输入的提交问题仍按下节暂缓，此接入没有改变其批准状态。
 
 ## 3. 已确认决定与已知差异
 
@@ -115,3 +117,5 @@ contained 与顶栏组合在 1088000µs 的关闭样本中，两端主进度均�
 Windows Catalog 已实测自动聚焦、查询过滤、选择结果收起及焦点恢复、返回按钮、深色/RTL、遮罩右键不关闭和主按钮关闭；搜索顶栏演示额外验证显式上滚减少栏高及停止后吸附。输入只导出一次；触摸、屏幕阅读器遍历及移动端 IME/预测返回仍未经这些桌面测试验证。
 
 完整控件测试通过 **2065/2065**，VisualParity 系统测试通过 **124/124**，解决方案与双端 Release 捕获端构建成功。构建仍有既有 Avalonia 资源、TextField 空引用分析等警告，未为清理警告扩大本组件改动范围。验证日志与捕获产物保存在本机 `artifacts/`；上述图像超差仍未解决，执行成功不代表所有上游行为和图像一致。
+
+2026-11-05 输入交互源补齐：`SearchBarInputFieldTests` **13/13** 通过，Catalog 构建成功。双端 `search-bar-input` 运行 `20261105-063820-587b4028` 共 15 例，执行错误 0，全部重复稳定。新增外部 Focus、真实焦点的配对 Unfocus、延迟执行中换源三个场景，实际 focused / expanded / requests / other-focused 全部相等，包括清焦前 99ms 与 100ms 边界；既有编辑行 56 / 58.5 DIP 及插槽纵坐标差异仍存在，15 例整体状态均为 different。聚焦场景沿用原套件的结构化测量，未把不可虚拟化的原生光标时钟纳入图像通过结论；10 个静态场景仍捕获完整图像。

@@ -121,7 +121,7 @@ public sealed class TextFieldCases
         foreach (var time in new long[] { 96000, 160000, 240000, 400000, 800000 }) { Advance(time); Sample($"time-{time}"); }
     }
 
-    sealed class FieldScene
+    internal sealed class FieldScene
     {
         readonly AvaloniaHost host;
         readonly TextFieldConfig config;

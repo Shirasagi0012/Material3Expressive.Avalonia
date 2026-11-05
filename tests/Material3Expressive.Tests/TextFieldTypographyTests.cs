@@ -305,8 +305,9 @@ public class TextFieldTypographyTests
         var originalColor = Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color;
         var originalStyle = MaterialText.GetStyle(label)! with { Foreground = null };
         floating.SetValue(TextBlock.LineHeightProperty, double.PositiveInfinity);
-        // Exercise the real theme's focus selector without focusing/measuring the native editor.
-        ((IPseudoClasses)fixture.Box.Classes).Add(":focus");
+        // Exercise the decoration color selector without focusing/measuring the native editor
+        // or starting the independent label-position transition.
+        TextFieldThemeDefaults.SetIsFocused(fixture.Box, true);
         fixture.Advance(100);
         var focusedColor = Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color;
         Assert.NotEqual(originalColor, focusedColor);
@@ -321,7 +322,7 @@ public class TextFieldTypographyTests
         floating.ClearValue(TextBlock.LineHeightProperty);
         Assert.Equal(errorColor, Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color);
         MaterialTextField.SetIsError(fixture.Box, false);
-        ((IPseudoClasses)fixture.Box.Classes).Remove(":focus");
+        TextFieldThemeDefaults.SetIsFocused(fixture.Box, false);
         fixture.Advance(100);
         Assert.Equal(originalColor, Assert.IsAssignableFrom<ISolidColorBrush>(text.Foreground).Color);
         Assert.Equal(24, text.LineHeight);

@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using ComposeAnimation;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Catalog;
 
@@ -17,6 +18,9 @@ public partial class SearchBarDemo : Window
     {
         AnimationScope.Initialize(this);
         InitializeComponent();
+        var source = new MaterialInteractionSource();
+        Query.InteractionSource = source;
+        source.Interaction += interaction => InputInteraction.Text = $"输入交互：{interaction.GetType().Name}";
         UpdateResults();
     }
     private void QueryChanged(object? sender, TextChangedEventArgs e)

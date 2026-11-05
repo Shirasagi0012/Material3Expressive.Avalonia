@@ -66,6 +66,11 @@ private void OnFavoriteRequested(object? sender, IconCheckedChangeEventArgs e)
 SpacedBy 消费 `Spacing`；`SpacingAlignment` 用 Left / Center / Right 表示逻辑起点、居中、终点，RTL 随组镜像。
 组内默认顶对齐，可设 `ItemVerticalAlignment`；项目的 `Alignment` 单独覆盖它。
 
+`MinWidth` 可在运行中绑定或修改，排列和权重分配随之重算；例如
+`<m3:ButtonGroup MinWidth="{Binding MinimumActionsWidth}" HorizontalArrangement="End">…</m3:ButtonGroup>`。
+Catalog 的 **Minimum width** 示例提供滑杆。固定 `Height` / 较大的 `MinHeight` 向自定义内容传播仍有已记录差异，
+目前不要依靠它拉伸所有项目；详情见 [INTERNALS](INTERNALS.md)。
+
 `Weight` 默认为 NaN，表示按固有宽度分配；正值按权重分享剩余空间。没有有限宽度时，权重项以最小宽度
 为目标分配，和上游相同。`CompressionLimit` 限制该项被邻项压缩的最大 DIP，默认来自 Token（24 DIP）。
 

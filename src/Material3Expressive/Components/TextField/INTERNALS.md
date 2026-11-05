@@ -36,9 +36,26 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 - 图标 presenter 外部保留 48 DIP 槽，内部按子控件测得的 DesiredSize 居中排列，避免 ContentPresenter
   将默认 24 DIP MaterialSymbol 拉伸到整槽；按钮等本身首选尺寸为 48 DIP 的内容继续占满交互空间
 - `Phase` 区分聚焦、未聚焦空值、未聚焦非空值。label / placeholder / affix 独立动画，目标在下一共享帧合并；不要用一个 opacity 或仅一张静态截图替代状态转换
+- `TextFieldLayout.Interaction.cs` 对照固定 `FocusInteraction.collectIsFocusedAsState`、`FocusableNode` 和
+  `TextFieldPressGestureFilter.kt`。共享 `MaterialInteractionSource` 的焦点列表以事件身份增删，
+  内部 `TextFieldThemeDefaults.IsFocused` 同时驱动主题颜色和装饰动画；外部焦点不调用原生 Focus。
+  换源取消旧 collector，结束本控件的旧 starts，保留 remembered boolean 到新源下一事件，不重放原生焦点。
+  普通交互控制器的 hover/激活键及 ripple 不适用于编辑器，故模板内部只桥接原生焦点与按压，
+  不拦截编辑、不接管捕获、不创建新公共交互框架；SecureTextField 共用此实现。
+- Filled 指示线单独保留 `IndicatorLineNode.trackFocusState` 的状态和即时动画注册；属性变化在下一共享帧
+  合并后更新，对应重组中的 `IndicatorLineNode.update`，不把错误/主题变更提前为交互事件。宽度使用
+  固定 FastSpatial 规格未指定 visibilityThreshold，保留 VectorizedSpringSpec 的 0.01 默认值，
+  不套用 animateDpAsState 默认规格的 Dp 阈值。换源将 collector 的 focused 清零但不使绘制失效；新源非焦点事件不改变旧指示线。
+  下一焦点状态变化或 enabled/error/颜色/规格变化才重新求目标；不能将它合并成标签的 remembered boolean。
+  禁用使用 `animateTo(snap())` 的下一动画帧提交，不用立即 `SnapToAsync` 代替。
+- Outlined 的 `animateBorderStrokeAsState` 禁用分支使用 `rememberUpdatedState`；重新启用时，
+  颜色与宽度动画以当前目标初始化。这只作用于描边，不重建编辑器、不改变已确认的标签连续回落。
 - 隐藏槽位不参与布局及辅助技术遍历。placeholder 同时检查原生 Text 与 PreeditText，不能遮住 IME 预编辑文本
 - Inside / Cutout / Above 的测量与排列保留在内部布局；leading/trailing 的 48 DIP 槽、12 DIP Padding 补偿、affix 的 2 DIP 内距与支持区由这里消费
 - 缺口通过真实几何裁剪形成，额外水平留白为 4 DIP，透明容器也适用；`TextFieldDecoration` 只是内部绘制部件，不是公开替代控件
+- Outlined 的描边复用现有内部 `SurfaceOutline`，按固定 `Border.kt` 对物理像素线宽取 ceil、
+  处理小圆角及非对称内轮廓；原浮点 Pen 绘制在动画中产生了双端可见差异。
+  描边节点排列在实际 ContainerBounds 内，不贡献 Padding；装饰层的真实缺口同时裁剪背景和描边。
 - 无障碍名称/帮助文字以 Style 优先级投影到原生 Automation 属性，应用的显式值优先；owner 保留原生 Edit / IValueProvider peer，不声称构建了 Compose 的完整 semantics 树
 - 共用排版通过 BodyLarge / BodySmall 聚合 Token；运动使用 FastSpatial / FastEffects / SlowEffects。共享能力的原因和限制引用相应文档，不在此复制决定
 
@@ -146,12 +163,20 @@ Compose 不同。内容真正变化时仍重新测量，不冻结布局，不保
 
 **尚未实现：**
 
-- SearchBar 展开、建议列表和键盘/IME 搜索动作流程；Catalog 的搜索输入仅演示内容槽
-- Compose keyboard options/action、InteractionSource 对外 API、任意非圆角 Shape、完整 Compose semantics
+- 新状态编辑模型对应的 SearchBar API 不在此模板内；已有字符串输入、展开、建议列表和 Enter 提交
+  由 [SearchBar](../SearchBar/README.md) 维护，不能将其概括为尚未实现
+- Compose keyboard options/action、任意非圆角 Shape、完整 Compose semantics
 - 本阶段没有实现上述编辑状态/转换模型；接受原生编辑边界不代表这些 Compose API 已经存在
 - SecureTextField 的 RevealLastTyped、密码 automation / IME 缺口由[该组件](../SecureTextField/README.md)维护；PasswordChar / RevealPassword 透传不启用安全策略
 
 **已观察到但未消除的差异：**
+
+- `text-field-source` 真实指针时间线中，原生 TextBox 在 Press 时聚焦，固定 Core 新版字段在 Release 后聚焦；
+  保留已确认的原生编辑职责，不延迟或伪造 Focus 事件。外部 Focus 在新版 Core 还会显示 caret，本地仅驱动装饰；
+  caret 由原生真实焦点控制。这些截图如实保留，不隐藏光标或将原生编辑边界说成逐像素等价。
+- 活动按压换源时，本地按 `TextFieldPressGestureFilter` 的旧值重载规则取消旧 Press；新版 Core
+  `TextFieldDecoratorModifierNode` 重启 pointerInput 后没有发布该 Cancel。新状态编辑模型尚未移植，
+  此处不混用新版节点的行为，也不把两种上游重载的源生命周期宣称一致。
 
 - 原生编辑行度量、换行、字体排版及鼠标光标定位沿用平台语义。原 4× 固定字体环境中，Core 空输入行为 26.5 DIP、Avalonia 最小编辑行为 24 DIP；自动尺寸不同不能用强制高度或测试偏移掩盖
 - `dynamic.reverse.*` 旧验证在 160000 / 240000 µs 观察到约 `7.45e-9` 的标签进度差异，即使所测槽位几何一致，精确数值比较仍可失败；没有为此取整、改容差或改共享运行时
@@ -176,8 +201,24 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ```
 
 - [原生编辑与生命周期测试](../../../../tests/Material3Expressive.Tests/TextFieldTests.cs)：主题、错误/禁用优先级、内容槽、IME 客户端、选区/撤销、主题替换、自动高度、反向与 detach
+- `TextFieldInteractionTests` 检查四种普通/安全主题、身份配对、重叠焦点、源替换及同步重入、
+  按压取消、编辑按键、卸载重挂与 Filled 指示线的独立换源语义。
+- `TextFieldSourceCases.cs` / `.kt` 的 `text-field-source` 族有 38 个时间线：20 个新状态重载、18 个旧值重载。
+  读取实际事件配对和槽几何；新状态重载另读标签进度，旧重载不伪造未提供的内部进度。
+  最终 `20261105-071528-8d045c3d` 双端捕获无执行错误且全部重复稳定，38 例均保留 different；
+  差异分类见上文，不能将捕获成功或终态相等当作完整视觉验收。
+- `TextFieldContainerCases.cs` / `.kt` 独立比较实际 Container 的全图，不含标签或编辑光标；
+  覆盖聚焦、反向、错误、禁用、换源、明暗和慢弹簧，以及 Outlined 直角、极小/非对称圆角。
+  Filled 的慢弹簧反向行为另有测试确认保留速度；Outlined 的 animateAsState 按固定上游
+  `restartAnimation` 先取消旧 job，不擅自套用 Filled 的中断语义。
+  最终 `20261105-071433-c6be015f` 的 17 例全部无执行错误且重复稳定，5 例像素完全相等、
+  12 例在既定容差内、超差 0。未修改比较容差或参考算法；这个结果不替代完整字段的布局/编辑一致性。
+- 本轮 Windows Catalog 实际操作检查了外部焦点预览、原生输入、明暗/RTL 切换，及 SearchBar
+  聚焦展开、文字筛选、Enter 提交、收起后 Unfocus；这不覆盖下述 IME、触控或辅助技术验收。
 - [稀疏排版属性与模板测试](../../../../tests/Material3Expressive.Tests/TextFieldTypographyTests.cs)：未测量的真实模板覆盖完整/稀疏端点、资源/主题/字体缩放、原生覆盖及移除、重挂与动画输出隔离；不验证字形或文字像素
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/TextFieldCases.cs)与 [Compose 用例](../../../../tests/VisualParity/reference/src/main/kotlin/cases/TextFieldCases.kt)：Filled / Outlined、三种标签位置、最小化、RTL、错误/禁用/明暗/约束和动态中断
+- 原有 72 例最终回归 `20261105-071508-0a87db03`：27 例完全相等、27 例容差内、18 例不同，
+  执行错误 0，全部重复稳定；自动高度、标签过冲尺寸限制等既有差异仍按上文区分，未放宽门禁。
 - 自动尺寸用例保留真实空编辑行；几何内容通过正式槽位传入，窄宽度采用与 Compose `Modifier.size` 同义的受约束首选尺寸
 - 聚焦动态主采样读取槽位几何与标签进度，不对未虚拟化的原生 caret blink 做常规截图；其他适用场景保留原图
 

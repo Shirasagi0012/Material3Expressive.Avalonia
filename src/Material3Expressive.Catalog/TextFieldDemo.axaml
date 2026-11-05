@@ -37,6 +37,10 @@
       <TextBox Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Custom graphic"
                m3:MaterialTextField.LeadingIcon="{x:Null}"
                m3:MaterialTextField.LeadingIconTemplate="{StaticResource CustomGlyphTemplate}" />
+      <TextBox Name="InteractionInput" m3:MaterialTextField.Label="Shared interactions"
+               m3:MaterialTextField.SupportingText="Focus this field or toggle the focus preview below" />
+      <Button Content="Toggle focus preview" Click="TogglePreviewFocus" />
+      <TextBlock Name="InteractionStatus" Text="No interaction" />
       <StackPanel Orientation="Horizontal" Spacing="12">
         <Button Content="Toggle light / dark" Click="ToggleTheme" />
         <Button Content="Toggle RTL" Click="ToggleDirection" />

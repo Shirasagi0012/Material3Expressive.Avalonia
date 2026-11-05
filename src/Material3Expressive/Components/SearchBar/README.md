@@ -105,7 +105,7 @@ FullScreenSearch.State = state;
 
 - `IsExpanded` 控制结果显隐；中途反向保留当前动画值。
 - 输入字段获得焦点时发出 `ExpansionRequested`，Enter 发出 `SearchRequested`；两者不代写查询或展开状态。将两个控件的 `IsExpanded` 绑定到同一状态。
-- 输入字段从展开变为收起且当时拥有焦点时，100ms 后清除焦点；重新展开和卸载取消待执行任务。焦点变化本身不会启动这个延迟。
+- 输入字段从展开变为收起且交互源当时处于聚焦状态时，100ms 后清除窗口焦点；重新展开和卸载取消待执行任务。焦点变化本身不会启动这个延迟。
 - `CollapseRequested` 在未被子控件处理的 Escape 按下时发出请求；应用应将 `IsExpanded` 设为 `false`。事件不会自行改变该属性。
 - `Background`、`Foreground`、`CornerRadius`、`DividerColor` 定制表面和分隔线；`TonalElevation`、`ShadowElevation` 默认均为零。
 - 默认宽度为 360 DIP，可通过 `Width`、父级约束及组件 Token 调整。结果区域至少 240 DIP，最多为窗口高度的三分之二；较小窗口或父级约束会进一步限制高度。
@@ -149,6 +149,16 @@ float remainingVelocity = await scrolling.OnPostFlingAsync(availableVelocityY, c
 可在局部资源覆盖 `MaterialTokens.Comp.SearchBar`，例如 `DefaultWidth`、`MinimumResultsHeight`、`ContainerColor` 和 `DockedContainerShape`。需要自定义整体布局时替换控件模板。
 
 输入字段复用 `MaterialTextField.Placeholder`、`LeadingIcon`、`TrailingIcon` 及对应模板，保留原生 TextBox 的 Text/Selection/IME。默认输入背景透明、无指示线，图标向内偏移 4 DIP，首选宽度范围 360–720 DIP；父级可缩小它。`Foreground`、`Background`、`PlaceholderForeground` 等原生属性可覆盖默认颜色。无障碍默认名称和展开状态使用固定 Core 的本地化文案，显式 `AutomationProperties.Name` / `ItemStatus` 优先。
+
+`InteractionSource` 可观察输入的焦点与按压，也可与外部装饰共享；默认 null 使用模板私有源。它与 `MaterialTextField.InteractionSource` 是同一属性：
+
+```csharp
+var interactions = new MaterialInteractionSource(); // Material3Expressive.Foundation.Interaction
+Query.InteractionSource = interactions;
+interactions.Interaction += interaction => Debug.WriteLine(interaction.GetType().Name);
+```
+
+外部 Focus 参与收起时的判断，但不改变原生键盘焦点、不发出 `ExpansionRequested`。展开请求仍来自输入控件实际获得焦点。替换源不回放焦点，也不会重新启动或取消已经开始的清焦延迟；配对、替换和原生编辑边界见 [TextField](../TextField/README.md)。Catalog 的 **Docked search** 显示实际交互事件。
 
 ## 使用限制与注意事项
 

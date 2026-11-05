@@ -10,6 +10,16 @@ namespace Material3Expressive.Components;
 // through ordinary theme bindings, so application styles and local values win.
 internal static class TextFieldThemeDefaults
 {
+    public static readonly AttachedProperty<bool> IsFocusedProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, bool>("IsFocused", typeof(TextFieldThemeDefaults));
+    public static bool GetIsFocused(TextBox owner) => owner.GetValue(IsFocusedProperty);
+    public static void SetIsFocused(TextBox owner, bool value) => owner.SetValue(IsFocusedProperty, value);
+
+    public static readonly AttachedProperty<bool> IndicatorFocusedProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, bool>("IndicatorFocused", typeof(TextFieldThemeDefaults));
+    public static bool GetIndicatorFocused(TextBox owner) => owner.GetValue(IndicatorFocusedProperty);
+    public static void SetIndicatorFocused(TextBox owner, bool value) => owner.SetValue(IndicatorFocusedProperty, value);
+
     public static readonly AttachedProperty<IBrush?> ForegroundProperty =
         AvaloniaProperty.RegisterAttached<TextBox, IBrush?>("Foreground", typeof(TextFieldThemeDefaults));
     public static IBrush? GetForeground(TextBox owner) => owner.GetValue(ForegroundProperty);

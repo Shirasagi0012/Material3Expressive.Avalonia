@@ -19,7 +19,8 @@ data class ButtonGroupConfig(
     val rtl: Boolean = false, val space: Int = 400, val fixedWidth: Boolean = false,
     val arrangement: String = "SpacedBy", val weights: String = "none", val alignment: String = "Top",
     val content: String = "blocks", val action: String = "none", val pressIndex: Int = 1,
-    val ratio: Double = .15, val compression: Double = 24.0, val checked: Boolean = false, val spacingAlignment: String = "Left"
+    val ratio: Double = .15, val compression: Double = 24.0, val checked: Boolean = false, val spacingAlignment: String = "Left",
+    val groupHeight:Int=-1,val minimumHeight:Int=0,val maximumHeight:Int=-1,val unboundedWidth:Boolean=false
 )
 
 @ParitySuite("button-group")
@@ -40,6 +41,7 @@ class ButtonGroupCases {
             val menuItems = List(3) { Probe() }
             var menuState: ButtonGroupMenuState? = null
             var space by mutableStateOf(config.space)
+            var minimumWidth by mutableStateOf(0)
             var enabled by mutableStateOf(true)
             var clicks = 0
             val checked = mutableStateListOf(config.checked, config.checked, config.checked)
@@ -66,9 +68,13 @@ class ButtonGroupCases {
                                 "Bottom" -> Alignment.Bottom
                                 else -> Alignment.Top
                             }
-                            val sizeModifier = if (config.fixedWidth) Modifier.width(space.dp) else Modifier.widthIn(max = space.dp)
+                            val sizeModifier = if (config.fixedWidth) Modifier.width(space.dp)
+                                else (if(config.unboundedWidth)Modifier.wrapContentWidth(AbsoluteAlignment.Left,unbounded=true)else Modifier)
+                                    .widthIn(min=minimumWidth.dp,max=if(config.unboundedWidth)Dp.Unspecified else space.dp)
+                            val heightModifier = if(config.groupHeight>=0)Modifier.height(config.groupHeight.dp)
+                                else Modifier.heightIn(min=config.minimumHeight.dp,max=if(config.maximumHeight>=0)config.maximumHeight.dp else Dp.Unspecified)
                             ButtonGroup(
-                                modifier = Modifier.absoluteOffset(32.dp, 24.dp).then(sizeModifier).then(group.modifier()),
+                                modifier = Modifier.absoluteOffset(32.dp, 24.dp).then(sizeModifier).then(heightModifier).then(group.modifier()),
                                 expandedRatio = config.ratio.toFloat(),
                                 horizontalArrangement = arrangement,
                                 verticalAlignment = alignment,
@@ -193,6 +199,12 @@ class ButtonGroupCases {
 
             sample("initial")
             if (!dynamic) return
+            if(config.action=="minimum") {
+                mutate(1000,"grow-minimum"){minimumWidth=300}
+                mutate(2000,"shrink-minimum"){minimumWidth=80}
+                mutate(3000,"reset-minimum"){minimumWidth=0}
+                return
+            }
             if (config.action == "resize") {
                 mutate(1000, "all-visible") { space = 400 }
                 mutate(2000, "none-visible") { space = 20 }

@@ -21,6 +21,7 @@
       </ScrollViewer>
     </m3:DockedSearchBar>
     <TextBlock x:Name="Status" Text="尚未选择结果" />
+    <TextBlock x:Name="InputInteraction" Text="输入交互：无" />
     <TextBlock Text="输入字段请求展开和搜索；应用管理查询与展开状态。收起 100ms 后清除输入焦点，重新展开会取消清焦。"
                TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
   </StackPanel>

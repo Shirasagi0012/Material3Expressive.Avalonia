@@ -13,6 +13,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Xunit;
 
 namespace Material3Expressive.Tests;
@@ -119,6 +120,65 @@ public class SearchBarInputFieldTests
         other.Focus(); host.Advance(100);
         Assert.False(other.IsFocused); // Upstream captured focused at collapse, then clears the focus manager.
         Assert.Null(host.Window.FocusManager!.GetFocusedElement());
+    }
+
+    [AvaloniaFact]
+    public void ExternalSourceFocusDoesNotRequestExpansionButParticipatesInCollapseEffect()
+    {
+        using var host = new Host();
+        var source = new MaterialInteractionSource();
+        host.Field.InteractionSource = source;
+        Assert.Same(source, MaterialTextField.GetInteractionSource(host.Field));
+        var other = new Button();
+        host.Window.Content = null;
+        host.Window.Content = new StackPanel { Children = { host.Field, other } }; host.Draw();
+        other.Focus();
+        var requests = 0;
+        host.Field.ExpansionRequested += (_, _) => requests++;
+        source.Emit(new MaterialInteractionEvent.Focus());
+        Assert.False(host.Field.IsFocused);
+        Assert.False(host.Field.IsExpanded);
+        Assert.Equal(0, requests);
+        host.Field.IsExpanded = true;
+        host.Field.IsExpanded = false;
+        host.Advance(99); Assert.True(other.IsFocused);
+        host.Advance(1); Assert.False(other.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void SourceUnfocusPreventsClearEffectEvenWhenEditorRemainsFocused()
+    {
+        using var host = new Host();
+        var source = new MaterialInteractionSource();
+        MaterialInteractionEvent.Focus? focus = null;
+        source.Interaction += interaction => { if (interaction is MaterialInteractionEvent.Focus f) focus = f; };
+        host.Field.InteractionSource = source;
+        host.Field.Focus();
+        host.Field.IsExpanded = true;
+        Assert.NotNull(focus);
+        source.Emit(new MaterialInteractionEvent.Unfocus(focus));
+        Assert.True(host.Field.IsFocused);
+        host.Field.IsExpanded = false;
+        host.Advance(200);
+        Assert.True(host.Field.IsFocused);
+        Assert.Equal(0, host.Time.ActiveTimerCount);
+    }
+
+    [AvaloniaFact]
+    public void SourceReplacementDoesNotRestartOrCancelAnAlreadyLaunchedCollapseEffect()
+    {
+        using var host = new Host();
+        host.Field.InteractionSource = new();
+        host.Field.Focus();
+        host.Field.IsExpanded = true;
+        host.Field.IsExpanded = false;
+        host.Advance(60);
+        var next = new MaterialInteractionSource();
+        host.Field.InteractionSource = next;
+        next.Emit(new MaterialInteractionEvent.HoverEnter());
+        host.Advance(39); Assert.True(host.Field.IsFocused);
+        host.Advance(1); Assert.False(host.Field.IsFocused);
+        Assert.Equal(0, host.Time.ActiveTimerCount);
     }
 
     [AvaloniaFact]

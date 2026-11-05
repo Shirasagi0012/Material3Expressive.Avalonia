@@ -55,6 +55,20 @@
 - `IsReadOnly` 仍允许原生选择与复制；`IsEnabled="False"` 禁用整个输入框及其内容
 - 字符串 `Label` 自动提供无障碍名称，字符串 `SupportingText` 提供普通 HelpText；应用显式设置的 `AutomationProperties.Name` / `HelpText` 优先
 
+`MaterialTextField.InteractionSource` 连接可共享的交互流，普通与安全输入主题都支持。
+例如视图中的 `input` 与提示标签 `label` 可以共用同一源：
+
+```csharp
+var source = new Material3Expressive.Foundation.Interaction.MaterialInteractionSource();
+MaterialTextField.SetInteractionSource(input, source);
+label.InteractionSource = source;
+```
+
+原生焦点与指针按压会发布配对事件；文本输入按键不生成按钮按压，悬停不生成状态层。
+外部 Focus / Unfocus 可驱动装饰而不移动编辑焦点或改变文本；多个 Focus 必须分别结束。
+null 恢复私有源。更换源结束旧源上的原生交互，不向新源补发当前焦点；装饰保留此前的焦点值，
+直到新源收到下一事件。Catalog 的 Shared interactions 示例可预览这一路径。
+
 ## 标签、内容槽与多行
 
 两种外观均支持 `LabelPosition="Inside|Cutout|Above"`。`AlwaysMinimizeLabel="True"`

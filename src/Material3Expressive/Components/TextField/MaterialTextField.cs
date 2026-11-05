@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Material3Expressive.Foundation.Interaction;
 namespace Material3Expressive.Components;
 
 /// <summary>Material decoration for a native TextBox. Editing, selection and IME remain native.</summary>
@@ -12,6 +13,13 @@ namespace Material3Expressive.Components;
 /// </remarks>
 public static class MaterialTextField
 {
+    /// <summary>Observes native editing interactions and drives the Material decoration.
+    /// Null uses a private source. External focus events do not move keyboard focus.</summary>
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, MaterialInteractionSource?>("InteractionSource", typeof(MaterialTextField));
+    public static MaterialInteractionSource? GetInteractionSource(TextBox owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(TextBox owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+
     public static readonly AttachedProperty<object?> LabelProperty =
         AvaloniaProperty.RegisterAttached<TemplatedControl, object?>("Label", typeof(MaterialTextField), null);
     public static object? GetLabel(TemplatedControl owner) => owner.GetValue(LabelProperty);

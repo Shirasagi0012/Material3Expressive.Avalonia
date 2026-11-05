@@ -102,7 +102,8 @@ public class ButtonGroup : ItemsControl
         base.OnPropertyChanged(change);
         if (change.Property == ExpandedRatioProperty || change.Property == SpacingProperty ||
             change.Property == HorizontalArrangementProperty || change.Property == ItemVerticalAlignmentProperty ||
-            change.Property == SpacingAlignmentProperty || change.Property == FlowDirectionProperty)
+            change.Property == SpacingAlignmentProperty || change.Property == FlowDirectionProperty ||
+            change.Property == MinWidthProperty || change.Property == MinHeightProperty)
             Layout?.InvalidateItemsMeasure();
     }
 }
