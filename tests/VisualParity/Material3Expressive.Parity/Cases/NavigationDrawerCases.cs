@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
@@ -142,11 +144,17 @@ public sealed class NavigationDrawerCases
         private readonly IMouseDevice _mouse;
         private int _clicks;
         private bool _pressed;
-        public DrawerState State { get; }
+        public DrawerState State { get; private set; }
         public NavigationDrawer Drawer { get; }
         public DrawerSheet Sheet { get; }
         public NavigationDrawerItem Item { get; }
         public Control Root { get; }
+        public void ReplaceState()
+        {
+            State = new DrawerState(DrawerValue.Open);
+            ((DismissibleNavigationDrawer)Drawer).State = State;
+            ((DismissibleDrawerSheet)Sheet).State = State;
+        }
         public Scene(AvaloniaHost host, NavigationDrawerConfig c)
         {
             _host = host; _config = c; SetTheme(c.Dark);
@@ -169,6 +177,15 @@ public sealed class NavigationDrawerCases
             }
             if (!c.Empty) Sheet.Content = new StackPanel { Margin = new Thickness(12, 16), Children = { new Marker { PreferredWidth = 48, PreferredHeight = 32, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left }, Item } };
             Drawer.DrawerContent = Sheet; Drawer.Content = _page;
+            if (c.Action == "native-thumb")
+            {
+                Drawer.Content = null;
+                Drawer.Content = new Thumb { Template = new FuncControlTemplate<Thumb>((_, _) => _page) };
+            }
+            if (c.Action == "child") _page.PointerMoved += (_, e) =>
+            {
+                if (e.GetCurrentPoint(_page).Properties.IsLeftButtonPressed) e.Handled = true;
+            };
             Root = new Border { Padding = new Thickness(16), Background = Brushes.White, Child = Drawer, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
         public void Input(string action, Point p)

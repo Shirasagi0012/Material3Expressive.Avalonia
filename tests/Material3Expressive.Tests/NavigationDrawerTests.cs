@@ -25,6 +25,143 @@ namespace Material3Expressive.Tests;
 public class NavigationDrawerTests
 {
     [AvaloniaTheory]
+    [InlineData("modal")]
+    [InlineData("dismissible")]
+    public void DisablingDrawerGestures_DoesNotReleaseChildButtonCapture(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, true);
+        var window = Show(drawer);
+        try
+        {
+            var item = drawer.GetVisualDescendants().OfType<NavigationDrawerItem>().Single();
+            var clicks = 0;
+            item.Click += (_, _) => clicks++;
+            var point = item.TranslatePoint(new Point(80, 28), window)!.Value;
+            window.MouseMove(point); window.MouseDown(point, MouseButton.Left);
+            drawer.GesturesEnabled = false;
+            Advance(clock, window, 1);
+            window.MouseUp(point, MouseButton.Left);
+            Assert.Equal(1, clicks);
+            Assert.Equal(0, drawer.State.CurrentOffset);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void RemovingDrawer_CancelsPendingFocusWithoutWaitingForAnotherFrame()
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create("modal", false);
+        var window = Show(drawer);
+        try
+        {
+            drawer.State.SnapToAsync(DrawerValue.Open).GetAwaiter().GetResult();
+            Assert.True(clock.PendingFrameCount > 0);
+            window.Content = null;
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, clock.PendingFrameCount);
+            window.Content = drawer;
+            window.UpdateLayout();
+            Advance(clock, window, 1);
+            Assert.True(drawer.GetVisualDescendants().OfType<NavigationDrawerItem>().Single().IsFocused);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("modal")]
+    [InlineData("dismissible")]
+    public void DescendantConsumedMovement_DoesNotStartDrawerDrag(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, false);
+        var child = new ConsumingContent();
+        drawer.Content = child;
+        var window = Show(drawer);
+        try
+        {
+            window.MouseMove(new Point(120, 240));
+            window.MouseDown(new Point(120, 240), MouseButton.Left);
+            window.MouseMove(new Point(200, 240), RawInputModifiers.LeftMouseButton);
+            Assert.Equal(1, child.DragMoves);
+            Assert.Equal(-360, drawer.State.CurrentOffset);
+            window.MouseUp(new Point(200, 240), MouseButton.Left);
+            Assert.False(drawer.State.IsAnimationRunning);
+        }
+        finally { window.Close(); }
+    }
+    private sealed class ConsumingContent : Border
+    {
+        public int DragMoves { get; private set; }
+        public ConsumingContent() => Background = Brushes.Transparent;
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) { DragMoves++; e.Handled = true; }
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("modal")]
+    [InlineData("dismissible")]
+    public void DraggingContentSlider_DoesNotMoveDrawer(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, false);
+        var slider = new Slider { Minimum = 0, Maximum = 100, Value = 40, Width = 240,
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        drawer.Content = slider;
+        var window = Show(drawer);
+        try
+        {
+            var thumb = slider.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Thumb>().Single();
+            var point = thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), window)!.Value;
+            window.MouseMove(point); window.MouseDown(point, MouseButton.Left);
+            window.MouseMove(point + new Vector(60, 0), RawInputModifiers.LeftMouseButton);
+            window.MouseUp(point + new Vector(60, 0), MouseButton.Left);
+            Assert.True(slider.Value > 40);
+            Assert.Equal(-360, drawer.State.CurrentOffset);
+            Assert.False(drawer.State.IsAnimationRunning);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("modal", "direction")]
+    [InlineData("dismissible", "direction")]
+    [InlineData("modal", "gestures")]
+    [InlineData("dismissible", "gestures")]
+    public void InterruptedDrag_EndsOldInputCycleBeforeFurtherMovement(string kind, string interruption)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, true);
+        var window = Show(drawer);
+        try
+        {
+            window.MouseMove(new Point(280, 240));
+            window.MouseDown(new Point(280, 240), MouseButton.Left);
+            window.MouseMove(new Point(240, 240), RawInputModifiers.LeftMouseButton);
+            Assert.InRange(drawer.State.CurrentOffset, -41, -39);
+            var oldState = drawer.State;
+            if (interruption == "direction") drawer.FlowDirection = FlowDirection.RightToLeft;
+            else drawer.GesturesEnabled = false;
+            Advance(clock, window, 1);
+            var offset = drawer.State.CurrentOffset;
+            window.MouseMove(new Point(200, 240), RawInputModifiers.LeftMouseButton);
+            Assert.Equal(offset, drawer.State.CurrentOffset);
+            window.MouseUp(new Point(200, 240), MouseButton.Left);
+            Advance(clock, window, 30);
+            Assert.Equal(0, drawer.State.CurrentOffset);
+            Assert.False(drawer.State.IsAnimationRunning);
+            Assert.False(oldState.IsAnimationRunning);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData("modal", true, 0, 520)]
     [InlineData("modal", false, 0, 520)]
     [InlineData("dismissible", true, 360, 520)]

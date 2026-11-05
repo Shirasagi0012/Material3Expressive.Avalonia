@@ -22,6 +22,7 @@
 - 背景匹配最终布局，前景决定自然尺寸并独立移动。背景槽按 BadgedBox 的 presenter 注册与 LogicalChildren 模式维护 DataContext 和父级归属。
 - 状态持有窗口子作用域，控件另持配置和回调作用域。状态替换、卸载与调用者取消结束旧操作。Bubble 阶段处理移动，保留子控件消费优先级；按下可立即打断程序化动画，尚未开始拖动时保留子按钮点击。
 - IsEffectivelyEnabled 变化立即取消捕获并以零速度 settle，覆盖祖先禁用。GesturesEnabled 的取消在下一对应帧处理。
+- 取消候选拖动仅释放本控件拥有的 capture；子 Button 的捕获归子控件所有，父手势开关不合成子按压取消。
 - Dismissed 观察提交状态。初始已消除状态可能在首次测量前通知，此时 direction 可为 Settled；动画提交同帧通知，外部 snap 在后续重组帧通知。卸载、换状态或回到 Settled 撤销待发通知。
 
 ## 3. 已确认决定与已知差异
@@ -34,6 +35,11 @@
 
 ## 4. 验证入口
 
+- `AnchoredContainerInputTests` 与双端 `anchored-child-input` 验证按住子按钮后关闭父手势，再释放仍产生一次点击；
+  另覆盖原生 Thumb 拖动，行为测试使用真实 Slider。原生 Thumb 的 `DragStarted` 结束父级候选手势，
+  对应子级已消费拖动；不能仅依赖 PointerMoved.Handled，也不取消普通子按钮的候选点击。
+  Swipe 的 LTR/RTL 四例原始事实和截图 equal，重复及额外截图稳定。命令：
+  `./tests/VisualParity/parity.ps1 self-test --family anchored-child-input`。这不证明任意嵌套拖动仲裁已实现。
 - `tests/Material3Expressive.Tests/SwipeToDismissBoxTests.cs` 覆盖状态、阈值、布局、反向、中断、禁用、子控件输入和回调中卸载。
 - 双端用例为 `SwipeToDismissBoxCases.cs` / `SwipeToDismissBoxCases.kt`，族名 `swipe-to-dismiss`。
 - 目标锚点移除场景单独执行，避免参考端异常影响其他用例。Windows Catalog 可检查鼠标消除、复位和 RTL。

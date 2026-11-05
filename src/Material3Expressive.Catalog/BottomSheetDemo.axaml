@@ -21,6 +21,7 @@
           <TextBlock Text="Your next destination" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
           <TextBlock Text="The content stays in the main visual tree. There is no modal scrim and the page remains interactive outside the sheet." TextWrapping="Wrap" />
           <Button Content="Done" Click="OnHide" HorizontalAlignment="Left" />
+          <CheckBox Content="Allow dragging; Done remains available" IsChecked="{Binding GesturesEnabled, ElementName=Sheet, Mode=TwoWay}" />
         </StackPanel>
       </Border>
     </m3:BottomSheet>

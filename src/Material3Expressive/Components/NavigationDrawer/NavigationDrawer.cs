@@ -37,37 +37,65 @@ public abstract class NavigationDrawer : ContentControl
     private bool _dragging;
     private readonly VelocityTracker _velocity = new();
     private int _focusGeneration;
+    private AnimationChildScope? _effects;
+    private FlowDirection _gestureDirection;
+    private int _gestureGeneration;
 
     protected NavigationDrawer()
     {
         AddHandler(PointerPressedEvent, PointerDown, RoutingStrategies.Tunnel);
-        AddHandler(PointerMovedEvent, PointerMove, RoutingStrategies.Tunnel);
+        // Compose detects slop in the Main pass, after descendants can consume motion.
+        AddHandler(PointerMovedEvent, PointerMove, RoutingStrategies.Bubble);
         AddHandler(PointerReleasedEvent, PointerUp, RoutingStrategies.Tunnel);
         AddHandler(PointerCaptureLostEvent, PointerLost);
+        // Native Thumb reports ownership through DragStarted, not PointerMoved.Handled.
+        AddHandler(Thumb.DragStartedEvent, (_, _) => CancelPointer(), RoutingStrategies.Bubble, true);
         AddHandler(KeyUpEvent, EscapeUp);
     }
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        CancelPointer();
+        if (_layout is not null) _layout.Owner = null;
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<NavigationDrawerLayout>("PART_Layout");
         _sheet = e.NameScope.Find<ContentPresenter>("PART_Drawer");
         if (_layout is not null) _layout.Owner = this;
         AttachState();
     }
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) { base.OnAttachedToVisualTree(e); AttachState(); }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _effects = AnimationScope.Get(this).CreateChild("Drawer effects");
+        AttachState();
+    }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         CancelPointer();
         if (_attachedState is { } state) { state.PropertyChanged -= StateChanged; state.Detach(this); }
         _attachedState = null;
         _focusGeneration++;
+        _effects?.Dispose();
+        _effects = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == DismissibleNavigationDrawer.StateProperty) AttachState();
-        if (change.Property == DismissibleNavigationDrawer.GesturesEnabledProperty && !Gestures) CancelPointer();
+        if ((change.Property == DismissibleNavigationDrawer.GesturesEnabledProperty || change.Property == FlowDirectionProperty)
+            && _pointer is { } pointer && _effects is { } scope)
+        {
+            var generation = _gestureGeneration;
+            _ = scope.Launch(async ct =>
+            {
+                // AnchoredDraggable.update resets pointer input when its committed enabled or
+                // reverseDirection changes. Preserve the old animation's composition-frame sample.
+                await scope.NextFrameAsync(ct);
+                if (generation == _gestureGeneration && _pointer == pointer
+                    && (!Gestures || FlowDirection != _gestureDirection)) CancelPointer();
+            }, "Drawer gesture configuration");
+        }
+        if (change.Property == IsEffectivelyEnabledProperty) CancelPointer();
     }
     private void AttachState()
     {
@@ -90,9 +118,8 @@ public abstract class NavigationDrawer : ContentControl
     }
     private void FocusDrawer()
     {
-        if (!this.IsAttachedToVisualTree()) return;
+        if (_effects is not { } scope) return;
         var generation = ++_focusGeneration;
-        var scope = AnimationScope.Get(this);
         _ = scope.Launch(async ct =>
         {
             // LaunchedEffect(isOpen) runs after the next composition frame, including snapTo.
@@ -117,6 +144,8 @@ public abstract class NavigationDrawer : ContentControl
         // Positions in the mirrored drawer are already reversed. Track physical window X,
         // then apply anchoredDraggable's RTL direction once below.
         _pointer = e.Pointer; _down = _last = e.GetPosition(TopLevel.GetTopLevel(this));
+        _gestureGeneration++;
+        _gestureDirection = FlowDirection;
         _velocity.Reset(); _velocity.Add(e.Timestamp, (float)(_down.X * LayoutHelper.GetLayoutScale(this)));
         if (AnimatedState?.IsAnimationRunning == true) StartDrag(e);
     }
@@ -150,8 +179,12 @@ public abstract class NavigationDrawer : ContentControl
     private void CancelPointer()
     {
         var pointer = _pointer; var dragged = _dragging;
-        _pointer = null; _dragging = false; pointer?.Capture(null);
-        if (dragged && AnimatedState is { } state && this.IsAttachedToVisualTree()) _ = state.EndDrag(0);
+        _pointer = null; _dragging = false;
+        // A potential parent drag does not own a descendant button's capture.
+        if (pointer?.Captured == this) pointer.Capture(null);
+        // AndroidX's pinned DragGestureNode.processDragCancel calls onDragStopped with zero
+        // velocity. The locked desktop artifact does too; Core's Git source differs here.
+        if (dragged && _attachedState is { } state && this.IsAttachedToVisualTree()) _ = state.EndDrag(0);
     }
     protected override AutomationPeer OnCreateAutomationPeer() => new DrawerPeer(this);
     private sealed class DrawerPeer(NavigationDrawer owner) : ControlAutomationPeer(owner), ISelectionProvider, IInvokeProvider

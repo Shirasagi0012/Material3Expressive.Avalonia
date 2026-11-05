@@ -70,6 +70,8 @@ await Sheet.State.HideAsync();
 
 `GesturesEnabled` 控制直接拖动及嵌套滚动，手柄仍可点击。`BackHandlerEnabled` 控制 Escape：
 展开时先部分收起，否则隐藏。`DismissRequested` 报告用户关闭或拖动隐藏，程序化 HideAsync 不触发该事件。
+关闭父级手势不会取消内容按钮已经开始的点击；例如面板内的 Done 按钮仍可独立执行。
+内容中的原生 Slider / Thumb 开始拖动后由子控件持有该手势，不同时拖动面板。
 
 `BottomSheetScaffold.State` 是 `BottomSheetScaffoldState`，包含 `BottomSheetState` 和 `SnackbarHostState`。
 默认只启用 PartiallyExpanded / Expanded，停在 56 DIP 的 `SheetPeekHeight`；展开后点击手柄返回 peek。

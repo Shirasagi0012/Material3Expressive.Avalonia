@@ -45,6 +45,8 @@
             <StackPanel Margin="24" Spacing="16">
               <Button Content="Toggle dismissible drawer" Tag="dismissible" Click="ToggleDrawer" HorizontalAlignment="Left" />
               <TextBlock Text="The drawer pushes this page while preserving its measured width." TextWrapping="Wrap" />
+              <TextBlock Text="Drag this slider without moving the drawer. Drag the page background to open the drawer." TextWrapping="Wrap" />
+              <Slider Minimum="0" Maximum="100" Value="40" />
             </StackPanel>
           </Grid>
         </m3:DismissibleNavigationDrawer>

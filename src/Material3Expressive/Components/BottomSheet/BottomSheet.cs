@@ -66,6 +66,8 @@ public class BottomSheet : ContentControl
         AddHandler(PointerMovedEvent, PointerMove, RoutingStrategies.Bubble);
         AddHandler(PointerReleasedEvent, PointerUp, RoutingStrategies.Tunnel);
         AddHandler(PointerCaptureLostEvent, PointerLost);
+        // Native Thumb reports ownership through DragStarted, not PointerMoved.Handled.
+        AddHandler(Thumb.DragStartedEvent, (_, _) => CancelPointer(), RoutingStrategies.Bubble, true);
     }
     protected override bool RegisterContentPresenter(ContentPresenter presenter) => presenter.Name == "PART_DragHandle" || base.RegisterContentPresenter(presenter);
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -202,7 +204,9 @@ public class BottomSheet : ContentControl
     private void PointerLost(object? sender, PointerCaptureLostEventArgs e) { if (e.Source == this && _pointer == e.Pointer) CancelPointer(); }
     private void CancelPointer()
     {
-        var pointer = _pointer; var dragged = _dragging; _pointer = null; _dragging = false; pointer?.Capture(null);
+        var pointer = _pointer; var dragged = _dragging; _pointer = null; _dragging = false;
+        // A pending parent gesture must not cancel a child's independent press.
+        if (pointer?.Captured == this) pointer.Capture(null);
         if (dragged && _attachedState is { } state)
         { if (this.IsAttachedToVisualTree()) _ = Fling(0, true); else state.CancelDrag(); }
     }

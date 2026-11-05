@@ -86,14 +86,45 @@ Modal 仍在本地布局中覆盖，不因名字带 Modal 而套用窗口级 Dia
 SourceProbe 超出精度的字段仍应标为 different，不可把整族宣称严格一致。
 这些是 Drawer 自身记录的确认，不能仅援引其他组件的共享精度决定扩大范围；当前依赖版本由中央文件管理。
 
+## 手势仲裁与生命周期
+
+拖动输入在 Bubble 阶段检测 slop，对应 Foundation Main pass 的后代优先消费。
+Avalonia 原生 Thumb 通过 `DragStarted` / `DragDelta` 处理拖动，移动事件不置 Handled；
+容器监听其 `DragStarted` 结束候选手势，保留子项的隐式捕获。这是原生输入到消费语义的适配，
+不修改已确认的单值 Slider 输入职责；不把普通 Button 的 capture 当作拖动消费。
+取消父级候选手势只释放由 Drawer 自身持有的 capture，不取消子按钮尚未完成的按压。
+GesturesEnabled / FlowDirection 更新在下一动画组合帧取消旧周期；周期序号防止旧任务取消同一鼠标的下一次按压。
+焦点等待与配置取消使用控件子作用域，卸载立即释放等待，不依赖再投递一帧；模板替换断开旧布局 Owner。
+
+**固定来源差异**：AndroidX 的 Foundation `gestures/Draggable.kt::processDragCancel` 调用零速度
+`onDragStopped`，锁定 `foundation-desktop-1.13.0-alpha01.jar` 的字节码和实测亦如此；固定 Core Git
+同一函数没有这次调用。本组件保留 AndroidX 逻辑及现有零速度回弹，不改参考依赖，也不把 Core 源码静默混入。
+
 ## 尚未实现与未经验证
+
+**待维护者决定：活动拖动中替换 State**。双端 `navigation-drawer-gesture.dynamic.*.state.*` 的四个
+参考端捕获均在 `AnchoredDraggableNode.update → processDragCancel → settle → requireOffset` 抛出未初始化 offset；
+新状态尚未布局就被旧输入的取消回调消费。本地仍有旧输入继续操作新状态的缺口，未交付临时规避。
+推荐在 `drawer.State = nextState` 时先结束旧输入，再连接新状态，保证后续 move/up 不写新状态；
+需要决定旧状态是否继续零速度回弹、是否保留其最后 offset，以及换状态和布局提交的顺序。
+这不同于上游当前的重绑定顺序，尚未批准；失败用例保留且应逐例运行，避免参考 JVM 终止影响其他用例。
 
 predictive-back 连续变形/取消恢复尚未实现；焦点陷阱与关闭后恢复焦点也不是当前容器能力。
 真实字体排版、系统触摸投递、硬件触摸和屏幕阅读器未经验收。用几何标记替代文字的 parity 不证明真实文字一致。
-旧完整双端自检在各用例有 equal、withinTolerance 和上述数值 different，重复捕获与额外被动截图稳定；
-执行错误为零不代表所有事实严格相等。
 
 ## 验证入口
+
+当前容器修订已执行 `navigation-drawer` 原有 110 例完整 self-test：31 equal、65 withinTolerance、14 different，
+全部零执行错误、重复捕获与额外被动截图稳定。different 字段为手势收尾 offset 与打开过冲的变换布局框，
+分别在约 0.000031 / 0.000032 DIP 范围；截图均通过既有比较。保留上述原始数值报告，不宣称整族严格一致。
+
+`NavigationDrawerTests` 补充方向/手势开关中断、后代消费移动、真实 Slider 拖动、子按钮 capture 和卸载时取消焦点等待。
+`NavigationDrawerGestureCases.cs` / `.kt` 的 24 个用例覆盖 Modal / Dismissible × LTR / RTL：
+4 个后代消费与 4 个原生 Thumb 场景 equal，4 个子按钮场景 withinTolerance；8 个方向/开关中断场景 different，
+均零执行错误且重复/额外截图稳定。中断后的几何与截图一致，方向修改事件当帧仍有即时属性与重组提交差异，
+后续 offset 存在约 0.000004 DIP 的 Tween 精度差，未修改采样、容差或基准。
+其余 4 个 State 替换场景为上文参考端执行错误，不计为通过。运行入口：
+`./tests/VisualParity/parity.ps1 self-test --case navigation-drawer-gesture.dynamic.modal.child-press.ltr`。
 
 `NavigationInteractionSourceTests` 包含 DrawerItem 的外部/原生输入、替换和重挂；
 双端 `navigation-source.dynamic.drawer.*` 覆盖重叠、替换、悬停/焦点、原生换源和无附加槽 RTL。
@@ -120,6 +151,6 @@ Catalog 入口为 [NavigationDrawerDemo.axaml](../../../Material3Expressive.Cata
 snap、拖动/速度、禁用/veto/scrim/键盘和动态配置。配置变更在下一重组帧读取已提交布局，保留相同事件与送帧历史。
 Catalog 绑定与开关的旧 headless 集成不替代真实系统输入。
 
-上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
+当前验证限于上文实际运行的 suite 与字段，不代表所有组件、字体和平台均已验收。旧测试数量不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/NavigationDrawer/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。

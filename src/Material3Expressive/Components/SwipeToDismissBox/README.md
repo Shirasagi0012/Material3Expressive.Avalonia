@@ -46,6 +46,8 @@ await swipe.State.ResetAsync();
 `EnableDismissFromStartToEnd`、`EnableDismissFromEndToStart` 控制可拖动方向；
 `FlowDirection` 将逻辑方向映射到物理方向。`GesturesEnabled="False"` 只禁用手势，仍可程序化消除。
 完成消除后手势暂停，调用 `ResetAsync()` 后恢复。方向开关不否决程序化写入不存在锚点的状态。
+前景可包含 Button 等交互内容；关闭父级手势不会取消子按钮已开始的点击，子内容仍可独立操作。
+原生 Slider / Thumb 开始拖动后由子控件持有手势，不同时消除容器。
 
 `Dismissed` 在已提交状态不是 Settled 时通知；初始已消除状态也会通知，首次布局前方向可能为 Settled，
 处理器可更新业务集合，也可调用复位。

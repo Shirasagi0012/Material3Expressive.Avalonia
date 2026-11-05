@@ -106,9 +106,12 @@ label.InteractionSource = source;
 Catalog 的 Tooltip 示例包含此接入。
 
 `GesturesEnabled="False"` 关闭拖动和 scrim 点击，不阻止程序化或键盘关闭。
+关闭手势或切换方向会在下一动画帧结束当前拖动并回弹；子按钮仍可完成点击，
+正文中已经消费移动的滑块等控件优先处理自己的手势。拖动途中请勿替换 `State`，该边界仍待确定。
 打开完成后请求抽屉内焦点，关闭时退出命中和 Tab 遍历；当前没有焦点陷阱，也不恢复关闭前焦点。
 抽屉内 Escape KeyUp 可关闭，绑定 State 的 Sheet 响应离散 BackRequested；predictive-back 连续变形尚未实现。
 系统 Insets 由应用提供，真实 OS 触摸、文字及屏幕阅读器仍需单独验证。
 
 Catalog 示例见 [NavigationDrawerDemo.axaml](../../../Material3Expressive.Catalog/NavigationDrawerDemo.axaml)；
+Dismissible 页包含可独立拖动的 Slider，与页面背景拖动进行对照。
 状态确认顺序、已接受数值差异与验证入口见 [INTERNALS.md](INTERNALS.md)。

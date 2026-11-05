@@ -16,10 +16,13 @@
           </Border>
         </m3:SwipeToDismissBox.BackgroundContent>
         <m3:Card Padding="24" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-          <StackPanel Spacing="8">
-            <TextBlock Text="Project update" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
-            <TextBlock Text="Drag horizontally, or use the actions below." />
-          </StackPanel>
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Project update" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+              <TextBlock Text="Drag horizontally, or open the item." />
+            </StackPanel>
+            <Button Grid.Column="1" Content="Open" Click="OnOpenItem" VerticalAlignment="Center" />
+          </Grid>
         </m3:Card>
       </m3:SwipeToDismissBox>
     </Border>

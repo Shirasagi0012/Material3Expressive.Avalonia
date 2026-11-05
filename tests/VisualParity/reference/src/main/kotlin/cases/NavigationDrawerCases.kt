@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.ViewConfiguration
@@ -110,22 +112,35 @@ class NavigationDrawerCases {
     internal class Scene(val c:NavigationDrawerConfig) {
         var interactions by mutableStateOf<MutableInteractionSource?>(null)
         lateinit var state:DrawerState; lateinit var scope:CoroutineScope
+        var stateGeneration by mutableIntStateOf(0)
+        var rtl by mutableStateOf(c.rtl)
+        var gestures by mutableStateOf(c.gestures)
         var dark by mutableStateOf(c.dark); var selected by mutableStateOf(c.selected); var width by mutableStateOf(c.width)
         var clicks=0; var focused=false
         val page=Probe(); val sheet=Probe(); val item=Probe(); val icon=Probe(); val label=Probe(); val badge=Probe()
         val painted=mutableMapOf<String,Color>()
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-                    state=rememberDrawerState(if(c.open) DrawerValue.Open else DrawerValue.Closed) { !c.veto }
+                CompositionLocalProvider(LocalLayoutDirection provides if(rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+                    state=key(stateGeneration) { rememberDrawerState(if(c.open) DrawerValue.Open else DrawerValue.Closed) { !c.veto } }
                     scope=rememberCoroutineScope()
                     Box(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
                         val drawer:@Composable ()->Unit={ Sheet() }
-                        val content:@Composable ()->Unit={ Canvas(page.modifier().fillMaxSize()) { drawRect(Color(0xFFF0F0F0)) } }
+                        val content:@Composable ()->Unit={
+                            Canvas(page.modifier().fillMaxSize().then(if(c.action=="child") Modifier.pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while(true) {
+                                        val event=awaitPointerEvent()
+                                        event.changes.forEach { if(it.pressed && it.previousPressed) it.consume() }
+                                    }
+                                }
+                            } else if(c.action=="native-thumb") Modifier.draggable(rememberDraggableState {},Orientation.Horizontal)
+                            else Modifier)) { drawRect(Color(0xFFF0F0F0)) }
+                        }
                         when(c.kind) {
-                            "modal" -> ModalNavigationDrawer(drawer,drawerState=state,gesturesEnabled=c.gestures,
+                            "modal" -> ModalNavigationDrawer(drawer,drawerState=state,gesturesEnabled=gestures,
                                 scrimColor=if(c.custom) Color(0x66365A80) else DrawerDefaults.scrimColor,content=content)
-                            "dismissible" -> DismissibleNavigationDrawer(drawer,drawerState=state,gesturesEnabled=c.gestures,content=content)
+                            "dismissible" -> DismissibleNavigationDrawer(drawer,drawerState=state,gesturesEnabled=gestures,content=content)
                             else -> PermanentNavigationDrawer(drawer,content=content)
                         }
                     }
@@ -185,7 +200,7 @@ class NavigationDrawerCases {
         }
     }
     companion object {
-        private fun desktopContext(width:Int):PlatformContext {
+        internal fun desktopContext(width:Int):PlatformContext {
             val empty=PlatformContext.Empty()
             return object:PlatformContext by empty {
                 override val windowInfo=object:WindowInfo by empty.windowInfo {

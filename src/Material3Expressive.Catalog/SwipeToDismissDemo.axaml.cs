@@ -16,6 +16,7 @@ public partial class SwipeToDismissDemo : Window
         InitializeComponent();
     }
     private void OnDismissed(object? sender, SwipeDismissedEventArgs e) => Status.Text = $"Completed: {e.Direction}. Reset restores this item.";
+    private void OnOpenItem(object? sender, RoutedEventArgs e) => Status.Text = "Item action invoked. Disabling swipe gestures keeps this action available.";
     private async void OnDismissStart(object? sender, RoutedEventArgs e) => await Run(Swipe.State.DismissAsync(SwipeToDismissBoxValue.StartToEnd));
     private async void OnDismissEnd(object? sender, RoutedEventArgs e) => await Run(Swipe.State.DismissAsync(SwipeToDismissBoxValue.EndToStart));
     private async void OnReset(object? sender, RoutedEventArgs e) => await Run(Swipe.State.ResetAsync());

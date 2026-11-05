@@ -28,6 +28,8 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 - 复用动画子作用域、MaterialSurface、VelocityTracker 和 MaterialWindowInsets，不引入公共共享锚点框架。
   同一状态一次挂载一个组件；卸载或换状态取消所有任务。鼠标 slop 0.125 DIP，触屏 18 DIP；子内容先消费移动事件。
 - 手柄点击不受 GesturesEnabled 禁止，默认 TooltipBox + PlainTooltip；关闭完成后通知，调用 HideAsync 本身不产生关闭回调。
+- 父级取消候选拖动时仅释放自己的 capture；子按钮持有的捕获不被手势开关取消，保留原来的 Click 周期。
+  原生 Thumb 的移动事件不置 Handled，容器改由其 `DragStarted` 结束候选手势，保留 Slider 原生输入职责。
 
 - Standard 分支仅由 Scaffold 模板设置内部 StandardPeekHeight，不公开通用布局策略。
   锚点依次 partial、hidden、expanded；partial = full − peek，expanded = full − sheet。
@@ -71,6 +73,10 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 
 ## 4. 验证入口
 
+- `AnchoredContainerInputTests` 和双端 `anchored-child-input` 覆盖按住内容按钮时关闭父手势及原生 Thumb 拖动；
+  行为测试使用真实纵向 Slider。Sheet 的 LTR/RTL 四例结构化事实 equal、图像 withinTolerance，
+  重复和额外截图稳定。与 Swipe 共用场景只复用测试过程，
+  生产代码没有新增共享手势机制。入口：`./tests/VisualParity/parity.ps1 self-test --family anchored-child-input`。
 - `BottomSheetTests` / `BottomSheetScaffoldTests` / `ModalBottomSheetTests`：锚点、程序化与拖动、拒绝、中断、卸载、嵌套滚动消费，及模态自动显示、恢复状态、返回/外部点击策略、焦点恢复、换状态、Inset 预消费与遮罩反转。
 - 双端 `BottomSheetCases.cs` / `BottomSheetCases.kt`，族名 `bottom-sheet`。
 - Catalog：`dotnet run --project src/Material3Expressive.Catalog -- --bottom-sheet`。
