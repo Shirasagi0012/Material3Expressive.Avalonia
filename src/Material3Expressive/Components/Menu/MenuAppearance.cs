@@ -1,14 +1,21 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 public enum MenuColorStyle { Standard, Vibrant }
 
-/// <summary>Color style and content slots for native menus using the Material Vertical theme.</summary>
+/// <summary>Appearance and interaction options for native menus using Material themes.</summary>
 public static class MenuAppearance
 {
+    /// <summary>Observes and emits interactions for a native Material menu item; null uses an internal source.</summary>
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<MenuItem, MaterialInteractionSource?>("InteractionSource", typeof(MenuAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(MenuItem owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(MenuItem owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+
     public static readonly AttachedProperty<object?> SupportingTextProperty =
         AvaloniaProperty.RegisterAttached<MenuItem, object?>("SupportingText", typeof(MenuAppearance));
     public static object? GetSupportingText(MenuItem owner) => owner.GetValue(SupportingTextProperty);

@@ -7,6 +7,8 @@ using Avalonia.Media;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -15,6 +17,112 @@ namespace Material3Expressive.Tests;
 
 public class PullToRefreshTests
 {
+    [AvaloniaFact]
+    public async Task DerivedMotionPreservesOvershootReverseSnapAndCancellation()
+    {
+        using var clock = new MotionTestClockScope();
+        PullToRefreshState state = new BouncyState();
+        var indicator = new PullToRefreshIndicator { State = state };
+        var window = Show(indicator); clock.SendFrame(TimeSpan.Zero);
+        var expand = state.AnimateToThresholdAsync();
+        Frames(clock, window, 16, 144);
+        Assert.True(state.DistanceFraction > 1); // Same high-bouncy spring as the pinned sample.
+        Assert.True(state.IsAnimating);
+        var beforeReverse = state.DistanceFraction;
+        var hide = state.AnimateToHiddenAsync();
+        Assert.Equal(beforeReverse, state.DistanceFraction);
+        Frames(clock, window, 160, 192);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => expand);
+        await state.SnapToAsync(1.5f); Flush(window);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hide);
+        Assert.Equal(1.5f, state.DistanceFraction);
+        Assert.False(state.IsAnimating);
+        Assert.Equal(80, Layout(indicator).TranslationY);
+        using var cancellation = new CancellationTokenSource();
+        var pending = state.AnimateToHiddenAsync(cancellation.Token);
+        Frames(clock, window, 208, 240);
+        cancellation.Cancel(); Flush(window);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        var retained = state.DistanceFraction;
+        Frames(clock, window, 256, 640);
+        Assert.Equal(retained, state.DistanceFraction);
+        Assert.False(state.IsAnimating);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public async Task DerivedMotionUsesSharedConsumerLifetimeAndCanResumeAfterRemount()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new BouncyState();
+        var first = new PullToRefreshIndicator { State = state };
+        var second = new PullToRefreshLoadingIndicator { State = state };
+        var panel = new StackPanel { Children = { first, second } };
+        var window = Show(panel); clock.SendFrame(TimeSpan.Zero);
+        var pending = state.AnimateToThresholdAsync();
+        Frames(clock, window, 16, 48);
+        panel.Children.Remove(first); Flush(window);
+        Assert.True(state.IsAnimating);
+        Frames(clock, window, 64, 80);
+        panel.Children.Remove(second); Flush(window);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        Assert.False(state.IsAnimating);
+        Assert.Equal(0, clock.PendingFrameCount);
+        var retained = state.DistanceFraction;
+        panel.Children.Add(first); Flush(window);
+        Assert.Equal(retained, state.DistanceFraction);
+        var finish = state.AnimateToHiddenAsync();
+        Frames(clock, window, 96, 800); await finish;
+        Assert.Equal(0, state.DistanceFraction);
+        window.Close(); Assert.Null(window.MotionRoot.Diagnostics.LastError);
+    }
+
+    [AvaloniaFact]
+    public async Task ScrollBehaviorDispatchesToDerivedStateOperations()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new BouncyState();
+        var behavior = new PullToRefreshScrollBehavior();
+        var indicator = new PullToRefreshIndicator { State = state, ScrollBehavior = behavior };
+        var window = Show(indicator); clock.SendFrame(TimeSpan.Zero);
+        Assert.Equal(1, state.Snaps);
+        behavior.OnPostScroll(200); Flush(window);
+        Assert.Equal(2, state.Snaps);
+        var release = behavior.OnPreFlingAsync(200);
+        Frames(clock, window, 16, 320);
+        Assert.Equal(200, await release); Assert.Equal(1, state.Hides);
+        indicator.IsRefreshing = true;
+        Frames(clock, window, 336, 480);
+        Assert.Equal(1, state.Expands); Assert.True(state.DistanceFraction > 1);
+        Assert.Equal(0, behavior.OnPostScroll(80));
+        indicator.IsRefreshing = false;
+        Frames(clock, window, 496, 1008);
+        Assert.Equal(2, state.Hides); Assert.Equal(0, state.DistanceFraction);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    private sealed class BouncyState : PullToRefreshState
+    {
+        public int Expands { get; private set; }
+        public int Hides { get; private set; }
+        public int Snaps { get; private set; }
+        public override Task AnimateToThresholdAsync(CancellationToken cancellationToken = default)
+        {
+            Expands++;
+            return AnimateToAsync(1, new SpringSpec<float>(.2f), cancellationToken);
+        }
+        public override Task AnimateToHiddenAsync(CancellationToken cancellationToken = default)
+        {
+            Hides++;
+            return AnimateToAsync(0, new TweenSpec<float>(TimeSpan.FromMilliseconds(240)), cancellationToken);
+        }
+        public override Task SnapToAsync(float distanceFraction, CancellationToken cancellationToken = default)
+        {
+            Snaps++;
+            return base.SnapToAsync(distanceFraction, cancellationToken);
+        }
+    }
+
     [AvaloniaFact]
     public async Task StateCanBeSeededWithoutMountingAndDoesNotClampOvershoot()
     {

@@ -79,6 +79,14 @@ LocalMinimumInteractiveComponentSize 自定义环境；Foundation 的其他缺�
 未经验证的范围包括文字像素、真实 OS IME、屏幕阅读器隔离、触屏、多显示器 DPI 切换和跨平台冻结。
 Headless 和离屏双端结果不构成真实桌面验收。
 
+**自定义交互尺寸的待定接入**：上游按钮换行间距为
+`clamp(8 - (minimumInteractiveSize - 40), 0, 8)`；当前 `ActionVerticalSpacing` 的默认 0
+表示最终间距，不能把它静默改为参与减法的原始 8，否则已有 Token 覆盖的含义改变。
+推荐保留显式 Token 覆盖的最终间距语义，只让默认值随 `MaterialInteractiveSize.Minimum`
+更新，例如 `<m3:AlertDialog m3:MaterialInteractiveSize.Minimum="40" ... />` 默认采用 8 DIP。
+实施前需确定默认值与环境变更的依赖接入；共享按钮面板还服务 DatePickerDialog，后者的独立间距不能被连带改变。
+这是待维护者确认的 Token 默认值职责方案，本次未改实现或登记为已批准。
+
 已跟踪入口：
 
 - [AlertDialogTests](../../../../tests/Material3Expressive.Tests/AlertDialogTests.cs)：XAML、模板、文字角色与局部覆盖、槽所有权、尺寸和平台宽度

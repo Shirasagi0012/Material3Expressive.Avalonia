@@ -37,6 +37,7 @@ internal sealed class MenuItemChrome : Decorator
     private AnimationChildScope? _attachScope;
     private bool _pending;
     private MenuItem? _keyboardOwner;
+    private readonly MaterialInteractionSource _localSource = new();
 
     static MenuItemChrome() => AffectsMeasure<MenuItemChrome>(MinimumContainerWidthProperty, MaximumIntrinsicWidthProperty,
         MinimumContainerHeightProperty, MinimumInteractiveHeightProperty);
@@ -67,6 +68,8 @@ internal sealed class MenuItemChrome : Decorator
         if (TemplatedParent is MenuItem owner)
         {
             _keyboardOwner = owner;
+            owner.PropertyChanged += OnOwnerPropertyChanged;
+            MaterialInteraction.GetOrCreate(owner).ConnectSource(MenuAppearance.GetInteractionSource(owner) ?? _localSource);
             owner.AddHandler(InputElement.KeyDownEvent, OnOwnerKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
             owner.AddHandler(InputElement.KeyUpEvent, OnOwnerKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
@@ -85,6 +88,8 @@ internal sealed class MenuItemChrome : Decorator
         AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_keyboardOwner is { } owner)
         {
+            owner.PropertyChanged -= OnOwnerPropertyChanged;
+            MaterialInteraction.GetOrCreate(owner).ConnectSource(null);
             owner.RemoveHandler(InputElement.KeyDownEvent, OnOwnerKeyDown);
             owner.RemoveHandler(InputElement.KeyUpEvent, OnOwnerKeyUp);
             _keyboardOwner = null;
@@ -110,6 +115,14 @@ internal sealed class MenuItemChrome : Decorator
         // MenuItem feedback here; DefaultMenuInteractionHandler still owns Enter activation.
         if (_keyboardOwner is { } owner && ReferenceEquals(e.Source, owner) && e.Key == Key.Enter)
             MaterialInteraction.GetOrCreate(owner).StartPress(new Rect(owner.Bounds.Size).Center);
+    }
+
+    private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != MenuAppearance.InteractionSourceProperty || _keyboardOwner is not { } owner) return;
+        var controller = MaterialInteraction.GetOrCreate(owner);
+        controller.ConnectSource(MenuAppearance.GetInteractionSource(owner) ?? _localSource);
+        controller.ResetSourceIndication();
     }
     private void OnOwnerKeyUp(object? sender, KeyEventArgs e)
     {

@@ -1,9 +1,12 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using ComposeAnimation;
+using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
 
 namespace Material3Expressive.Catalog;
@@ -18,7 +21,7 @@ public partial class PullToRefreshDemo : Window
         AnimationScope.Initialize(this);
         InitializeComponent();
         Circular.State = Expressive.State = _state;
-        Gesture.State = new PullToRefreshState();
+        Gesture.State = new BouncyRefreshState();
         Gesture.ScrollBehavior = _scroll;
         _scroll.RefreshRequested += (_, _) => Gesture.IsRefreshing = true;
         _ready = true;
@@ -59,4 +62,10 @@ public partial class PullToRefreshDemo : Window
     private void CompleteRefresh(object? sender, RoutedEventArgs e) => Gesture.IsRefreshing = false;
     private void ToggleTheme(object? sender, RoutedEventArgs e) =>
         RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
+
+    private sealed class BouncyRefreshState : PullToRefreshState
+    {
+        public override Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) =>
+            AnimateToAsync(1, new SpringSpec<float>(.2f), cancellationToken);
+    }
 }

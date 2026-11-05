@@ -34,7 +34,11 @@ class MenuInteractionSourceCases {
             // Avalonia's source positions are owner-local; Compose's indication is inside
             // the expressive item's 4dp horizontal padding and 2dp minimum-touch inset.
             // Use the same scene point, including the 44dp surface inside the 48dp target.
-            val position=if(c.kind=="baseline") Offset(40f,24f) else Offset(36f,22f)
+            val position=when(c.kind) {
+                "baseline", "native-baseline" -> Offset(40f,24f)
+                "native-expressive" -> Offset(40f,22f) // Native owner Bounds excludes horizontal Margin.
+                else -> Offset(36f,22f)
+            }
             val scaledPosition=position*ComposeHost.RenderScale.toFloat()
             val press=PressInteraction.Press(scaledPosition)
             val second=PressInteraction.Press(scaledPosition)
@@ -106,6 +110,7 @@ class MenuInteractionSourceCases {
                             val modifier = probe.modifier().width(180.dp)
                             when(c.kind) {
                                 "expressive" -> DropdownMenuItem(onClick={clicks++},text=content,shape=MenuDefaults.itemShapes().shape,modifier=modifier,enabled=enabled,interactionSource=source)
+                                "native-expressive" -> SelectableDropdownMenuItem(selected=false,onClick={clicks++},text=content,shapes=MenuDefaults.itemShapes(),modifier=modifier,enabled=enabled,interactionSource=source)
                                 "checkable" -> CheckableDropdownMenuItem(checked=selected,onCheckedChange={clicks++},text=content,shapes=MenuDefaults.itemShapes(),modifier=modifier,enabled=enabled,interactionSource=source)
                                 "selectable" -> SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,shapes=MenuDefaults.itemShapes(),modifier=modifier,enabled=enabled,interactionSource=source)
                                 else -> DropdownMenuItem(text=content,onClick={clicks++},modifier=modifier,enabled=enabled,interactionSource=source)

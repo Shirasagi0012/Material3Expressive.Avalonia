@@ -88,7 +88,7 @@ internal sealed class TabHeader : Panel
         if (replacing) controller.ResetSourceIndication();
     }
 
-    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, ContainerHeightProperty, LargeContainerHeightProperty, TabHorizontalPaddingProperty, LeadingIconLabelSpaceProperty, StackedIconLabelSpaceProperty, SingleLineBaselineOffsetProperty, MultiLineBaselineOffsetProperty, BaselineExtraOffsetProperty);
+    static TabHeader() => AffectsMeasure<TabHeader>(ContentLayoutProperty, FlowDirectionProperty, ContainerHeightProperty, LargeContainerHeightProperty, TabHorizontalPaddingProperty, LeadingIconLabelSpaceProperty, StackedIconLabelSpaceProperty, SingleLineBaselineOffsetProperty, MultiLineBaselineOffsetProperty, BaselineExtraOffsetProperty);
     protected override void OnMeasureInvalidated()
     {
         base.OnMeasureInvalidated();
@@ -161,7 +161,9 @@ internal sealed class TabHeader : Panel
     }
     private void UpdateColorTarget()
     {
-        if (this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault() is { } surface)
+        // The indication is a sibling overlay: Tab.kt clips its ripple, not its content.
+        if (((this.GetVisualParent() as Panel)?.Children.OfType<MaterialSurface>().FirstOrDefault()
+            ?? this.GetVisualAncestors().OfType<MaterialSurface>().FirstOrDefault()) is { } surface)
             surface.StateLayerBrush = new SolidColorBrush(Active);
         if (!this.IsAttachedToVisualTree() || _transition is null || _pending || _attachScope is not { } motion
             || motion.Lifetime.IsCancellationRequested) return;

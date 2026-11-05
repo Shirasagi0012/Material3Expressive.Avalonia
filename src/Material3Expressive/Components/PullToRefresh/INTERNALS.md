@@ -8,6 +8,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe5
 | 上游符号 / 职责 | 本地类型 / 成员 | 对应说明 |
 | --- | --- | --- |
 | `PullToRefreshStateImpl` | `PullToRefreshState` | Float Animatable、默认弹簧、距离与运行状态 |
+| `PullToRefreshSampleCustomState` | 派生 `PullToRefreshState`、受保护 `AnimateToAsync` | 自定义操作复用相同的 Animatable 和挂载生命周期 |
 | `PullToRefreshDefaults.IndicatorBox` | `PullToRefreshIndicatorBox` / 内部 Layout | 软尺寸、仅顶部裁剪、图层平移、条件阴影 |
 | `Indicator` / `CircularArrowProgressIndicator` | `PullToRefreshIndicator` / `PullToRefreshArrow` | 箭头与现有 CircularProgressIndicator Crossfade |
 | `LoadingIndicator` | `PullToRefreshLoadingIndicator` | 现有 ContainedLoadingIndicator 的确定/不确定重载 Crossfade |
@@ -18,6 +19,11 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe5
 
 State 保存原始 Float，不额外钳制到 0–1。两个动画方法使用 Animatable 的默认弹簧，保持速度和取消语义；
 它们不是 Material MotionScheme 动画。显式 Snap 可在未挂载时执行。消费方共享窗口根下的子作用域，最后一个消费者离开时取消运行，保留值，重挂后可继续操作。
+
+`PullToRefreshState` 可派生，三个操作均为 virtual；`AnimateToAsync` 接受有限动画规格，默认 null 仍走原默认弹簧。
+此非破坏性组件扩展在剩余移植任务授权内实现，不改变现有 `State` 属性类型，也不引入公共共享状态框架。
+上游自定义状态样例的 HighBouncy 阈值 spring 可直接用派生类表达；默认隐藏、Snap、速度、通知及共享消费者取消保持原实现。
+这覆盖复用距离 Animatable 的自定义运动，不等于可注入任意外部可观察状态的完整 Kotlin 接口；后者仍列为缺口。
 
 图层位移为 `fraction * round(maxDistance * density) - measuredHeightPx`，再转换到 DIP。布局尺寸保持不变；
 裁剪只限制 y≥0，不能使用 ClipToBounds 把下方内容和侧边阴影裁掉。背景不应用 Surface 的 tonal elevation。
@@ -44,7 +50,7 @@ behavior 是组件专属显式适配，不注册 ScrollViewer，不改变既有 
 ## 3. 已确认决定与已知差异
 
 - **授权范围**：本次任务授权上游语义内新增组件及非破坏性组件 API；未新增公共共享框架。
-- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox`；自定义 State 接口与保存/恢复适配；任意路径容器 Shape。
+- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox`；任意外部距离状态接口与自动保存/恢复适配；任意路径容器 Shape。自定义回弹已可通过派生状态表达。
 - **未经验证**：实际触摸、屏幕阅读器客户端和非 Windows 平台。State 的消费者生命周期是现有作用域模式的组件接入，不代表自动滚动已实现。
 - **已接受差异**：没有为本组件新增像素或时序容差；共享适配仅在已有决定的适用范围内复用。
 
@@ -65,6 +71,17 @@ Avalonia 立即卸载，保留最后 208ms 的 `0.45967421`。两端任务均取
 - `PullToRefreshCases.cs` / `.kt`：传统/Expressive、距离阶段、明暗、RTL、受限空间、颜色与距离覆盖、自定义内容及刷新/反向/卸载；含半透明绘制和帧内目标合并。
 - `./tests/VisualParity/parity.ps1 self-test --family pull-to-refresh`；实际结果以生成报告为准。
 - Catalog：`PullToRefreshDemo`，示范宿主显式控制距离与刷新状态。
+- 自定义运动：`pull-to-refresh.custom-motion.*` 覆盖传统/Expressive 的高回弹、反向/Snap 和卸载重挂；`pull-refresh-scroll.custom-motion.*` 验证滚动策略调用派生操作。行为测试另检查显式取消、共享消费者及任务释放。
+
+自定义运动验证的当前结果：指示器 59 例、滚动 17 例均无捕获错误且重复/额外截图稳定；原有指示器 53 例仍在既有门禁内，
+滚动原有 14 例中 13 例在门禁内，保留上文卸载差异。新增九例仍标记 different：自定义 Tween 的距离尾差约 10⁻⁷、
+非帧时刻卸载的保留值差异，以及圆箭头在高回弹跨越阈值时的透明度提交差异。Expressive 的 bounce 时间线全部截图在容差内，
+圆箭头 96ms 的距离精确相同而图像超差，不能归入数值尾差。行为测试 29 项、整仓 Release 构建通过。
+
+**待决定的动画帧提交能力**：箭头收到帧内 DistanceFraction 更新后仍等待 NextFrameAsync，目标比 Core 的帧末 SideEffect 晚提交；
+例如派生状态以 `.2f` 阻尼进入阈值时跨越 1。推荐在已有动画作用域内提供可区分帧内采样与帧间参数变更的提交能力，
+再让箭头合并最新目标；不能仅检查 IsAnimating 或固定补/减 16ms。影响动画链的消费者及现有帧间多次修改的合并语义，
+本组件未增加第二套调度器，也未将该方案登记为已批准。复现产物为 `artifacts/visual-parity/runs/custom-pull-motion` 和 `custom-pull-scroll`。
 
 Windows Skia 双端 `20261104-070918-1b23c57b`：指示器 53/53 用例在既有容差内，结构读数相等，重复捕获稳定、错误为零。
 显式滚动 `20261104-070928-773f13b1`：13/14 用例在容差内；剩下的卸载保留值差异见上文，14 个均稳定且无捕获错误。

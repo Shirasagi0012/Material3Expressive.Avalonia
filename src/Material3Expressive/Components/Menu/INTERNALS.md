@@ -51,6 +51,10 @@ Baseline 的静态勾也使用非镜像向量，RTL 只改变槽位位置。
 项目默认尺寸和间距由组件 Token 绑定，默认 sizeIn 的 112 / 280 在测量阶段受调用方约束限制。
 
 `DropdownMenuItem.InteractionSource` 由勾选 / 单选子类继承，null 使用内部源。替换源重置 indication，卸载取消原生按压，重挂和模板替换仅接收后续外部事件。
+原生 Baseline / Vertical 项通过 `MenuAppearance.InteractionSource` 接入同一控制器，
+`MenuItemChrome` 随模板连接源、观察附加属性变化，卸载断开源及属性订阅；null 使用模板内部源。
+来源为固定 `Menu.kt` / Core `SkikoMenu.skiko.kt` 的 interactionSource 参数，本次非破坏性 API 授权内
+采用附加属性适配原生 MenuItem。外部事件不调用激活或改变 IsChecked；原生 handler 的执行顺序保持不变。
 `DropdownMenuGroup` 独立收集 hover，替换源清空列表但保留 remembered bool 至新源任意事件。hasBeenHovered 在下一组合帧观察，同帧 enter / exit 不计为曾悬停。
 原生 hover 的 exit 发往旧源，卸载重置两种记忆。组级反馈仅负责形变。
 普通 Expressive 项目需显式选择 `MaterialExpressiveDropdownMenuItemTheme`。
@@ -100,6 +104,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - `MenuTests` 检查原生 flyout、菜单栏、子菜单、主题优先级及原生行为，新增槽的排版、Token 更新、快捷键与子菜单并存和原生激活。
 - 原生勾选动画覆盖 CheckBox / Radio、快速反向、普通 Icon 增删、ToggleType 变化、尺寸 Token、模板替换及快速重开；卸载恢复透明度基础值并释放动画任务，重开后背景色继续响应选择。
 - `MenuInteractionSourceTests` 检查项目和组的源替换、原生配对与模板重建，`CommandMenuDensityTokenTests` 检查尺寸覆盖。
+- `MenuTests.NativeInteractionSource*` 使用真实 MenuFlyout 检查两套主题的外部反馈、原生按压配对、换源取消、模板重建和关闭重开；键盘回归同时检查 Enter 的源事件配对。
 - 双端族为 `dropdown-menu-item`、`dropdown-menu`、`menu`、`menu-container`、`menu-source`、`menu-group-source`、`native-menu-supporting`。新增槽族覆盖 Standard / Vibrant、选中/禁用、RTL、暗色、模板独立使用、窄宽度及动态移除/恢复。Baseline 夹具需提供外层菜单表面的 content color。
 
 ```powershell
@@ -122,3 +127,12 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 
 辅助文字和尾部内容回归 `native-menu-supporting` 的 48 例全部通过现有门禁，重复稳定、执行错误为零
 （`20261105-034217-d26d1c27`）。这些项目级场景不能替代原生 Popup 完整定位与开闭动画的验收。
+
+原生交互源接入后，`native-menu-regression` 的原有 `menu` 98 例再次通过 `--require-match`，
+全部重复稳定、无捕获错误。`native-menu-source-corrected` 的 `menu-source` 40 例（新增原生 12 例）
+全部在原有像素容差内，几何、启用、选择和点击读数相等，捕获错误为零；仍有 Core 重复/额外截图不稳定，
+故 self-test 保留失败。新增 native-baseline.disable 与 native-expressive.overlap 受此影响，
+不是 Avalonia 反复捕获变化。重叠按压的 Core 图像差检查到最大单通道 1，未放宽稳定性门禁。
+原生 Vertical 的参考使用既有映射 SelectableDropdownMenuItem(selected=false)，测量外层分配宽度，
+按压坐标扣除对应的触摸内缩，不把原生 Margin 误当 Compose 内部 padding。
+控件库全量 2202/2202、菜单相关 87/87、VisualParity 基础设施 124/124 和整仓 Release 构建通过。

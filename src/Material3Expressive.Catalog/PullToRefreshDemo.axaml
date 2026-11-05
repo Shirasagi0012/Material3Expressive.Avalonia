@@ -26,7 +26,7 @@
     </Grid>
     <TextBlock Text="本页由宿主显式驱动距离和刷新状态。指示器本身不接管 ScrollViewer 的滚动与刷新请求。"
                TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
-    <TextBlock Text="显式 nested-scroll 宿主示例" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+    <TextBlock Text="自定义弹簧与显式 nested-scroll 宿主" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
     <StackPanel Orientation="Horizontal" Spacing="8">
       <Button Content="下拉 80 DIP" Click="Pull" />
       <Button Content="上推 40 DIP" Click="Push" />
@@ -34,7 +34,7 @@
       <Button Content="完成刷新" Click="CompleteRefresh" />
     </StackPanel>
     <Grid Height="160"><m3:PullToRefreshIndicator x:Name="Gesture" /></Grid>
-    <TextBlock Text="两个下拉刚好到阈值，第三次下拉后释放才请求刷新。按钮模拟宿主的 pre/post 输入；释放示例显式传入零速度。"
+    <TextBlock Text="两个下拉刚好到阈值，第三次下拉后释放才请求刷新。此例的派生 State 使用高回弹弹簧进入阈值，隐藏仍使用默认弹簧。按钮模拟宿主的 pre/post 输入；释放示例显式传入零速度。"
                TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
   </StackPanel>
   </ScrollViewer>

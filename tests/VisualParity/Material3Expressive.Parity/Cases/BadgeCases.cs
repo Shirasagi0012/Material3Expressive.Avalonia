@@ -49,6 +49,13 @@ public sealed class BadgeCases
         foreach (var host in new[] { "short", "wide" })
         foreach (var rtl in new[] { false, true })
             yield return Data($"static.navigation.{host}.start.{(rtl ? "rtl" : "ltr")}", new(host, "wide", Rtl: rtl, Start: true));
+        foreach (var content in new[] { "wide", "tall" })
+        foreach (var rtl in new[] { false, true })
+        {
+            foreach (var label in new[] { false, true })
+                yield return Data($"static.tab.{content}.{(label ? "label" : "icon")}.{(rtl ? "rtl" : "ltr")}", new("tab", content, Rtl: rtl, Start: label));
+            yield return Data($"static.tab-leading.{content}.{(rtl ? "rtl" : "ltr")}", new("tab-leading", content, Rtl: rtl, Start: true));
+        }
     }
 
     public static IEnumerable<CaseData<BadgeConfig>> DynamicConfigurations()
@@ -57,6 +64,9 @@ public sealed class BadgeCases
             yield return Data($"dynamic.{action}", new("box", Action: action));
         yield return Data("dynamic.navigation.resize", new("rail", "wide", Action: "resize"));
         yield return Data("dynamic.navigation.bounds", new("bar", "wide", Action: "bounds"));
+        foreach (var action in new[] { "bounds", "resize", "content", "layout", "rtl" })
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.tab.{action}.{(rtl ? "rtl" : "ltr")}", new("tab", action == "layout" ? "tall" : "wide", Rtl: rtl, Action: action, Start: true));
     }
     private static CaseData<BadgeConfig> Data(string id, BadgeConfig config) => new(id, id, config);
 
@@ -105,6 +115,11 @@ public sealed class BadgeCases
             case "bounds":
                 Mutate(1000, "narrow", () => scene.Root.Width = 60);
                 Mutate(2000, "wide", () => scene.Root.Width = 96); break;
+            case "layout":
+                Mutate(1000, "leading", () => ((Tab)scene.Root).ContentLayout = TabContentLayout.Leading);
+                Mutate(2000, "stacked", () => ((Tab)scene.Root).ContentLayout = TabContentLayout.Stacked);
+                Mutate(3000, "unselected", () => ((Tab)scene.Root).IsSelected = false);
+                Mutate(4000, "selected", () => ((Tab)scene.Root).IsSelected = true); break;
             case "input": case "interactive":
                 // Pick a point painted by the badge that overlaps the clickable anchor.
                 var point = scene.Anchor.TranslatePoint(new Point(20, 5), host.Window)!.Value;
@@ -145,10 +160,14 @@ public sealed class BadgeCases
             if (config.Host != "badge") { Box.Content = Anchor; Box.Badge = Badge; }
             if (config.BoxWidth is { } boxWidth) Box.Width = boxWidth;
             if (config.BoxHeight is { } boxHeight) Box.Height = boxHeight;
+            var tabLabel = new Marker { PreferredWidth = 32, PreferredHeight = 16, FixedBrush = Brushes.Blue };
+            TextBlock.SetBaselineOffset(tabLabel, 12);
             Root = config.Host switch
             {
                 "badge" => Badge,
                 "box" => Box,
+                "tab" or "tab-leading" => new Tab { Icon = Box, Content = config.Start ? tabLabel : null,
+                    IsSelected = true, Width = config.Action == "rtl" ? 80.25 : 80, ContentLayout = config.Host == "tab-leading" ? TabContentLayout.Leading : TabContentLayout.Stacked },
                 "rail" => new NavigationRailItem { Icon = Box, IsSelected = true },
                 "bar" => new NavigationBarItem { Icon = Box, IsSelected = true, Width = 80 },
                 "short" => new ShortNavigationBarItem { Icon = Box, IsSelected = true, Width = 80,

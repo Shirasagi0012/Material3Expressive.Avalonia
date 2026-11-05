@@ -12,6 +12,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
 
@@ -67,6 +70,10 @@ class BadgeCases {
                 "bounds" -> {
                     mutate(1000,"narrow") { scene.itemWidth=60.0 }; mutate(2000,"wide") { scene.itemWidth=96.0 }
                 }
+                "layout" -> {
+                    mutate(1000,"leading") { scene.leading=true }; mutate(2000,"stacked") { scene.leading=false }
+                    mutate(3000,"unselected") { scene.selected=false }; mutate(4000,"selected") { scene.selected=true }
+                }
                 "input","interactive" -> {
                     val point=checkNotNull(scene.anchor.coordinates).localToRoot(Offset(20f,5f)*ComposeHost.RenderScale.toFloat())/ComposeHost.RenderScale.toFloat()
                     host.advanceTo(1000); host.input("move",point); host.input("down",point); host.draw(); sample("down")
@@ -86,7 +93,9 @@ class BadgeCases {
         var anchorHeight by mutableStateOf(config.anchorHeight)
         var clicks=0
         var badgeClicks=0
-        var itemWidth by mutableStateOf(80.0)
+        var itemWidth by mutableStateOf(if(config.host=="tab" && config.action=="rtl") 80.25 else 80.0)
+        var leading by mutableStateOf(config.host=="tab-leading")
+        var selected by mutableStateOf(true)
         val badge=Probe(); val box=Probe(); val anchor=Probe(); val item=Probe()
         val contents=listOf(Probe(),Probe())
         val painted=mutableMapOf<Int,Color>()
@@ -100,6 +109,16 @@ class BadgeCases {
                         when(config.host) {
                             "badge" -> BadgeContent()
                             "box" -> BoxContent()
+                            "tab", "tab-leading" -> {
+                                val label: @Composable () -> Unit = {
+                                    Canvas(Modifier.size(32.dp,16.dp).layout { measurable,constraints ->
+                                        val child=measurable.measure(constraints)
+                                        layout(child.width,child.height,mapOf(FirstBaseline to 12.dp.roundToPx(),LastBaseline to 12.dp.roundToPx())) { child.placeRelative(0,0) }
+                                    }) { drawRect(Color.Blue) }
+                                }
+                                if(leading) LeadingIconTab(selected,{},text=label,icon={ BoxContent() },modifier=item.modifier().width(itemWidth.toFloat().dp))
+                                else Tab(selected,{},text=if(config.start) label else null,icon={ BoxContent() },modifier=item.modifier().width(itemWidth.toFloat().dp))
+                            }
                             "rail" -> NavigationRailItem(true,{},icon={ BoxContent() },modifier=item.modifier())
                             "bar" -> Row(Modifier.width(itemWidth.toFloat().dp)) { NavigationBarItem(true,{},icon={ BoxContent() },modifier=item.modifier()) }
                             "short" -> ShortNavigationBarItem(true,{},icon={ BoxContent() },modifier=item.modifier().width(80.dp),

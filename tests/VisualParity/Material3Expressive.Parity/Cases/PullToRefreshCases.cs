@@ -5,6 +5,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation.TestSupport;
+using ComposeAnimation;
+using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -12,7 +14,7 @@ namespace Material3Expressive.Parity;
 
 public sealed record PullToRefreshConfig(string Kind = "circular", double Fraction = 1, bool Refreshing = false,
     bool Dark = false, bool Rtl = false, double? Constraint = null, bool CustomColors = false,
-    double MaxDistance = 80, string Action = "none", bool Translucent = false);
+    double MaxDistance = 80, string Action = "none", bool Translucent = false, bool CustomMotion = false);
 
 [ParitySuite("pull-to-refresh")]
 public sealed class PullToRefreshCases
@@ -35,6 +37,9 @@ public sealed class PullToRefreshCases
             foreach (var action in new[] { "progress", "state", "refresh", "reverse", "detach", "indeterminate" })
                 yield return new($"dynamic.{kind}.{action}", "pull state, crossfade and animation lifetime",
                     new(kind, action == "state" ? .3 : 1, Refreshing: action is "detach" or "indeterminate", Action: action));
+            foreach (var action in new[] { "bounce", "state", "state-detach" })
+                yield return new($"custom-motion.{kind}.{action}", "custom state motion, interruption and mounted lifetime",
+                    new(kind, 0, Action: action, CustomMotion: true));
         }
         yield return new("static.custom-content", "custom indicator box", new("custom", .5));
     }
@@ -48,7 +53,7 @@ public sealed class PullToRefreshCases
         host.Window.Resources[Sys.Color.SurfaceContainerHigh] = Color.Parse(c.Dark ? "#2B2930" : "#ECE6F0");
         host.Window.Resources[Sys.Color.PrimaryContainer] = Color.Parse(c.Dark ? "#4F378B" : "#EADDFF");
         host.Window.Resources[Sys.Color.OnPrimaryContainer] = Color.Parse(c.Dark ? "#EADDFF" : "#21005D");
-        var state = new PullToRefreshState((float)c.Fraction);
+        var state = c.CustomMotion ? new CustomPullMotionState() : new PullToRefreshState((float)c.Fraction);
         PullToRefreshIndicatorBox indicator = c.Kind switch
         {
             "loading" => new PullToRefreshLoadingIndicator(),
@@ -97,6 +102,16 @@ public sealed class PullToRefreshCases
         Sample("initial");
         switch (c.Action)
         {
+            case "bounce":
+                Change(1000, "threshold", () => _ = state.AnimateToThresholdAsync());
+                At(16000, 48000, 96000, 144000, 240000, 400000, 800000, 1600000);
+                Change(1601000, "hide", () => _ = state.AnimateToHiddenAsync());
+                At(1616000, 1680000, 1760000, 1856000); break;
+            case "state-detach":
+                Change(1000, "threshold", () => _ = state.AnimateToThresholdAsync()); At(16000, 48000, 80000);
+                Change(81000, "detach", () => anchor.Children.Clear()); At(240000);
+                Change(241000, "reattach", () => anchor.Children.Add(indicator));
+                Change(257000, "hide", () => _ = state.AnimateToHiddenAsync()); At(272000, 320000, 400000, 640000); break;
             case "conflation":
                 foreach (var (time, fraction) in new[] { (1000L, 1.2f), (2000L, .7f), (3000L, 1.1f) })
                 {
@@ -127,4 +142,14 @@ public sealed class PullToRefreshCases
             case "indeterminate": At(16000, 80000, 160000, 320000, 640000, 656000, 736000, 1300000, 2600000, 5200000); break;
         }
     }
+}
+
+// The pinned PullToRefreshSampleCustomState uses a high-bouncy threshold spring.
+// A separate hidden tween also verifies that each operation dispatches independently.
+internal sealed class CustomPullMotionState : PullToRefreshState
+{
+    public override Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) =>
+        AnimateToAsync(1, new SpringSpec<float>(.2f), cancellationToken);
+    public override Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) =>
+        AnimateToAsync(0, new TweenSpec<float>(TimeSpan.FromMilliseconds(240)), cancellationToken);
 }

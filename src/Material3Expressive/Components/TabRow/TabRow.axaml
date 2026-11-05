@@ -75,6 +75,7 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:Tab}" TargetType="m3:Tab">
+      <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -83,7 +84,7 @@
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
+          <Panel Background="Transparent">
             <m3:TabHeader
                 TabHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.TabHorizontalPadding}}"
                 LeadingIconLabelSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LeadingIconLabelSpace}}"
@@ -101,11 +102,13 @@
               <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
                                 m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IconSize}}" />
             </m3:TabHeader>
-          </m3:MaterialSurface>
+            <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent" IsHitTestVisible="False" />
+          </Panel>
         </ControlTemplate>
       </Setter>
     </ControlTheme>
     <ControlTheme x:Key="MaterialTabItemTheme" TargetType="TabItem">
+      <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -115,7 +118,7 @@
       <Setter Property="Foreground" Value="{Binding ContentColor, RelativeSource={RelativeSource AncestorType=m3:TabRowChrome}}" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent">
+          <Panel Background="Transparent">
             <m3:TabHeader
                 TabHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.TabHorizontalPadding}}"
                 LeadingIconLabelSpace="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.LeadingIconLabelSpace}}"
@@ -133,7 +136,8 @@
               <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}"
                                 m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IconSize}}" />
             </m3:TabHeader>
-          </m3:MaterialSurface>
+            <m3:MaterialSurface x:Name="PART_Surface" Background="Transparent" IsHitTestVisible="False" />
+          </Panel>
         </ControlTemplate>
       </Setter>
     </ControlTheme>

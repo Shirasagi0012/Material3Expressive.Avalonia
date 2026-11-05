@@ -3,6 +3,7 @@
 package parity
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
@@ -16,13 +17,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class PullToRefreshConfig(val kind:String="circular",val fraction:Double=1.0,val refreshing:Boolean=false,
     val dark:Boolean=false,val rtl:Boolean=false,val constraint:Double?=null,val customColors:Boolean=false,
-    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false)
+    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false,val customMotion:Boolean=false)
 
 @ParitySuite("pull-to-refresh")
 class PullToRefreshCases {
     @ParityScenario("indicator") suspend fun capture(writer:CaptureWriter) {
         val c=writer.readConfig<PullToRefreshConfig>()
-        val state=PullToRefreshState()
+        val state=if(c.customMotion) CustomPullMotionState() else PullToRefreshState()
         state.snapTo(c.fraction.toFloat())
         var refreshing by mutableStateOf(c.refreshing)
         var present by mutableStateOf(true)
@@ -76,6 +77,18 @@ class PullToRefreshCases {
             fun at(vararg times:Long){times.forEach{advance(it);host.draw();sample("time-$it")}}
             sample("initial")
             when(c.action) {
+                "bounce" -> {
+                    change(1000,"threshold"){scope.launch{state.animateToThreshold()}}
+                    at(16000,48000,96000,144000,240000,400000,800000,1600000)
+                    change(1601000,"hide"){scope.launch{state.animateToHidden()}}
+                    at(1616000,1680000,1760000,1856000)
+                }
+                "state-detach" -> {
+                    change(1000,"threshold"){scope.launch{state.animateToThreshold()}};at(16000,48000,80000)
+                    change(81000,"detach"){present=false};at(240000)
+                    change(241000,"reattach"){present=true}
+                    change(257000,"hide"){scope.launch{state.animateToHidden()}};at(272000,320000,400000,640000)
+                }
                 "conflation" -> {
                     listOf(1000L to 1.2f,2000L to .7f,3000L to 1.1f).forEach{(time,fraction)->
                         advance(time);state.snapTo(fraction);writer.record(time,"mutation","distance-before-frame")
@@ -109,4 +122,13 @@ class PullToRefreshCases {
             }
         }
     }
+}
+
+internal class CustomPullMotionState : PullToRefreshState {
+    private val anim = Animatable(0f, Float.VectorConverter)
+    override val distanceFraction get() = anim.value
+    override val isAnimating get() = anim.isRunning
+    override suspend fun animateToThreshold() { anim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy)) }
+    override suspend fun animateToHidden() { anim.animateTo(0f, tween(240)) }
+    override suspend fun snapTo(targetValue: Float) { anim.snapTo(targetValue) }
 }

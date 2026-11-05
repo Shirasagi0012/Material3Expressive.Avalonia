@@ -46,6 +46,26 @@ await Indicator.State.AnimateToHiddenAsync();
 
 容器默认在顶部居中。位移不改变其布局占位，顶部之外裁掉，底部与两侧可溢出；父容器需要为实际显示区域留出空间。使用局部组件 Token 可动态调整默认距离、尺寸、颜色和动效。
 
+可派生 `PullToRefreshState` 为阈值和隐藏操作选择不同动画，既有 `State` 绑定不变。例如高回弹进入、默认弹簧隐藏：
+
+```csharp
+using ComposeAnimation.Runtime;
+using Material3Expressive.Components;
+
+public sealed class BouncyRefreshState : PullToRefreshState
+{
+    public override Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) =>
+        AnimateToAsync(1, new SpringSpec<float>(dampingRatio: .2f), cancellationToken);
+}
+
+// 设置给任一指示器；ScrollBehavior 也会调用派生状态的操作。
+Indicator.State = new BouncyRefreshState();
+```
+
+覆写 `AnimateToHiddenAsync` 可单独定制隐藏；覆写操作调用受保护的 `AnimateToAsync`，继续使用同一距离值、速度和取消生命周期。
+`SnapToAsync` 也可覆写；调用基类方法发布距离并取消已有动画。异步覆写必须传递取消令牌，不应另起未受控的后台动画。
+Catalog 下方的显式滚动示例使用这一高回弹状态。
+
 ## 使用限制与注意事项
 
 有 nested-scroll 协议的宿主可以设置 `ScrollBehavior`，由它处理拖动张力、阈值和回弹：

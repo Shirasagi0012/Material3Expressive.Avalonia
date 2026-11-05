@@ -82,9 +82,17 @@ FirstBaseline/LastBaseline 的缺口，不新增全库 alignment-line 机制。�
 [BadgeCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/BadgeCases.cs) 与
 [BadgeCases.kt](../../../../tests/VisualParity/reference/src/main/kotlin/cases/BadgeCases.kt) 独立构造真实 API，
 覆盖空/无/组合/宽高内容、颜色/环境、约束与宽度阈值、四种导航边界、RTL，以及内容/主题/方向/
-锚点尺寸变更和指针输入。这些 Badge 用例中的“四种导航边界”不包含 Stacked Tab；
-当前 TabHeader 的接入由源码确认，本段不把原有 Badge 验证范围自动扩大到 Tab。
+锚点尺寸变更和指针输入。Tab 组合另覆盖 Stacked/Leading、仅图标/图标标签、宽/高徽标、
+方向、内容、锚点尺寸和布局切换；控件测试使用真实文字检查选择、重挂及方向变化后的边界。
 可变 intrinsic 几何服从父最大约束，不以夹具补偿组件位置。
+
+2026-11-05 的 `badge-tab-unclipped` 双端自检共 85 例，83 例严格相等，全部重复稳定且执行错误为零。
+新增 22 例中 20 例严格相等；两个 `badge.dynamic.tab.rtl.*` 使用 80.25 DIP 外层宽度，
+Core 外层居中 x=60，Avalonia x=59.75，子槽随之整体偏移 0.25 DIP；局部边界关系一致。
+这是尚未解决的外层分数像素布局差异，不是已接受的组件偏离，也未用夹具位移或容差规避。
+新用例发现并修复了 Tab 模板裁剪溢出徽标、方向变化未重测槽缓存的问题，机制见
+[TabRow](../TabRow/INTERNALS.md)。原有 63 例仍严格相等。原始结果位于
+`artifacts/visual-parity/runs/badge-tab-unclipped/summary.md`，应通过跟踪用例复现。
 
 旧记录的结构化事实和原始 4× raster 均精确相等，双端重复及额外被动截图稳定；
 它使用非文字夹具，不能据此声明字形一致。历史统计与环境见固定提交，原来的未跟踪产物链接

@@ -10,6 +10,18 @@
         <m3:Tab Content="Videos" Click="OnTabClick" />
         <m3:Tab Content="Photos" Click="OnTabClick" />
       </m3:TabRow>
+      <TextBlock Text="Stacked tabs · badge bounds" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow SelectedIndex="0">
+        <m3:Tab Content="Inbox" IsSelected="True" Click="OnTabClick">
+          <m3:Tab.Icon>
+            <m3:BadgedBox>
+              <m3:BadgedBox.Badge><m3:Badge Content="99+" AutomationProperties.Name="99 unread messages" /></m3:BadgedBox.Badge>
+              <m3:MaterialSymbol Symbol="Mail" Width="24" Height="24" />
+            </m3:BadgedBox>
+          </m3:Tab.Icon>
+        </m3:Tab>
+        <m3:Tab Content="Sent" Icon="{m3:Symbol Send}" Click="OnTabClick" />
+      </m3:TabRow>
       <TextBlock Text="Secondary tabs · leading icons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow Variant="Secondary" SelectedIndex="0">
         <m3:Tab Content="Music" Icon="{m3:Symbol MusicNote}" ContentLayout="Leading" IsSelected="True" Click="OnTabClick" />

@@ -72,6 +72,12 @@ Vertical 项的 CheckBox / Radio 在未提供 Icon 时会展开、淡入选中�
 ### 共享交互源
 
 独立项目和 DropdownMenuGroup 可设置 InteractionSource，null 使用内部源。调用需在 UI 线程，结束事件引用同一开始对象。
+原生 Baseline / Vertical MenuItem 使用 `MenuAppearance.InteractionSource` 附加属性，
+例如 `MenuAppearance.SetInteractionSource(nativeItem, source)`；也可在 XAML 中绑定同一源：
+
+```xml
+<MenuItem Header="Copy" m3:MenuAppearance.InteractionSource="{Binding MenuInteractions}" />
+```
 
 ```csharp
 using Material3Expressive.Foundation.Interaction;
@@ -84,6 +90,8 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 ```
 
 源提供交互反馈，业务选择与关闭仍由应用控制。项目替换源后接收新事件，组的悬浮外观保留到新源下一事件重新求值。
+原生项目仍由 MenuItem 执行点击、命令、选择和关闭。模板替换、关闭和卸载会取消原生按压，
+重建或重开只接收后续外部事件，不重放源中先前发出的按压。Catalog 的原生项目提供共享悬浮预览。
 
 ## 内容槽与定制
 

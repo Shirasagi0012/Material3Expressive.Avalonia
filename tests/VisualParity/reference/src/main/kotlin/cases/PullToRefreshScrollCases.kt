@@ -14,13 +14,13 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 
-@Serializable data class PullRefreshScrollConfig(val action:String="release",val drag:Float=161f,val velocity:Float=200f,val threshold:Double=80.0)
+@Serializable data class PullRefreshScrollConfig(val action:String="release",val drag:Float=161f,val velocity:Float=200f,val threshold:Double=80.0,val customMotion:Boolean=false)
 
 @ParitySuite("pull-refresh-scroll")
 class PullToRefreshScrollCases {
     @ParityScenario("scroll") suspend fun capture(writer:CaptureWriter) {
         val c=writer.readConfig<PullRefreshScrollConfig>()
-        val state=PullToRefreshState();state.snapTo(2f)
+        val state=if(c.customMotion) CustomPullMotionState() else PullToRefreshState();state.snapTo(2f)
         var refreshing by mutableStateOf(false);var enabled by mutableStateOf(true);var present by mutableStateOf(true)
         val dispatcher=NestedScrollDispatcher();val empty=object:NestedScrollConnection{}
         lateinit var scope:CoroutineScope

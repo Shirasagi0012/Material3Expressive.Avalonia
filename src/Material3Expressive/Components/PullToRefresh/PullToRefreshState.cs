@@ -10,7 +10,7 @@ namespace Material3Expressive.Components;
 
 /// <summary>Hoisted pull distance, including overshoot beyond the refresh threshold.</summary>
 /// <remarks>Animated operations require a mounted indicator. SnapToAsync also works before mounting.</remarks>
-public sealed class PullToRefreshState : AvaloniaObject
+public class PullToRefreshState : AvaloniaObject
 {
     public static readonly DirectProperty<PullToRefreshState, float> DistanceFractionProperty =
         AvaloniaProperty.RegisterDirect<PullToRefreshState, float>(nameof(DistanceFraction), state => state.DistanceFraction);
@@ -36,21 +36,25 @@ public sealed class PullToRefreshState : AvaloniaObject
 
     public float DistanceFraction => _distanceFraction;
     public new bool IsAnimating => _isAnimating;
-    public Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) => AnimateAsync(1, cancellationToken);
-    public Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) => AnimateAsync(0, cancellationToken);
-    public Task SnapToAsync(float distanceFraction, CancellationToken cancellationToken = default)
+    public virtual Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) => AnimateToAsync(1, cancellationToken: cancellationToken);
+    public virtual Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) => AnimateToAsync(0, cancellationToken: cancellationToken);
+    public virtual Task SnapToAsync(float distanceFraction, CancellationToken cancellationToken = default)
     {
         Dispatcher.UIThread.VerifyAccess();
         return _animation.SnapToAsync(distanceFraction, cancellationToken);
     }
 
-    private Task AnimateAsync(float target, CancellationToken cancellationToken)
+    /// <summary>Animates the shared distance using a custom specification, preserving velocity, notifications and mounted-consumer lifetime.</summary>
+    /// <remarks>Derived states can override the threshold/hidden operations to select their own motion.
+    /// A null specification uses the same default spring as the standard state.</remarks>
+    protected Task AnimateToAsync(float target, IFiniteAnimationSpec<float>? animationSpec = null,
+        CancellationToken cancellationToken = default)
     {
         Dispatcher.UIThread.VerifyAccess();
         cancellationToken.ThrowIfCancellationRequested();
         var scope = _scope is { } active && !active.Lifetime.IsCancellationRequested ? active
             : throw new InvalidOperationException("Mount a pull-to-refresh indicator before animating its state. Use SnapToAsync to set an initial distance.");
-        return _animation.AnimateToAsync(scope, target, cancellationToken: cancellationToken);
+        return _animation.AnimateToAsync(scope, target, animationSpec, cancellationToken: cancellationToken);
     }
 
     internal void Attach(Control owner)

@@ -6,7 +6,7 @@ using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
 
-public sealed record PullRefreshScrollConfig(string Action = "release", float Drag = 161, float Velocity = 200, double Threshold = 80);
+public sealed record PullRefreshScrollConfig(string Action = "release", float Drag = 161, float Velocity = 200, double Threshold = 80, bool CustomMotion = false);
 
 [ParitySuite("pull-refresh-scroll")]
 public sealed class PullToRefreshScrollCases
@@ -19,6 +19,8 @@ public sealed class PullToRefreshScrollCases
         yield return new("fractional-threshold", "threshold rounds at actual density", new(Drag: 121, Threshold: 60.3));
         foreach (var action in new[] { "pre-post", "side-effect", "disabled", "callback", "programmatic", "detach" })
             yield return new(action, action, new(action));
+        foreach (var action in new[] { "release", "callback", "programmatic" })
+            yield return new($"custom-motion.{action}", "scroll behavior dispatches custom state operations", new(action, CustomMotion: true));
     }
     [ParityScenario("scroll", Data = nameof(Configurations))]
     public async Task Capture(CaptureWriter writer)
@@ -27,7 +29,8 @@ public sealed class PullToRefreshScrollCases
         await using var host = new AvaloniaHost(writer, 240, 320, new ManualTimeProvider());
         CaseDefaults.SetThemeColors(host, false);
         host.Window.Resources[Sys.Color.SurfaceContainerHigh] = Avalonia.Media.Color.Parse("#ECE6F0");
-        var state = new PullToRefreshState(2);
+        var state = c.CustomMotion ? new CustomPullMotionState() : new PullToRefreshState(2);
+        if (c.CustomMotion) await state.SnapToAsync(2);
         var behavior = new PullToRefreshScrollBehavior();
         var indicator = new PullToRefreshIndicator { State = state, ScrollBehavior = behavior,
             RefreshThreshold = c.Threshold, Margin = new Thickness(0, 16, 0, 0) };

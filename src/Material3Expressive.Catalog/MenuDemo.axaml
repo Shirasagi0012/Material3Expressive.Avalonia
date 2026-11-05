@@ -77,10 +77,12 @@
         </StackPanel>
         <TextBlock Text="Native selection — toggle quickly to reverse the check animation" TextWrapping="Wrap" />
         <MenuItem x:Name="NativeIconPreview" Header="Native selected icon" ToggleType="CheckBox"
+                  m3:MenuAppearance.InteractionSource="{StaticResource PreviewSource}"
                   Theme="{StaticResource MaterialVerticalMenuItemTheme}" Width="240" HorizontalAlignment="Left" />
         <StackPanel Orientation="Horizontal" Spacing="12">
             <Button Content="Toggle native selection" Click="OnNativeIconSelection" />
             <Button Content="Add / remove native icon" Click="OnNativeRegularIcon" />
+            <Button Content="Preview shared hover" Click="OnPreview" />
         </StackPanel>
         <TextBlock Text="Independent DropdownMenu" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
         <StackPanel Orientation="Horizontal" Spacing="16">

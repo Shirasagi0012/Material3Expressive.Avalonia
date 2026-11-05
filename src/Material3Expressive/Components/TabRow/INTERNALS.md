@@ -65,6 +65,11 @@ Tab 内容颜色使用 `Transition<bool>`，进入选择使用 DefaultEffects，
 Stacked / Leading 分支把 IconTemplate 也视为图标槽存在，即使内容为 null；Custom 布局仍完全交给调用方。
 TabRow 的 MaterialSymbol 默认尺寸使用通用 24 DIP，显式尺寸和其他自定义内容不受限制。
 Leading 和 Custom 不应意外继承 Stacked 的基线、字体或 BadgeBounds 规则。
+Tab 的 selectable 只有 bounded ripple，不包含内容 clip。两套项目模板因此把无内容的 MaterialSurface
+作为同级反馈覆盖层，内容留在未裁剪的 TabHeader；沿用同一 controller、坐标、墨色与生命周期，
+不更改共享 Surface 的背景/裁剪契约。原先用 Surface 包裹内容会裁掉 Leading 的高徽标，
+也会截掉 Stacked 自定义大图标超出容器的部分。祖先 Row/滚动视口的裁剪保持各自语义。
+TabHeader 的测量使用 FlowDirection 决定居中取整，方向变化必须重新测量缓存的槽矩形。
 
 Avalonia 没有 Compose intrinsic API，TabHeader 查询真实内容后必须按实际约束重新测量，
 避免查询约束污染后续 Arrange。intrinsic 变化、父约束变化与选择变化分别遵循上游更新顺序。
@@ -109,10 +114,28 @@ TabHeader 自身的颜色 Transition 保留，原生 TabItem 的选择时机也�
 双端 `tab-source` 覆盖 Stacked/Leading/Custom/仅图标/仅标签、RTL、重叠按压、禁用与换源；
 原生按下选择的既有差异仍保留在结果中。
 
-当前 `tab-source` 的 18 个双端用例均完成捕获：6 equal、6 withinTolerance、6 different，执行错误为零。
+此前 `tab-source` 的 18 个双端用例均完成捕获：6 equal、6 withinTolerance、6 different，执行错误为零。
 禁用/启用及换源仍有属性即时更新与 Core 下一重组帧的差异；受控入口后续帧收敛。
 原生换源用例保留已确认的按下选择时机，因此指示器在 Core release 前已开始移动；800ms 采样收敛。
 部分重叠波纹的 Compose 重复采集或额外截图不稳定，不能将整个新增套件宣称通过稳定性验收。
+
+2026-11-05 在修复 Tab 内容溢出裁剪后重新采集 `tab-overlay-source`：18 例中 2 equal、
+2 withinTolerance、14 different，执行错误为零；部分 Core 波纹重复捕获仍不稳定。
+没有用历史结果替代本次结果。为排除模板调整造成回归，在初始提交 `e4342dd` 的独立工作区
+捕获 `tab-source.dynamic.controlled.label.rtl`，其 13 张 Avalonia 原始截图与本次逐像素一致；
+该例的波纹差异在初始代码也存在。此对照仅证明该例，不推断全部波纹差异的原因。
+原始对照保留在 `tab-initial-source` 与 `tab-overlay-source` 运行目录。
+
+固定栏内容增宽在 64ms 的指示器也有尚未解决的时序差异：Core 宽 46，Avalonia 宽 39.5 DIP，
+其余采样收敛。`tab-initial-content` 在初始提交重现了 39.5 DIP，说明该例不是本次模板调整引入。
+建议进一步核对 intrinsic 更新、目标提交与动画首帧顺序；不归入原生选择适配，
+不通过修改时钟、容差或预期值绕过。
+
+最终 `tab-overlay-final` 的 123 例全部捕获成功、重复及额外截图稳定：118 例在既有门禁内，
+5 例 different（上述 3 个固定栏内容变更例和 2 个已确认原生输入时机例）。90 个静态例严格相等。
+Badge/Tab 相关控件测试 67/67、控件库全量 2204/2204、整仓 Release 构建通过。
+首次全量测试曾在 ButtonLayoutTests 的清理阶段异常中止；未改测试，全量重跑得到上述通过结果。
+本次增加的 Badge 组合覆盖及剩余分数居中差异见 [Badge 验证](../Badge/INTERNALS.md#一致性边界与验证)。
 
 从仓库根目录执行，环境与结果含义见 [VisualParity](../../../../tests/VisualParity/README.md)：
 

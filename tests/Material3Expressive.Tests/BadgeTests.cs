@@ -177,6 +177,40 @@ public class BadgeTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TabBoundsFollowLayoutChangesSelectionAndRemount(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var badge = new Badge { Content = new Border { Width = 8, Height = 48 } };
+        var anchor = new Border { Width = 24, Height = 24 };
+        var box = new BadgedBox { Content = anchor, Badge = badge };
+        var tab = new Tab { Width = 100, Icon = box, Content = "Inbox", IsSelected = true };
+        var window = Show(tab);
+        try
+        {
+            window.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight; Flush(window);
+            var initial = badge.TranslatePoint(default, tab)!.Value;
+            Assert.False(tab.ClipToBounds);
+            Assert.False(Assert.IsType<Panel>(tab.GetVisualChildren().Single()).ClipToBounds);
+            Assert.True(initial.Y >= 0);
+            tab.ContentLayout = TabContentLayout.Leading; Flush(window);
+            Assert.True(badge.TranslatePoint(default, tab)!.Value.Y < 0);
+            tab.ContentLayout = TabContentLayout.Stacked; Flush(window);
+            Assert.Equal(initial, badge.TranslatePoint(default, tab)!.Value);
+            tab.IsSelected = false; Flush(window);
+            Assert.Equal(initial, badge.TranslatePoint(default, tab)!.Value);
+            anchor.Height = 40; tab.Width = 120; Flush(window);
+            Assert.True(badge.TranslatePoint(default, tab)!.Value.Y >= 0);
+            ((Grid)window.Content!).Children.Clear(); Flush(window);
+            ((Grid)window.Content!).Children.Add(tab); Flush(window);
+            Assert.True(badge.TranslatePoint(default, tab)!.Value.Y >= 0);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     static Window Show(Control content)
     {
         content.HorizontalAlignment = HorizontalAlignment.Center; content.VerticalAlignment = VerticalAlignment.Center;

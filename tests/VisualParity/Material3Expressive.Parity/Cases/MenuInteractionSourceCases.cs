@@ -16,9 +16,13 @@ public sealed class MenuInteractionSourceCases
 {
     public static IEnumerable<CaseData<MenuSourceConfig>> Configurations()
     {
-        foreach (var kind in new[] { "baseline", "expressive", "checkable", "selectable" })
+        foreach (var kind in new[] { "baseline", "expressive", "checkable", "selectable", "native-baseline", "native-expressive" })
         foreach (var action in new[] { "press", "overlap", "replace", "disable", "hover-drag", "reattach", "null-native" })
+        {
+            // Native activation is exercised in a real MenuFlyout by the behavior tests.
+            if (kind.StartsWith("native-") && action == "null-native") continue;
             yield return new($"{kind}.{action}", $"{kind} external source {action}", new(kind, action));
+        }
     }
 
     [ParityScenario("behavior", Data = nameof(Configurations))]
@@ -29,29 +33,40 @@ public sealed class MenuInteractionSourceCases
         MenuCases.SetColors(host, false);
         host.Window.Resources[Tokens.MaterialTokens.Sys.Color.OnSurfaceVariant] = Color.Parse("#49454F");
         host.Window.Resources[Tokens.MaterialTokens.Sys.Color.OnSurface] = Color.Parse("#1D1B20");
-        DropdownMenuItem control = c.Kind switch
+        Control control = c.Kind switch
         {
+            "native-baseline" => new MenuItem { Theme = (ControlTheme)host.Window.FindResource("MaterialBaselineMenuItemTheme")! },
+            "native-expressive" => new MenuItem { Theme = (ControlTheme)host.Window.FindResource("MaterialVerticalMenuItemTheme")! },
             "expressive" => new DropdownMenuItem { Shapes = MenuDefaults.ItemShape(0, 1) },
             "checkable" => new CheckableDropdownMenuItem { IsChecked = true },
             "selectable" => new SelectableDropdownMenuItem { IsSelected = true },
             _ => new DropdownMenuItem()
         };
-        control.Width = 180;
+        // Native Margin is outside Bounds; Compose's outer modifier includes item padding.
+        Control allocation = control is MenuItem ? new Grid { Width = 180, Children = { control } } : control;
+        if (control is not MenuItem) control.Width = 180;
         if (c.Kind == "expressive") control.Theme = (ControlTheme)host.Window.FindResource("MaterialExpressiveDropdownMenuItemTheme")!;
-        control.Content = new Border { Width = 32, Height = 16, Background = Brushes.Blue };
-        var clicks = 0; control.Click += (_, _) => clicks++;
+        var marker = new Border { Width = 32, Height = 16, Background = Brushes.Blue };
+        var clicks = 0;
+        if (control is MenuItem native) { native.Header = marker; native.Click += (_, _) => clicks++; }
+        else { var item = (DropdownMenuItem)control; item.Content = marker; item.Click += (_, _) => clicks++; }
         var source = new MaterialInteractionSource();
-        void SetSource(MaterialInteractionSource? value) => control.InteractionSource = value;
+        void SetSource(MaterialInteractionSource? value)
+        {
+            if (control is MenuItem native) MenuAppearance.SetInteractionSource(native, value);
+            else ((DropdownMenuItem)control).InteractionSource = value;
+        }
         SetSource(source);
-        var content = CaseDefaults.Center(control);
+        var content = CaseDefaults.Center(allocation);
         var root = new Border { Background = Brushes.White, Child = content };
         TextElement.SetForeground(root, new SolidColorBrush(Color.Parse("#1D1B20")));
         host.Mount(root); host.Frame(-1000); host.Frame(0);
         long next = 16000;
         void Advance(long t) { while (next <= t) { host.Frame(next); next += 16000; } host.AdvanceTo(t); }
+        bool Selected() => control is MenuItem native ? native.IsChecked : ((DropdownMenuItem)control).Selected;
         void Sample(string id) => writer.Submit(host.Snapshot(id, id, [new("control", c.Kind, null,
-            [.. AvaloniaMeasurements.Geometry(control, host.Window).Where(m => m.Name is "box" or "size"),
-                Measurement.Numeric("state", control.Selected ? 1 : 0, "enum", definition: "menu-source.state"),
+            [.. AvaloniaMeasurements.Geometry(allocation, host.Window).Where(m => m.Name is "box" or "size"),
+                Measurement.Numeric("state", Selected() ? 1 : 0, "enum", definition: "menu-source.state"),
                 Measurement.Flag("enabled", control.IsEffectivelyEnabled, definition: "menu-source.enabled"),
                 Measurement.Numeric("clicks", clicks, "count", definition: "menu-source.clicks")])]));
         void Times(params long[] ts) { foreach (var t in ts) { Advance(t); host.Draw(); Sample($"time-{t}"); } }

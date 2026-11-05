@@ -38,6 +38,22 @@ WideNavigationRailItem 的 Icon 槽，使用该项提供的上方/末端徽标�
 不要求必须有 BadgedBox。普通 BadgedBox 允许徽标溢出，其自身尺寸只由锚点决定；祖先裁剪仍可能遮住徽标。
 RTL 改变相对位置，不镜像文字。
 
+Stacked Tab 的图标可以直接组合徽标，标签栏仍按锚点尺寸布局：
+
+```xml
+<m3:Tab Content="收件箱" IsSelected="True">
+  <m3:Tab.Icon>
+    <m3:BadgedBox>
+      <m3:BadgedBox.Badge><m3:Badge Content="99+" /></m3:BadgedBox.Badge>
+      <m3:MaterialSymbol Symbol="Mail" Width="24" Height="24" />
+    </m3:BadgedBox>
+  </m3:Tab.Icon>
+</m3:Tab>
+```
+
+切换到 Leading 时不再应用 Stacked 的徽标边界；内容可以超出 Tab，但仍受更外层容器的裁剪影响。
+Catalog 的 TabRow 示例包含这一组合。
+
 ## 内容、外观与输入
 
 用 `Background` / `Foreground` / `CornerRadius` / `Padding` 或内容模板定制单个 Badge。

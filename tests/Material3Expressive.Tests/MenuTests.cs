@@ -19,6 +19,82 @@ namespace Material3Expressive.Tests;
 public class MenuTests
 {
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeInteractionSourcePairsInputAndCancelsOnReplacementAndClose(bool baseline)
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource(); var events = new List<MaterialInteractionEvent>();
+        source.Interaction += events.Add;
+        var item = new MenuItem { Header = "Choice", ToggleType = MenuItemToggleType.CheckBox, StaysOpenOnClick = true };
+        MenuAppearance.SetInteractionSource(item, source);
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout, baseline);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var point = item.TranslatePoint(new Rect(item.Bounds.Size).Center, window)!.Value;
+            var clicks = 0; item.Click += (_, _) => clicks++;
+            window.MouseMove(point); window.MouseDown(point, MouseButton.Left);
+            var press = Assert.Single(events.OfType<MaterialInteractionEvent.Press>());
+            window.MouseUp(point, MouseButton.Left);
+            Assert.Same(press, Assert.Single(events.OfType<MaterialInteractionEvent.Release>()).Start);
+            Assert.True(item.IsChecked); Assert.Equal(1, clicks); Assert.True(flyout.IsOpen);
+            events.Clear(); window.MouseDown(point, MouseButton.Left);
+            press = Assert.Single(events.OfType<MaterialInteractionEvent.Press>());
+            var replacement = new MaterialInteractionSource();
+            MenuAppearance.SetInteractionSource(item, replacement);
+            Assert.Same(press, Assert.Single(events.OfType<MaterialInteractionEvent.CancelPress>()).Start);
+            window.MouseUp(point, MouseButton.Left);
+            events.Clear(); replacement.Interaction += events.Add;
+            window.MouseDown(point, MouseButton.Left);
+            press = Assert.Single(events.OfType<MaterialInteractionEvent.Press>());
+            flyout.Hide(); Flush(window);
+            Assert.Same(press, Assert.Single(events.OfType<MaterialInteractionEvent.CancelPress>()).Start);
+            window.MouseUp(point, MouseButton.Left);
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            MenuAppearance.SetInteractionSource(item, null);
+            clicks = 0; Click(window, item); Assert.Equal(1, clicks);
+        }
+        finally { flyout.Hide(); window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeInteractionSourceDoesNotReplayAcrossReplacementTemplateAndRemount(bool baseline)
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource();
+        var item = new MenuItem { Header = "Choice", ToggleType = MenuItemToggleType.CheckBox };
+        MenuAppearance.SetInteractionSource(item, source);
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout, baseline);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var controller = MaterialInteraction.GetOrCreate(item);
+            var press = new MaterialInteractionEvent.Press(new Point(24, 24));
+            source.Emit(press); Advance(); Assert.Equal(1, controller.RippleCount);
+            Assert.False(item.IsChecked);
+            var replacement = new MaterialInteractionSource(); replacement.Emit(press);
+            MenuAppearance.SetInteractionSource(item, replacement); Advance(); Assert.Equal(0, controller.RippleCount);
+            source.Emit(press); Advance(); Assert.Equal(0, controller.RippleCount);
+            replacement.Emit(press); Advance(); Assert.Equal(1, controller.RippleCount);
+            var template = item.Template;
+            item.Template = new FuncControlTemplate<MenuItem>((_, _) => new Border()); Flush(window);
+            item.Template = template; Flush(window); Advance(); Assert.Equal(0, controller.RippleCount);
+            replacement.Emit(press); Advance(); Assert.Equal(1, controller.RippleCount);
+            flyout.Hide(); Flush(window); replacement.Emit(press);
+            flyout.ShowAt((Control)window.Content!); Flush(window); Advance(); Assert.Equal(0, controller.RippleCount);
+            replacement.Emit(press); Advance(); Assert.Equal(1, controller.RippleCount);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { flyout.Hide(); window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+        void Advance() { for (var i = 0; i < 3; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); } }
+    }
+
+    [AvaloniaTheory]
     [InlineData(MenuItemToggleType.CheckBox)]
     [InlineData(MenuItemToggleType.Radio)]
     public void NativeSelectionIcon_AnimatesReversesAndReleasesWithTemplate(MenuItemToggleType toggle)
@@ -357,6 +433,9 @@ public class MenuTests
         var first = new MenuItem { Header = "One", ToggleType = MenuItemToggleType.Radio, GroupName = "test", IsChecked = true, StaysOpenOnClick = true };
         var disabled = new MenuItem { Header = "Disabled", IsEnabled = false };
         var second = new MenuItem { Header = "Two", ToggleType = MenuItemToggleType.Radio, GroupName = "test", StaysOpenOnClick = true };
+        var source = new MaterialInteractionSource(); var interactions = new List<MaterialInteractionEvent>();
+        source.Interaction += interactions.Add;
+        MenuAppearance.SetInteractionSource(second, source);
         var flyout = new MenuFlyout { Items = { first, disabled, second } };
         var window = Show(flyout); flyout.ShowAt((Control)window.Content!); Flush(window);
         var clicks = 0;
@@ -365,8 +444,10 @@ public class MenuTests
         window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.None, null);
         Assert.True(second.IsFocused);
         window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+        var press = Assert.Single(interactions.OfType<MaterialInteractionEvent.Press>());
         Assert.True(MaterialInteraction.GetOrCreate(second).Interaction.HasFlag(InteractionState.Pressed));
         window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+        Assert.Same(press, Assert.Single(interactions.OfType<MaterialInteractionEvent.Release>()).Start);
         Assert.False(MaterialInteraction.GetOrCreate(second).Interaction.HasFlag(InteractionState.Pressed));
         Assert.Equal(1, clicks);
         Assert.True(second.IsChecked); Assert.False(first.IsChecked); Assert.True(flyout.IsOpen);
