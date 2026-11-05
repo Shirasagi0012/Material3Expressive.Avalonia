@@ -211,6 +211,56 @@ public class BadgeTests
         Assert.Equal(0, clock.PendingFrameCount);
     }
 
+    [AvaloniaTheory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void LeadingTabLabelPaintsAboveOverflowingIconBadge(bool native, bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var label = new Border { Width = 32, Height = 16, Background = Brushes.Blue };
+        var box = new BadgedBox
+        {
+            Content = new Border { Width = 24, Height = 24, Background = Brushes.Blue },
+            Badge = new Badge { Content = new Border { Width = 40, Height = 8, Background = Brushes.White }, Background = Brushes.Red }
+        };
+        Control item = native
+            ? new TabItem { Header = label, Icon = box }
+            : new Tab { Content = label, Icon = box, IsSelected = true };
+        TabAppearance.SetContentLayout(item, TabContentLayout.Leading);
+        Control root = native ? new TabControl { Width = 120, Items = { item } } : item;
+        var window = Show(root);
+        try
+        {
+            window.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            CheckLabel();
+            TabAppearance.SetContentLayout(item, TabContentLayout.Stacked); Flush(window);
+            TabAppearance.SetContentLayout(item, TabContentLayout.Leading); CheckLabel();
+            window.FlowDirection = rtl ? FlowDirection.LeftToRight : FlowDirection.RightToLeft; CheckLabel();
+            var parent = (Grid)window.Content!;
+            parent.Children.Remove(root); Flush(window);
+            parent.Children.Add(root); CheckLabel();
+
+            void CheckLabel()
+            {
+                Flush(window);
+                using var frame = window.CaptureRenderedFrame()!;
+                var point = label.TranslatePoint(new Point(16, 2), window)!.Value;
+                using var pixels = frame.Lock();
+                var address = pixels.Address + (int)point.Y * pixels.RowBytes + (int)point.X * 4;
+                var first = System.Runtime.InteropServices.Marshal.ReadByte(address);
+                var green = System.Runtime.InteropServices.Marshal.ReadByte(address + 1);
+                var third = System.Runtime.InteropServices.Marshal.ReadByte(address + 2);
+                var rgb = pixels.Format == Avalonia.Platform.PixelFormat.Rgba8888
+                    ? (first, green, third) : (third, green, first);
+                Assert.Equal(((byte)0, (byte)0, (byte)255), rgb);
+            }
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     static Window Show(Control content)
     {
         content.HorizontalAlignment = HorizontalAlignment.Center; content.VerticalAlignment = VerticalAlignment.Center;
@@ -219,6 +269,6 @@ public class BadgeTests
         window.Content = new Grid { Children = { content } }; window.Show(); Flush(window);
         return window;
     }
-    static T Part<T>(Control owner, string name) where T : Control => owner.GetVisualDescendants().OfType<T>().Single(control => control.Name == name);
+    static T Part<T>(Control owner, string name) where T : Control => owner.GetVisualDescendants().OfType<T>().Single(control => control.Name == name && control.TemplatedParent == owner);
     static void Flush(Window window) { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsConfiguration
@@ -225,11 +226,14 @@ class ChipCases {
             val selectable=config.kind in listOf("filter","elevated-filter","input")
             var coordinator:Any?=probe.coordinates
             var elevation=0.0
+            var corner:Double?=null
             while(coordinator!=null) {
                 val layer=field(coordinator,"layer")
                 if(layer!=null) {
                     val graphics=checkNotNull(field(layer,"graphicsLayer"))
                     elevation=maxOf(elevation,(graphics.javaClass.methods.single { it.name=="getShadowElevation" && it.parameterCount==0 }.invoke(graphics) as Number).toDouble())
+                    if(config.action=="source-disable" && graphics.javaClass.methods.single { it.name=="getClip" && it.parameterCount==0 }.invoke(graphics)==true)
+                        corner=(field(layer,"outline") as? Outline.Rounded ?: error("Chip Surface has no rounded outline")).roundRect.topLeftCornerRadius.x.toDouble()/ComposeHost.RenderScale
                 }
                 coordinator=field(coordinator,"wrapped")
             }
@@ -238,7 +242,8 @@ class ChipCases {
                     flag("selected",if(selectable) semantics[SemanticsProperties.Selected] else false,definition="chip.selected"),
                     flag("enabled",!semantics.contains(SemanticsProperties.Disabled),definition="chip.enabled"),
                     number("shadowElevation",elevation/ComposeHost.RenderScale,"dip",category="motion",definition="chip.shadow-elevation",source="Surface graphics layer shadowElevation / density"),
-                    number("clicks",clicks.toDouble(),"count",definition="chip.click-callback-count"))),
+                    number("clicks",clicks.toDouble(),"count",definition="chip.click-callback-count"))+
+                    if(config.action=="source-disable") listOf(number("cornerRadius",checkNotNull(corner),"dip",category="motion",definition="chip.top-left-outline-radius",source="cached Surface GraphicsLayerOwnerLayer.outline / density")) else emptyList()),
                 ProbePoint("label","content","chip",labelProbe.geometry().filter { it.name=="box" || it.name=="size" }))
         }
     }

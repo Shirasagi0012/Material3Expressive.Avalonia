@@ -33,6 +33,12 @@
       </m3:ToggleableSurface>
       <CheckBox x:Name="Enable" Content="Enable surfaces" IsChecked="True" />
       <m3:ClickableSurface IsEnabled="{Binding #Enable.IsChecked}" CornerRadius="12" Padding="16" TonalElevation="1" Click="OnOpen" Content="Enabled state keeps the same colors" />
+      <TextBlock Text="Transparent surfaces · elevation 1" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel Orientation="Horizontal" Spacing="24" Margin="8">
+        <m3:MaterialSurface Width="64" Height="32" CornerRadius="7.6246843338012695" Background="Transparent" ShadowElevation="1" />
+        <m3:MaterialSurface Width="64" Height="32" CornerRadius="16" Background="Transparent" ShadowElevation="1" />
+        <m3:MaterialSurface Width="72" Height="72" CornerRadius="36" Background="Transparent" ShadowElevation="1" />
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </Window>

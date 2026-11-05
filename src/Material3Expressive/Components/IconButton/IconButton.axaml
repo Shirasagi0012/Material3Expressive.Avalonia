@@ -75,22 +75,20 @@
         </ControlTemplate>
       </Setter>
 
-      <!-- §7.4 with the motion slice: the controller owns state-layer opacity and the press ripple,
-           so pseudo-class styles only pick the layer's color. Later selectors win on ties, so the
-           declaration order hover < focus < pressed is load-bearing: pressed must beat hover when
-           both pseudo-classes are active, because its brush is the ripple ink. BasedOn variants
-           re-declare the StateLayerBrush setters with their own slots. -->
+      <!-- IconButtonImpl creates ripple outside the content color provider. Standard feedback
+           therefore reads the outer ambient, including Vibrant. Surface-based variants below
+           create indication inside their content provider and use the effective Foreground. -->
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.StateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.HoverStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.FocusedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
       <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.PressedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+StandardIconButton.DisabledContainerColor}}" />
@@ -362,16 +360,16 @@
       <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.ContentColor}}" />
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.StateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.HoverStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.FocusedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.PressedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledIconButton.DisabledContainerColor}}" />
@@ -388,16 +386,16 @@
       <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.ContentColor}}" />
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.StateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.HoverStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.FocusedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.PressedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TonalIconButton.DisabledContainerColor}}" />
@@ -419,16 +417,16 @@
       <Setter Property="m3:ButtonThemeProperties.BorderThickness" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.OutlinedOutlineWidth}}" />
 
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.StateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.HoverStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:focus-visible /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.FocusedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:pressed /template/ m3|MaterialSurface#PART_Container">
-        <Setter Property="StateLayerBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.PressedStateLayerColor}}" />
+        <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Foreground}" />
       </Style>
       <Style Selector="^:disabled">
         <Setter Property="m3:ButtonThemeProperties.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedIconButton.DisabledContainerColor}}" />

@@ -8,7 +8,8 @@ using Material3Expressive.Components;
 namespace Material3Expressive.Parity;
 
 public sealed record SurfaceConfig(string Shape = "round", string Layer = "fill", bool Dark = false,
-    string Kind = "surface", double X = 130, double Y = 95, double Elevation = 0, bool Rtl = false);
+    string Kind = "surface", double X = 130, double Y = 95, double Elevation = 0, bool Rtl = false,
+    double Width = 100, double Height = 50, double Radius = 16);
 
 [ParitySuite("surface")]
 public sealed class SurfaceCases
@@ -27,6 +28,15 @@ public sealed class SurfaceCases
         foreach (var kind in new[] { "surface", "button", "fab" })
         foreach (var position in new[] { ("left", 32d, 48d), ("center", 130d, 95d), ("right", 228d, 142d) })
             yield return new($"shadow.{kind}.{position.Item1}", "Window-relative point light", new(Kind: kind, X: position.Item2, Y: position.Item3, Elevation: 6));
+        foreach (var (name, width, height, radius) in new[] {
+                     ("small", 64d, 32d, 6d), ("morph", 64d, 32d, 7.6246843338012695),
+                     ("round", 64d, 32d, 8d), ("pill", 64d, 32d, 16d),
+                     ("large", 96d, 64d, 20d), ("circle", 72d, 72d, 36d) })
+        foreach (var elevation in new[] { 1d, 6d })
+        foreach (var transparent in new[] { false, true })
+            yield return new($"shadow.contour.{name}.{elevation}.{(transparent ? "transparent" : "filled")}",
+                "Curved shadow contour and native fallback", new(Layer: transparent ? "transparent" : "fill",
+                    Elevation: elevation, Width: width, Height: height, Radius: radius));
     }
 
     [ParityScenario("static", Data = nameof(Configurations))]
@@ -34,7 +44,7 @@ public sealed class SurfaceCases
     {
         var config = writer.Metadata.ReadConfig<SurfaceConfig>();
         await using var host = new AvaloniaHost(writer, 360, 240);
-        var brush = new SolidColorBrush(Color.Parse(config.Dark ? "#211F26" : "#EADDFF"));
+        var brush = new SolidColorBrush(config.Layer == "transparent" ? Colors.Transparent : Color.Parse(config.Dark ? "#211F26" : "#EADDFF"));
         Control control;
         if (config.Kind == "button")
         {
@@ -50,12 +60,12 @@ public sealed class SurfaceCases
             control = new MaterialSurface
             {
                 Background = brush, ShadowElevation = config.Elevation,
-                CornerRadius = config.Shape switch { "asymmetric" => new(24, 8, 0, 16), "asymmetric-large" => new(80, 40, 0, 0), "horizontal-overlap" => new(80, 80, 0, 0), _ => new(16) },
+                CornerRadius = config.Shape switch { "asymmetric" => new(24, 8, 0, 16), "asymmetric-large" => new(80, 40, 0, 0), "horizontal-overlap" => new(80, 80, 0, 0), _ => new(config.Radius) },
                 BorderBrush = config.Layer == "border" ? Brushes.Red : null,
                 BorderThickness = new(config.Layer == "border" ? 1.1 : 0),
                 Child = config.Layer == "content" ? new Border { Background = Brushes.Blue } : null
             };
-        control.Width = 100; control.Height = 50;
+        control.Width = config.Width; control.Height = config.Height;
         control.FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         control.HorizontalAlignment = HorizontalAlignment.Left;
         control.VerticalAlignment = VerticalAlignment.Top;

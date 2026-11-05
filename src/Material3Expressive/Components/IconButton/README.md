@@ -60,8 +60,18 @@
 
 **从旧主题迁移：** 依赖 `Comp.StandardIconButton.*` / `Comp.OutlinedIconButton.*` 颜色 Token 的调用方，
 分别改用 `MaterialVibrantIconButtonTheme` / `MaterialOutlinedVibrantIconButtonTheme`。
-这两个主题保留原有容器、内容、状态层和描边颜色 Token 的消费方式；普通主题不再消费这些颜色槽。
+这两个主题保留容器、内容和描边颜色 Token；普通主题不再消费这些颜色槽。
 尺寸和形状 Token 的用法不变。此行为迁移已于 2026-11-03 获维护者确认。
+
+Standard（含 Vibrant）的波纹和状态层取父级 `TextElement.Foreground`；Filled、Tonal、Outlined
+（含 Vibrant）取按钮当前 `Foreground`，包括用户覆盖和禁用色。比如 Filled 的 `Foreground="Red"`
+会让图标与反馈一起变红，Standard 的同一设置只改变图标。Catalog 提供相应颜色对照。
+
+旧 `Comp.*IconButton.*StateLayerColor` 键仍可供自定义主题引用，但内置主题不再消费这些键。
+原先依靠它们单独改反馈色的调用方应迁移到上述颜色来源；需要保持独立反馈色时，在自定义
+ControlTheme 的 `^ /template/ m3|MaterialSurface#PART_Container` 上设置 `StateLayerBrush`。
+同时覆盖 `^:pointerover`、`^:focus-visible`、`^:pressed` 的同一目标 Setter，避免内置状态选择器
+在交互时重新接管墨色。这保留显式定制能力，默认反馈始终按内容环境更新。
 
 ## IconToggleButton
 

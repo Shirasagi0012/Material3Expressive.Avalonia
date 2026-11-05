@@ -67,6 +67,8 @@ public sealed class BadgeCases
         foreach (var action in new[] { "bounds", "resize", "content", "layout", "rtl" })
         foreach (var rtl in new[] { false, true })
             yield return Data($"dynamic.tab.{action}.{(rtl ? "rtl" : "ltr")}", new("tab", action == "layout" ? "tall" : "wide", Rtl: rtl, Action: action, Start: true));
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.tab.wide-layout.{(rtl ? "rtl" : "ltr")}", new("tab", "wide", Rtl: rtl, Action: "layout", Start: true));
     }
     private static CaseData<BadgeConfig> Data(string id, BadgeConfig config) => new(id, id, config);
 

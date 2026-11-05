@@ -92,6 +92,10 @@ public sealed class IconButtonCases
         foreach (var style in new[] { "standard", "outlined" })
         foreach (var action in new[] { "press", "hover", "focus", "ambient-hover" })
             yield return Data($"dynamic.vibrant-ink.{style}.{action}", new(style, Action: action, AmbientColor: "#40208070", Vibrant: true));
+        foreach (var style in Styles)
+            yield return Data($"dynamic.content-ink.{style}", new(style, Action: "content-ink", AmbientColor: "#40208070"));
+        foreach (var style in new[] { "standard", "outlined" })
+            yield return Data($"dynamic.content-ink.vibrant.{style}", new(style, Action: "content-ink", AmbientColor: "#40208070", Vibrant: true));
         // Shape clamping and content dimensions have independent size branches.
         foreach (var size in Sizes.Where(s => s != "small"))
             yield return Data($"dynamic.morph-press.filled.{size}", new(Size: size, PressedRadius: 8, Action: "press"));
@@ -157,6 +161,17 @@ public sealed class IconButtonCases
         }
         switch (config.Action)
         {
+            case "content-ink":
+                Event(1000, "move", center); SamplesAt(16000, 180000);
+                AdvanceTo(181000); scene.Button.Foreground = Brushes.Magenta;
+                writer.Record(181000, "mutation", "content magenta"); host.Draw(); Sample("content-changed"); SamplesAt(192000, 240000);
+                Event(241000, "down", center); SamplesAt(256000, 320000);
+                AdvanceTo(321000); scene.Button.IsEnabled = false;
+                writer.Record(321000, "mutation", "disable"); host.Draw(); Sample("disabled"); SamplesAt(336000, 400000);
+                AdvanceTo(401000); scene.Button.ClearValue(IconButton.ForegroundProperty);
+                writer.Record(401000, "mutation", "restore default content"); host.Draw(); Sample("content-restored"); SamplesAt(416000, 560000);
+                Event(561000, "up", center); AdvanceTo(562000); scene.Button.IsEnabled = true;
+                writer.Record(562000, "mutation", "enable"); host.Draw(); SamplesAt(576000, 800000); break;
             case "hover":
                 Event(1000, "move", center); Sample("hover-event"); SamplesAt(16000, 75000, 180000);
                 Event(181000, "move", outside); Sample("exit-event"); SamplesAt(196000, 400000); break;

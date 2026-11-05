@@ -70,6 +70,16 @@ Tab 的 selectable 只有 bounded ripple，不包含内容 clip。两套项目�
 不更改共享 Surface 的背景/裁剪契约。原先用 Surface 包裹内容会裁掉 Leading 的高徽标，
 也会截掉 Stacked 自定义大图标超出容器的部分。祖先 Row/滚动视口的裁剪保持各自语义。
 TabHeader 的测量使用 FlowDirection 决定居中取整，方向变化必须重新测量缓存的槽矩形。
+固定 AndroidX/Core `Tab.kt` 内容相同：LeadingIconTab 的 Row 先放 icon，再放 text；
+Stacked 的 TabBaselineLayout 则先 text、后 icon。2026-11-05 当前 Badge 回归暴露 Leading 宽徽标
+覆盖标签的失败：槽几何均相等，但本地沿用 Stacked 的绘制顺序。共享 TabHeader 按布局设置
+标签 presenter 的 ZIndex，保持测量子项顺序和现有内容生命周期；切回 Stacked 恢复原序。
+这是一项等价顺序移植，不改变公共 API 或徽标边界规则，无迁移动作。两种入口、LTR/RTL、
+布局切换、方向反转与重挂的真实像素测试修改前 4/4 失败，修改后通过。
+最终 `tab-layer-family` 的完整 143 例为 135 equal、6 withinTolerance、2 different（上述原生
+按下/方向焦点选择时机），全部重复及额外被动截图稳定、零执行错误。`tab-layer-current` 的
+Badge 组合 87 例为 85 equal、2 different，两个 Leading 宽徽标以及新增布局切换样本严格相等；
+剩余两个差异为已记录的外层分数像素居中。相关控件回归 53/53、最终全量 2279/2279 通过。
 
 Avalonia 没有 Compose intrinsic API，TabHeader 查询真实内容后必须按实际约束重新测量，
 避免查询约束污染后续 Arrange。intrinsic 变化、父约束变化与选择变化分别遵循上游更新顺序。

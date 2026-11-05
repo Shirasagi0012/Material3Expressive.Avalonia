@@ -266,6 +266,9 @@ public sealed class ChipCases
                 Measurement.Flag("enabled", Chip.IsEffectivelyEnabled, definition: "chip.enabled"),
                 Measurement.Numeric("shadowElevation", Chip.GetVisualDescendants().OfType<MaterialSurface>().First().ShadowElevation,
                     "dip", category: "motion", definition: "chip.shadow-elevation", source: "Surface.ShadowElevation"),
+                .. (config.Action == "source-disable" ? new[] { Measurement.Numeric("cornerRadius",
+                    Chip.GetVisualDescendants().OfType<MaterialSurface>().First().EffectiveCornerRadius.TopLeft,
+                    "dip", category: "motion", definition: "chip.top-left-outline-radius", source: "Surface.EffectiveCornerRadius.TopLeft") } : []),
                 Measurement.Numeric("clicks", clicks, "count", definition: "chip.click-callback-count")]),
             new("label", "content", "chip", AvaloniaMeasurements.Geometry(label, host.Window).Where(m => m.Name is "box" or "size").ToArray())
         ];

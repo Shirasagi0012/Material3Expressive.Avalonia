@@ -37,6 +37,15 @@
         <m3:Tab Content="Music" Icon="{m3:Symbol MusicNote}" ContentLayout="Leading" IsSelected="True" Click="OnTabClick" />
         <m3:Tab Content="Photos" Icon="{m3:Symbol Photo}" ContentLayout="Leading" Click="OnTabClick" />
       </m3:TabRow>
+      <TextBlock Text="Leading icon badge · label paints last" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:Tab Content="Inbox" ContentLayout="Leading" HorizontalAlignment="Left" IsSelected="True">
+        <m3:Tab.Icon>
+          <m3:BadgedBox>
+            <m3:BadgedBox.Badge><m3:Badge Content="99+" MinWidth="48" AutomationProperties.Name="99 unread messages" /></m3:BadgedBox.Badge>
+            <m3:MaterialSymbol Symbol="Mail" Width="24" Height="24" />
+          </m3:BadgedBox>
+        </m3:Tab.Icon>
+      </m3:Tab>
       <TextBlock Text="Scrollable tabs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow IsScrollable="True" SelectedIndex="0">
         <m3:Tab Content="All albums" IsSelected="True" Click="OnTabClick" />

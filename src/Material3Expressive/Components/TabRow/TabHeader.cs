@@ -211,6 +211,9 @@ internal sealed class TabHeader : Panel
         if (custom) Label.ClearValue(ContentPresenter.TextWrappingProperty);
         else Label.TextWrapping = TextWrapping.Wrap;
         BadgeBounds.SetIsEnabled(this, ContentLayout == TabContentLayout.Stacked);
+        // LeadingIconTab's Row emits icon, spacer, then text; TabBaselineLayout emits
+        // text before icon. Preserve that paint order when custom slot content overflows.
+        Label.ZIndex = ContentLayout == TabContentLayout.Leading ? 1 : 0;
     }
     private void TransitionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {

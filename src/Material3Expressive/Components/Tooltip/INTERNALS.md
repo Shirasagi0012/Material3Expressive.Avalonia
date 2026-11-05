@@ -106,7 +106,8 @@ Label 调用 BasicTooltipBox 而非 TooltipBox 动画包装，所以显隐立即
 - 同日接受 Tooltip 的动画目标提交时序差异：ComposeAnimation Transition 立即跟随 TargetState，Core 在采样旧动画后的重组帧末提交；保留现有共享 API，不加手动同步开关。仅覆盖该目标时序，不接受其他定位或布局偏离
 - 本次剩余移植的非破坏性组件 API 授权包含 `TooltipBox.LongPressDuration`；此入口仅配置该组件的长按等待，不改原生 ToolTip 服务或 TooltipState 的显示时长。
 
-尚未实现 caret 的形状及背景、裁剪、阴影路径并集，任意自定义容器的基线透传也尚未实现。
+尚未实现 caret 的形状及背景、裁剪、阴影路径并集。BadgedBox 已通过共享读取器仅透传锚点基线，
+并由真实 RichTooltip 组合的双端用例验证；任意自定义容器的自动基线透传仍未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
 
 RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分别连接自定义 Thumb 内的 TooltipLabel。

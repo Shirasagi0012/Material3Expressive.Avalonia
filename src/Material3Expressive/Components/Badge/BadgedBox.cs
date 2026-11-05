@@ -1,14 +1,27 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.LogicalTree;
+using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Positions a badge at the top end of an anchor without enlarging the anchor's layout.</summary>
-public class BadgedBox : ContentControl
+public class BadgedBox : ContentControl, IMaterialTextBaselineProvider
 {
+    private BadgedBoxLayout? _layout;
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+    {
+        base.OnApplyTemplate(e);
+        _layout = e.NameScope.Find<BadgedBoxLayout>("PART_Layout");
+    }
+
+    (int First, int Last) IMaterialTextBaselineProvider.ReadTextBaselines(double scale) =>
+        _layout?.ReadAnchorBaselines(scale) ?? (int.MinValue, int.MinValue);
+
     public static readonly StyledProperty<object?> BadgeProperty =
         AvaloniaProperty.Register<BadgedBox, object?>(nameof(Badge));
     public static readonly StyledProperty<IDataTemplate?> BadgeTemplateProperty =

@@ -84,12 +84,52 @@ public class IconButtonAmbientTests
             button.Resources[outlined ? Comp.OutlinedIconButton.ContentColor : Comp.StandardIconButton.ContentColor] = Colors.Magenta;
             button.Resources[outlined ? Comp.OutlinedIconButton.DisabledContentColor : Comp.StandardIconButton.DisabledContentColor] = Colors.Red;
             Flush(window); Assert.Equal(Colors.Magenta, ColorOf(button.Foreground));
-            Assert.Equal(Colors.Magenta, ColorOf(button.GetVisualDescendants().OfType<MaterialSurface>().Single().StateLayerBrush));
+            Assert.Equal(outlined ? Colors.Magenta : Colors.Blue, ColorOf(button.GetVisualDescendants().OfType<MaterialSurface>().Single().StateLayerBrush));
             button.IsEnabled = false; Flush(window); Assert.Equal(Colors.Red, ColorOf(button.Foreground));
             button.IsEnabled = true; window.RequestedThemeVariant = ThemeVariant.Dark; Flush(window);
             if (outlined) Assert.Equal(ButtonThemeFixture.SchemeColor(true, s => s.OutlineVariant), ColorOf(button.BorderBrush));
             button.Theme = (ControlTheme)window.FindResource(outlined ? "MaterialOutlinedIconButtonTheme" : "MaterialStandardIconButtonTheme")!;
             Flush(window); Assert.Equal(Colors.Blue, ColorOf(button.Foreground));
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("MaterialFilledIconButtonTheme", false)]
+    [InlineData("MaterialTonalIconButtonTheme", false)]
+    [InlineData("MaterialOutlinedVibrantIconButtonTheme", false)]
+    [InlineData("MaterialVibrantIconButtonTheme", true)]
+    public void FeedbackInkTracksItsLiveColorProviderThroughInputDisableAndReparent(string theme, bool ambientInk)
+    {
+        using var clock = new MotionTestClockScope();
+        var button = new IconButton();
+        var parent = new Border { Child = button };
+        var ambient = new SolidColorBrush(Color.Parse("#40245A80"));
+        TextElement.SetForeground(parent, ambient);
+        var window = Show(parent);
+        try
+        {
+            button.Theme = (ControlTheme)window.FindResource(theme)!;
+            Flush(window);
+            var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            void AssertInk() => Assert.Equal(ambientInk ? ColorOf(TextElement.GetForeground((Control)button.Parent!)) : ColorOf(button.Foreground), ColorOf(surface.StateLayerBrush));
+            AssertInk();
+            var point = button.TranslatePoint(new Point(24, 24), window)!.Value;
+            window.MouseMove(point); Flush(window); AssertInk();
+            window.MouseDown(point, MouseButton.Left); Flush(window); AssertInk();
+            button.Foreground = Brushes.Magenta; Flush(window); AssertInk();
+            ambient.Color = Colors.Green; Flush(window); AssertInk();
+            button.ClearValue(IconButton.ForegroundProperty);
+            button.IsEnabled = false; Flush(window); AssertInk();
+            window.MouseUp(point, MouseButton.Left);
+            button.IsEnabled = true; button.Focus(NavigationMethod.Tab); Flush(window); AssertInk();
+            window.RequestedThemeVariant = ThemeVariant.Dark; Flush(window); AssertInk();
+            parent.Child = null;
+            var replacement = new Border { Child = button };
+            TextElement.SetForeground(replacement, Brushes.Purple); window.Content = replacement; Flush(window);
+            surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            AssertInk();
+            ambient.Color = Colors.Red; Flush(window); AssertInk();
         }
         finally { window.Close(); }
     }

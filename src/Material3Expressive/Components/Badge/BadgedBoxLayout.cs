@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
 
@@ -36,6 +37,19 @@ internal sealed class BadgedBoxLayout : Panel
     private double _end = double.PositiveInfinity;
     private double _top = double.NegativeInfinity;
     private Size _badgeSize;
+
+    internal (int First, int Last) ReadAnchorBaselines(double scale)
+    {
+        // Badge.kt deliberately publishes only anchorPlaceable's lines. The badge's text
+        // must never participate, even if the anchor has no alignment lines at all.
+        var anchor = Children[0];
+        var pair = MaterialTextBaseline.Read(anchor, scale);
+        // The standard anchor presenter is centered in the allocated box. Use measured
+        // sizes, not last frame's Bounds: consumers query alignment lines during measure.
+        var offset = MathUtils.RoundToInt((DesiredSize.Height - anchor.DesiredSize.Height) * scale / 2);
+        return (pair.First == int.MinValue ? int.MinValue : pair.First + offset,
+            pair.Last == int.MinValue ? int.MinValue : pair.Last + offset);
+    }
 
     public BadgedBoxLayout() => LayoutUpdated += (_, _) =>
     {

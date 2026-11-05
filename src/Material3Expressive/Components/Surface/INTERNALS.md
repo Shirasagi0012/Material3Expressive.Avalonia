@@ -118,6 +118,18 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
   0 different、零执行错误且重复稳定（`20261105-042829-4912403a`），包含六个新增方向/绘制层用例。
   Button 的 RTL 非对称按压也在现有门禁内且重复稳定（`20261105-042956-3d2cdb73`）。
 - 双端 `SurfaceCases.cs` / `SurfaceCases.kt` 的族名为 `surface`。共享修改还应选择 Button、Chip、Toggle/Split、ListItem 等实际调用方回归。
+- 2026-11-05 `shadow-contour-current` 在当前实现上新增 24 个静态轮廓用例：6 种尺寸/圆角、
+  1/6 DIP 阴影、实色/透明填充。共 47 例为 10 equal、32 withinTolerance、5 different，
+  零执行错误且全部重复稳定。失败为透明 circle/large/morph/pill 的 1 DIP，以及透明 pill 的 6 DIP；
+  所有几何读数一致。它们直接使用真实 MaterialSurface/Compose Surface，没有动画、输入或模拟阴影。
+  Catalog `SurfaceDemo` 增加相应低高度透明样本，便于在桌面后端观察；该展示不等同于 GPU 验证。
+- 同轮调查固定 Skiko `0.152.0-alpha02` 的 `ShadowUtils.drawShadow`，独立 ambient-only 探针亦出现
+  morph 轮廓内部渐变，本地则没有。物理像素路径替代 DIP+CTM 的实验图像不变；直接采用
+  `SkShadowTessellator::handleQuad` 的非 Ganesh 控制点分支虽令该样本相等，却令整个 Surface 族
+  出现 8 个不同用例，且使既有圆形 ambient 网格测试失败。这不足以证明固定原生构建采用该分支，
+  两项实验均撤回；保留原始 Ganesh 算法及全部门禁。准确分歧仍待定位，不能将这些内部渐变
+  归入 DECISIONS §20 已接受的坐标栅格差异。实验报告 `shadow-quad-surface`、`chip-shadow-quad`
+  只用于说明被否决方案，当前结论以 `shadow-contour-current` 为准。
 - 2026-11-04 `interactive-surface` 最终运行 `20261104-081657-a2237b4f`：111 例执行错误 0，
   92 例像素完全相等、19 例容差内、超差 0；覆盖三个入口的静态颜色/尺寸/描边/阴影与输入/换源/重挂。
   105 例稳定，6 例 Core 波纹重叠时不稳定：click.keys / keys-reverse、select.keys-reverse、toggle.keys

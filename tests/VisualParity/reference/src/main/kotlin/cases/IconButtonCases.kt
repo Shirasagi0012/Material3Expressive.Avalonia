@@ -92,6 +92,18 @@ class IconButtonCases {
                     key(122000,true); sample("key-down"); samplesAt(138000,197000,347000)
                     key(348000,false); sample("key-up"); samplesAt(364000,498000,700000)
                 }
+                "content-ink" -> {
+                    event(1000,"move",center); samplesAt(16000,180000)
+                    advanceTo(181000); scene.contentColor=Color.Magenta
+                    writer.record(181000,"mutation","content magenta"); host.draw(); sample("content-changed"); samplesAt(192000,240000)
+                    event(241000,"down",center); samplesAt(256000,320000)
+                    advanceTo(321000); scene.enabled=false
+                    writer.record(321000,"mutation","disable"); host.draw(); sample("disabled"); samplesAt(336000,400000)
+                    advanceTo(401000); scene.contentColor=null
+                    writer.record(401000,"mutation","restore default content"); host.draw(); sample("content-restored"); samplesAt(416000,560000)
+                    event(561000,"up",center); advanceTo(562000); scene.enabled=true
+                    writer.record(562000,"mutation","enable"); host.draw(); samplesAt(576000,800000)
+                }
                 "ambient-hover" -> {
                     event(1000,"move",center); samplesAt(16000,180000)
                     advanceTo(181000); scene.ambientColor="#800080"
@@ -157,6 +169,7 @@ class IconButtonCases {
 
     internal class IconScene(val config:IconButtonConfig) {
         var ambientColor by mutableStateOf(config.ambientColor)
+        var contentColor by mutableStateOf<Color?>(null)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
         var size by mutableStateOf(config.size)
@@ -223,7 +236,7 @@ class IconButtonCases {
             val colors=when(config.style) {
                 "standard" -> if(config.vibrant) IconButtonDefaults.iconButtonVibrantColors() else IconButtonDefaults.iconButtonColors(); "tonal" -> IconButtonDefaults.filledTonalIconButtonColors()
                 "outlined" -> if(config.vibrant) IconButtonDefaults.outlinedIconButtonVibrantColors() else IconButtonDefaults.outlinedIconButtonColors(); else -> IconButtonDefaults.filledIconButtonColors()
-            }
+            }.let { defaults -> contentColor?.let { defaults.copy(contentColor=it,disabledContentColor=it) } ?: defaults }
             val border=if(config.custom=="border") BorderStroke(3.dp,Color.Red) else if(config.vibrant) IconButtonDefaults.outlinedIconButtonVibrantBorder(enabled) else IconButtonDefaults.outlinedIconButtonBorder(enabled)
             var modifier=container.modifier().focusRequester(requester).onFocusChanged { focused=it.isFocused }
             if(config.width!=null) modifier=modifier.width(config.width.toFloat().dp)

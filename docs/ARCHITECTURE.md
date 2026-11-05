@@ -47,7 +47,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 - **角色聚合**：使用 `MaterialText.Style` 指定文字排版角色，按需将字体族、粗细、行高与字号批量投影到目标控件。
 - **默认值级联**：容器通过 `MaterialText.DefaultStyle` 逐字段向下游提供环境继承，已显式声明的字段优先，未声明字段保留原生继承。
 - **单位换算**：排版配置统一以设备独立像素存储，比例缩放与相对单位在解析消费点执行换算，不替换原生文本排版引擎。
-- **显式基线**：自定义槽根通过 `MaterialTextBaseline.First/Last` 发布相对自身顶边、排除 Margin 的 DIP 基线，供 Snackbar / RichTooltip 消费；属性不继承，变化使祖先重新测量。共享读取器只处理显式值、原生文字与内容呈现器，不推断任意容器内部布局。用法见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md#自定义内容的文字基线)。
+- **文字基线**：自定义槽根通过 `MaterialTextBaseline.First/Last` 发布相对自身顶边、排除 Margin 的 DIP 基线，供 Snackbar / RichTooltip 消费；属性不继承，变化使祖先重新测量。共享读取器处理显式值、原生文字、内容呈现器及内部可选提供接口；BadgedBox 通过该接口仅转发锚点的测量基线。显式覆盖优先，不推断任意容器内部布局。用法见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md#自定义内容的文字基线)。
 
 ---
 

@@ -97,7 +97,7 @@ Vibrant 切换主题对应固定 `IconButtonDefaults.iconToggleButtonVibrantColo
 即时选择；独立主题继承已有尺寸、形状 collector、受控请求与 Surface 生命周期，不新增动画引擎。
 Standard indication 仍在内容色 provider 之外，读取外部 ambient；Outlined 的 Surface indication 使用最终内容色。
 选中时描边厚度为零，包括禁用选中态；未选中禁用描边替换 OutlineVariant 的 alpha。
-新主题入口在本次非破坏性组件 API 授权范围内，未改变旧 Vibrant IconButton 的状态层 Token 合约。
+新切换主题最初没有改变旧 Vibrant IconButton 的状态层 Token 合约；现行反馈色决定见下文。
 固定 upstream 的 Outlined Vibrant helper 写入普通 Outlined 缓存而没有写回自身缓存；本地无这类全局缓存，
 默认返回的六个颜色槽保持对应关系，不将该 helper 的跨入口缓存副作用扩散到组件状态。
 
@@ -111,11 +111,6 @@ Small.OutlinedOutlineWidth，原始 Large/XLarge 2/3 DIP Token 保留供显式�
 
 **已观察到、尚未解决：**
 
-- 旧 Vibrant Standard IconButton 保留已确认的状态层 Token 消费；上游 ripple 读取外部 ambient。
-  `icon-button.dynamic.vibrant-ink.*` 对比带 alpha 的环境色、hover / press / focus 和悬浮中变色。
-  推荐迁移到外部 ambient，例如父容器 `TextElement.Foreground="Blue"` 时反馈为蓝色，而图标仍使用
-  OnSurfaceVariant；这会影响已有 `Comp.StandardIconButton.*StateLayerColor` 覆盖，需维护者决定兼容或迁移方案。
-  该改变尚未批准，现有主题未改写；新增 Vibrant 切换主题直接使用上游颜色路径。
 - 属性变更当帧的即时更新、更换按压目标后部分状态层像素仍有差异
 - 受限图标盒已改为两轴分别约束；文字字体图标绘制仍不由向量用例证明
 
@@ -270,10 +265,17 @@ preserveSurfaceMotion，仅 IconButton 使用：结束旧 ripple/state-layer 动
 测试入口为 IconButtonInteractionSourceTests、双端 `icon-button-source`；Catalog TooltipDemo 展示与 Label 共享源。
 
 新增场景保留换源当帧旧 Compose 波纹尚未重绘、本地已清除的差异；随后帧形状和波纹生命周期应分别比较。
-禁用时普通 Filled/Tonal 仍消费原有 StateLayerColor Token，而固定上游使用实际内容色；
-这会影响尚未结束的外部波纹。建议维护者决定是否将普通 Filled/Tonal 的反馈墨色迁至有效 Foreground，
-例如 `iconButton.Foreground = Brushes.Red` 时 ripple 同步为红色；已有独立状态层 Token 覆盖的调用方将受影响，
-需要兼容入口或明确迁移。当前未改写该 Token 合约，建议也未记为已批准。
+**反馈色决定：本轮依据用户扩大授权重新决定。** 固定 AndroidX/Core `IconButton.kt` 相同：
+`IconButtonImpl` 在内容色 provider 外创建 ripple，Surface 路径在内容 provider 内创建 indication。
+原 Vibrant Standard 保留状态层 Token 是为兼容旧主题；Filled/Tonal/Outlined Vibrant 的相同路径
+还导致 Foreground 覆盖及禁用时的活动波纹使用旧色。现统一遵循上述 provider 边界：Standard
+（普通/Vibrant）用父级 ambient，其余三种样式（含 Outlined Vibrant）用实际 Foreground。
+使用现有 XAML 绑定，不新增颜色缓存、动画或共享调度机制。`button.Foreground = Brushes.Red`
+在 Filled/Tonal/Outlined 同时改变内容和反馈；Standard 反馈由父级 TextElement.Foreground 控制。
+备选的“默认仍读独立 Token，另加 opt-in 属性”会保留错误默认行为；自动侦测资源覆盖会引入
+额外优先级，均不采用。旧 Token 类型和来源保留供自定义主题使用，独立反馈色需迁移到
+模板 Surface.StateLayerBrush；容器/内容/描边 Token 与所有布局、动画和交互源 API 不变。
+此决定替代旧状态层消费合约，不追认为早期已批准。
 
 本批最终控件测试 1702/1702 通过，其中新交互源及 Label 行为用例 26 项；VisualParity 系统测试
 124/124 通过。期间全量测试曾有一次 IconButtonThemeTests 清理阶段 InvalidOperationException，
@@ -296,3 +298,21 @@ preserveSurfaceMotion，仅 IconButton 使用：结束旧 ripple/state-layer 动
 这些 self-test 完成并不表示双端全匹配；原始报告保留不同值、实际截图与重复性证据。
 最终解决方案构建通过，保留现有私有 API、可空性、过时属性及测试分析器警告；依赖验证范围仍受
 上文临时包缓存与原始字体制品缺失的限制。
+
+## 2026-11-05 反馈色修复复验
+
+本轮先用当前代码重现 Vibrant Standard hover 持续墨色差异，再按固定两端的 provider 边界修复。
+`IconButtonAmbientTests` 的新增行为回归在修复前失败，修复后 IconButton 相关测试 54/54 通过；
+覆盖局部前景、父级画刷对象及 Color 更新、hover/press、禁用、主题切换和重挂，Catalog 增加对应示例。
+
+- `icon-ink-current`：icon-button 293 例，263 equal、7 withinTolerance、23 different，全部重复稳定，零执行错误。
+  六个新增 content-ink 用例覆盖普通/鲜艳 Standard、Filled、Tonal 和普通/鲜艳 Outlined；
+  前景改变、禁用和清除覆盖的修改当帧仍不同，下一采样帧及后续反馈色相等。保留实际事件时序，
+  没有延迟属性更新或补帧来掩盖差异。Vibrant Standard 的稳定 hover 墨色已相等；
+  其 ambient 修改当帧以及其他既有主题/禁用/尺寸变更当帧的差异仍未解决；原生 Enter 按下激活
+  则按 DECISIONS 的共享键盘职责保留，不能将两类情况混为尚待决定。
+- `icon-ink-source-current`：icon-button-source 48 例，12 equal、12 withinTolerance、24 different，
+  全部重复稳定，零执行错误。保留换源、禁用及原生按压取消的差异，不能表述为交互源全匹配。
+
+原始报告位于 `artifacts/visual-parity/runs/` 下同名目录，包含实际图像、结构化状态、事件与重复性。
+固定参考提交、依赖和容差未改；上述结论不替代字体、真实辅助技术或所有历史未验收能力的验证。

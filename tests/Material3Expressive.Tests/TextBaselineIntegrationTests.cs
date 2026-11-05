@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
@@ -13,6 +14,83 @@ namespace Material3Expressive.Tests;
 
 public class TextBaselineIntegrationTests
 {
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BadgedBoxNativeTextAndTemplateReplacementKeepMeasuredBaselineOffsets(bool nested)
+    {
+        using var clock = new MotionTestClockScope();
+        var text = new TextBlock { Text = "First\nLast", Margin = new Thickness(0, 3, 0, 1) };
+        var inner = new BadgedBox { Content = text, Badge = new Badge { Content = "999" } };
+        var box = nested ? new BadgedBox { Content = inner, Badge = new Badge() } : inner;
+        box.Height = 80;
+        box.Margin = new Thickness(0, 4, 0, 2);
+        var window = DialogTests.Show(box);
+        try
+        {
+            void AssertActualLines()
+            {
+                var pair = MaterialTextBaseline.Read(box, 1);
+                var origin = box.Margin.Top + text.TranslatePoint(default, box)!.Value.Y;
+                var lines = text.TextLayout.TextLines;
+                Assert.Equal(MathUtils.DipToPx(origin + lines[0].Baseline, 1), pair.First);
+                Assert.Equal(MathUtils.DipToPx(origin + lines.Take(lines.Count - 1).Sum(l => l.Height) + lines[^1].Baseline, 1), pair.Last);
+            }
+            AssertActualLines();
+            box.Height = 96; window.UpdateLayout(); AssertActualLines();
+            MaterialTextBaseline.SetLast(box, 70); window.UpdateLayout();
+            Assert.Equal(74, MaterialTextBaseline.Read(box, 1).Last);
+            box.ClearValue(MaterialTextBaseline.LastProperty); window.UpdateLayout(); AssertActualLines();
+            inner.Content = null;
+            inner.ContentTemplate = new FuncDataTemplate<object>((_, _) => text = new TextBlock { Text = "Template\nContent" });
+            window.UpdateLayout(); AssertActualLines();
+            var template = box.Template;
+            box.Template = null; window.UpdateLayout();
+            Assert.Equal((int.MinValue, int.MinValue), MaterialTextBaseline.Read(box, 1));
+            box.Template = template; window.UpdateLayout(); AssertActualLines();
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BadgedBoxForwardsOnlyAnchorBaselinesAndInvalidatesConsumers(bool tooltipHost)
+    {
+        using var clock = new MotionTestClockScope();
+        var anchor = new Border { Width = 60, Height = 32 };
+        MaterialTextBaseline.SetFirst(anchor, 10);
+        MaterialTextBaseline.SetLast(anchor, 26);
+        var badgeContent = new Border { Width = 8, Height = 16 };
+        MaterialTextBaseline.SetFirst(badgeContent, 1);
+        MaterialTextBaseline.SetLast(badgeContent, 15);
+        var box = new BadgedBox { Content = anchor, Badge = new Badge { Content = badgeContent } };
+        Control host = tooltipHost ? new RichTooltip { Title = box, Content = new Border { Width = 40, Height = 8 } }
+            : new Snackbar { Content = box, Action = new Border { Width = 24, Height = 24 }, ActionOnNewLine = true };
+        var window = DialogTests.Show(host);
+        try
+        {
+            void AssertBaseline(double first, double last)
+            {
+                Assert.Equal((first, last), (MaterialTextBaseline.Read(box, 1).First, MaterialTextBaseline.Read(box, 1).Last));
+                Assert.Equal(tooltipHost ? 28 : 30, anchor.TranslatePoint(default, host)!.Value.Y + first);
+            }
+            AssertBaseline(10, 26);
+            MaterialTextBaseline.SetFirst(anchor, 6); Flush(); AssertBaseline(6, 26);
+            MaterialTextBaseline.SetLast(anchor, 20); Flush(); AssertBaseline(6, 20);
+            MaterialTextBaseline.SetFirst(badgeContent, 30); Flush(); AssertBaseline(6, 20);
+            MaterialTextBaseline.SetFirst(box, 12); Flush();
+            Assert.Equal((12, 12), MaterialTextBaseline.Read(box, 1));
+            box.ClearValue(MaterialTextBaseline.FirstProperty); Flush(); AssertBaseline(6, 20);
+            box.Content = new Border { Width = 60, Height = 32 }; Flush();
+            Assert.Equal((int.MinValue, int.MinValue), MaterialTextBaseline.Read(box, 1));
+            box.Content = anchor; Flush(); AssertBaseline(6, 20);
+            window.Content = null; window.Content = host; Flush(); AssertBaseline(6, 20);
+        }
+        finally { window.Close(); }
+        void Flush() { window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(0)]
     [InlineData(3)]

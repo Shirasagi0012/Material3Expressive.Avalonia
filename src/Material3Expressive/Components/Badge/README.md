@@ -73,10 +73,27 @@ Badge 默认 `IsHitTestVisible="False"`，不挡住锚点输入。
 Badge 没有专用动作、选中状态或动画。需要计数绑定时由 DataContext 提供内容属性；
 启用编译绑定还需对应的 x:DataType。
 
-## 使用边界
+## 文字基线与使用边界
 
-BadgedBox 不向父布局透传 Compose FirstBaseline/LastBaseline；按文字基线对齐的父布局无法得到
-同等信息。默认不生成专属可访问性语义，应用应给徽标或锚点提供合适的 AutomationProperties.Name。
+BadgedBox 向 Snackbar、RichTooltip 的共享基线读取器转发锚点的首末文字基线，徽标本身的文字
+不参与父布局对齐。锚点可为原生 TextBlock、内容模板或另一层 BadgedBox；动态替换和基线变化
+会重新测量。无需额外属性，例如：
+
+```xml
+<m3:Snackbar Action="详情" ActionOnNewLine="True">
+  <m3:BadgedBox>
+    <m3:BadgedBox.Badge><m3:Badge Content="!" /></m3:BadgedBox.Badge>
+    <TextBlock Text="同步完成&#10;有新的待处理项目" />
+  </m3:BadgedBox>
+</m3:Snackbar>
+```
+
+复杂自定义锚点通过现有 `MaterialTextBaseline.First/Last` 发布真实布局所得基线；不自动搜索任意
+Grid/Panel 内的文字。BadgedBox 自身的显式基线优先，清除后恢复转发；只有 Last 时保留锚点首基线。
+已有调用无需迁移。曾为弥补缺口在 BadgedBox 上固定基线的调用方，可以清除覆盖以跟随内容。
+这不增加 Avalonia 任意父布局的 alignment-line 能力。Catalog 的 SnackbarDemo 包含组合示例。
+
+默认不生成专属可访问性语义，应用应给徽标或锚点提供合适的 AutomationProperties.Name。
 文字/MaterialSymbols 栅格、真实桌面操作与屏幕阅读器体验尚未经验证。
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 包含圆点、计数、宽内容、
 动态切换及 NavigationBar 集成；验证依据见 [INTERNALS](INTERNALS.md#一致性边界与验证)。

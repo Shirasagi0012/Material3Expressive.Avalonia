@@ -31,6 +31,18 @@
           </m3:Snackbar.Action>
         </m3:Snackbar>
         <TextBlock Text="Custom content publishes its first and last text baselines. Change the message without replacing its container." TextWrapping="Wrap" />
+        <m3:Snackbar ActionOnNewLine="True" HorizontalAlignment="Stretch">
+          <m3:Snackbar.Content>
+            <m3:BadgedBox>
+              <m3:BadgedBox.Badge><m3:Badge Content="!" /></m3:BadgedBox.Badge>
+              <TextBlock Text="Updates available&#10;The message keeps its text baselines." />
+            </m3:BadgedBox>
+          </m3:Snackbar.Content>
+          <m3:Snackbar.Action>
+            <Button Content="Got it" Theme="{StaticResource MaterialSnackbarActionButtonTheme}"
+                    Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnCustomAction" />
+          </m3:Snackbar.Action>
+        </m3:Snackbar>
         <Button Content="Toggle custom message lines" Click="OnToggleLines" HorizontalAlignment="Left" />
         <m3:Snackbar HorizontalAlignment="Stretch">
           <m3:Snackbar.Content>

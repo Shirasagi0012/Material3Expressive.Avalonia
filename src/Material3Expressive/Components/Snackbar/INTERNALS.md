@@ -51,7 +51,7 @@ ContentPresenter 和单子项 Grid，并读取已有标准 Button 的实际容�
 现有 Snackbar 首末基线和 RichTooltip 首基线两个真实调用方；共享显式输入解决复杂内容入口，
 不引入完整 AlignmentLine 引擎。原生文字/ContentPresenter 读取复用 Foundation；标准 Button 模板适配仍留在 Snackbar。
 First 单独设置表示单行；Last 显式覆盖末基线，null 恢复自动读取。变化使消费者重新测量，即使 DesiredSize 不变。
-复杂自定义容器的自动传播尚未实现；无可读取基线时沿用 Legacy 缺少基线的分支。
+BadgedBox 通过共享读取器转发锚点基线；任意复杂容器的自动传播尚未实现，无可读取基线时沿用 Legacy 缺少基线的分支。
 该分支在“消息没有基线、动作却有基线”时本身可能产生异常放置，本实现保留其计算。
 自定义复杂内容宜使用相应模板或不依赖该对齐关系的布局。
 
@@ -95,7 +95,7 @@ Avalonia 没有 Compose 的 dismiss 语义入口，当前项 Pane AutomationPeer
 
 ## 一致性边界与验证
 
-尚未实现复杂自定义容器自动基线传播；手动覆盖由共享附加属性提供，没有通用基线布局框架。
+BadgedBox 锚点基线已接入并由双端组合验证；任意复杂自定义容器的自动传播仍未实现，手动覆盖由共享附加属性提供，没有通用基线布局框架。
 未实现 Compose dismiss 语义入口，以 Invoke 暴露当前项关闭；实际辅助技术
 体验未经验证。文字像素、实体桌面、其他操作系统也未经验证。
 

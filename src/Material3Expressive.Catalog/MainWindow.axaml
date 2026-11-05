@@ -160,6 +160,12 @@
                     <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialOutlinedIconButtonTheme}" AutomationProperties.Name="Ambient outlined" />
                     <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialOutlinedVibrantIconButtonTheme}" AutomationProperties.Name="Vibrant outlined" />
                 </StackPanel>
+                <TextBlock Text="Custom content and feedback colors" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12" TextElement.Foreground="#245A80">
+                    <m3:IconButton Symbol="Home" Foreground="#A02070" Theme="{StaticResource MaterialVibrantIconButtonTheme}" AutomationProperties.Name="Pink icon, blue ambient feedback" />
+                    <m3:IconButton Symbol="Home" Foreground="#A02070" Theme="{StaticResource MaterialOutlinedVibrantIconButtonTheme}" AutomationProperties.Name="Pink outlined icon and feedback" />
+                    <m3:IconButton Symbol="Favorite" Foreground="#A02070" Theme="{StaticResource MaterialTonalIconButtonTheme}" AutomationProperties.Name="Pink tonal icon and feedback" />
+                </StackPanel>
                 <TextBlock Text="Controlled icon toggles" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <m3:IconToggleButton Symbol="Favorite" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Favorite" />

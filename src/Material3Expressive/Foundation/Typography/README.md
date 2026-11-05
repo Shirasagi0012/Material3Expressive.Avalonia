@@ -145,7 +145,9 @@ First 单独指定时以同一个值作为末基线，表示单行内容；同�
 复杂控件负责在测量/排版后发布真实基线，参考 Catalog `SnackbarDemo` 的图标与多行文字组合。
 属性变化使控件和视觉祖先重新测量，即使内容 DesiredSize 不变；不持有消费者注册表或生命周期订阅。
 
-这不是 Compose AlignmentLine 的全布局树实现，不自动搜索任意面板中的文字，也不更改 Badge 等组件。
+BadgedBox 通过内部可选基线提供接口转发测量后的锚点基线（包含固定高度的居中偏移），排除徽标槽；
+支持嵌套和显式覆盖，见 [Badge](../../Components/Badge/README.md#文字基线与使用边界)。
+这不是 Compose AlignmentLine 的全布局树实现，不自动搜索任意面板中的文字，也不改变 Badge 的尺寸判断。
 已有原生文字与原生 BaselineOffset 调用无需迁移。新增共享决定及原始推迟原因见 [DECISIONS §24](../../../../docs/DECISIONS.md#24-自定义内容的显式文字基线)。
 
 ### 文字样式边界

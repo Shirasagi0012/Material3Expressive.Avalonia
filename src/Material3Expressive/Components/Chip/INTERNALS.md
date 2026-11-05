@@ -135,7 +135,15 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 
 未解决且未接受的 `morph.source-disable` 阴影差异涉及 Filter、ElevatedFilter 和 Input。
 复现使用 `new ChipElevation(2, 3, 4, 5, 9, 1)`，外部 Press 后 65ms 禁用，在 160ms 捕获。
-差异与禁用高度参与的阴影分支有关，具体路径及 tessellator 原因仍未确认。修改共享阴影坐标接入需另行决定。
+2026-11-05 本轮依据用户扩大授权继续核验：`chip-shadow-outline` 当前捕获确认 160ms 的尺寸、
+1 DIP 高度和实际圆角 `7.6246843338012695` DIP 都相等，仍有 raster 差异。新增 Surface 静态透明容器
+用例可独立复现，因此不能归因于 Chip 禁用/形变时序，也不属于已接受的高度精度差异。
+固定 Skiko 的独立 ambient-only 原生绘制复现内部渐变；详见 [Surface 记录](../Surface/INTERNALS.md)。
+物理像素路径实验没有改善；替换 quadratic 分支仅改善部分样本且导致回归，均已撤回。
+共享 tessellator 的准确分歧点尚未定位，不要求再次取得技术授权，也未宣布该差异已获接受。
+新增圆角观察器在全部 10 个 fixed/morph source-disable 配置运行成功，零执行错误且全部稳定；
+运行目录为 `shadow-observation-<kind>.<fixed|morph>`。这些用例仍报告真实时序、Float/double 和
+raster 差异；观察器读取现有缓存 outline，不通过重新计算期望轮廓来代替实际呈现状态。
 部分重叠 Press 的 Core 重复捕获与额外截图存在最大单通道 1 的不稳定像素，现有稳定性门禁仍保留失败。
 
 ## 4. 验证入口

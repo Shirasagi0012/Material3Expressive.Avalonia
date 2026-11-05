@@ -92,6 +92,8 @@ Catalog 的 Changing labels 示例同时演示这两个入口，无需额外刷�
 无显式尺寸的 MaterialSymbol 默认使用通用 24 DIP；显式 `Width` / `Height` 优先，自定义图标尺寸参与 Tab 测量。
 标准标签默认 TitleSmall、居中文字；显式文字设置优先。自定义复合标签需要跨包装层提供基线时，
 在标签根控件设置 TextBlock.BaselineOffset。只有标准 Stacked 布局提供 Badge bounds。
+Leading 布局允许图标中的 BadgedBox 溢出；与固定上游一致，标签在图标之后绘制，因此会覆盖
+与它重叠的徽标区域。需要避免重叠时应缩小徽标或选择 Stacked 布局，库不会自动隐藏或裁掉徽标。
 
 ## 颜色与指示器槽
 

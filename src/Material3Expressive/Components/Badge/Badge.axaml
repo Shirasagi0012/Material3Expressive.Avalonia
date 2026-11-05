@@ -43,7 +43,7 @@
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:BadgedBoxLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+          <m3:BadgedBoxLayout x:Name="PART_Layout" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               SmallHorizontalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.SmallHorizontalOffset}}"
               SmallVerticalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.SmallVerticalOffset}}"
               LargeHorizontalOffset="{m3:Token {x:Static m3:MaterialTokens+Comp+Badge.LargeHorizontalOffset}}"

@@ -5,6 +5,13 @@ using Avalonia.VisualTree;
 
 namespace Material3Expressive.Foundation.Typography;
 
+// Opt-in for a Material layout that knows which measured child supplies its alignment lines.
+// Values are physical pixels relative to the provider's top, excluding its margin.
+internal interface IMaterialTextBaselineProvider
+{
+    (int First, int Last) ReadTextBaselines(double scale);
+}
+
 /// <summary>Explicit first/last text baselines for custom content consumed by Material layouts.</summary>
 /// <remarks>Offsets are DIP from the control's top edge, excluding its margin. They are not
 /// inherited. A first baseline without a last baseline describes single-line content.</remarks>
@@ -49,7 +56,14 @@ public static class MaterialTextBaseline
             return (Px(control.Margin.Top + explicitFirst), Px(control.Margin.Top + (last ?? explicitFirst)));
 
         var result = (First: int.MinValue, Last: int.MinValue);
-        if (control is TextBlock text && text.TextLayout.TextLines is { Count: > 0 } lines)
+        if (control is IMaterialTextBaselineProvider provider)
+        {
+            result = provider.ReadTextBaselines(scale);
+            var margin = Px(control.Margin.Top);
+            if (result.First != int.MinValue) result.First += margin;
+            if (result.Last != int.MinValue) result.Last += margin;
+        }
+        else if (control is TextBlock text && text.TextLayout.TextLines is { Count: > 0 } lines)
         {
             var y = text.Margin.Top + text.Padding.Top;
             result = (Px(y + lines[0].Baseline), Px(y + lines.Take(lines.Count - 1).Sum(line => line.Height) + lines[^1].Baseline));
