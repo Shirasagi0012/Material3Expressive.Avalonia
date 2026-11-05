@@ -59,7 +59,7 @@ public class CommandMenuDensityTokenTests
             var key = baseline ? MaterialTokens.Comp.Menu.BaselineContentSpacing : MaterialTokens.Comp.Menu.VerticalContentSpacing;
             window.Resources[key] = 19d;
             window.UpdateLayout();
-            var leading = Part<Grid>(item, "PART_LeadingIcon");
+            var leading = Part<Control>(item, "PART_LeadingIcon");
             var header = Part<Avalonia.Controls.Presenters.ContentPresenter>(item, "PART_HeaderPresenter");
             Assert.Equal(19, header.TranslatePoint(default, item)!.Value.X -
                 leading.TranslatePoint(new Point(leading.Bounds.Width, 0), item)!.Value.X);

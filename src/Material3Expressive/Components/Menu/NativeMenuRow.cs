@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 
 namespace Material3Expressive.Components;
 
@@ -17,6 +18,7 @@ internal sealed class NativeMenuRow : Panel
     protected override Size MeasureOverride(Size availableSize)
     {
         double width = 0, height = 0;
+        double intrinsicExtra = 0;
         var first = true;
         foreach (var child in Children)
         {
@@ -24,10 +26,31 @@ internal sealed class NativeMenuRow : Panel
             if (!first) width += Math.Min(Spacing, Math.Max(0, availableSize.Width - width));
             child.Measure(new Size(Math.Max(0, availableSize.Width - width), availableSize.Height));
             width += child.DesiredSize.Width;
+            if (child is DropdownMenuLeadingIcon icon && this.FindAncestorOfType<MenuIntrinsicWidth>() is not null)
+                intrinsicExtra += icon.IntrinsicWidth - child.DesiredSize.Width;
             height = Math.Max(height, child.DesiredSize.Height);
             first = false;
         }
-        return new(width, height);
+        // The menu queries the retained icon's full width; actual row placement still
+        // uses the animated width, matching Column.width(IntrinsicSize.Max).
+        if (intrinsicExtra < 0)
+        {
+            // During spring overshoot the intrinsic allocation stays at the full
+            // icon width. Remeasure the row's contents within that allocation, but
+            // retain its intrinsic request for the popup's unbounded measurement.
+            var remaining = width + intrinsicExtra;
+            first = true;
+            height = 0;
+            foreach (var child in Children.Where(child => child.IsVisible))
+            {
+                if (!first) remaining = Math.Max(0, remaining - Spacing);
+                child.Measure(new Size(remaining, availableSize.Height));
+                remaining = Math.Max(0, remaining - child.DesiredSize.Width);
+                height = Math.Max(height, child.DesiredSize.Height);
+                first = false;
+            }
+        }
+        return new(width + intrinsicExtra, height);
     }
 
     protected override Size ArrangeOverride(Size finalSize)

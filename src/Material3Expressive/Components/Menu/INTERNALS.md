@@ -14,7 +14,7 @@ Material3 路径为 `compose/material3/material3/src/commonMain/kotlin/androidx/
 | `DropdownMenuGroup` / `shapeByInteraction` | `DropdownMenuGroup` 的 hover 历史和 AnimatedCornerRadius |
 | baseline / expressive item content | 独立项目两套主题、`DropdownMenuItemLayout`、`MenuArrangement` |
 | checkable / selectable item、leading AnimatedVisibility | 受控项目子类与 `DropdownMenuLeadingIcon` |
-| 原生菜单的对应静态表面及项目 | `Menu.axaml`、`MenuItemChrome`、`MenuThemeProperties` |
+| 原生菜单的表面及项目 | `Menu.axaml`、`MenuItemChrome`、`MenuThemeProperties` |
 | MenuDefaults 与 Menu / Standard / Vibrant / Segmented Token | `MenuTokenSource`、`Comp.Menu` 与主题绑定 |
 
 ## 2. 关键机制与架构契约
@@ -41,6 +41,13 @@ Separator 按最终列宽 Stretch。小图标槽保留内容实际测量尺寸�
 目标在 composition 对应帧合并，宽度 spring 使用上游泛型规格的 0.01 阈值。退出完成后释放内容和模板，反向保留运行状态。
 普通 leading 槽从无变有时，上游会移除 AnimatedVisibility 分支。本地同时释放该分支的作用域、延迟目标提交、值订阅和 Transition，
 防止旧 alpha/宽度继续写入静态替换图标；再次仅有 selected-leading 槽时按当前 selected 建立新分支。作用域随分支而非整个模板存活。
+原生 Vertical CheckBox / Radio 复用这一分支，IsChecked 提供目标，Icon 提供普通图标；
+选中勾使用固定 Core `internal/Icons.kt` 的 24×24 Check 路径。透明度以 Animation 优先级绑定，结束分支恢复调用方的基础值。
+`EnterExitTransition` 的 Alignment.End 固定使用 LayoutDirection.Ltr，RTL 子树需抵消镜像，保持物理右端展开。
+原生自然宽度测量保留完整图标宽度；spring 超出该宽度时，行内重新约束内容，避免标签越出分配宽度。
+弹层重开导致祖先作用域在帧前重建时，ScopeChanged 重新订阅宽度并续跑原 Transition，保留采样和速度。
+`MenuItemChrome` 同样在作用域替换后恢复容器颜色订阅和未完成目标，避免重开的菜单停留在旧选中色。
+Baseline 的静态勾也使用非镜像向量，RTL 只改变槽位位置。
 项目默认尺寸和间距由组件 Token 绑定，默认 sizeIn 的 112 / 280 在测量阶段受调用方约束限制。
 
 `DropdownMenuItem.InteractionSource` 由勾选 / 单选子类继承，null 使用内部源。替换源重置 indication，卸载取消原生按压，重挂和模板替换仅接收后续外部事件。
@@ -82,7 +89,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
 - 菜单栏的公开 `MaterialMenuBarItemTheme` 名称仍待维护者确认，可选容器式菜单栏也处于未实现提议阶段。
-- 尚未实现任意 Shape / CutCornerShape、任意 Arrangement、系统平台 inset 与预测返回。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变和选中图标显隐动画。
+- 尚未实现任意 Shape / CutCornerShape、任意 Arrangement、系统平台 inset 与预测返回。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
 - `menu-source` 的部分 Core 重复及额外截图存在最大单通道 1 的不稳定像素，稳定性门禁保留失败。原生无阴影外观与上游仍有已接受差异，历史暗色圆角边缘结果不能作为当前 Surface 裁剪的隔离证据。
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
@@ -91,17 +98,27 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - `DropdownMenuTests` 检查独立 Popup、受控输入、定位、滚动、反向、分组和选中图标生命周期。
 - 选中图标回归覆盖进入/退出途中添加普通内容或模板，随后移除、重进和卸载；静态分支不得再收到旧动画透明度写入。
 - `MenuTests` 检查原生 flyout、菜单栏、子菜单、主题优先级及原生行为，新增槽的排版、Token 更新、快捷键与子菜单并存和原生激活。
+- 原生勾选动画覆盖 CheckBox / Radio、快速反向、普通 Icon 增删、ToggleType 变化、尺寸 Token、模板替换及快速重开；卸载恢复透明度基础值并释放动画任务，重开后背景色继续响应选择。
 - `MenuInteractionSourceTests` 检查项目和组的源替换、原生配对与模板重建，`CommandMenuDensityTokenTests` 检查尺寸覆盖。
 - 双端族为 `dropdown-menu-item`、`dropdown-menu`、`menu`、`menu-container`、`menu-source`、`menu-group-source`、`native-menu-supporting`。新增槽族覆盖 Standard / Vibrant、选中/禁用、RTL、暗色、模板独立使用、窄宽度及动态移除/恢复。Baseline 夹具需提供外层菜单表面的 content color。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~MenuTests|FullyQualifiedName~MenuInteractionSourceTests|FullyQualifiedName~CommandMenuDensityTokenTests'
 ./tests/VisualParity/parity.ps1 self-test --family dropdown-menu
+./tests/VisualParity/parity.ps1 self-test --family menu --require-match
+./tests/VisualParity/parity.ps1 self-test --family dropdown-menu-item --require-match
 ./tests/VisualParity/parity.ps1 self-test --family menu-source
 ./tests/VisualParity/parity.ps1 self-test --family menu-group-source
 ./tests/VisualParity/parity.ps1 self-test --family native-menu-supporting --require-match
 ```
 
-独立项目族 `dropdown-menu-item` 的 54 例执行错误为零且重复/额外截图稳定（`20261104-182830-bb7e1cce`）：
+原生 `menu` 的 98 例执行错误为零且重复/额外截图稳定（`20261105-033821-8e21349e`）：
+48 equal、50 withinTolerance。新增覆盖三套配色/主题的真实勾选向量、明暗/禁用/RTL、选中反向、
+普通图标增删及自然宽度下的 spring 超调；几何、选择状态和圆角读数相等。未调整容差或参考基线。
+
+独立项目族 `dropdown-menu-item` 的 54 例执行错误为零且重复/额外截图稳定（`20261105-034045-d03caad5`）：
 50 equal、4 withinTolerance。新增四例为进入/退出途中切换 leading 槽 × LTR/RTL，几何和状态读数全部相等；
 添加普通图标后的样本逐像素相等，动画中的少量截图最大单通道差为 1，沿用原有门禁。
+
+辅助文字和尾部内容回归 `native-menu-supporting` 的 48 例全部通过现有门禁，重复稳定、执行错误为零
+（`20261105-034217-d26d1c27`）。这些项目级场景不能替代原生 Popup 完整定位与开闭动画的验收。

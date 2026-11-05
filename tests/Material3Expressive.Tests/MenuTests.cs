@@ -19,6 +19,104 @@ namespace Material3Expressive.Tests;
 public class MenuTests
 {
     [AvaloniaTheory]
+    [InlineData(MenuItemToggleType.CheckBox)]
+    [InlineData(MenuItemToggleType.Radio)]
+    public void NativeSelectionIcon_AnimatesReversesAndReleasesWithTemplate(MenuItemToggleType toggle)
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new MenuItem { Header = new Border { Width = 72, Height = 16 }, ToggleType = toggle, StaysOpenOnClick = true };
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var slot = item.GetVisualDescendants().OfType<DropdownMenuLeadingIcon>().Single();
+            var presenter = Assert.IsType<DropdownMenuSlotPresenter>(slot.Child);
+            Assert.Equal(0, slot.Bounds.Width); Assert.Null(presenter.Child);
+            slot.Opacity = .37;
+            Assert.Equal(0, slot.Opacity); // Animation must not replace the caller's base value.
+            var label = item.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().Single(p => p.Name == "PART_HeaderPresenter");
+            var start = label.TranslatePoint(default, item)!.Value.X;
+            var clicks = 0; item.Click += (_, _) => clicks++;
+            Click(window, item); Flush(window);
+            Assert.True(item.IsChecked); Assert.Equal(1, clicks); Assert.True(flyout.IsOpen);
+            Advance(64);
+            Assert.InRange(slot.Bounds.Width, .01, 19.99); Assert.InRange(slot.Opacity, .01, .99);
+            Assert.True(label.TranslatePoint(default, item)!.Value.X > start);
+            Assert.NotNull(presenter.Child);
+            item.IsChecked = false; Advance(32);
+            Assert.NotNull(presenter.Child); // Retain the check through its exit.
+            item.IsChecked = true; Advance(1000);
+            Assert.Equal(20, slot.Bounds.Width); Assert.Equal(1, slot.Opacity);
+            var check = Assert.IsType<Viewbox>(presenter.Child);
+            Assert.Equal(20, check.Bounds.Width);
+            item.IsChecked = false; Advance(1000);
+            Assert.Equal(0, slot.Bounds.Width); Assert.Null(presenter.Child);
+            Assert.Equal(start, label.TranslatePoint(default, item)!.Value.X);
+            item.IsChecked = true; Advance(32);
+            var template = item.Template;
+            item.Template = new FuncControlTemplate<MenuItem>((_, _) => new Border()); Flush(window);
+            Assert.Equal(.37, slot.Opacity);
+            item.Template = template; Flush(window);
+            var replacement = item.GetVisualDescendants().OfType<DropdownMenuLeadingIcon>().Single();
+            Assert.NotSame(slot, replacement); Assert.Equal(20, replacement.Bounds.Width);
+            flyout.Hide(); window.Close(); Advance(16);
+            Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+            Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { flyout.Hide(); window.Close(); }
+        void Advance(int ms)
+        {
+            for (var t = 0; t < ms; t += 16) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeSelectionIcon_RegularIconAndToggleModeRemoveAnimatedBranch(bool exiting)
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new MenuItem { Header = "Choice", ToggleType = MenuItemToggleType.CheckBox, IsChecked = exiting };
+        var flyout = new MenuFlyout { Items = { item } }; var window = Show(flyout);
+        try
+        {
+            flyout.ShowAt((Control)window.Content!); Flush(window);
+            var slot = item.GetVisualDescendants().OfType<DropdownMenuLeadingIcon>().Single();
+            var presenter = Assert.IsType<DropdownMenuSlotPresenter>(slot.Child);
+            item.IsChecked = !exiting; Advance(64);
+            var regular = new Border { Width = 12, Height = 12 };
+            item.Icon = regular; Flush(window);
+            Assert.Equal(1, slot.Opacity); Assert.Equal(20, slot.Bounds.Width);
+            if (exiting) Assert.Same(regular, presenter.Child);
+            else Assert.IsType<Viewbox>(presenter.Child);
+            Advance(800); Assert.Equal(1, slot.Opacity);
+            item.ToggleType = MenuItemToggleType.None; Flush(window);
+            Assert.Same(regular, presenter.Child);
+            item.Icon = null; Flush(window); Assert.False(slot.IsVisible);
+            item.IsChecked = false; item.ToggleType = MenuItemToggleType.CheckBox; Flush(window);
+            Assert.True(slot.IsVisible); Assert.Equal(0, slot.Bounds.Width);
+            item.IsChecked = true; Advance(800); Assert.Equal(20, slot.Bounds.Width);
+            item.Resources[MaterialTokens.Comp.Menu.LeadingIconSize] = 28d; Flush(window); Advance(800);
+            Assert.Equal(28, slot.Bounds.Width);
+            flyout.Hide(); flyout.ShowAt((Control)window.Content!); Flush(window);
+            Assert.Equal(28, slot.Bounds.Width); Assert.Equal(1, slot.Opacity);
+            item.IsChecked = false; Advance(800);
+            Assert.Equal(0, slot.Bounds.Width); Assert.Equal(0, slot.Opacity);
+            var chrome = item.GetVisualDescendants().OfType<MenuItemChrome>().Single();
+            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(item.Background).Color,
+                Assert.IsAssignableFrom<ISolidColorBrush>(chrome.PaintedBrush).Color);
+            item.IsChecked = true; Advance(800);
+            Assert.Equal(28, slot.Bounds.Width); Assert.Equal(1, slot.Opacity);
+        }
+        finally { flyout.Hide(); window.Close(); }
+        void Advance(int ms)
+        {
+            for (var t = 0; t < ms; t += 16) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
+        }
+    }
+
+    [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
     public void NativeTrailingContent_CentersSmallContentAndPreservesGestureAndSubmenu(bool templateOnly)
@@ -189,10 +287,11 @@ public class MenuTests
         Assert.Equal(17.59 * (baseline ? 1 : 20d / 24), checkEnd.X - checkStart.X, 5);
         Assert.True(checkStart.X > 0 && checkStart.Y > 0);
         child.IsChecked = false; Flush(window);
-        Assert.False(check.IsVisible);
+        if (baseline) Assert.False(check.IsVisible);
+        else Assert.False(check.IsAttachedToVisualTree()); // Static icon replacement removes the check content.
         child.ToggleType = MenuItemToggleType.CheckBox;
         child.IsChecked = true; Flush(window);
-        Assert.True(check.IsVisible);
+        Assert.True(child.GetVisualDescendants().OfType<Viewbox>().Single(p => p.Name == "PART_Check").IsVisible);
         flyout.Hide(); window.Close();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Null(window.MotionRoot.Diagnostics.LastError);

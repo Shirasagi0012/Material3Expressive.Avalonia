@@ -42,6 +42,9 @@ public partial class MenuDemo : Window
     private void OnSelectDate(object? sender, RoutedEventArgs e)
     { NameItem.IsSelected = false; DateItem.IsSelected = true; }
     private void OnIconSelection(object? sender, RoutedEventArgs e) => IconPreview.IsSelected = !IconPreview.IsSelected;
+    private void OnNativeIconSelection(object? sender, RoutedEventArgs e) => NativeIconPreview.IsChecked = !NativeIconPreview.IsChecked;
+    private void OnNativeRegularIcon(object? sender, RoutedEventArgs e) =>
+        NativeIconPreview.Icon = NativeIconPreview.Icon is null ? new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Info } : null;
     private void OnRegularIcon(object? sender, RoutedEventArgs e) =>
         IconPreview.LeadingIcon = IconPreview.LeadingIcon is null ? new MaterialSymbol { Symbol = MaterialSymbolCodepoint.Info } : null;
     private void OnAction(object? sender, RoutedEventArgs e) => Status.Text = $"Executed: {((MenuItem)sender!).Header}";

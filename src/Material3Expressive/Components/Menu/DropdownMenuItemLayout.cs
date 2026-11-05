@@ -3,6 +3,9 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Data.Converters;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -99,13 +102,17 @@ internal sealed class DropdownMenuItemLayout : Panel
 
 internal sealed class DropdownMenuLeadingIcon : Decorator
 {
+    public static readonly StyledProperty<IDataTemplate?> NativeSelectedIconTemplateProperty = AvaloniaProperty.Register<DropdownMenuLeadingIcon, IDataTemplate?>(nameof(NativeSelectedIconTemplate));
+    public IDataTemplate? NativeSelectedIconTemplate { get => GetValue(NativeSelectedIconTemplateProperty); set => SetValue(NativeSelectedIconTemplateProperty, value); }
     public static readonly StyledProperty<MaterialSpring?> SizeAnimationProperty = AvaloniaProperty.Register<DropdownMenuLeadingIcon, MaterialSpring?>(nameof(SizeAnimation));
     public static readonly StyledProperty<MaterialSpring?> AlphaAnimationProperty = AvaloniaProperty.Register<DropdownMenuLeadingIcon, MaterialSpring?>(nameof(AlphaAnimation));
     public MaterialSpring? SizeAnimation { get => GetValue(SizeAnimationProperty); set => SetValue(SizeAnimationProperty, value); }
     public MaterialSpring? AlphaAnimation { get => GetValue(AlphaAnimationProperty); set => SetValue(AlphaAnimationProperty, value); }
     private DropdownMenuItem? _owner;
+    private MenuItem? _nativeOwner;
     private AnimationChildScope? _animationScope;
     private Transition<bool>? _transition;
+    private IDisposable? _opacityBinding;
     private Transition<bool>.TransitionAnimationState<float>? _width;
     private bool _visible, _animated, _updatePending;
     private double _fullWidth;
@@ -118,21 +125,29 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
     internal void Update(DropdownMenuItem? owner)
     {
         _owner = owner;
+        Refresh();
+    }
+    private void Refresh()
+    {
         if (Presenter is not { } presenter) return;
-        if (owner is null)
+        if (_owner is null && _nativeOwner is null)
         { Stop(); presenter.Content = null; presenter.ContentTemplate = null; presenter.UpdateChild(); return; }
-        var selectedIcon = owner.IsExpressive && owner.HasSelectedLeading && owner.Selected;
-        _animated = owner.IsExpressive && !owner.HasLeading && owner.HasSelectedLeading;
+        var expressive = _owner?.IsExpressive ?? true;
+        var hasLeading = _owner?.HasLeading ?? _nativeOwner!.Icon is not null;
+        var hasSelected = _owner?.HasSelectedLeading ?? (_nativeOwner!.ToggleType != MenuItemToggleType.None && NativeSelectedIconTemplate is not null);
+        var selected = _owner?.Selected ?? _nativeOwner!.IsChecked;
+        var selectedIcon = expressive && hasSelected && selected;
+        _animated = expressive && !hasLeading && hasSelected;
         // Retain the selected icon through its exit, exactly as AnimatedVisibility does.
         var retained = _transition is { } running && (running.CurrentState || running.TargetState || running.IsRunning);
         var showSelected = selectedIcon || _animated && retained;
-        presenter.Content = showSelected ? owner.SelectedLeadingIcon : owner.LeadingIcon;
-        presenter.ContentTemplate = showSelected ? owner.SelectedLeadingIconTemplate : owner.LeadingIconTemplate;
+        presenter.Content = showSelected ? _owner?.SelectedLeadingIcon : _owner is { } owner ? owner.LeadingIcon : _nativeOwner!.Icon;
+        presenter.ContentTemplate = showSelected ? _owner is { } selectedOwner ? selectedOwner.SelectedLeadingIconTemplate : NativeSelectedIconTemplate : _owner?.LeadingIconTemplate;
         presenter.UpdateChild();
-        var visible = owner.HasLeading || owner.IsExpressive && owner.HasSelectedLeading && owner.Selected;
-        IsVisible = owner.HasLeading || owner.IsExpressive && owner.HasSelectedLeading;
+        var visible = hasLeading || expressive && hasSelected && selected;
+        IsVisible = hasLeading || expressive && hasSelected;
         if (!_animated)
-        { Stop(); _visible = visible; Opacity = visible ? 1 : 0; }
+        { Stop(); _visible = visible; }
         else if (_transition is null && this.IsAttachedToVisualTree() && SizeAnimation is not null && AlphaAnimation is not null)
         {
             var scope = _animationScope = AnimationScope.Get(this).CreateChild("Menu leading icon");
@@ -153,8 +168,11 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
             var alpha = _transition.AnimateValue(new FloatConverter(), show => show ? 1f : 0f,
                 _ => new SpringSpec<float>(AlphaAnimation.Value.DampingRatio, AlphaAnimation.Value.Stiffness, .01f));
             scope.SubscribeValue(_width, _ => InvalidateMeasure());
-            scope.SubscribeValue(alpha, value => Opacity = Math.Clamp(value, 0, 1));
-            Opacity = visible ? 1 : 0;
+            _opacityBinding = Bind(OpacityProperty, new Binding(nameof(alpha.Value))
+            {
+                Source = alpha, Priority = BindingPriority.Animation,
+                Converter = new FuncValueConverter<float, double>(value => Math.Clamp(value, 0, 1))
+            });
             var transition = _transition;
             _ = scope.Launch(ct => transition.RunAsync(scope, ct));
         }
@@ -196,18 +214,42 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
         // Its frame loop, queued target and subscriptions must end before static content takes over.
         _animationScope?.Dispose(); _animationScope = null;
         transition?.Dispose();
+        _opacityBinding?.Dispose(); _opacityBinding = null;
     }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        Update(_owner);
+        _nativeOwner = TemplatedParent as MenuItem;
+        if (_nativeOwner is not null) _nativeOwner.PropertyChanged += NativePropertyChanged;
+        Refresh();
+        AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    { Stop(); base.OnDetachedFromVisualTree(e); }
+    {
+        if (_nativeOwner is not null) _nativeOwner.PropertyChanged -= NativePropertyChanged;
+        AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
+        _nativeOwner = null;
+        Stop(); base.OnDetachedFromVisualTree(e);
+    }
+    private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree() || _transition is not { } transition) return;
+        _animationScope?.Dispose();
+        var motion = _animationScope = scope.CreateChild("Menu leading icon");
+        _updatePending = false;
+        if (_width is { } width) motion.SubscribeValue(width, _ => InvalidateMeasure());
+        transition.UpdateTarget(_visible);
+        _ = motion.Launch(ct => transition.RunAsync(motion, ct));
+    }
+    private void NativePropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == MenuItem.IsCheckedProperty || change.Property == MenuItem.IconProperty || change.Property == MenuItem.ToggleTypeProperty)
+            Refresh();
+    }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == SizeAnimationProperty || change.Property == AlphaAnimationProperty) Update(_owner);
+        if (change.Property == SizeAnimationProperty || change.Property == AlphaAnimationProperty || change.Property == NativeSelectedIconTemplateProperty) Refresh();
     }
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -226,8 +268,9 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
     protected override Size ArrangeOverride(Size finalSize)
     {
         var fullWidth = _fullWidth / LayoutHelper.GetLayoutScale(this);
-        // expandHorizontally / shrinkHorizontally default to Alignment.End.
-        Child?.Arrange(new Rect(_animated ? finalSize.Width - fullWidth : 0, 0,
+        // EnterExitTransition measures Alignment.End with LayoutDirection.Ltr even
+        // in RTL. Counter the inherited mirror so the reveal stays at physical right.
+        Child?.Arrange(new Rect(_animated && FlowDirection != FlowDirection.RightToLeft ? finalSize.Width - fullWidth : 0, 0,
             _animated ? fullWidth : finalSize.Width, finalSize.Height));
         return finalSize;
     }

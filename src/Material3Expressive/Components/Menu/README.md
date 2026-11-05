@@ -66,6 +66,8 @@ private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 
 后续片段沿用基础示例命名空间。Baseline 的资源名为 MaterialBaselineMenuTheme，默认 Vertical 为 MaterialVerticalMenuTheme。
 原生项目的业务选择使用 IsChecked，IsSelected 表达导航位置。InputGesture、Command、StaysOpenOnClick 和 GroupName 遵循原生语义。
+Vertical 项的 CheckBox / Radio 在未提供 Icon 时会展开、淡入选中勾，取消选择时反向退出；快速切换保留正在运行的过渡。
+提供 Icon 后按 IsChecked 直接替换普通图标与勾，运行中增删 Icon 也会切换对应分支。Baseline 保持静态勾选外观。
 
 ### 共享交互源
 

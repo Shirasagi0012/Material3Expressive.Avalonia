@@ -34,7 +34,7 @@ Compose Material3 没有 ComboBox。本主题对应的是 `ExposedDropdownMenuBo
 - 未选择时选择框不套用 `ItemTemplate`。`FuncDataTemplate<T>` 对引用类型匹配 null，而 `ContentPresenter` 会在 `Content` 为空时仍构建已匹配的模板，字段里会多出一行空数据
 - 前导图标由 `ComboBoxField` 写入；尾部箭头不是 `TrailingIcon` 槽
 - `ComboBoxThemeDefaults` 承接状态色，再绑定到原生 `Foreground` / `Background` / `BorderBrush` / `PlaceholderForeground`，应用的本地值可以覆盖
-- 聚焦外观使用 `:focus-within`，因为可编辑时键盘焦点在内部 TextBox。颜色优先级与 TextField 相同：禁用、错误、聚焦、普通
+- 聚焦外观使用 `:focus-within` 与 `:dropdownopen`，覆盖内部 TextBox 和展开菜单；颜色优先级与 TextField 相同：禁用、错误、聚焦/展开、普通
 - 弹出层 `ShouldUseOverlayLayer=True`、`WindowManagerAddShadowHint=False`，并在打开时给 `OverlayPopupHost` 和其 `LayoutTransformControl` 取消 `ClipToBounds`，否则 Material 阴影会被裁掉。这与原生 MenuFlyout 不加 Material 阴影的决定无关
 - 弹出层 `MinWidth` 绑定整个控件宽度，包含支持文字。`MaxHeight` 绑定原生 `MaxDropDownHeight`
 
@@ -47,6 +47,11 @@ Compose Material3 没有 ComboBox。本主题对应的是 `ExposedDropdownMenuBo
 
 项主题对应 `SelectableDropdownMenuItem`：BodyLarge、外沿水平 4、内容水平 16、选中勾。
 勾的宽度和透明度使用与 `DropdownMenuLeadingIcon` 相同的 Transition；未选中宽度为 0 时，文本仍留出 8 DIP，对应 `MenuArrangement` 的 leading spacing。
+选中勾和下拉箭头使用固定 Core `internal/Icons.kt` 的 Check / ArrowDropDown 向量，24×24 画布按对应 Token 缩放。
+勾的普通、选中和禁用颜色分别使用 LeadingIcon、StandardSelectedContent 和 DisabledIcon；退出期间颜色立即切换，宽度和 alpha 继续过渡。
+RTL 的展开仍锚在物理右端，遵循固定 `EnterExitTransition` 内部的 LayoutDirection.Ltr。
+透明度使用 Animation 优先级贡献，卸载时恢复基础值。Popup 重开时 ScopeChanged 续跑原 Transition，避免祖先作用域更换后动画停滞。
+项背景普通及禁用时为 StandardContainer，选中且启用时为 StandardSelectedContainer；内容按逻辑起点放置，不拉伸固定尺寸子内容。
 项不设置 `MaximumIntrinsicWidth`，因此可以跟着宽于 280 的字段伸展。`MenuItemChrome` 的键盘钩子只在 owner 是 `MenuItem` 时接入，这里只复用它的尺寸和颜色动画。
 
 ## 已接受的差异
@@ -69,32 +74,32 @@ Compose Material3 没有 ComboBox。本主题对应的是 `ExposedDropdownMenuBo
 
 ## 验证
 
-Headless 覆盖隐式 Filled、Outlined 主题、overlay 与裁剪样式、项圆角、可编辑文本框主题、箭头角度，以及未选择时不实例化 `ItemTemplate`。
+`ComboBoxTests` 的 9 项 Headless 测试覆盖隐式 Filled / Outlined、overlay 裁剪、项圆角、可编辑模板、
+箭头开闭角度、未选择时不实例化 ItemTemplate、选择反向、重开后的宽度/alpha/背景色恢复、
+调用方透明度保留、任务释放，以及菜单展开时的聚焦配色和错误/禁用优先级。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~ComboBoxTests
-```
-
-本轮 5 项通过。其中 `SelectingWhileOpenDoesNotDropTheLabelToTheCenter` 在项拿走焦点、随后选中并关闭时，标签进度保持 1。
-
-视觉用例在 `ComboBoxCases.cs` / `ComboBoxCases.kt`，suite 为 `combo-box`。关闭态沿用 TextField 的矩形槽位；菜单项也是矩形，不是文字。箭头和选中勾仍是模板里的真实字形，字形像素不在这套用例的覆盖里。参考端字段颜色用 TextField / OutlinedTextField 默认色，对应已接受的 autocomplete 调色板差异。菜单场景把字段高度固定为 96，避免空行高度差进到项的位置里；`static.empty.*` 仍保留自动高度。
-
-本轮执行的是 self-test，两端都重新采集，没有发布参考快照。重复性 stable，执行错误 0。结果目录：
-
-`artifacts/visual-parity/runs/20261011-194111-75720319`
-
-```powershell
+./tests/VisualParity/parity.ps1 self-test --family combo-box-selection --require-match
 ./tests/VisualParity/parity.ps1 self-test --family combo-box
 ```
 
-self-test 退出码 0 只表示比较完成。固定高度的关闭态里，字段、标签和槽位几何一致；剩余光栅集中在尾部箭头，约 81 像素。自动高度空字段是 Compose 58.5 DIP、Avalonia 56 DIP，高差 2.5，与 TextField 的空行度量同一类，没有用填充高度去抹平。
+双端 `combo-box-selection` 隔离真实 ComboBoxItem，覆盖选中/普通、启用/禁用、明暗、LTR/RTL、
+进入及中途反向。使用真实上游 Check 向量，内容为矩形标记，验证不包含文字栅格。
+20 例在现有门禁内，结构读数相等，重复及额外截图稳定、捕获错误为零（`20261105-034157-2b4e3b9c`）；原始向量边缘差异保留在报告。
 
-打开的菜单里，三项矩形的位置和像素一致。描边未选择菜单在修正后重跑，标签进度两端都是 1，标签位置一致：`artifacts/visual-parity/runs/20261012-075528-bb3929c9`。这次只重跑了 `combo-box.static.menu.outlined.items-3`，其余用例仍是上一轮 self-test。选中项在 Avalonia 字段里有选择框矩形，Compose 参考没有对应探针，该点为 `notCompared`。
+整项 `combo-box` 的最近结果为 `20261105-033650-45d3a5c3`：39 例执行错误为零、重复稳定，
+30 例 equal / withinTolerance，9 例 different。下拉箭头、六个未选择菜单配置及错误/主题变更已进入现有门禁。
+参考端字段颜色仍用 TextField / OutlinedTextField 默认色，沿用已确认的 autocomplete 调色板边界。
+菜单场景保留既有固定 96 DIP 字段高度；`static.empty.*` 继续自动测量，不借固定高度隐藏差异。
 
-`dynamic.focus.filled` 只在 160000 µs 有标签纵坐标差 0.25 DIP，前后采样一致。`dynamic.reverse.filled` 在 160000 / 240000 µs 的标签进度差约 `7.45e-9`，与 TextField 记录的弹簧尾数相同，400000 µs 起一致。`dynamic.disable.*` 在禁用当帧 Compose 标签进度已是 0，Avalonia 约为 0.51；`ComboBoxField` 与 `TextFieldLayout` 一样不在禁用时 snap 标签进度，400000 µs 起两端回到同一位置。这些采样没有改弹簧或容差。错误与主题采样的剩余光栅仍是箭头字形。
+剩余差异分别为：
 
-**尚未实现：** 关闭、中断和反向的菜单动画，以及 Compose 按剩余空间计算的最大高度、位置和缩放原点。本轮菜单项没有额外的放置偏差，但不能据此当作这两项已经实现。
+- 两个自动高度空字段：Compose 58.5 DIP、本地 56 DIP，属于原生编辑行度量边界。
+- 两个 focus 时间线在 160ms 的标签位置差 0.25 DIP；两个 reverse 时间线在 160/240ms 的进度差约 `7.45e-9`，后续一致。
+- 两个 disable 时间线在禁用当帧，Core 装饰重建将标签进度复位，本地保留连续回落；400ms 起一致。未改变共享提交或禁用语义。
+- 已选择菜单配置中，本地字段呈现选中内容，参考夹具的空 TextFieldState 没有对应内容探针，保留 `notCompared` 与整体图像差异；菜单项独立覆盖见上述选择族。
 
-**未经验证：** 桌面点击、输入法、无障碍树。没有跑 `prepare-reference` 或消费已发布参考的 `run`。
-
-**已接受的差异：** autocomplete 调色板、只读菜单打开时的字段焦点、文本与选择耦合、原生键盘/滚轮/关闭。见上文。
+这些结果不代表完整 ComboBox 一致，也不把既有差异改记为已接受。
+菜单退出动画和 Compose 位置/高度算法仍未实现，边界见上文。
+真实桌面点击、输入法、无障碍树、文字栅格及跨 DPI 切换未经本次验收；没有发布或刷新参考快照。

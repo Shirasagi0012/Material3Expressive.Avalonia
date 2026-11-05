@@ -5,6 +5,7 @@
     <Window.Resources>
         <m3:MaterialInteractionSource x:Key="PreviewSource" />
     </Window.Resources>
+    <ScrollViewer>
     <StackPanel Margin="24" Spacing="20">
         <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
@@ -74,6 +75,13 @@
                 </Button.Flyout>
             </Button>
         </StackPanel>
+        <TextBlock Text="Native selection — toggle quickly to reverse the check animation" TextWrapping="Wrap" />
+        <MenuItem x:Name="NativeIconPreview" Header="Native selected icon" ToggleType="CheckBox"
+                  Theme="{StaticResource MaterialVerticalMenuItemTheme}" Width="240" HorizontalAlignment="Left" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Button Content="Toggle native selection" Click="OnNativeIconSelection" />
+            <Button Content="Add / remove native icon" Click="OnNativeRegularIcon" />
+        </StackPanel>
         <TextBlock Text="Independent DropdownMenu" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
         <StackPanel Orientation="Horizontal" Spacing="16">
             <Button x:Name="DropdownAnchor" Content="Dropdown" Click="OnDropdown" />
@@ -129,4 +137,5 @@
         </StackPanel>
         <TextBlock x:Name="Status" Text="Choose an item. Checkboxes and radio items stay open." TextWrapping="Wrap" />
     </StackPanel>
+    </ScrollViewer>
 </Window>

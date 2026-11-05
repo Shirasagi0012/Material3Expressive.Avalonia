@@ -71,6 +71,7 @@ internal sealed class MenuItemChrome : Decorator
             owner.AddHandler(InputElement.KeyUpEvent, OnOwnerKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         }
         var motion = _attachScope = AnimationScope.Get(this).CreateChild("Menu item chrome");
+        AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
         PaintedBrush = TargetBrush;
         if (TargetBrush is ISolidColorBrush { Opacity: 1 } brush)
         {
@@ -81,6 +82,7 @@ internal sealed class MenuItemChrome : Decorator
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_keyboardOwner is { } owner)
         {
             owner.RemoveHandler(InputElement.KeyDownEvent, OnOwnerKeyDown);
@@ -90,6 +92,16 @@ internal sealed class MenuItemChrome : Decorator
         _attachScope?.Dispose(); _attachScope = null;
         _color = null; _pending = false;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree()) return;
+        _attachScope?.Dispose();
+        var motion = _attachScope = scope.CreateChild("Menu item chrome");
+        _pending = false;
+        if (_color is { } color) motion.SubscribeValue(color, value => PaintedBrush = new SolidColorBrush(value));
+        ScheduleColor();
     }
 
     private void OnOwnerKeyDown(object? sender, KeyEventArgs e)
@@ -109,6 +121,11 @@ internal sealed class MenuItemChrome : Decorator
     {
         base.OnPropertyChanged(change);
         if (change.Property != TargetBrushProperty && change.Property != ColorAnimationProperty) return;
+        ScheduleColor();
+    }
+
+    private void ScheduleColor()
+    {
         if (!this.IsAttachedToVisualTree() || _pending || _attachScope is not { } motion
             || motion.Lifetime.IsCancellationRequested) return;
         _pending = true;
@@ -127,7 +144,7 @@ internal sealed class MenuItemChrome : Decorator
                 motion.SubscribeValue(_color, color => PaintedBrush = new SolidColorBrush(color));
             }
             var color = _color;
-            if (color.TargetValue == target.Color || ColorAnimation is not { } spec) return;
+            if (color.TargetValue == target.Color && color.Value == target.Color || ColorAnimation is not { } spec) return;
             var targetColor = target.Color;
             _ = motion.Launch(async token =>
             {

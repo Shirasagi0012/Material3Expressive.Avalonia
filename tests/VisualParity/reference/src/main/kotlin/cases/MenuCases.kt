@@ -1,9 +1,11 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.InternalComposeUiApi::class)
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 package parity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.internal.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
@@ -16,12 +18,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MenuConfig(val variant:String="standard", val selected:Boolean=false, val enabled:Boolean=true,
     val dark:Boolean=false, val rtl:Boolean=false, val icon:Boolean=true, val width:Double=200.0,
-    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false)
+    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false, val nativeCheck:Boolean=false, val autoWidth:Boolean=false, val comboItem:Boolean=false)
 
 @ParitySuite("menu")
 class MenuCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
+    @ParityScenario("native-selection") suspend fun nativeSelection(writer:CaptureWriter)=capture(writer,true)
+    @ParityScenario("native-check") suspend fun nativeCheck(writer:CaptureWriter)=capture(writer,false)
     internal suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
         val config=writer.readConfig<MenuConfig>()
         ComposeHost(writer,320,160).use { host ->
@@ -75,11 +79,13 @@ class MenuCases {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                 CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
-                        Box(Modifier.width(config.width.toFloat().dp)) {
+                        val item: @Composable () -> Unit = {
                             val content:@Composable ()->Unit={
                                 Box(contentProbe.modifier().size(config.contentWidth.toFloat().dp,config.contentHeight.toFloat().dp).background(LocalContentColor.current))
                             }
-                            val icon:@Composable (() -> Unit)?=if(hasIcon) ({
+                            val icon:@Composable (() -> Unit)?=if(config.nativeCheck && config.variant=="baseline" && selected) ({
+                                Icon(Icons.Filled.Check,null,Modifier.size(24.dp))
+                            }) else if(hasIcon) ({
                                 val size=if(config.variant=="baseline") 24.dp else 20.dp
                                 Box(Modifier.size(size).background(LocalContentColor.current))
                             }) else null
@@ -93,9 +99,13 @@ class MenuCases {
                             }
                             else SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,
                                 shapes=MenuDefaults.itemShapes(),modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
-                                selectedLeadingIcon=if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
+                                contentPadding=if(config.comboItem) ExposedDropdownMenuDefaults.ItemContentPadding else MenuDefaults.DropdownMenuSelectableItemContentPadding,
+                                selectedLeadingIcon=if(config.nativeCheck) ({Icon(Icons.Filled.Check,null,Modifier.size(20.dp))}) else if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
                                 colors=if(config.variant=="vibrant") MenuDefaults.selectableItemVibrantColors() else MenuDefaults.selectableItemColors())
                         }
+                        // Native menus intentionally have no shadow (the established native theme adaptation).
+                        if(config.autoWidth) DropdownMenuGroup(shapes=MenuDefaults.groupShapes(),shadowElevation=0.dp,modifier=Modifier.width(IntrinsicSize.Max)) { item() }
+                        else Box(Modifier.width(config.width.toFloat().dp)) { item() }
                     }
                 }
             }

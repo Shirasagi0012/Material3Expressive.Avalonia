@@ -36,6 +36,9 @@
           <ComboBoxItem>Kept while disabled</ComboBoxItem>
         </ComboBox>
       </Grid>
+      <TextBlock Text="Selection icon preview — toggle quickly to reverse the animation" TextWrapping="Wrap" />
+      <ComboBoxItem x:Name="SelectionPreview" Content="Selected item" Width="260" HorizontalAlignment="Left" />
+      <Button Content="Toggle item selection" Click="ToggleItemSelection" HorizontalAlignment="Left" />
       <StackPanel Orientation="Horizontal" Spacing="12">
         <Button Content="Toggle light / dark" Click="ToggleTheme" />
         <Button Content="Toggle RTL" Click="ToggleDirection" />

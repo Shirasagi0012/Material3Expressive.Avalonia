@@ -346,7 +346,7 @@ public sealed class MenuBarThemeTests
         var icon = new Border { Width = 18, Height = 18 };
         var item = new MenuItem { Header = "Home", Icon = icon };
         var window = Show(new Menu { Items = { item } });
-        Assert.True(Part<Grid>(item, "PART_LeadingIcon").IsVisible);
+        Assert.True(Part<DropdownMenuLeadingIcon>(item, "PART_LeadingIcon").IsVisible);
         Assert.True(icon.IsAttachedToVisualTree());
         Assert.True(icon.TranslatePoint(default, item)!.Value.X < Header(item).TranslatePoint(default, item)!.Value.X);
         window.Close();
@@ -419,7 +419,7 @@ public sealed class MenuBarThemeTests
         edit.IsSubMenuOpen = true; Flush(window);
         var wrap = edit.Items.OfType<MenuItem>().Single(i => i.ToggleType == MenuItemToggleType.CheckBox);
         Assert.Same(vertical, wrap.Theme);
-        Assert.True(Part<Viewbox>(wrap, "PART_Check").IsVisible);
+        Assert.True(wrap.GetVisualDescendants().OfType<Viewbox>().Single(p => p.Name == "PART_Check").IsVisible);
         Assert.Equal(Color(window, MaterialTokens.Comp.Menu.StandardSelectedContainer), Brush(wrap.Background));
         window.Close();
     }

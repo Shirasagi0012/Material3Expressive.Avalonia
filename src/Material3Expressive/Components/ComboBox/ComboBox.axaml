@@ -89,8 +89,13 @@
                     MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.ContentMinHeight}}" VerticalContentAlignment="Center" IsHitTestVisible="False"
                     m3:MaterialText.Style="{m3:Typography BodyLarge}" />
                 <Panel Name="Trailing" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSlotSize}}">
-                  <m3:MaterialSymbol Name="DropDownArrow" Symbol="ArrowDropDown" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}"
-                      HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
+                  <Viewbox Name="DropDownArrow" FlowDirection="LeftToRight" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TextField.IconSize}}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <Canvas Width="24" Height="24">
+                      <!-- ExposedDropdownMenuDefaults.TrailingIcon: internal Icons.Filled.ArrowDropDown. -->
+                      <Path Data="M 7,10 l 5,5 5,-5 Z" Fill="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+                    </Canvas>
+                  </Viewbox>
                 </Panel>
                 <ContentPresenter Name="Supporting" Content="{TemplateBinding m3:MaterialComboBox.SupportingText}"
                     ContentTemplate="{TemplateBinding m3:MaterialComboBox.SupportingTextTemplate}"
@@ -132,22 +137,22 @@
       <Setter Property="m3:ComboBoxThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedPlaceholderColor}}" />
       <Style Selector="^ /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedLabelColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^ /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^ /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedTrailingIconColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.UnfocusedSupportingColor}}" /></Style>
       <Style Selector="^ /template/ TextBox#PART_EditableTextBox">
         <Setter Property="CaretBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.CursorColor}}" />
         <Setter Property="SelectionBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.SelectionColor}}" />
       </Style>
-      <Style Selector="^:focus-within">
+      <Style Selector="^:focus-within, ^:dropdownopen">
         <Setter Property="m3:ComboBoxThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedInputColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedContainerColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedIndicatorColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedPlaceholderColor}}" />
       </Style>
-      <Style Selector="^:focus-within /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLabelColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedTrailingIconColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSupportingColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ m3|ComboBoxField, ^:dropdownopen /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLabelColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ ContentPresenter#Leading, ^:dropdownopen /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedLeadingIconColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ Viewbox#DropDownArrow, ^:dropdownopen /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ ContentPresenter#Supporting, ^:dropdownopen /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.FocusedSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True], ^:error">
         <Setter Property="m3:ComboBoxThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorInputColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorContainerColor}}" />
@@ -156,7 +161,7 @@
       </Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ m3|ComboBoxField, ^:error /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorLabelColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ ContentPresenter#Leading, ^:error /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorLeadingIconColor}}" /></Style>
-      <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ m3|MaterialSymbol#DropDownArrow, ^:error /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorTrailingIconColor}}" /></Style>
+      <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ Viewbox#DropDownArrow, ^:error /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorTrailingIconColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ ContentPresenter#Supporting, ^:error /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ TextBox#PART_EditableTextBox, ^:error /template/ TextBox#PART_EditableTextBox">
         <Setter Property="CaretBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.ErrorCursorColor}}" />
@@ -169,7 +174,7 @@
       </Style>
       <Style Selector="^:disabled /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledLabelColor}}" /></Style>
       <Style Selector="^:disabled /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledLeadingIconColor}}" /></Style>
-      <Style Selector="^:disabled /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledTrailingIconColor}}" /></Style>
+      <Style Selector="^:disabled /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledTrailingIconColor}}" /></Style>
       <Style Selector="^:disabled /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledSupportingColor}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialOutlinedComboBoxTheme" TargetType="ComboBox" BasedOn="{StaticResource MaterialComboBoxBaseTheme}">
@@ -182,22 +187,22 @@
       <Setter Property="m3:ComboBoxThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedPlaceholderColor}}" />
       <Style Selector="^ /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedLabelColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^ /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^ /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedTrailingIconColor}}" /></Style>
       <Style Selector="^ /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.UnfocusedSupportingColor}}" /></Style>
       <Style Selector="^ /template/ TextBox#PART_EditableTextBox">
         <Setter Property="CaretBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.CursorColor}}" />
         <Setter Property="SelectionBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.SelectionColor}}" />
       </Style>
-      <Style Selector="^:focus-within">
+      <Style Selector="^:focus-within, ^:dropdownopen">
         <Setter Property="m3:ComboBoxThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedInputColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedContainerColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.BorderBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedIndicatorColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.PlaceholderForeground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedPlaceholderColor}}" />
       </Style>
-      <Style Selector="^:focus-within /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLabelColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLeadingIconColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedTrailingIconColor}}" /></Style>
-      <Style Selector="^:focus-within /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSupportingColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ m3|ComboBoxField, ^:dropdownopen /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLabelColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ ContentPresenter#Leading, ^:dropdownopen /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedLeadingIconColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ Viewbox#DropDownArrow, ^:dropdownopen /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedTrailingIconColor}}" /></Style>
+      <Style Selector="^:focus-within /template/ ContentPresenter#Supporting, ^:dropdownopen /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.FocusedSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True], ^:error">
         <Setter Property="m3:ComboBoxThemeDefaults.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorInputColor}}" />
         <Setter Property="m3:ComboBoxThemeDefaults.Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorContainerColor}}" />
@@ -206,7 +211,7 @@
       </Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ m3|ComboBoxField, ^:error /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorLabelColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ ContentPresenter#Leading, ^:error /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorLeadingIconColor}}" /></Style>
-      <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ m3|MaterialSymbol#DropDownArrow, ^:error /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorTrailingIconColor}}" /></Style>
+      <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ Viewbox#DropDownArrow, ^:error /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorTrailingIconColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ ContentPresenter#Supporting, ^:error /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorSupportingColor}}" /></Style>
       <Style Selector="^[(m3|MaterialComboBox.IsError)=True] /template/ TextBox#PART_EditableTextBox, ^:error /template/ TextBox#PART_EditableTextBox">
         <Setter Property="CaretBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.ErrorCursorColor}}" />
@@ -219,16 +224,17 @@
       </Style>
       <Style Selector="^:disabled /template/ m3|ComboBoxField"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledLabelColor}}" /></Style>
       <Style Selector="^:disabled /template/ ContentPresenter#Leading"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledLeadingIconColor}}" /></Style>
-      <Style Selector="^:disabled /template/ m3|MaterialSymbol#DropDownArrow"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledTrailingIconColor}}" /></Style>
+      <Style Selector="^:disabled /template/ Viewbox#DropDownArrow"><Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledTrailingIconColor}}" /></Style>
       <Style Selector="^:disabled /template/ ContentPresenter#Supporting"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledSupportingColor}}" /></Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type ComboBox}" TargetType="ComboBox" BasedOn="{StaticResource MaterialFilledComboBoxTheme}" />
     <ControlTheme x:Key="{x:Type ComboBoxItem}" TargetType="ComboBoxItem">
       <Setter Property="FocusAdorner" Value="{x:Null}" />
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.Text}}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ComboBox.ItemPadding}}" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography BodyLarge}" />
       <Setter Property="CornerRadius">
@@ -258,11 +264,17 @@
                 <m3:ComboBoxSelectionIcon ClipToBounds="True"
                     SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}"
                     AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
-                  <m3:MaterialSymbol Symbol="Check" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}"
-                      Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+                  <Viewbox Name="PART_Check" FlowDirection="LeftToRight" TextElement.Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIcon}}" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}"
+                      Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}">
+                    <Canvas Width="24" Height="24">
+                      <!-- Fixed Core internal Icons.Filled.Check, not a font glyph. -->
+                      <Path Data="M 9,16.17 L 4.83,12 3.41,13.41 9,19 21,7 19.59,5.59 Z"
+                            Fill="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+                    </Canvas>
+                  </Viewbox>
                 </m3:ComboBoxSelectionIcon>
                 <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                    Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" />
+                    Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
               </m3:ComboBoxItemLayout>
             </m3:MaterialSurface>
           </m3:MenuItemChrome>
@@ -272,7 +284,14 @@
         <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContainer}}" />
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}}" />
       </Style>
+      <Style Selector="^:selected /template/ Viewbox#PART_Check">
+        <Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardSelectedContent}}" />
+      </Style>
+      <Style Selector="^:disabled /template/ Viewbox#PART_Check">
+        <Setter Property="TextElement.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.DisabledIcon}}" />
+      </Style>
       <Style Selector="^:disabled">
+        <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.StandardContainer}}" />
         <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.DisabledText}}" />
       </Style>
     </ControlTheme>

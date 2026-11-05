@@ -4,6 +4,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Data.Converters;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -55,6 +57,7 @@ internal sealed class ComboBoxSelectionIcon : Decorator
     private ComboBoxItem? _owner;
     private AnimationChildScope? _attachScope;
     private Transition<bool>? _transition;
+    private IDisposable? _opacityBinding;
     private Transition<bool>.TransitionAnimationState<float>? _width;
     private bool _visible, _updatePending;
     private double _fullWidth;
@@ -65,17 +68,33 @@ internal sealed class ComboBoxSelectionIcon : Decorator
         _owner = TemplatedParent as ComboBoxItem;
         if (_owner != null) _owner.PropertyChanged += OwnerChanged;
         _attachScope = AnimationScope.Get(this).CreateChild("ComboBox selection icon");
+        AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
         Ensure();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (_owner != null) _owner.PropertyChanged -= OwnerChanged;
+        AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         Stop();
         _attachScope?.Dispose();
         _attachScope = null;
         _owner = null;
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
+    {
+        if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree()) return;
+        _attachScope?.Dispose();
+        var motion = _attachScope = scope.CreateChild("ComboBox selection icon");
+        _updatePending = false;
+        if (_transition is not { } transition) { Ensure(); return; }
+        // A reopened popup can replace the ancestor scope at the next frame's
+        // drain. Keep the transition's samples and velocity, and rejoin that clock.
+        if (_width is { } width) motion.SubscribeValue(width, _ => InvalidateMeasure());
+        transition.UpdateTarget(_visible);
+        _ = motion.Launch(ct => transition.RunAsync(motion, ct));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -102,8 +121,11 @@ internal sealed class ComboBoxSelectionIcon : Decorator
         var alpha = _transition.AnimateValue(new FloatConverter(), show => show ? 1f : 0f,
             _ => new SpringSpec<float>(AlphaAnimation.Value.DampingRatio, AlphaAnimation.Value.Stiffness, .01f));
         scope.SubscribeValue(_width, _ => InvalidateMeasure());
-        scope.SubscribeValue(alpha, value => Opacity = Math.Clamp(value, 0, 1));
-        Opacity = _visible ? 1 : 0;
+        _opacityBinding = Bind(OpacityProperty, new Binding(nameof(alpha.Value))
+        {
+            Source = alpha, Priority = BindingPriority.Animation,
+            Converter = new FuncValueConverter<float, double>(value => Math.Clamp(value, 0, 1))
+        });
         var transition = _transition;
         _ = scope.Launch(ct => transition.RunAsync(scope, ct));
         InvalidateMeasure();
@@ -131,7 +153,13 @@ internal sealed class ComboBoxSelectionIcon : Decorator
     }
 
     private float WidthTarget(bool show) => show ? (float)_fullWidth : 0;
-    private void Stop() { _transition = null; _width = null; _updatePending = false; }
+    private void Stop()
+    {
+        var transition = _transition;
+        _transition = null; _width = null; _updatePending = false;
+        transition?.Dispose();
+        _opacityBinding?.Dispose(); _opacityBinding = null;
+    }
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -151,7 +179,8 @@ internal sealed class ComboBoxSelectionIcon : Decorator
     protected override Size ArrangeOverride(Size finalSize)
     {
         var fullWidth = _fullWidth / LayoutHelper.GetLayoutScale(this);
-        Child?.Arrange(new Rect(finalSize.Width - fullWidth, 0, fullWidth, finalSize.Height));
+        // EnterExitTransition uses physical Alignment.End (LayoutDirection.Ltr).
+        Child?.Arrange(new Rect(FlowDirection == FlowDirection.RightToLeft ? 0 : finalSize.Width - fullWidth, 0, fullWidth, finalSize.Height));
         return finalSize;
     }
 

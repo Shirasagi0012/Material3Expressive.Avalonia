@@ -17,6 +17,96 @@ namespace Material3Expressive.Tests;
 
 public class ComboBoxTests
 {
+    [AvaloniaTheory]
+    [InlineData("MaterialFilledComboBoxTheme")]
+    [InlineData("MaterialOutlinedComboBoxTheme")]
+    public void OpenMenuKeepsFocusedColorsAndErrorDisabledPrecedence(string theme)
+    {
+        using var clock = new MotionTestClockScope();
+        var window = Show(out var box);
+        try
+        {
+            box.Theme = (ControlTheme)window.FindResource(theme)!;
+            MaterialComboBox.SetLabel(box, "Choice");
+            box.Items.Add("First");
+            var other = new Button { Content = "Other" };
+            ((StackPanel)window.Content!).Children.Add(other);
+            window.UpdateLayout(); other.Focus(); Settle(clock, window);
+            var field = box.GetVisualDescendants().OfType<ComboBoxField>().Single();
+            var unfocused = Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color;
+            box.Focus(); Settle(clock, window);
+            var focused = Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color;
+            Assert.NotEqual(unfocused, focused);
+            box.IsDropDownOpen = true; Settle(clock, window);
+            Assert.IsType<ComboBoxItem>(box.ContainerFromIndex(0)).Focus(); Settle(clock, window);
+            Assert.False(box.IsFocused);
+            Assert.Equal(focused, Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color);
+            MaterialComboBox.SetIsError(box, true); Settle(clock, window);
+            Assert.Equal((Color)window.FindResource(Material3Expressive.Tokens.MaterialTokens.Sys.Color.Error)!,
+                Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color);
+            box.IsEnabled = false; Settle(clock, window);
+            Assert.Equal(97, Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color.A);
+            box.IsDropDownOpen = false; box.IsEnabled = true; MaterialComboBox.SetIsError(box, false);
+            other.Focus(); Settle(clock, window);
+            Assert.Equal(unfocused, Assert.IsAssignableFrom<ISolidColorBrush>(field.LabelBrush).Color);
+            var arrow = box.GetVisualDescendants().OfType<Viewbox>().Single(control => control.Name == "DropDownArrow");
+            Assert.Equal(0, Assert.IsType<RotateTransform>(arrow.RenderTransform).Angle);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SelectionIcon_ReversesAndRestoresOpacityContributionOnDetach(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var window = Show(out var box);
+        try
+        {
+            box.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            box.Items.Add("First"); box.Items.Add("Second");
+            box.IsDropDownOpen = true; window.UpdateLayout();
+            var item = Assert.IsType<ComboBoxItem>(box.ContainerFromIndex(0));
+            var icon = item.GetVisualDescendants().OfType<ComboBoxSelectionIcon>().Single();
+            icon.Opacity = .37; // Keep a caller's value under the animation contribution.
+            Assert.Equal(0, icon.Opacity);
+            Assert.IsType<Viewbox>(icon.Child);
+            Assert.Empty(icon.GetVisualDescendants().OfType<MaterialSymbol>());
+            box.SelectedIndex = 0; Advance(64);
+            Assert.True(box.IsDropDownOpen); Assert.True(item.IsSelected);
+            Assert.InRange(icon.Bounds.Width, .01, 19.99); Assert.InRange(icon.Opacity, .01, .99);
+            box.SelectedIndex = 1; Advance(32);
+            box.SelectedIndex = 0; Advance(800);
+            Assert.Equal(20, icon.Bounds.Width); Assert.Equal(1, icon.Opacity);
+            box.IsDropDownOpen = false; window.UpdateLayout();
+            Assert.Equal(.37, icon.Opacity);
+            box.IsDropDownOpen = true; window.UpdateLayout();
+            // Virtualization can recycle a different container when the popup reopens.
+            item = Assert.IsType<ComboBoxItem>(box.ContainerFromIndex(0));
+            icon = item.GetVisualDescendants().OfType<ComboBoxSelectionIcon>().Single();
+            icon.Opacity = .37;
+            Assert.Equal(1, icon.Opacity); Assert.Equal(20, icon.Bounds.Width);
+            box.SelectedIndex = 1; Advance(800);
+            Assert.Equal(1, box.SelectedIndex);
+            Assert.False(item.IsSelected);
+            Assert.Equal(0, icon.Opacity); Assert.Equal(0, icon.Bounds.Width);
+            var chrome = item.GetVisualDescendants().OfType<MenuItemChrome>().Single();
+            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(item.Background).Color,
+                Assert.IsAssignableFrom<ISolidColorBrush>(chrome.PaintedBrush).Color);
+            window.Close(); Advance(16);
+            Assert.Equal(.37, icon.Opacity);
+            Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveChildCount);
+            Assert.Equal(0, window.MotionRoot.Diagnostics.ActiveTaskCount);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+        void Advance(int ms)
+        {
+            for (var t = 0; t < ms; t += 16) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
+        }
+    }
+
     [AvaloniaFact]
     public void ImplicitThemeIsFilledAndOutlinedThemeCutsTheLabel()
     {
@@ -65,7 +155,7 @@ public class ComboBoxTests
             Assert.Equal(new CornerRadius(12, 12, 4, 4), ShapeAt(box, 0));
             Assert.Null(ShapeAt(box, 1));
             Assert.Equal(new CornerRadius(4, 4, 12, 12), ShapeAt(box, 2));
-            var arrow = box.GetVisualDescendants().OfType<MaterialSymbol>().Single(symbol => symbol.Name == "DropDownArrow");
+            var arrow = box.GetVisualDescendants().OfType<Viewbox>().Single(symbol => symbol.Name == "DropDownArrow");
             Assert.Equal(180, Assert.IsType<RotateTransform>(arrow.RenderTransform).Angle);
         }
         finally { window.Close(); }

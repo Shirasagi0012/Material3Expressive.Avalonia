@@ -61,7 +61,7 @@ public class CommandBarThemeTests
             var ripple = Part<MaterialSurface>(overflow, "PART_IndicatorRipple");
             var indicator = Part<Border>(overflow, "PART_Indicator");
             var referenceSurface = Part<MaterialSurface>(reference, "PART_ItemSurface");
-            var referenceIcon = Part<Grid>(reference, "PART_LeadingIcon");
+            var referenceIcon = Part<DropdownMenuLeadingIcon>(reference, "PART_LeadingIcon");
             var referenceLabel = Part<ContentPresenter>(reference, "PART_HeaderPresenter");
             var text = label.GetVisualDescendants().OfType<TextBlock>().Single();
             var referenceText = referenceLabel.GetVisualDescendants().OfType<TextBlock>().Single();

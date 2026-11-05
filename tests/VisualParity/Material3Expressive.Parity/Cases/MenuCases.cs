@@ -13,7 +13,7 @@ namespace Material3Expressive.Parity;
 
 public sealed record MenuConfig(string Variant = "standard", bool Selected = false, bool Enabled = true,
     bool Dark = false, bool Rtl = false, bool Icon = true, double Width = 200,
-    double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false);
+    double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false, bool NativeCheck = false, bool AutoWidth = false, bool ComboItem = false);
 
 [ParitySuite("menu")]
 public sealed class MenuCases
@@ -46,6 +46,33 @@ public sealed class MenuCases
     }
     private static CaseData<MenuConfig> Data(string id, MenuConfig config) => new(id, id, config);
 
+    public static IEnumerable<CaseData<MenuConfig>> NativeSelectionConfigurations()
+    {
+        foreach (var variant in new[] { "standard", "vibrant" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "selection", "reverse", "icon-enter", "icon-exit" })
+            yield return Data($"native-selection.{variant}.{action}.{(rtl ? "rtl" : "ltr")}",
+                new(variant, Selected: action == "icon-exit", Rtl: rtl, Icon: false, Action: action, NativeCheck: true));
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "selection", "reverse", "icon-enter", "icon-exit" })
+            yield return Data($"native-selection.auto.{action}.{(rtl ? "rtl" : "ltr")}",
+                new(Selected: action == "icon-exit", Rtl: rtl, Icon: false, ContentWidth: 144, Action: action, NativeCheck: true, AutoWidth: true));
+    }
+    [ParityScenario("native-selection", Data = nameof(NativeSelectionConfigurations))]
+    public Task NativeSelection(CaptureWriter writer) => Capture(writer, true);
+
+    public static IEnumerable<CaseData<MenuConfig>> NativeCheckConfigurations()
+    {
+        foreach (var variant in new[] { "baseline", "standard", "vibrant" })
+        foreach (var enabled in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var dark in new[] { false, true })
+            yield return Data($"native-check.{variant}.{(enabled ? "enabled" : "disabled")}.{(rtl ? "rtl" : "ltr")}.{(dark ? "dark" : "light")}",
+                new(variant, Selected: true, Enabled: enabled, Rtl: rtl, Dark: dark, Icon: false, NativeCheck: true));
+    }
+    [ParityScenario("native-check", Data = nameof(NativeCheckConfigurations))]
+    public Task NativeCheck(CaptureWriter writer) => Capture(writer, false);
+
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
     public async Task Static(CaptureWriter writer) => await Capture(writer, false);
     [ParityScenario("dynamic", Data = nameof(DynamicConfigurations))]
@@ -75,9 +102,17 @@ public sealed class MenuCases
             select = value => ((SelectableDropdownMenuItem)dropdown).IsSelected = value;
             item = dropdown;
         }
+        else if (config.ComboItem)
+        {
+            var comboItem = new ComboBoxItem { Content = marker, IsSelected = config.Selected };
+            selected = () => comboItem.IsSelected;
+            select = value => comboItem.IsSelected = value;
+            item = comboItem;
+        }
         else
         {
             var native = new MenuItem { Header = marker, IsChecked = config.Selected, Icon = config.Icon ? icon : null,
+                ToggleType = config.NativeCheck ? MenuItemToggleType.CheckBox : MenuItemToggleType.None,
                 Theme = (ControlTheme)host.Window.FindResource(config.Variant == "baseline" ? "MaterialBaselineMenuItemTheme" : "MaterialVerticalMenuItemTheme")! };
             native.Click += (_, _) => clicks++;
             selected = () => native.IsChecked; select = value => native.IsChecked = value;
@@ -91,16 +126,22 @@ public sealed class MenuCases
         // DropdownMenuItem intentionally consumes its parent's foreground for the ripple.
         if (independent && config.Variant == "baseline")
             TextElement.SetForeground(allocation, new SolidColorBrush((Color)host.Window.FindResource(Sys.Color.OnSurface)!));
-        host.Mount(CaseDefaults.Center(allocation)); host.Frame(-1000); host.Frame(0);
+        Control container = allocation;
+        if (config.AutoWidth)
+        {
+            allocation.Children.Clear();
+            container = new MenuFlyoutPresenter { Items = { item } };
+        }
+        host.Mount(CaseDefaults.Center(container)); host.Frame(-1000); host.Frame(0);
         ProbePoint[] Measure() =>
         [
             new("content", "content", null, AvaloniaMeasurements.Geometry(marker, host.Window).Where(m => m.Name is "box" or "size").ToArray()),
             new("item", "item", null,
             [
-                Measurement.Flag("selected", selected(), definition: "menu.selected", source: independent ? "SelectableDropdownMenuItem.IsSelected" : "native MenuItem.IsChecked"),
+                Measurement.Flag("selected", selected(), definition: "menu.selected", source: independent ? "SelectableDropdownMenuItem.IsSelected" : config.ComboItem ? "native ComboBoxItem.IsSelected" : "native MenuItem.IsChecked"),
                 Measurement.Numeric("clicks", clicks, "count", definition: "menu.click-count"),
                 config.Variant == "baseline" ? Measurement.Numeric("cornerRadius", 0, "dip", category: "motion", definition: "menu.item.visible-rounded-corner") :
-                    Measurement.Numeric("cornerRadius", ((CornerRadius)typeof(MaterialSurface).GetProperty("EffectiveCornerRadius", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(item.GetVisualDescendants().OfType<MaterialSurface>().Single(s => s.Name == "PART_ItemSurface"))!).TopLeft,
+                    Measurement.Numeric("cornerRadius", ((CornerRadius)typeof(MaterialSurface).GetProperty("EffectiveCornerRadius", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(item.GetVisualDescendants().OfType<MaterialSurface>().Single(s => config.ComboItem || s.Name == "PART_ItemSurface"))!).TopLeft,
                         "dip", category: "motion", definition: "menu.item.visible-rounded-corner", source: "MaterialSurface.EffectiveCornerRadius cached by chrome"),
             ])
         ];
@@ -113,13 +154,18 @@ public sealed class MenuCases
         var center = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), host.Window)!.Value;
         var outside = new Point(8, 8);
         void Event(long time, string action, Point point) { Advance(time); host.Input(action, point); host.Draw(); host.Frame(time); }
+        void SetIcon(object? value)
+        {
+            if (item is DropdownMenuItem dropdown) dropdown.LeadingIcon = value;
+            else ((MenuItem)item).Icon = value;
+        }
         switch (config.Action)
         {
             case "icon-enter": case "icon-exit":
                 Change(1000, "toggle-selection", () => select(!config.Selected)); Times(16000, 32000, 64000);
-                Change(65000, "add-leading", () => ((DropdownMenuItem)item).LeadingIcon = icon);
+                Change(65000, "add-leading", () => SetIcon(icon));
                 Times(80000, 96000, 160000, 400000);
-                Change(401000, "remove-leading", () => { select(false); ((DropdownMenuItem)item).LeadingIcon = null; });
+                Change(401000, "remove-leading", () => { select(false); SetIcon(null); });
                 Times(416000);
                 Change(450000, "select-again", () => select(true)); Times(464000, 512000, 800000);
                 break;

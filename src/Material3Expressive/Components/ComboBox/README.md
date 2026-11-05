@@ -77,5 +77,8 @@
 弹出层使用官方只读 Exposed Dropdown 样例的单组外观：Standard 容器、大圆角、可选中项和选中勾。
 可编辑与只读共用这一套菜单。菜单宽度跟随整个控件，高度仍使用 Avalonia 的 `MaxDropDownHeight`（默认 200）。
 菜单不能画出窗口之外。
+选中勾使用固定上游向量，宽度与透明度随选择过渡，支持中途反选和 RTL；未选中时仍保留 8 DIP 的前导间距。
+项内容默认按逻辑起点排列，可通过 ComboBoxItem.HorizontalContentAlignment 覆盖。
+Catalog 另有独立项预览按钮，可在不关闭弹层的情况下观察快速反选效果。
 
 Catalog 入口是主窗口的 ComboBox demo，也可以用 `dotnet run --project src/Material3Expressive.Catalog -- --combo-box` 直接打开。
