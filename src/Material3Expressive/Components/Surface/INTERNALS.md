@@ -39,6 +39,9 @@ BorderThickness 会改变内容测量，因此描边不能简单移回 `_chrome`
 Surface.Render 按同一有效圆角绘制 tonal tint 后的背景，对应上游 background(shape).clip(shape) 顺序，
 避免背景抗锯齿覆盖再次乘内容裁剪的覆盖。覆盖层仅为视觉子节点。
 描边不占布局，不接受输入；它不再次套用背景 clip，避免圆角抗锯齿覆盖被乘两次。
+纯视觉节点不继承 Avalonia 的 FlowDirection。描边、交互层和选中覆盖层显式绑定 Surface 的方向，
+非均匀描边的原生 Border 子层也绑定其父层方向，使各层沿用 Surface 的同一局部坐标，避免 RTL 二次镜像。
+该绑定跟随运行时方向变化；没有交换公开 CornerRadius 的角值，也没有改变内容的逻辑继承关系。
 均匀线宽沿固定上游物理像素 ceil 后向内绘制；非均匀 Thickness 保留 Avalonia Border 分支。
 普通零线宽无描边，Toggle/Split 描边动画才启用内部 hairline 语义。确认原因、范围和依据见
 [Surface 圆角描边决定](../../../../docs/DECISIONS.md)。
@@ -110,6 +113,10 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
 - `InteractiveSurfaceTests` 覆盖三个交互入口的自然尺寸、最小留白、描边、内容色、键盘释放/取消、
   受控绑定、automation、命令禁用、源替换与重挂；Catalog `SurfaceDemo` 提供完整接线。
 - `MaterialSurfaceRenderTests` 用 Skia headless 渲染检查阴影、覆盖、圆角和 hairline，`InsetFocusRingTests` 检查反馈缓存与形状重绘。
+- 方向回归覆盖 LTR → RTL → LTR 的非对称描边（均匀及原生非均匀分支）、悬停层与选中覆盖层；
+  `MaterialSurfaceRenderTests` 17 项通过。`surface` 双端 23 例为 10 equal、13 withinTolerance、
+  0 different、零执行错误且重复稳定（`20261105-042829-4912403a`），包含六个新增方向/绘制层用例。
+  Button 的 RTL 非对称按压也在现有门禁内且重复稳定（`20261105-042956-3d2cdb73`）。
 - 双端 `SurfaceCases.cs` / `SurfaceCases.kt` 的族名为 `surface`。共享修改还应选择 Button、Chip、Toggle/Split、ListItem 等实际调用方回归。
 - 2026-11-04 `interactive-surface` 最终运行 `20261104-081657-a2237b4f`：111 例执行错误 0，
   92 例像素完全相等、19 例容差内、超差 0；覆盖三个入口的静态颜色/尺寸/描边/阴影与输入/换源/重挂。

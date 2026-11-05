@@ -25,6 +25,7 @@ internal sealed class SurfaceOutline : Control
     {
         _fallback = new Border
         {
+            [!FlowDirectionProperty] = this[!FlowDirectionProperty],
             [!Border.BorderBrushProperty] = this[!BorderBrushProperty],
             [!Border.BorderThicknessProperty] = this[!BorderThicknessProperty],
             [!Border.CornerRadiusProperty] = this[!CornerRadiusProperty],

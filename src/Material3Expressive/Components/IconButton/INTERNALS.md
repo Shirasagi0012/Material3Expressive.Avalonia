@@ -91,8 +91,19 @@ Standard 继续取 provider 外的 ambient 内容色。无伪类与有伪类的�
 仍由 Surface 处理 pressed > checked > resting、DefaultEffects、目标中断及模板/挂载清理。
 这些新增组件 API 在 2026-11-02 的剩余移植批次授权内实施，不改变已有固定形状默认值。
 
+Vibrant 切换主题对应固定 `IconButtonDefaults.iconToggleButtonVibrantColors` /
+`outlinedIconToggleButtonVibrantColors` 与 `outlinedIconToggleButtonVibrantBorder`。
+`IconToggleButtonTokenSource` 提供 Standard / Outlined 的六槽默认值，按 disabled → checked → unchecked
+即时选择；独立主题继承已有尺寸、形状 collector、受控请求与 Surface 生命周期，不新增动画引擎。
+Standard indication 仍在内容色 provider 之外，读取外部 ambient；Outlined 的 Surface indication 使用最终内容色。
+选中时描边厚度为零，包括禁用选中态；未选中禁用描边替换 OutlineVariant 的 alpha。
+新主题入口在本次非破坏性组件 API 授权范围内，未改变旧 Vibrant IconButton 的状态层 Token 合约。
+固定 upstream 的 Outlined Vibrant helper 写入普通 Outlined 缓存而没有写回自身缓存；本地无这类全局缓存，
+默认返回的六个颜色槽保持对应关系，不将该 helper 的跨入口缓存副作用扩散到组件状态。
+
 **尚未实现：** 任意 Shape。
-可选 InsetRing 通过 Surface 自动接入，IconButton 各尺寸/变体的独立双端焦点环验证尚未完成。
+可选 InsetRing 通过 Surface 自动接入。`icon-button-focus` 覆盖普通四主题、两种旧 Vibrant 主题的
+五种尺寸，以及 dark / RTL / wide / square 下的焦点反向；当前未覆盖全部形变中按压与焦点交织组合。
 对应原始 Token 可以存在，不意味着模板已经消费或有公开入口。
 
 普通 Standard/Outlined 内容色、禁用色及描边已按下方决定迁移到 ambient；所有尺寸仍使用
@@ -100,7 +111,11 @@ Small.OutlinedOutlineWidth，原始 Large/XLarge 2/3 DIP Token 保留供显式�
 
 **已观察到、尚未解决：**
 
-- Vibrant Standard 保留既有状态层颜色 Token 消费；固定上游 Standard 的 ripple 在外层 ambient provider 读取墨色，该路径与本地 Token 墨色的视觉差异仍单独报告，不能从普通配色修正推断它已一致
+- 旧 Vibrant Standard IconButton 保留已确认的状态层 Token 消费；上游 ripple 读取外部 ambient。
+  `icon-button.dynamic.vibrant-ink.*` 对比带 alpha 的环境色、hover / press / focus 和悬浮中变色。
+  推荐迁移到外部 ambient，例如父容器 `TextElement.Foreground="Blue"` 时反馈为蓝色，而图标仍使用
+  OnSurfaceVariant；这会影响已有 `Comp.StandardIconButton.*StateLayerColor` 覆盖，需维护者决定兼容或迁移方案。
+  该改变尚未批准，现有主题未改写；新增 Vibrant 切换主题直接使用上游颜色路径。
 - 属性变更当帧的即时更新、更换按压目标后部分状态层像素仍有差异
 - 受限图标盒已改为两轴分别约束；文字字体图标绘制仍不由向量用例证明
 
@@ -139,6 +154,32 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
 不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
 分别说明执行错误、双端差异、稳定性及未覆盖项。
+
+新增 Vibrant 切换主题的行为测试位于 `IconButtonAmbientTests` / `IconToggleButtonTests`，
+覆盖 disabled 优先级、资源和主题切换、用户覆盖、重挂、真实输入与 automation 请求。
+双端 `icon-toggle-vibrant` 的 64 例、316 个采样：61 equal、3 withinTolerance、执行错误 0
+（`20261105-040507-829fbb88`）。其中 Standard / RTL 的快速反向在 Core repeat / extraImages
+各有 5 个样本的 raster 波动，最大通道差 1；Avalonia 两类自检全部稳定，不把该套件声明为稳定性全通过。
+
+新增主题后的原有 `icon-toggle-button` 回归为 226 例、832 个采样：218 equal、8 withinTolerance、
+0 different、执行错误 0（`20261105-041341-96424931`）。7 例快速反向在 Core 的 repeat 或 extraImages
+检查中不稳定；Avalonia 两类自检全部稳定。该结果不覆盖下一节记载的旧普通 IconButton 颜色差异。
+
+`icon-button-focus` 的 36 例、300 个采样：20 equal、16 withinTolerance、执行错误 0，
+双端 repeat / extraImages 全部稳定（`20261105-041102-38f0645c`）。场景显式对齐 Secondary /
+OnSecondary 和 Expressive motion；不能把第一轮缺少 OnSecondary 且两端动效模式不同的结果归为组件缺陷。
+原有颜色/动画场景的输入及比较门禁未改。
+
+`icon-button.dynamic.vibrant-ink.*` 的 8 例已执行：旧 Standard 四例均不同，Outlined 四例全等，
+执行错误 0、双端重复稳定。该证据隔离上文旧 Standard 的状态层 Token 兼容问题。
+Windows Catalog 已实际检查新增两主题的点击，以及 Outlined 的空格键反选和描边恢复；
+真实字体图标已显示，但不构成双端字体栅格或屏幕阅读器验收。
+
+```powershell
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~IconButtonAmbientTests|FullyQualifiedName~IconToggleButtonTests'
+./tests/VisualParity/parity.ps1 self-test --family icon-toggle-vibrant
+./tests/VisualParity/parity.ps1 self-test --family icon-button-focus
+```
 
 [IconButtonTokenTests.cs](../../../../tests/Material3Expressive.Tests/IconButtonTokenTests.cs) 检查尺寸/颜色/描边 Token；
 形状和 ButtonLayout 共享回归见 [Button 维护入口](../Button/INTERNALS.md#一致性边界与验证)。

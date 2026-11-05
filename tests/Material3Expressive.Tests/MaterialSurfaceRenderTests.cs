@@ -120,6 +120,86 @@ public class MaterialSurfaceRenderTests
     }
 
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AsymmetricOutline_FollowsSurfaceDirectionIncludingNativeFallback(bool nonuniform)
+    {
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(24, 8, 0, 16);
+        surface.BorderBrush = Brushes.Red;
+        surface.BorderThickness = nonuniform ? new Thickness(6, 5, 7, 6) : new Thickness(6);
+        surface.Child = new Border { Background = Brushes.Blue };
+        var window = Show(surface);
+        window.SetRenderScaling(2);
+        try
+        {
+            foreach (var rtl in new[] { false, true, false })
+            {
+                window.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+                window.UpdateLayout();
+                using var frame = window.CaptureRenderedFrame()!;
+                int X(int x) => rtl ? 319 - x : x;
+                Assert.Equal((255, 255, 255), PixelAt(frame, X(66), 116));
+                Assert.Equal((255, 0, 0), PixelAt(frame, X(250), 116));
+                Assert.Equal((255, 0, 0), PixelAt(frame, X(254), 204));
+                Assert.Equal((255, 255, 255), PixelAt(frame, X(66), 204));
+                Assert.Equal((0, 0, 255), PixelAt(frame, X(160), 130));
+                Assert.Equal(new Size(100, 50), surface.Child.Bounds.Size);
+            }
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AsymmetricFeedback_FollowsSurfaceDirection(bool selectedOverlay)
+    {
+        using var clock = new MotionTestClockScope();
+        var surface = ProbeSurface();
+        surface.CornerRadius = new CornerRadius(24, 0, 0, 0);
+        surface.StateLayerBrush = Brushes.Red;
+        surface.HoverStateLayerOpacity = 1;
+        var button = new Button
+        {
+            Width = 100, Height = 50,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Template = new FuncControlTemplate<Button>((_, _) => surface),
+        };
+        MaterialInteraction.SetIsInteractive(button, true);
+        var window = Show(button);
+        try
+        {
+            if (selectedOverlay)
+            {
+                ButtonSurfaceState.SetCheckedOverlayOpacity(surface, 1);
+                ButtonSurfaceState.SetIsChecked(surface, true);
+            }
+            else
+            {
+                var source = new MaterialInteractionSource();
+                MaterialInteraction.GetOrCreate(button).ConnectSource(source);
+                source.Emit(new MaterialInteractionEvent.HoverEnter());
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+                clock.AdvanceBy(TimeSpan.FromMilliseconds(500));
+            }
+            foreach (var rtl in new[] { false, true, false })
+            {
+                window.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+                window.UpdateLayout();
+                using var frame = window.CaptureRenderedFrame()!;
+                int X(int x) => rtl ? 159 - x : x;
+                Assert.Equal((255, 255, 255), PixelAt(frame, X(33), 58));
+                Assert.Equal((255, 0, 0), PixelAt(frame, X(126), 58));
+                Assert.Equal((255, 0, 0), PixelAt(frame, 80, 80));
+            }
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
     [InlineData(0, true, 1)]
     [InlineData(0, false, 0)]
     [InlineData(1.1, true, 3)]

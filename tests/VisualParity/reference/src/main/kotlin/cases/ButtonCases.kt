@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.ui.InternalComposeUiApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
 import androidx.compose.foundation.BorderStroke
@@ -32,7 +32,8 @@ data class ButtonConfig(val style:String="filled", val size:String="small", val 
     val enabled:Boolean=true, val dark:Boolean=false, val icon:String="none", val rtl:Boolean=false,
     val width:Double?=240.0, val custom:String="none", val baseline:Boolean=false,
     val action:String="none", val height:Double?=null, val empty:Boolean=false,
-    val contentWidth:Double=32.0, val contentHeight:Double=16.0, val requiredContentSize:Boolean=false, val morph:Boolean=true)
+    val contentWidth:Double=32.0, val contentHeight:Double=16.0, val requiredContentSize:Boolean=false, val morph:Boolean=true,
+    val insetRing:Boolean=false)
 
 @ParitySuite("button")
 class ButtonCases {
@@ -86,6 +87,12 @@ class ButtonCases {
                 "focus" -> {
                     focus(1000,true); sample("focus-event"); samplesAt(16000,45000,121000,180000)
                     focus(181000,false); sample("blur-event"); samplesAt(196000,331000,400000)
+                }
+                "focus-reverse" -> {
+                    focus(1000,true); samplesAt(16000,48000)
+                    focus(49000,false); samplesAt(64000)
+                    focus(65000,true); samplesAt(80000,160000,400000)
+                    focus(401000,false); samplesAt(416000,480000,800000)
                 }
                 "focus-hover", "hover-focus" -> {
                     if(config.action=="focus-hover") focus(1000,true) else event(1000,"move",center)
@@ -178,8 +185,10 @@ class ButtonCases {
 
         @Composable
         fun Content() {
-            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),
+                motionScheme=if(config.insetRing) MotionScheme.expressive() else MaterialTheme.motionScheme) {
+                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                    LocalRippleThemeConfiguration provides if(config.insetRing) RippleDefaults.InsetFocusRingThemeConfiguration else RippleDefaults.OpacityFocusThemeConfiguration) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) { ButtonContent() }
                 }
             }
@@ -291,7 +300,7 @@ class ButtonCases {
             }
             if(config.action in listOf("hover","focus-hover","hover-focus","press","quick","cancel","drag-back","reverse","disable","disabled","shape-change"))
                 buttonFields+=flag("hovered",hovered,definition="button.hovered",source="actual MutableInteractionSource active HoverInteraction set")
-            if(config.action in listOf("focus","focus-hover","hover-focus","space","enter"))
+            if(config.action in listOf("focus","focus-reverse","focus-hover","hover-focus","space","enter"))
                 buttonFields+=flag("focused",focused,definition="button.focused",source="Modifier.onFocusChanged")
             val points=mutableListOf(ProbePoint("button","button",null,buttonFields),containerPoint())
             val contentGeometry=config.width==null || config.width<64 || config.height!=null || config.icon!="none" || config.shape=="asymmetric" || config.custom=="padding"
@@ -376,4 +385,10 @@ class ButtonCases {
             }
         }
     }
+}
+
+@ParitySuite("button-focus")
+class ButtonFocusCases {
+    @ParityScenario("behavior")
+    suspend fun behavior(writer:CaptureWriter) = ButtonCases().behavior(writer)
 }

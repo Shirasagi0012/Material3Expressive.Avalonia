@@ -150,6 +150,9 @@ public sealed class MaterialSurface : Control
         // Avalonia Border includes its thickness in layout, so only this childless visual paints it.
         _outline = new SurfaceOutline
         {
+            // Visual-only layers do not inherit FlowDirection. Keep their local axes
+            // aligned with Surface instead of applying a second RTL mirror.
+            [!FlowDirectionProperty] = this[!FlowDirectionProperty],
             // Compose's border modifier surrounds the shape clip. Clipping the border
             // itself applies its rounded antialias coverage twice, especially in dark mode.
             ClipToBounds = false,
@@ -442,7 +445,11 @@ public sealed class MaterialSurface : Control
         var opacity = ButtonSurfaceState.GetIsChecked(this) == true ? ButtonSurfaceState.GetCheckedOverlayOpacity(this) : 0;
         if (_checkedOverlay is null && opacity > 0)
         {
-            _checkedOverlay = new Border { IsHitTestVisible = false };
+            _checkedOverlay = new Border
+            {
+                IsHitTestVisible = false,
+                [!FlowDirectionProperty] = this[!FlowDirectionProperty],
+            };
             VisualChildren.Add(_checkedOverlay);
             _checkedOverlay.Arrange(new Rect(Bounds.Size));
         }
@@ -718,6 +725,7 @@ public sealed class MaterialSurface : Control
         public InteractionOverlay(MaterialSurface owner)
         {
             _owner = owner;
+            this[!FlowDirectionProperty] = owner[!FlowDirectionProperty];
             IsHitTestVisible = false;
             Focusable = false;
         }

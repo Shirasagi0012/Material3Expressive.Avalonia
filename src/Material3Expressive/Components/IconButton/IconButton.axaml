@@ -502,6 +502,59 @@
       </Style>
     </ControlTheme>
 
+    <ControlTheme x:Key="MaterialVibrantIconToggleButtonTheme" TargetType="m3:IconToggleButton"
+                  BasedOn="{StaticResource MaterialStandardIconToggleButtonTheme}">
+      <Setter Property="Background">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeProperties.ToggleColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeProperties.ToggleColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+StandardIconToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MaterialOutlinedVibrantIconToggleButtonTheme" TargetType="m3:IconToggleButton"
+                  BasedOn="{StaticResource MaterialOutlinedIconToggleButtonTheme}">
+      <Setter Property="Background">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeProperties.ToggleColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.ContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.DisabledContainerColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.CheckedContainerColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Foreground">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeProperties.ToggleColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.ContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.DisabledContentColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconToggleButton.CheckedContentColor}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="BorderBrush">
+        <MultiBinding Converter="{x:Static m3:IconButtonThemeProperties.ToggleColorConverter}">
+          <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="IsChecked" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconButton.OutlineColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconButton.DisabledOutlineColor}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+OutlinedIconButton.OutlineColor}" />
+        </MultiBinding>
+      </Setter>
+    </ControlTheme>
+
     <!-- The implicit IconButton theme IS standard (M3 baseline). BasedOn inherits the setters and
          nested styles, and a derived theme's own setters win over the inherited ones on ties. -->
     <ControlTheme x:Key="{x:Type m3:IconButton}" TargetType="m3:IconButton"

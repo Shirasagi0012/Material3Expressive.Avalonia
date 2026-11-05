@@ -11,15 +11,16 @@ import androidx.compose.ui.*
 import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.platform.LocalLayoutDirection
 import kotlinx.serialization.Serializable
 
 @Serializable data class IconToggleConfig(val selected:Boolean=false,val enabled:Boolean=true,val dark:Boolean=false,val action:String="none",
-    val style:String="standard",val size:String="small",val widthOption:String="uniform",val morph:Boolean=false,val preset:String="none")
+    val style:String="standard",val size:String="small",val widthOption:String="uniform",val morph:Boolean=false,val preset:String="none",val vibrant:Boolean=false,val rtl:Boolean=false)
 @ParitySuite("icon-toggle-button")
 class IconToggleButtonCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
-    private suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
+    internal suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
         val config=writer.readConfig<IconToggleConfig>()
         ComposeHost(writer,280,220).use {host ->
             var selected by mutableStateOf(config.selected);var enabled by mutableStateOf(config.enabled);var requests=0
@@ -27,7 +28,7 @@ class IconToggleButtonCases {
             val button=Probe()
             host.mount {
                 MaterialTheme(colorScheme=if(config.dark)darkColorScheme()else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
-                    CompositionLocalProvider(LocalContentColor provides Color(0xff245a80)) {
+                    CompositionLocalProvider(LocalContentColor provides Color(0xff245a80), LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                         Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
                             val width=when(widthOption) { "narrow" -> IconButtonDefaults.IconButtonWidthOption.Narrow; "wide" -> IconButtonDefaults.IconButtonWidthOption.Wide; else -> IconButtonDefaults.IconButtonWidthOption.Uniform }
                             val dimensions=when(config.size) {
@@ -48,12 +49,15 @@ class IconToggleButtonCases {
                             // Approved constructor semantics: the pinned default helper reads the
                             // standard cache by mistake. Explicit slots isolate this accepted correction
                             // without patching the reference library or depending on suite call order.
-                            val outlinedColors=if(config.style=="outlined") IconToggleButtonColors(
+                            val outlinedColors=if(config.vibrant && config.style=="outlined") IconButtonDefaults.outlinedIconToggleButtonVibrantColors()
+                                else if(config.style=="outlined") IconToggleButtonColors(
                                 containerColor=Color.Transparent, contentColor=LocalContentColor.current,
                                 disabledContainerColor=Color.Transparent,
                                 disabledContentColor=LocalContentColor.current.copy(alpha=0.38f),
                                 checkedContainerColor=MaterialTheme.colorScheme.inverseSurface,
                                 checkedContentColor=contentColorFor(MaterialTheme.colorScheme.inverseSurface)) else null
+                            val standardColors=if(config.vibrant) IconButtonDefaults.iconToggleButtonVibrantColors() else IconButtonDefaults.iconToggleButtonColors()
+                            val outline=if(config.vibrant) IconButtonDefaults.outlinedIconToggleButtonVibrantBorder(enabled,selected) else IconButtonDefaults.outlinedIconToggleButtonBorder(enabled,selected)
                             val change:(Boolean)->Unit={requests++;if(config.action!="ignore")selected=it}
                             if(config.morph || config.preset!="none") {
                                 val square=when(config.size) { "xsmall","small" -> MaterialTheme.shapes.medium; "medium" -> MaterialTheme.shapes.large; else -> MaterialTheme.shapes.extraLarge }
@@ -65,15 +69,15 @@ class IconToggleButtonCases {
                                     "filled" -> FilledIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,content=content)
                                     // The expressive overload defaults to vibrant colors AND border;
                                     // this theme keeps the ordinary ambient defaults with opt-in shapes.
-                                    "outlined" -> OutlinedIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,colors=outlinedColors!!,border=IconButtonDefaults.outlinedIconToggleButtonBorder(enabled,selected),content=content)
+                                    "outlined" -> OutlinedIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,colors=outlinedColors!!,border=outline,content=content)
                                     "tonal" -> FilledTonalIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,content=content)
-                                    else -> IconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,colors=IconButtonDefaults.iconToggleButtonColors(),content=content)
+                                    else -> IconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,shapes=shapes,colors=standardColors,content=content)
                                 }
                             } else when(config.style) {
                                 "filled" -> FilledIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,content=content)
-                                "outlined" -> OutlinedIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,colors=outlinedColors!!,content=content)
+                                "outlined" -> OutlinedIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,colors=outlinedColors!!,border=outline,content=content)
                                 "tonal" -> FilledTonalIconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,content=content)
-                                else -> IconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,content=content)
+                                else -> IconToggleButton(checked=selected,onCheckedChange=change,enabled=enabled,modifier=modifier,colors=standardColors,content=content)
                             }
                         }
                     }
@@ -109,4 +113,10 @@ class IconToggleButtonCases {
             }
         }
     }
+}
+
+@ParitySuite("icon-toggle-vibrant")
+class IconToggleVibrantCases {
+    @ParityScenario("static") suspend fun static(writer:CaptureWriter)=IconToggleButtonCases().capture(writer,false)
+    @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=IconToggleButtonCases().capture(writer,true)
 }

@@ -236,6 +236,14 @@ C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 
 ## 使用边界
 
+焦点环可以与显式按压形变组合，环的轮廓随按钮当前形状变化：
+
+```xml
+<Button Content="保存" CornerRadius="12"
+        m3:MaterialButton.PressedCornerRadius="8"
+        m3:MaterialInteraction.FocusFeedback="InsetRing" />
+```
+
 - 默认键盘焦点反馈为状态层；可通过 `m3:MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环，支持四角不等圆角。继承配置、颜色和尺寸见 [交互反馈](../../Foundation/Interaction/README.md)；主题关闭了原生 `FocusAdorner`
 - 普通 Button 不提供选中/切换状态，需要此行为时见 [ToggleButton](../ToggleButton/README.md)
 - 默认尺寸与 Padding 未实现上游 precision-pointer 紧凑分支；需要更紧凑布局时可显式覆盖尺寸与 `Padding`

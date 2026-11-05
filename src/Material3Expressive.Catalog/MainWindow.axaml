@@ -164,6 +164,8 @@
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <m3:IconToggleButton Symbol="Favorite" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Favorite" />
                     <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Filled favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialVibrantIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Vibrant favorite" />
+                    <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialOutlinedVibrantIconToggleButtonTheme}" Classes="morph" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Vibrant outlined favorite" />
                     <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialOutlinedIconToggleButtonTheme}" Classes="morph" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Outlined favorite" />
                     <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialTonalIconToggleButtonTheme}" IsChecked="True" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Tonal favorite" />
                     <m3:IconToggleButton Symbol="Favorite" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" WidthOption="Wide" CheckedCornerRadius="12" m3:MaterialButton.PressedCornerRadius="8" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Shape-changing favorite" />

@@ -190,6 +190,8 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
 
 可选 InsetRing 已由 Surface 的独立视觉部件接入；配置与通用维护规则见
 [Interaction](../../Foundation/Interaction/README.md)。默认仍为 Opacity，原生 FocusAdorner 保持关闭。
+RTL 非对称描边曾因纯视觉子层缺少方向继承而与背景反向；已在 Surface 内绑定各层的方向，
+保留公开圆角值与既有描边算法。`button-focus` 同时检查描边、悬停状态层、焦点环和按压轮廓的组合。
 
 ### 尚未实现
 
@@ -212,7 +214,8 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
 - 重叠波纹的部分 Compose 重复采集/额外被动截图有单通道差；Avalonia 对应自检稳定。
   因此这些场景未达到稳定双端验收，不修改帧、基线或容差规避。
 
-- Button 全部样式/尺寸/形变组合的焦点环尚未全部进行双端验证
+- 焦点环的五种样式 × 五档尺寸 × 圆形/方圆角、快速反向、键盘按压固定/变形及 RTL 非对称悬停
+  已有双端矩阵；任意自定义形状、尺寸和资源动态组合仍未经完整验证
 
 - 既有记录中的属性变更当帧即时更新、替换 pressed shape 后状态层像素差异仍未解决，不能列为已接受偏离
 - `dynamic.repress` 的 Compose 普通重复采集曾出现至多 1 个通道值的像素不稳定；保留为参考采集问题，
@@ -226,6 +229,16 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
 阴影坐标接入差异只在各自共享决定的范围内接受。其他失败不会因为执行了回归而获得授权。
 
 ### 可追踪的验证入口
+
+`button-focus` 的 70 例、720 个采样已完成（`20261105-042758-7e58b61a`）：48 equal、
+19 withinTolerance、3 different；执行错误为零，双端重复/额外截图均稳定，所有截图在现有门禁内。
+三个 different 是 Filled / Tonal / Elevated 的焦点与悬停组合中 shadowElevation 的精确数值尾差，
+最大约 `5.01e-7` DIP；没有舍入读数或调整容差。该矩阵显式使用相同的 Secondary / OnSecondary
+及 Expressive MotionScheme。RTL 非对称 Outlined 的原描边翻转已修复；历史失败产物保留。
+
+```powershell
+./tests/VisualParity/parity.ps1 self-test --family button-focus
+```
 
 交互源接入后的既有 `button` 191 例复测完成：132 equal、35 withinTolerance、24 different，
 执行错误为零；190 例自检稳定，另 1 例参考捕获不稳定。属性变更当帧、pressed shape 替换、

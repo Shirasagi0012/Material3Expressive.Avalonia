@@ -103,9 +103,11 @@ remembered bool、elevation 的 remembered 列表和 indication 分开。替换�
 
 ## 验证入口
 
-交互源接入后的既有 `split-button` 99 例复测完成：50 equal、30 withinTolerance、19 different，
-执行错误为零，重复捕获与额外被动截图稳定。different 仍包括 Enter 时机、属性变更当帧及 hover 高度微差；
-这不是对未决差异的新接受。
+Surface 视觉子层方向修正后的 `split-button` 107 例、405 个采样复测完成：50 equal、31 withinTolerance、
+26 different，执行错误为零，重复捕获与额外被动截图稳定（`20261105-042829-b96dfc3b`）。
+新增八例为四种外观的 RTL 选中及 Leading 悬停；选中后的形变/覆盖层采样均在现有画面门禁内，
+四例仍保留 1000µs 赋值当帧的状态/绘制差异，三例悬停仍有高度数值尾差。原有 99 例的状态计数不变。
+其余 different 仍包括 Enter 时机、属性变更当帧及 hover 高度微差；这不是对未决差异的新接受。
 
 - [控件测试](../../../../tests/Material3Expressive.Tests/ToggleSplitButtonTests.cs)：双区独立输入、尾部原生切换、共同布局、窄宽溢出、光学偏移和选中动画中修改非活动形状；同时覆盖 Toggle 生命周期；[ButtonConfigurationTests](../../../../tests/Material3Expressive.Tests/ButtonConfigurationTests.cs) 检查条件默认与用户 Style 优先级。
 - [Avalonia 双端用例](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/SplitButtonCases.cs) /

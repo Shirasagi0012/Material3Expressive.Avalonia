@@ -67,6 +67,8 @@ public class IconToggleButtonTests
     [InlineData("Standard")]
     [InlineData("Filled")]
     [InlineData("Tonal")]
+    [InlineData("Vibrant")]
+    [InlineData("OutlinedVibrant")]
     public void PointerAndAutomation_RequestState_AndRespectDisabled(string variant)
     {
         using var clock = new MotionTestClockScope();

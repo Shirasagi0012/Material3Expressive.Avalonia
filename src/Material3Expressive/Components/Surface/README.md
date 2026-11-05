@@ -25,6 +25,7 @@
 ## 变体与属性
 
 - `CornerRadius` 同时影响背景、内容裁剪、描边和阴影；支持非对称圆角
+- RTL 下描边与交互反馈跟随表面的同一轮廓，运行时改变 `FlowDirection` 也会同步；非对称圆角示例见 Catalog 的 **Inset focus ring / RTL outline**
 - `Padding` 消耗内容布局空间；`BorderThickness` 只在表面内绘制，不缩小内容或增加期望尺寸
 - `ShadowElevation` 是本层的阴影高度，单位 DIP，默认 0；`ShadowColor` 为 null 时取主题 Shadow
 - `TonalElevation` 改变表面色，并在嵌套 Surface 中累积；只有背景为当前主题精确 Surface 颜色的纯色画刷才着色，SurfaceContainer 或自定义颜色不变

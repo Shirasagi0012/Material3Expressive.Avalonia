@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.ui.InternalComposeUiApi::class)
 package parity
 
 import androidx.compose.foundation.BorderStroke
@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 data class IconButtonConfig(val style:String="filled", val size:String="small", val shape:String="round",
     val enabled:Boolean=true, val dark:Boolean=false, val rtl:Boolean=false, val width:Double?=null,
     val height:Double?=null, val pressedRadius:Double?=null, val action:String="none", val custom:String="none",
-    val empty:Boolean=false, val ambientColor:String?=null, val widthOption:String="uniform", val vibrant:Boolean=false)
+    val empty:Boolean=false, val ambientColor:String?=null, val widthOption:String="uniform", val vibrant:Boolean=false, val insetRing:Boolean=false)
 
 @ParitySuite("icon-button")
 class IconButtonCases {
@@ -77,6 +77,12 @@ class IconButtonCases {
                     event(1000,"move",center); sample("hover-event"); samplesAt(16000,75000,180000)
                     event(181000,"move",outside); sample("exit-event"); samplesAt(196000,400000)
                 }
+                "focus-reverse" -> {
+                    focus(1000,true); samplesAt(16000,48000)
+                    focus(49000,false); samplesAt(64000)
+                    focus(65000,true); samplesAt(80000,160000,400000)
+                    focus(401000,false); samplesAt(416000,480000,800000)
+                }
                 "focus" -> {
                     focus(1000,true); sample("focus-event"); samplesAt(16000,45000,180000)
                     focus(181000,false); sample("blur-event"); samplesAt(196000,400000)
@@ -85,6 +91,12 @@ class IconButtonCases {
                     focus(1000,true); samplesAt(16000,121000)
                     key(122000,true); sample("key-down"); samplesAt(138000,197000,347000)
                     key(348000,false); sample("key-up"); samplesAt(364000,498000,700000)
+                }
+                "ambient-hover" -> {
+                    event(1000,"move",center); samplesAt(16000,180000)
+                    advanceTo(181000); scene.ambientColor="#800080"
+                    writer.record(181000,"mutation","ambient changed while hovered"); host.draw(); sample("mutation"); samplesAt(192000,400000)
+                    event(401000,"move",outside); samplesAt(416000,600000)
                 }
                 "ambient" -> {
                     advanceTo(1000); scene.ambientColor="#800080"
@@ -157,8 +169,10 @@ class IconButtonCases {
         var paintedColor:Color?=null
 
         @Composable fun Content() {
-            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),
+                motionScheme=if(config.insetRing) MotionScheme.expressive() else MaterialTheme.motionScheme) {
+                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                    LocalRippleThemeConfiguration provides if(config.insetRing) RippleDefaults.InsetFocusRingThemeConfiguration else RippleDefaults.OpacityFocusThemeConfiguration) {
                     @Composable fun Scene() { Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) { ButtonContent() } }
                     val ambientHex=ambientColor?.removePrefix("#")
                     if(ambientHex!=null) {
@@ -288,4 +302,9 @@ class IconButtonCases {
         private val CornerComponents=listOf("topLeft.x","topLeft.y","topRight.x","topRight.y","bottomRight.x","bottomRight.y","bottomLeft.x","bottomLeft.y")
         private val Arrow by lazy { Path().apply { moveTo(2f,3f); lineTo(11f,3f); lineTo(11f,1f); lineTo(18f,8f); lineTo(11f,15f); lineTo(11f,12f); lineTo(2f,12f); close() } }
     }
+}
+
+@ParitySuite("icon-button-focus")
+class IconButtonFocusCases {
+    @ParityScenario("behavior") suspend fun behavior(writer:CaptureWriter)=IconButtonCases().behavior(writer)
 }

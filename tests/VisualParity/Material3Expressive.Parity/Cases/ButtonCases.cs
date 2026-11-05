@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Tokens;
 using SkiaSharp;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -20,7 +21,7 @@ public sealed record ButtonConfig(string Style = "filled", string Size = "small"
     bool Enabled = true, bool Dark = false, string Icon = "none", bool Rtl = false,
     double? Width = 240, string Custom = "none", bool Baseline = false, string Action = "none",
     double? Height = null, bool Empty = false, double ContentWidth = 32, double ContentHeight = 16,
-    bool RequiredContentSize = false, bool Morph = true);
+    bool RequiredContentSize = false, bool Morph = true, bool InsetRing = false);
 
 [ParitySuite("button")]
 public sealed class ButtonCases
@@ -220,6 +221,11 @@ public sealed class ButtonCases
             case "focus":
                 Focus(1000, true); Sample("focus-event"); SamplesAt(16000, 45000, 121000, 180000);
                 Focus(181000, false); Sample("blur-event"); SamplesAt(196000, 331000, 400000); break;
+            case "focus-reverse":
+                Focus(1000, true); SamplesAt(16000, 48000);
+                Focus(49000, false); SamplesAt(64000);
+                Focus(65000, true); SamplesAt(80000, 160000, 400000);
+                Focus(401000, false); SamplesAt(416000, 480000, 800000); break;
             case "focus-hover":
             case "hover-focus":
                 if (config.Action == "focus-hover") Focus(1000, true); else Event(1000, "move", center);
@@ -317,6 +323,7 @@ public sealed class ButtonCases
             this.host = host; this.config = config; this.writer = writer;
             SetTheme(config.Dark);
             Button = new Button { IsEnabled = config.Enabled, FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+            if (config.InsetRing) MaterialInteraction.SetFocusFeedback(Button, FocusFeedback.InsetRing);
             Button.Theme = (ControlTheme)host.Window.FindResource(config.Style switch
             {
                 "filled" => "MaterialFilledButtonTheme", "elevated" => "MaterialElevatedButtonTheme",
@@ -344,7 +351,16 @@ public sealed class ButtonCases
             Button.Click += (_, _) => clicks++;
         }
 
-        public void SetTheme(bool dark) => CaseDefaults.SetThemeColors(host, dark);
+        public void SetTheme(bool dark)
+        {
+            CaseDefaults.SetThemeColors(host, dark);
+            if (config.InsetRing)
+            {
+                // The ring consumes both colors; use the actual Compose scheme inputs.
+                host.Window.Resources[Sys.Color.Secondary] = Color.Parse(dark ? "#CCC2DC" : "#625B71");
+                host.Window.Resources[Sys.Color.OnSecondary] = Color.Parse(dark ? "#332D41" : "#FFFFFF");
+            }
+        }
 
         public void ConfigureContent(string? size = null)
         {
@@ -473,7 +489,7 @@ public sealed class ButtonCases
             }
             if (config.Action is "hover" or "focus-hover" or "hover-focus" or "press" or "quick" or "cancel" or "drag-back" or "reverse" or "disable" or "disabled" or "shape-change")
                 buttonFields.Add(Measurement.Flag("hovered", Interaction("Hovered"), definition: "button.hovered", source: "MaterialSurface._interactionController.Interaction active Hovered feedback flag"));
-            if (config.Action is "focus" or "focus-hover" or "hover-focus" or "space" or "enter")
+            if (config.Action is "focus" or "focus-reverse" or "focus-hover" or "hover-focus" or "space" or "enter")
                 buttonFields.Add(Measurement.Flag("focused", Button.IsFocused, definition: "button.focused", source: "Button.IsFocused"));
             var points = new List<ProbePoint>
             {
@@ -536,4 +552,29 @@ public sealed class ButtonCases
         }
     }
     static readonly string[] CornerComponents = ["topLeft.x", "topLeft.y", "topRight.x", "topRight.y", "bottomRight.x", "bottomRight.y", "bottomLeft.x", "bottomLeft.y"];
+}
+
+[ParitySuite("button-focus")]
+public sealed class ButtonFocusCases
+{
+    public static IEnumerable<CaseData<ButtonConfig>> Configurations()
+    {
+        foreach (var style in new[] { "filled", "elevated", "tonal", "outlined", "text" })
+        {
+            foreach (var size in new[] { "xsmall", "small", "medium", "large", "xlarge" })
+            foreach (var shape in new[] { "round", "square" })
+                yield return new($"dynamic.{style}.{size}.{shape}", "Inset focus entry and exit across sizes and shapes",
+                    new(style, size, shape, Action: "focus", InsetRing: true));
+            yield return new($"dynamic.{style}.reverse", "Inset focus reverses before entry completes",
+                new(style, Shape: "asymmetric", Action: "focus-reverse", Dark: true, Rtl: true, InsetRing: true));
+            yield return new($"dynamic.{style}.hover-asymmetric", "RTL feedback layers share the asymmetric surface outline",
+                new(style, Shape: "asymmetric", Action: "focus-hover", Rtl: true, InsetRing: true));
+            foreach (var morph in new[] { false, true })
+                yield return new($"dynamic.{style}.space.{(morph ? "morph" : "fixed")}", "Keyboard press while the inset ring is focused",
+                    new(style, Shape: "square", Action: "space", Morph: morph, InsetRing: true));
+        }
+    }
+
+    [ParityScenario("behavior", Data = nameof(Configurations))]
+    public Task Behavior(CaptureWriter writer) => new ButtonCases().Behavior(writer);
 }

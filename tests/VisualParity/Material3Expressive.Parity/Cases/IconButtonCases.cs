@@ -10,6 +10,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Foundation.Interaction;
 using SkiaSharp;
 
 namespace Material3Expressive.Parity;
@@ -17,7 +18,7 @@ namespace Material3Expressive.Parity;
 public sealed record IconButtonConfig(string Style = "filled", string Size = "small", string Shape = "round",
     bool Enabled = true, bool Dark = false, bool Rtl = false, double? Width = null, double? Height = null,
     double? PressedRadius = null, string Action = "none", string Custom = "none", bool Empty = false,
-    string? AmbientColor = null, string WidthOption = "uniform", bool Vibrant = false);
+    string? AmbientColor = null, string WidthOption = "uniform", bool Vibrant = false, bool InsetRing = false);
 
 [ParitySuite("icon-button")]
 public sealed class IconButtonCases
@@ -88,6 +89,9 @@ public sealed class IconButtonCases
         foreach (var style in new[] { "standard", "outlined" })
         foreach (var enabled in new[] { false, true })
             yield return Data($"dynamic.ambient.{style}.{(enabled ? "enabled" : "disabled")}", new(style, Action: "ambient", Enabled: enabled, AmbientColor: "#40208070"));
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var action in new[] { "press", "hover", "focus", "ambient-hover" })
+            yield return Data($"dynamic.vibrant-ink.{style}.{action}", new(style, Action: action, AmbientColor: "#40208070", Vibrant: true));
         // Shape clamping and content dimensions have independent size branches.
         foreach (var size in Sizes.Where(s => s != "small"))
             yield return Data($"dynamic.morph-press.filled.{size}", new(Size: size, PressedRadius: 8, Action: "press"));
@@ -156,6 +160,11 @@ public sealed class IconButtonCases
             case "hover":
                 Event(1000, "move", center); Sample("hover-event"); SamplesAt(16000, 75000, 180000);
                 Event(181000, "move", outside); Sample("exit-event"); SamplesAt(196000, 400000); break;
+            case "focus-reverse":
+                Focus(1000, true); SamplesAt(16000, 48000);
+                Focus(49000, false); SamplesAt(64000);
+                Focus(65000, true); SamplesAt(80000, 160000, 400000);
+                Focus(401000, false); SamplesAt(416000, 480000, 800000); break;
             case "focus":
                 Focus(1000, true); Sample("focus-event"); SamplesAt(16000, 45000, 180000);
                 Focus(181000, false); Sample("blur-event"); SamplesAt(196000, 400000); break;
@@ -163,6 +172,11 @@ public sealed class IconButtonCases
                 Focus(1000, true); SamplesAt(16000, 121000);
                 Key(122000, true); Sample("key-down"); SamplesAt(138000, 197000, 347000);
                 Key(348000, false); Sample("key-up"); SamplesAt(364000, 498000, 700000); break;
+            case "ambient-hover":
+                Event(1000, "move", center); SamplesAt(16000, 180000);
+                AdvanceTo(181000); TextElement.SetForeground(host.Window, Brushes.Purple);
+                writer.Record(181000, "mutation", "ambient changed while hovered"); host.Draw(); Sample("mutation"); SamplesAt(192000, 400000);
+                Event(401000, "move", outside); SamplesAt(416000, 600000); break;
             case "ambient":
                 AdvanceTo(1000); TextElement.SetForeground(host.Window, Brushes.Purple);
                 writer.Record(1000, "mutation", "ambient changed"); host.Draw(); Sample("mutation"); SamplesAt(16000, 400000);
@@ -233,6 +247,13 @@ public sealed class IconButtonCases
             Button = new IconButton { IsEnabled = config.Enabled, FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
                 WidthOption = Enum.Parse<IconButtonWidthOption>(config.WidthOption, true),
                 Symbol = config.Empty ? MaterialSymbols.MaterialSymbolCodepoint.None : MaterialSymbols.MaterialSymbolCodepoint.Home };
+            if (config.InsetRing)
+            {
+                MaterialInteraction.SetFocusFeedback(Button, FocusFeedback.InsetRing);
+                // Match both default ring colors with the fixed Compose scheme (not MCU).
+                host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Secondary] = Color.Parse(config.Dark ? "#CCC2DC" : "#625B71");
+                host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.OnSecondary] = Color.Parse(config.Dark ? "#332D41" : "#FFFFFF");
+            }
             Button.Theme = (ControlTheme)host.Window.FindResource(config.Vibrant
                 ? config.Style == "outlined" ? "MaterialOutlinedVibrantIconButtonTheme" : "MaterialVibrantIconButtonTheme"
                 : config.Style switch
@@ -334,4 +355,24 @@ public sealed class IconButtonCases
         }
     }
     static readonly string[] CornerComponents = ["topLeft.x", "topLeft.y", "topRight.x", "topRight.y", "bottomRight.x", "bottomRight.y", "bottomLeft.x", "bottomLeft.y"];
+}
+
+[ParitySuite("icon-button-focus")]
+public sealed class IconButtonFocusCases
+{
+    public static IEnumerable<CaseData<IconButtonConfig>> Configurations()
+    {
+        foreach (var style in new[] { "standard", "filled", "tonal", "outlined", "vibrant", "outlined-vibrant" })
+        {
+            var actualStyle = style == "vibrant" ? "standard" : style == "outlined-vibrant" ? "outlined" : style;
+            var vibrant = style.Contains("vibrant");
+            foreach (var size in new[] { "xsmall", "small", "medium", "large", "xlarge" })
+                yield return new($"dynamic.{style}.{size}", "Inset focus entry and exit at each size",
+                    new(actualStyle, size, Action: "focus", Vibrant: vibrant, InsetRing: true));
+            yield return new($"dynamic.{style}.reverse", "Inset focus reverses before entry completes",
+                new(actualStyle, Shape: "square", Action: "focus-reverse", Vibrant: vibrant, InsetRing: true, Dark: true, Rtl: true, WidthOption: "wide"));
+        }
+    }
+    [ParityScenario("behavior", Data = nameof(Configurations))]
+    public Task Behavior(CaptureWriter writer) => new IconButtonCases().Behavior(writer);
 }

@@ -12,7 +12,7 @@ using Material3Expressive.Foundation.Rendering;
 namespace Material3Expressive.Parity;
 
 public sealed record IconToggleConfig(bool Selected = false, bool Enabled = true, bool Dark = false, string Action = "none",
-    string Style = "standard", string Size = "small", string WidthOption = "uniform", bool Morph = false, string Preset = "none");
+    string Style = "standard", string Size = "small", string WidthOption = "uniform", bool Morph = false, string Preset = "none", bool Vibrant = false, bool Rtl = false);
 
 [ParitySuite("icon-toggle-button")]
 public sealed class IconToggleButtonCases
@@ -64,7 +64,7 @@ public sealed class IconToggleButtonCases
     [ParityScenario("dynamic", Data = nameof(DynamicConfigurations))]
     public Task Dynamic(CaptureWriter writer) => Capture(writer, true);
 
-    private static async Task Capture(CaptureWriter writer, bool dynamic)
+    internal static async Task Capture(CaptureWriter writer, bool dynamic)
     {
         var config = writer.Metadata.ReadConfig<IconToggleConfig>();
         await using var host = new AvaloniaHost(writer, 280, 220);
@@ -79,12 +79,14 @@ public sealed class IconToggleButtonCases
         var button = new IconToggleButton { Symbol = MaterialSymbols.MaterialSymbolCodepoint.Favorite,
             IsChecked = config.Selected, IsEnabled = config.Enabled,
             WidthOption = Enum.Parse<IconButtonWidthOption>(config.WidthOption, true) };
-        button.Theme = (ControlTheme)host.Window.FindResource($"Material{char.ToUpperInvariant(config.Style[0]) + config.Style[1..]}IconToggleButtonTheme")!;
+        var theme = config.Vibrant ? config.Style == "outlined" ? "OutlinedVibrant" : "Vibrant" : char.ToUpperInvariant(config.Style[0]) + config.Style[1..];
+        button.Theme = (ControlTheme)host.Window.FindResource($"Material{theme}IconToggleButtonTheme")!;
         if (config.Size != "small") button.Classes.Add(config.Size);
         if (config.Preset != "none") button.Classes.Add("morph");
         if (config.Preset == "square") button.Classes.Add("square");
         if (config.Morph) { button.CheckedCornerRadius = new CornerRadius(12); MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8)); }
         var root = CaseDefaults.Center(button);
+        root.FlowDirection = config.Rtl ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
         TextElement.SetForeground(root, new SolidColorBrush(Color.Parse("#FF245A80")));
         var requests = 0;
         button.CheckedChangeRequested += (_, e) => { requests++; if (config.Action != "ignore") button.IsChecked = e.Value; };
@@ -133,4 +135,35 @@ public sealed class IconToggleButtonCases
         protected override Type StyleKeyOverride => typeof(MaterialSymbol);
         public override void Render(DrawingContext context) => context.FillRectangle(Foreground!, new Rect(4, 4, Bounds.Width - 8, Bounds.Height - 8));
     }
+}
+
+[ParitySuite("icon-toggle-vibrant")]
+public sealed class IconToggleVibrantCases
+{
+    public static IEnumerable<CaseData<IconToggleConfig>> StaticConfigurations()
+    {
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var selected in new[] { false, true })
+        foreach (var enabled in new[] { false, true })
+        foreach (var dark in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+            yield return new($"static.{style}.{(selected ? "checked" : "unchecked")}.{(enabled ? "enabled" : "disabled")}.{(dark ? "dark" : "light")}.{(rtl ? "rtl" : "ltr")}",
+                "Vibrant toggle colors and border", new(selected, enabled, dark, Style: style, Vibrant: true, Rtl: rtl));
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var size in new[] { "xsmall", "medium", "large", "xlarge" })
+            yield return new($"static.shape.{style}.{size}", "Vibrant checked shape and dimensions",
+                new(Selected: true, Style: style, Size: size, WidthOption: "wide", Preset: "square", Vibrant: true));
+    }
+    public static IEnumerable<CaseData<IconToggleConfig>> DynamicConfigurations()
+    {
+        foreach (var style in new[] { "standard", "outlined" })
+        foreach (var action in new[] { "accept", "ignore", "disable", "reverse", "cancel", "width" })
+        foreach (var rtl in new[] { false, true })
+            yield return new($"dynamic.{style}.{action}.{(rtl ? "rtl" : "ltr")}", "Vibrant toggle input and interrupted shape",
+                new(Action: action, Style: style, Morph: true, Vibrant: true, Rtl: rtl));
+    }
+    [ParityScenario("static", Data = nameof(StaticConfigurations))]
+    public Task Static(CaptureWriter writer) => IconToggleButtonCases.Capture(writer, false);
+    [ParityScenario("dynamic", Data = nameof(DynamicConfigurations))]
+    public Task Dynamic(CaptureWriter writer) => IconToggleButtonCases.Capture(writer, true);
 }

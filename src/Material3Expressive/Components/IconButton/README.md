@@ -82,6 +82,21 @@ Primary / OnPrimary；Tonal 未选中使用 SecondaryContainer / OnSecondaryCont
 Secondary / OnSecondary。Outlined 未选中时使用透明容器与父级内容色，选中使用 InverseSurface 及其
 `contentColorFor` 内容色；选中时移除默认描边（禁用的选中态也无描边）。禁用优先于选中配色，颜色立即更新，没有颜色过渡。
 
+Vibrant 配色使用 `MaterialVibrantIconToggleButtonTheme` 或 `MaterialOutlinedVibrantIconToggleButtonTheme`。
+两者未选中使用 OnSurfaceVariant，禁用使用 OnSurface 的 DisabledContentOpacity；Standard 选中使用 Primary，
+Outlined 选中使用 InverseSurface / InverseOnSurface，未选中描边使用 OutlineVariant。禁用的选中态同样不绘制描边。
+Standard 的交互反馈取父级内容色，Outlined 的反馈取当前 Foreground。它们与普通切换主题共享受控选择及形变规则。
+
+```xml
+<m3:IconToggleButton Symbol="Favorite" Classes="morph"
+                     Theme="{StaticResource MaterialOutlinedVibrantIconToggleButtonTheme}"
+                     IsChecked="{Binding IsFavorite}" CheckedChangeRequested="ChangeFavorite"
+                     AutomationProperties.Name="收藏" />
+```
+
+六槽颜色可分别通过 `Comp.StandardIconToggleButton` / `Comp.OutlinedIconToggleButton` 局部覆盖；
+这些槽仅供新增 Vibrant 切换主题使用，普通主题仍读取内容环境。
+
 ```xml
 <m3:IconToggleButton Symbol="Favorite" Classes="morph"
                      Theme="{StaticResource MaterialOutlinedIconToggleButtonTheme}"

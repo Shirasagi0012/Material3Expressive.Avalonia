@@ -5,15 +5,19 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class SurfaceConfig(val shape:String="round",val layer:String="fill",val dark:Boolean=false,
-    val kind:String="surface",val x:Double=130.0,val y:Double=95.0,val elevation:Double=0.0)
+    val kind:String="surface",val x:Double=130.0,val y:Double=95.0,val elevation:Double=0.0,val rtl:Boolean=false)
 
 @ParitySuite("surface")
 class SurfaceCases {
@@ -24,13 +28,15 @@ class SurfaceCases {
             host.mount {
                 MaterialTheme(colorScheme=lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                     Box(Modifier.fillMaxSize().background(Color.White)) {
-                        val modifier=Modifier.offset(config.x.toFloat().dp,config.y.toFloat().dp).then(probe.modifier()).size(100.dp,50.dp)
+                        val modifier=Modifier.absoluteOffset(config.x.toFloat().dp,config.y.toFloat().dp).then(probe.modifier()).size(100.dp,50.dp)
                         val color=if(config.dark) Color(0xFF211F26) else Color(0xFFEADDFF)
                         val shape=when(config.shape) {
+                            "asymmetric" -> RoundedCornerShape(24.dp,8.dp,0.dp,16.dp)
                             "asymmetric-large" -> AbsoluteRoundedCornerShape(80.dp,40.dp,0.dp,0.dp)
                             "horizontal-overlap" -> AbsoluteRoundedCornerShape(80.dp,80.dp,0.dp,0.dp)
                             else -> AbsoluteRoundedCornerShape(16.dp)
                         }
+                        CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                         when(config.kind) {
                             "button" -> ElevatedButton(onClick={},modifier=modifier,shape=shape,
                                 colors=ButtonDefaults.elevatedButtonColors(containerColor=color),
@@ -42,6 +48,7 @@ class SurfaceCases {
                                 border=if(config.layer=="border") BorderStroke(1.1.dp,Color.Red) else null) {
                                 if(config.layer=="content") Box(Modifier.fillMaxSize().background(Color.Blue))
                             }
+                        }
                         }
                     }
                 }

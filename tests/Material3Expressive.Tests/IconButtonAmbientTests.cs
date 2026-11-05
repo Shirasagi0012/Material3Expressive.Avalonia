@@ -139,6 +139,68 @@ public class IconButtonAmbientTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void VibrantToggle_ColorsBorderAndInk_FollowStateResourcesAndOverrides(bool outlined)
+    {
+        using var clock = new MotionTestClockScope();
+        var button = new IconToggleButton();
+        var root = new Border { Child = button };
+        TextElement.SetForeground(root, Brushes.Blue);
+        var window = Show(root);
+        try
+        {
+            button.Theme = (ControlTheme)window.FindResource(outlined ? "MaterialOutlinedVibrantIconToggleButtonTheme" : "MaterialVibrantIconToggleButtonTheme")!;
+            Flush(window);
+            var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            Assert.Equal(ButtonThemeFixture.SchemeColor(false, s => s.OnSurfaceVariant), ColorOf(button.Foreground));
+            Assert.Equal(Colors.Transparent, ColorOf(button.Background));
+            Assert.Equal(outlined ? ColorOf(button.Foreground) : Colors.Blue, ColorOf(surface.StateLayerBrush));
+            if (outlined)
+            {
+                Assert.Equal(new Thickness(1), button.BorderThickness);
+                Assert.Equal(ButtonThemeFixture.SchemeColor(false, s => s.OutlineVariant), ColorOf(button.BorderBrush));
+            }
+            button.IsChecked = true; Flush(window);
+            Assert.Equal(ButtonThemeFixture.SchemeColor(false, s => outlined ? s.InverseOnSurface : s.Primary), ColorOf(button.Foreground));
+            Assert.Equal(outlined ? ButtonThemeFixture.SchemeColor(false, s => s.InverseSurface) : Colors.Transparent, ColorOf(button.Background));
+            Assert.Equal(default, button.BorderThickness);
+            window.RequestedThemeVariant = ThemeVariant.Dark; Flush(window);
+            Assert.Equal(ButtonThemeFixture.SchemeColor(true, s => outlined ? s.InverseOnSurface : s.Primary), ColorOf(button.Foreground));
+            root.IsEnabled = false; Flush(window);
+            var onSurface = ButtonThemeFixture.SchemeColor(true, s => s.OnSurface);
+            Assert.Equal(Color.FromArgb(97, onSurface.R, onSurface.G, onSurface.B), ColorOf(button.Foreground));
+            Assert.Equal(Colors.Transparent, ColorOf(button.Background));
+            Assert.Equal(default, button.BorderThickness);
+            button.IsChecked = false; Flush(window);
+            if (outlined)
+            {
+                var outline = ButtonThemeFixture.SchemeColor(true, s => s.OutlineVariant);
+                Assert.Equal(Color.FromArgb(97, outline.R, outline.G, outline.B), ColorOf(button.BorderBrush));
+                Assert.Equal(new Thickness(1), button.BorderThickness);
+            }
+            root.IsEnabled = true; button.IsChecked = true;
+            button.Resources[outlined ? Comp.OutlinedIconToggleButton.CheckedContentColor : Comp.StandardIconToggleButton.CheckedContentColor] = Colors.Magenta;
+            Flush(window); Assert.Equal(Colors.Magenta, ColorOf(button.Foreground));
+            var point = button.TranslatePoint(new Point(24, 24), window)!.Value;
+            window.MouseMove(point); window.MouseDown(point, MouseButton.Left); Flush(window);
+            TextElement.SetForeground(root, Brushes.Green); Flush(window);
+            Assert.Equal(outlined ? Colors.Magenta : Colors.Green, ColorOf(surface.StateLayerBrush));
+            window.MouseUp(point, MouseButton.Left);
+            var userStyle = new Style { Setters = { new Setter(IconButton.ForegroundProperty, Brushes.Yellow), new Setter(IconButton.BackgroundProperty, Brushes.Red) } };
+            button.Styles.Add(userStyle); button.ApplyStyling(); button.IsEnabled = false; Flush(window);
+            Assert.Equal(Colors.Yellow, ColorOf(button.Foreground)); Assert.Equal(Colors.Red, ColorOf(button.Background));
+            button.Styles.Remove(userStyle); button.IsEnabled = true; Flush(window);
+            Assert.Equal(Colors.Magenta, ColorOf(button.Foreground));
+            root.Child = null;
+            var other = new Border { Child = button };
+            TextElement.SetForeground(other, Brushes.Purple); window.Content = other; Flush(window);
+            Assert.Equal(outlined ? Colors.Magenta : Colors.Purple, ColorOf(button.GetVisualDescendants().OfType<MaterialSurface>().Single().StateLayerBrush));
+        }
+        finally { window.Close(); }
+    }
+
     private static Color ColorOf(IBrush? brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
     private static MotionTestWindow Show(Control content)
     {

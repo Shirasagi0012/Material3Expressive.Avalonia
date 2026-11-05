@@ -50,6 +50,8 @@ public sealed class SplitButtonCases
         foreach (var style in Styles)
         {
             yield return Data($"dynamic.selection.{style}", new(style, Action: "selection"));
+            yield return Data($"dynamic.rtl.selection.{style}", new(style, Rtl: true, Action: "selection"));
+            yield return Data($"dynamic.rtl.hover.{style}", new(style, Rtl: true, Action: "hover", Part: "leading"));
             foreach (var part in new[] { "leading", "trailing" })
                 yield return Data($"dynamic.press.{style}.{part}", new(style, Action: "press", Part: part));
         }
