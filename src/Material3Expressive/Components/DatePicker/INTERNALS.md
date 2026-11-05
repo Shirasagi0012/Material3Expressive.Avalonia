@@ -37,8 +37,8 @@ Kotlin 函数名，查询却使用 zh-cn/pt-pt；as/in/is 的反引号函数也�
 这是 Core 桌面字符串平台分支；AndroidX 的 Android 资源选择不混入桌面规则。
 
 API 不变；以前依赖错误英文回退的应用将看到对应译文。显式 Title/Headline 仍可覆盖。
-维护导入及独立核验：`python scripts/update_datetime_strings.py --upstream <Core仓库路径> [--check]`，
-脚本只读取 docs/upstream-baseline.json 的固定提交，不消费本机 HEAD。对旧正文逐键检查无改动。
+维护译表时按 docs/upstream-baseline.json 的固定 Core 提交核对 localeTag 映射与译文，不消费本机 HEAD。
+本轮对旧正文逐键检查无改动。
 真实 TimeInput editor/error live region 与 DatePicker/DateRangePicker 调用方共同验证共享查找。
 
 日历点选：单日直接替换。范围在没有终点或新日期早于起点时重新开始，否则补上终点。
