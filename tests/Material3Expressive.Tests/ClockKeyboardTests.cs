@@ -60,7 +60,7 @@ public class ClockKeyboardTests
         Tab(true); Assert.True(minute.IsFocused);
         ClickKey(); Tab(false);
         if (clock24) Assert.True(after.IsFocused);
-        else Assert.True(picker.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "AM")).IsFocused);
+        else Assert.True(picker.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, DateTimeStrings.Get("TimePickerAM"))).IsFocused);
         window.Close();
         void ClickKey() { window.KeyPress(Key.Enter, 0, PhysicalKey.None, null); window.KeyRelease(Key.Enter, 0, PhysicalKey.None, null); Flush(window); }
         void Tab(bool shift) { window.KeyPress(Key.Tab, shift ? Avalonia.Input.RawInputModifiers.Shift : 0, PhysicalKey.None, null); Flush(window); }
@@ -75,6 +75,11 @@ public class ClockKeyboardTests
         var dial = picker.GetVisualDescendants().OfType<ClockFace>().Single();
         dial.Activate();
         var minute = picker.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "PART_MinuteSelector");
+        // Button.OnPointerReleased checks the renderer's hit-test scene, even when events are
+        // raised directly. Layout alone leaves this dependent on the wall-clock render timer.
+        // Complete actual rendering before injecting touch; no motion frame is advanced.
+        using (window.CaptureRenderedFrame()) { }
+        Assert.NotEmpty(minute.GetVisualsAt(new Point(24, 24)));
         var point = minute.TranslatePoint(new Avalonia.Point(24, 24), window)!.Value;
         using var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
         minute.RaiseEvent(new PointerPressedEventArgs(minute, pointer, window, point, 0,

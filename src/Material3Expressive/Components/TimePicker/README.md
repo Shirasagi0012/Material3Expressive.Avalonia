@@ -41,6 +41,9 @@ Avalonia 原生时间滚轮，包括秒和步长，使用 [原生日期与时间
 
 `TimeInput` 只有当前 `Selection` 对应的字段是编辑器；点击另一字段的数字会切换选择并聚焦编辑器，保留已有草稿与选区。
 Standard 显示小时/分钟提示，Vibrant 在有效输入时不显示提示。无效输入显示对应 12/24 小时制或分钟错误，并以 polite live region 提供给辅助技术。
+时间提示、AM/PM 和错误文案读取 `CultureInfo.CurrentUICulture`；应用应在创建控件前设置 UI 语言，
+例如 `CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-CN")`。地区译表覆盖 `zh-CN`、`zh-TW`、
+`zh-HK`、`pt-PT` 等，缺失时按上游语言/英语链回退；此属性不改变已有控件的动态语言绑定契约。
 在完整有效小时的末尾继续键入数字会转入分钟；分钟开头的 Backspace 不切换字段。Enter 可确认有效小时并转入分钟。
 
 Vibrant 输入及滚动模式可只提供 `ToggleTemplate`：AM/PM 和模式按钮组成侧栏；24 小时制保留居中的模式按钮。

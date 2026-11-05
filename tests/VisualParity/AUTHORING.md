@@ -15,6 +15,11 @@ WindowInfo，Core 的桌面阴影光照会单独读取后者。显式非零窗�
 
 ## 用例分类与稳定输入
 
+涉及真实本地化文本时，应在元数据中显式指定语言/地区和字体，并在用例退出时恢复进程语言。
+不能把 JVM 默认语言与 .NET CurrentUICulture 当作天然相同，也不能用主字体哈希代替实际角色的字体配置。
+TimeInput 的错误文本读数曾独立证明中文/SansSerif 与英文/Roboto 的输入混淆；现有用例提供固定输入，
+同时保留 platform-defaults 诊断配置。相同输入下的字体回退、行高与图像差异继续报告，不能靠偏移或改容差消除。
+
 用例分为静态和动态两类，组件用例 ID 分别采用 `<component>.static.*` 和
 `<component>.dynamic.*`。分类依据是是否验证随时间发生的变化，不是是否存在用户交互。
 
@@ -265,7 +270,7 @@ Point ID 在样本内唯一，Field 名在 Point 内唯一，双端按身份配�
 ## 执行与采集边界
 
 - Frame 只投递一次动画帧，然后 Draw。AdvanceTo 只推进事件逻辑时间，不投递帧。
-- Compose 的 AdvanceTo 同时推进 TestCoroutineScheduler，其 delay 精度为整毫秒；Avalonia 的任意 Task.Delay 和框架计时器未虚拟化。
+- Compose 的 AdvanceTo 同时推进 TestCoroutineScheduler，Compose 调度上下文中的 delay、withTimeout / withTimeoutOrNull 精度均为整毫秒；Skiko 后台任务不接管。Avalonia 的任意 Task.Delay 和框架计时器未虚拟化。
 - Draw 处理布局/渲染而不投递 ComposeAnimation 帧；Snapshot 被动读取已有结果，不 Draw、不 Frame。
 - Sample 同时保存 timeUs 和 frameTimeUs。时间相同不保证输入、注册与动画开始顺序相同，trace 保留操作次序。
 - Avalonia 用 Skia headless、ManualAnimationFrameClock 和 GetLastRenderedFrame；绘制最多处理 20 轮工作，不是全局异步静止证明。

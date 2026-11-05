@@ -277,6 +277,30 @@ public class PullToRefreshTests
     }
 
     [AvaloniaFact]
+    public void AnimatedThresholdCommitsAlphaAtTheEndOfTheCrossingFrame()
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new BouncyState();
+        var indicator = new PullToRefreshIndicator { State = state };
+        var window = Show(indicator); clock.SendFrame(TimeSpan.Zero);
+        var arrow = indicator.GetVisualDescendants().OfType<PullToRefreshArrow>().Single();
+        _ = state.AnimateToThresholdAsync();
+        var crossing = 0;
+        for (var time = 16; time <= 320; time += 16)
+        {
+            Frames(clock, window, time, time);
+            if (state.DistanceFraction >= 1) { crossing = time; break; }
+        }
+        Assert.True(crossing > 0);
+        Assert.Equal(.3f, arrow.Alpha);
+        Frames(clock, window, crossing + 16, crossing + 16);
+        Assert.Equal(.3f, arrow.Alpha); // First alpha sample establishes its start time.
+        Frames(clock, window, crossing + 32, crossing + 32);
+        Assert.True(arrow.Alpha > .3f);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
     public void CustomContentAndDynamicTokensRetainTheirBindingsAndLayout()
     {
         var marker = new Border { Width = 12, Height = 12, Background = Brushes.Red };

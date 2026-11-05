@@ -71,6 +71,7 @@ internal sealed class FrameClock : IDisposable
     public void VerifyAccess() => _source.VerifyAccess();
 
     internal bool IsUnavailable => _disposed || _failure is not null;
+    internal bool IsDispatchingFrame { get; private set; }
 
     /// <summary>
     /// Waits for the next frame and returns its source timestamp. Cancelled when either token is.
@@ -210,37 +211,42 @@ internal sealed class FrameClock : IDisposable
 
     private void RunFrame(TimeSpan timestamp)
     {
-        // Cached snapshots: a hook (un)registered during this frame invalidates the cache for the
-        // next frame and leaves the arrays held here untouched (same semantics as a copy).
-        var before = _beforeFrame.Snapshot();
-        var after = _afterWaiter.Snapshot();
+        IsDispatchingFrame = true;
         try
         {
-            foreach (var hook in before) hook.Action();
-        }
-        catch (Exception error)
-        {
-            FailWaiters(error, after);
-            return;
-        }
+            // Cached snapshots: a hook (un)registered during this frame invalidates the cache for the
+            // next frame and leaves the arrays held here untouched (same semantics as a copy).
+            var before = _beforeFrame.Snapshot();
+            var after = _afterWaiter.Snapshot();
+            try
+            {
+                foreach (var hook in before) hook.Action();
+            }
+            catch (Exception error)
+            {
+                FailWaiters(error, after);
+                return;
+            }
 
-        // RunFrame is never re-entered: the spare buffer is always empty when the batch swaps in.
-        Debug.Assert(_spare.Count == 0);
-        var batch = _waiters;
-        _waiters = _spare;
-        if (_batchVersions.Length < batch.Count) _batchVersions = new short[Math.Max(batch.Count, _batchVersions.Length * 2)];
-        var versions = _batchVersions;
-        for (var i = 0; i < batch.Count; i++) versions[i] = batch[i].Version;
-        VerifyAccess();
-        try
-        {
-            ResumeBatch(batch, versions, timestamp, after);
+            // RunFrame is never re-entered: the spare buffer is always empty when the batch swaps in.
+            Debug.Assert(_spare.Count == 0);
+            var batch = _waiters;
+            _waiters = _spare;
+            if (_batchVersions.Length < batch.Count) _batchVersions = new short[Math.Max(batch.Count, _batchVersions.Length * 2)];
+            var versions = _batchVersions;
+            for (var i = 0; i < batch.Count; i++) versions[i] = batch[i].Version;
+            VerifyAccess();
+            try
+            {
+                ResumeBatch(batch, versions, timestamp, after);
+            }
+            finally
+            {
+                batch.Clear();
+                _spare = batch;
+            }
         }
-        finally
-        {
-            batch.Clear();
-            _spare = batch;
-        }
+        finally { IsDispatchingFrame = false; }
     }
 
     private void ResumeBatch(List<Waiter> batch, short[] versions, TimeSpan timestamp, Hook[] after)

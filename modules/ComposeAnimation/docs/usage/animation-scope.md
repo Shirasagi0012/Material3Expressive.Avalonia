@@ -52,6 +52,20 @@ AnimationScope.AddScopeChangedHandler(button, (_, e) =>
 
 `Animatable`、`Transition`、`InfiniteTransition` 只是状态，不持有时钟、生命周期或 Scope（D19）。每次运行在调用处指定 Scope：`AnimateToAsync(scope, …)`、`AnimateDecayAsync(scope, …)`、`RunAsync(scope, …)`、`SeekableTransitionState.AnimateToAsync(scope, …)`；Scope 提供帧、生命周期和时长倍率。Scope 结束时其中的运行被取消，之后在该 Scope 上启动运行会抛 `ObjectDisposedException`；状态对象本身不受影响，可以在新 Scope 中从停下的值继续。不带 Scope 的成员（`SnapToAsync`、`UpdateTarget`、`Stop` 等）只在对象自身 `Dispose` 之后抛错。同一对象的第二次运行接管第一次：旧运行的清理完成后新运行才采样。
 
+## 消费动画值后提交新目标
+
+当一个动画的采样结果驱动另一个动画目标时，可在拥有的 `AnimationScope` 上使用：
+
+```csharp
+await scope.WaitForFrameEndAsync(cancellationToken);
+// 这里读取最新目标；同一批次内的多个变化由调用方合并。
+await alpha.AnimateToAsync(scope, latestTarget, spec, cancellationToken: cancellationToken);
+```
+
+帧内调用等当前批次全部采样完成；帧间调用等下一批次完成。它不补发一帧，不受 DurationScale 影响，
+取消连接调用方和作用域。此入口用于目标提交，不保证布局/渲染已完成，也不是通用 Compose 重组实现。
+Material3Expressive 的 PullToRefreshArrow 是实际调用方；普通每帧循环继续使用 NextFrameAsync。
+
 ## FrameScope：运行为什么接收 Scope
 
 `ComposeAnimation.Runtime` 不依赖 Avalonia，因此不认识 `AnimationScope`。运行入口接收它的基类 `FrameScope`：提供 `NextFrameAsync`、`Lifetime`（Scope 结束时取消）与有效 `DurationScale`。`AnimationScope` 就是一个 `FrameScope`，所以 `alpha.AnimateToAsync(AnimationScope.Get(this), …)` 直接可用；`SuspendAnimation` 等运行时辅助同样接收 `FrameScope`。

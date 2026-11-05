@@ -17,7 +17,11 @@ import kotlinx.serialization.json.*
 class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platformContext:PlatformContext=PlatformContext.Empty()):AutoCloseable {
     companion object { const val RenderScale=4 }
     val scheduler=TestCoroutineScheduler()
-    val scope=CoroutineScope(UnconfinedTestDispatcher(scheduler) + CoroutineExceptionHandler { _,e -> writer.errors+=e.stackTraceToString() })
+    private val dispatcher=UnconfinedTestDispatcher(scheduler).also {
+        check(System.getProperty("kotlinx.coroutines.main.delay") == "true") { "Configure Main timeout routing before starting the reference runtime." }
+        ReferenceTimeoutClock.attach(it)
+    }
+    val scope=CoroutineScope(dispatcher + CoroutineExceptionHandler { _,e -> writer.errors+=e.stackTraceToString() })
     val recomposer:FrameRecomposer
     val scene:ComposeScene
     val surface=Surface.makeRasterN32Premul(Math.multiplyExact(width,RenderScale),Math.multiplyExact(height,RenderScale))
@@ -30,6 +34,10 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
     }
     var pressed=false
     init {
+        // Fixed Core's FlushCoroutineDispatcher forwards delay(), but inherits Delay's
+        // invokeOnTimeout -> DefaultDelay. Route that fallback through the same scheduler,
+        // without replacing Core's trampoline/frame queues or modifying component code.
+        try {
         registerSkikoComposeImplementation(); recomposer=FrameRecomposer(scope.coroutineContext)
         // Empty has a zero WindowInfo.containerSize. Scene size controls layout but does
         // not populate WindowInfo; Core uses it separately for desktop shadow lighting.
@@ -40,6 +48,10 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
             }
         } else platformContext
         scene=CanvasLayersComposeScene(recomposer,Density(RenderScale.toFloat()),size=IntSize(surface.width,surface.height),platformContext=context)
+        } catch (error: Throwable) {
+            scope.cancel(); surface.close(); ReferenceTimeoutClock.detach()
+            throw error
+        }
     }
     fun mount(content:@Composable ()->Unit) {
         scene.setContent(content=content); draw(); writer.record(timeUs,"mount","${surface.width/RenderScale}x${surface.height/RenderScale} DIP; density=$RenderScale; no animation frame")
@@ -88,5 +100,12 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
         return Sample(id,timeUs,stage,points,rasters,frameTimeUs,listOf(RasterCollection("full",if(rasters.isEmpty()) "notRequested" else "captured",
             if(rasters.isEmpty()) "Case requested a measurement-only sample." else null)))
     }
-    override fun close() { scene.close(); recomposer.close(); surface.close(); scope.cancel(); scheduler.runCurrent(); writer.record(timeUs,"dispose","scene/recomposer/scope") }
+    override fun close() {
+        try {
+            scene.close(); recomposer.close(); surface.close(); scope.cancel(); scheduler.runCurrent()
+            writer.record(timeUs,"dispose","scene/recomposer/scope; cancelled timers before releasing timeout clock")
+        } finally {
+            ReferenceTimeoutClock.detach()
+        }
+    }
 }

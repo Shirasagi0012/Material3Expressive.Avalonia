@@ -344,6 +344,23 @@ public class AnimationScope : FrameScope
 
     private static void CompleteDelay(object? state) => ((TaskCompletionSource)state!).TrySetResult();
 
+    /// <summary>
+    /// Waits until the current frame batch has finished sampling, or the next batch if called
+    /// between frames. Resumes through the UI dispatcher without requesting an additional frame.
+    /// This is a target-commit boundary, not a layout/render completion barrier. Cancellation
+    /// follows this scope and the caller; duration scale does not change the boundary.
+    /// </summary>
+    public Task WaitForFrameEndAsync(CancellationToken cancellationToken = default)
+        => Launch(async lifetime =>
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
+            var token = linked.Token;
+            token.ThrowIfCancellationRequested();
+            if (!_frameClock.IsDispatchingFrame) await NextFrameAsync(token);
+            await Dispatcher.Yield(FrameClock.ResumePriority);
+            token.ThrowIfCancellationRequested();
+        }, "Frame-end commit");
+
     // ---- Internal surface -----------------------------------------------------------------------
 
     /// <summary>The window's frame clock, shared by every scope of this environment.</summary>

@@ -116,10 +116,9 @@ internal sealed class TabRowItemsPanel : StackPanel
     private int[] _widths = [];
     private int _height, _padding;
     private bool _measuringHeaders;
-    internal bool IntrinsicTargetsPending { get; set; }
     internal void HeaderMeasureInvalidated()
     {
-        if (!_measuringHeaders) { IntrinsicTargetsPending = true; InvalidateMeasure(); }
+        if (!_measuringHeaders) InvalidateMeasure();
     }
     protected override void OnMeasureInvalidated()
     {
@@ -248,8 +247,6 @@ internal sealed class TabRowContent : Panel
         var chrome = Chrome;
         var items = this.GetVisualDescendants().OfType<TabRowItemsPanel>().FirstOrDefault();
         var positions = items?.Positions ?? [];
-        var intrinsicChange = items?.IntrinsicTargetsPending == true;
-        if (items is not null) items.IntrinsicTargetsPending = false;
         LayoutHeight = items?.LayoutHeight ?? desired.Height;
         if (positions.Length == 0 || chrome.SelectedIndex < 0 || chrome.SelectedIndex >= positions.Length)
         {
@@ -268,14 +265,14 @@ internal sealed class TabRowContent : Panel
                 motion.SubscribeValue(_offset, _ => InvalidateMeasure());
                 motion.SubscribeValue(_width, _ => InvalidateMeasure());
             }
-            Animate(_width!, targetWidth, "Tab indicator width", intrinsicChange);
-            Animate(_offset, (float)position.Left, "Tab indicator offset", intrinsicChange);
+            Animate(_width!, targetWidth, "Tab indicator width");
+            Animate(_offset, (float)position.Left, "Tab indicator offset");
         }
         var scale = LayoutHelper.GetLayoutScale(this);
         chrome.Indicator.Measure(new Size(Math.Max(0, MathUtils.DipToPx(_width?.Value ?? targetWidth, (float)scale)) / scale, LayoutHeight));
         return desired;
     }
-    private void Animate(Animatable<float> track, float target, string label, bool intrinsicChange)
+    private void Animate(Animatable<float> track, float target, string label)
     {
         if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested
             || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
@@ -288,10 +285,8 @@ internal sealed class TabRowContent : Panel
             // Apply the measure-triggered coroutine after the corresponding composition
             // frame. Its first animation frame is the next one, as in the Desktop node.
             await motion.NextFrameAsync(ct);
-            // FixedTabRow queries intrinsics before measuring tabs; its offset node
-            // observes the TabPositions write on the next layout frame. ScrollableTabRow
-            // measures the tabs before querying intrinsics and measuring the indicator.
-            if (intrinsicChange && !Chrome.Scrollable) await motion.NextFrameAsync(ct);
+            // Both row variants publish TabPositions before measuring the offset node.
+            // Intrinsic remeasurement does not add another animation-frame boundary.
             if (_requested[track] != target) return;
             await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: ct);
         }, label);

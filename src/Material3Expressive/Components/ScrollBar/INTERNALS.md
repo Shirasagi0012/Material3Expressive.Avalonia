@@ -65,15 +65,12 @@ ThumbColor 的默认来源与 ThumbOpacity 分开绑定，局部 converter 保�
 真实桌面、触屏/触控笔与屏幕阅读器未经上述 headless 检查证明。测试来源和历史确认范围保留，
 后续结果需按实际执行范围报告，不能从测试源码或历史确认推定当前通过。
 
-默认延迟的双端动画尚未验收：固定 Core 的 `FlushCoroutineDispatcher` 实现
-`scheduleResumeAfterDelay`，却没有实现 `invokeOnTimeout`。Scrollbar 使用 `withTimeoutOrNull`，
-其 timeout 不由现有 TestCoroutineScheduler 驱动，受实际执行时间影响；首轮曾出现 Compose 重复图像不稳定。
-零延迟额外场景独立检验 Tween、反向/再滚动及配置重建，不替换原有默认延迟场景。
-推荐在共享参考宿主中显式接管 timeout 调度并补充框架自测；须维护者决定时间源接入范围，
-不能通过延长本地等待、修改基线或跳过重复捕获来掩盖。该方案未批准、未实施。
-调用示例仍为现有 `host.advanceTo(400_000); host.frame(400_000)`：若最后一次 offset 变化在 0，
-应由普通虚拟时间触发 400ms timeout，并从随后动画帧开始采样淡出。
-接管范围会影响参考端所有 withTimeout 使用者和取消顺序，需先补普通延迟/timeout/帧三者的顺序自测。
+默认延迟的参考时间源按 [共享测试决定](../../../../tests/VisualParity/DECISIONS.md#compose-普通延迟与-timeout-共用宿主时间)
+接入虚拟时间。固定 Core 未重写 invokeOnTimeout，旧捕获受墙钟影响，不能作为组件淡出期限的证据。
+当前 `timeout-scrollbar-current` 运行的 50 个双端用例全部 equal、重复/额外截图稳定且零执行错误；
+包含 400ms 默认等待、滚动续期、淡出中断、配置重建、内容可滚动性变化、卸载重建以及水平 RTL。
+544ms 保持全 alpha，160ms 最后一次滚动对应 560ms 期限，随后连续帧淡出；真实 4× 原图逐像素相等。
+零延迟用例独立覆盖立即 timeout 分支，仍保留默认延迟用例。未修改生产动画或比较容差。
 
 ## 4. 验证入口
 

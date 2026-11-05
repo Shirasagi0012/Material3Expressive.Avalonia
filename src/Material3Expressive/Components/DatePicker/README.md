@@ -38,6 +38,10 @@ Avalonia 原生年月日滚轮、文本框和下拉日历使用另一套主题�
   ；也可以粘贴同格式日期。占位符使用大写格式，例如 `MM/DD/YYYY`。
 - `Title`、`Headline` 及对应模板：不设置时使用当前语言的 Material 文案。`ShowHeadline` 可以隐藏大标题。
 
+例如 `picker.Culture = CultureInfo.GetCultureInfo("zh-CN")` 使用简体中文，`zh-TW` 使用繁体中文，
+`pt-PT` 使用葡萄牙地区文案。先查语言和地区，再查语言，最后回退英语；仅 `zh` 没有对应上游译表。
+Catalog 的日期语言按钮会同时更新单日和范围选择器。
+
 日期范围用一次赋值更新起止，避免两个独立双向绑定产生中间状态。终点早于起点，或只有终点没有起点时，范围会整个清空。这与固定版本
 Compose 的 `setSelection` 相同。
 

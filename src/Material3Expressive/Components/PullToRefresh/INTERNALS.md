@@ -78,10 +78,17 @@ Avalonia 立即卸载，保留最后 208ms 的 `0.45967421`。两端任务均取
 非帧时刻卸载的保留值差异，以及圆箭头在高回弹跨越阈值时的透明度提交差异。Expressive 的 bounce 时间线全部截图在容差内，
 圆箭头 96ms 的距离精确相同而图像超差，不能归入数值尾差。行为测试 29 项、整仓 Release 构建通过。
 
-**待决定的动画帧提交能力**：箭头收到帧内 DistanceFraction 更新后仍等待 NextFrameAsync，目标比 Core 的帧末 SideEffect 晚提交；
-例如派生状态以 `.2f` 阻尼进入阈值时跨越 1。推荐在已有动画作用域内提供可区分帧内采样与帧间参数变更的提交能力，
-再让箭头合并最新目标；不能仅检查 IsAnimating 或固定补/减 16ms。影响动画链的消费者及现有帧间多次修改的合并语义，
-本组件未增加第二套调度器，也未将该方案登记为已批准。复现产物为 `artifacts/visual-parity/runs/custom-pull-motion` 和 `custom-pull-scroll`。
+**帧末提交能力已实现**：当前 `pull-frame-before` 再次复现帧内 DistanceFraction 更新晚提交一帧。
+本轮依据用户扩大授权重新决定，使用共享 `AnimationScope.WaitForFrameEndAsync` 区分当前批次内与帧间修改，
+随后读取最新透明度目标；不按 IsAnimating 猜测、不补减固定时长，也不重写弹簧或目标合并规则。
+固定 AndroidX/Core 的 PullToRefresh.kt 内容相同，AnimateAsState.kt 的 SideEffect 是提交依据。
+独立作用域测试和真实 BouncyState 越阈值测试通过；API、取消与职责范围见 [共享决定](../../../../docs/DECISIONS.md#帧末目标提交边界)。
+`pull-frame-after` 的 96ms 图像从超差变为既有容差内，降采样最大通道差 27 → 2；不是严格像素相等。
+原自定义 Tween 数值尾差与卸载末帧问题没有由此消除，仍分别报告。
+当前 `pull-frame-current` 的 59 例无执行错误、全部重复/额外截图稳定：4 equal、49 withinTolerance、
+6 different（自定义状态的数值/卸载及个别切换图像差异）；圆箭头 bounce 的 15 张图全部在既有门禁内。
+`pull-scroll-frame-current` 的 17 例同样稳定且无错误：2 equal、11 withinTolerance、4 different，
+保留自定义回调/程序化/释放用例和既有 detach 差异。两族均未改变用例时间线、规格、容差或参考基线。
 
 Windows Skia 双端 `20261104-070918-1b23c57b`：指示器 53/53 用例在既有容差内，结构读数相等，重复捕获稳定、错误为零。
 显式滚动 `20261104-070928-773f13b1`：13/14 用例在容差内；剩下的卸载保留值差异见上文，14 个均稳定且无捕获错误。

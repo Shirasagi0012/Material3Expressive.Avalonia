@@ -112,7 +112,7 @@ Avalonia 捕获端通过 ProjectReference 使用仓内 ComposeAnimation.TestSupp
 YAML 读写使用锁定的 YamlDotNet。以下命令从仓库根目录执行；`<case-id>` 和 `<suite>` 替换为 list 输出的实际身份。
 prepare-reference、self-test 自动构建双端；run、recompare、list、capture-actual 只构建 C# 项目。
 普通 run 不启动 JVM，不隐式补采 Compose；参考缺失、配置或参考实现改变时，在 Avalonia 采集前列出问题。
-verify-reference 不自动构建，首次使用前执行 build。
+verify-reference 不自动构建，首次使用前执行 build。test 同时运行 Gradle hostTest 的真实 Compose 宿主时序自测和 .NET 框架测试。
 报告需要 Node.js 22.12+ 或 24+；仅查看已有结果无需启动 .NET 或 JVM。npm 依赖由 package-lock.json 锁定。
 
 ```powershell
@@ -255,6 +255,12 @@ PNG 固定为 sRGB 8-bit straight alpha，取色通过 fast-png 直接解码，C
 
 
 ## 验证
+
+参考宿主的普通 delay 和 Compose timeout 使用同一 1ms 虚拟时间；Skiko 后台任务仍走墙钟。
+`ReferenceTimeoutClock` 的接入、固定内部依赖和范围见 [调度决定](DECISIONS.md#compose-普通延迟与-timeout-共用宿主时间)。
+可在 reference 目录单独执行 `./gradlew.bat hostTest --dependency-verification strict`（Linux 使用 `sh ./gradlew`）。
+该测试直接使用真实 FrameRecomposer，不依赖组件预期像素；检查 timeout 期限/取消、帧顺序、
+Draw/Snapshot 被动性、连续宿主与后台时间隔离。组件本身仍需独立双端验证。
 
 系统测试覆盖差分、语义冲突、缺失、协议与像素完整性，以及真实控件采集和时钟重复性。
 结果格式测试还验证 YAML 数值/字符串类型及精度、双端语义保留、同时间样本的原始执行次序、

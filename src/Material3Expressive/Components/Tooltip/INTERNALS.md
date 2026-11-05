@@ -133,12 +133,12 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 缩放锚点场景的 Core modifier 已改放在 TooltipBox 本身，与本地自身 RenderTransform 对应；
 旧夹具放在包围 TooltipBox 的祖先 Box，测到的是另一种输入。修正后 LTR/RTL 两例均全等，没有改变组件定位算法或比较门禁。
 
-显示超时的 `dynamic.timeout` 尚未双端验收：1501000µs 时本地已将目标置 false，Core 仍为 true。
-固定 Core `FlushCoroutineDispatcher.skiko.kt` 仅接管 `scheduleResumeAfterDelay`，未接管 `invokeOnTimeout`，
-所以 TooltipState 的 withTimeout 仍受墙钟影响，现有 TestCoroutineScheduler 无法驱动它。
-这与 [ScrollBar 已记录缺口](../ScrollBar/INTERNALS.md) 相同。推荐维护者决定在共享参考宿主接管 timeout 的范围，
-例如 `host.advanceTo(1_501_000)` 应结束 1000µs 开始的 1500ms 请求，再由后续帧推进退出。
-影响所有 withTimeout 使用者及取消/重组顺序，需要共享宿主时序自测；该方案未批准、未实施。
+显示超时的参考时间源按 [共享测试决定](../../../../tests/VisualParity/DECISIONS.md#compose-普通延迟与-timeout-共用宿主时间)
+接入虚拟时间；原固定 Core 未重写 invokeOnTimeout，旧报告中的墙钟结果不用于评判组件期限。
+当前 `timeout-tooltip-current` 的 dynamic.timeout 捕获成功且重复稳定：1000µs 发起请求，
+1500000µs 尚未取消，1501000µs 双端均取消 Show 并设置 target=false，最后帧仍为1488000µs，
+1904000µs 均完成退出。全部结构化读数一致，10 个采样中 6 个逐像素相等；
+其余 4 个入场/退出途中截图仍保留本节已确认的目标提交时序差异，没有改容差或补帧。
 
 TooltipLabelTests 与 TooltipAnchorTests 覆盖身份、重叠、换源、卸载、持续模式、外部关闭及自身/祖先变换。
 `tooltip-label` 扩充后的 38 个双端用例全部截图逐像素相等、重复稳定、零捕获错误

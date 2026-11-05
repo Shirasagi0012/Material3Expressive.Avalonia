@@ -100,7 +100,14 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
 
 - 新增 `time-picker-side-control` 双端场景覆盖 12/24 小时、RTL、明暗、模板模式内容、按压、外缘鼠标命中及移除/恢复。
   `time-input-presentation` 覆盖 Standard/Vibrant、错误提示、焦点切换、无效草稿和解析边界；动态编辑用例只比较真实状态与布局，因原生光标时钟未虚拟化不采动态图像，静态有效/错误状态保留完整图像。
-  28 个输入用例覆盖包括 Unicode 数字的解析与外部字段更新。除下述外部同步细节外，选择/焦点/文本/有效时间/合法性/错误 live region 数量一致；错误提示的整体高度仍有 1 DIP 差异，未改容差或补偿高度。
+  原 28 个输入用例覆盖包括 Unicode 数字的解析与外部字段更新。旧错误提示整体高度的 1 DIP 差异
+  现已用真实文本读数定位：参考进程为中文/SansSerif，本地为英文/Roboto。不得据此给组件补 1 DIP。
+  当前夹具显式提供相同语言及锁定 Roboto，原输入保留为 diagnostic.platform-defaults，公开原值而不改预期。
+  这又暴露 DateTimeStrings 的区域键及遗漏语言错误，现已修复共享译表，依据见 [日期维护说明](../DatePicker/INTERNALS.md#日期与时间共享译表)。
+  `time-localization-final` 的 57 例无执行错误且全部重复/额外截图稳定，28 个本地化错误文案读数全部相等。
+  英文、德文、葡萄牙文、印尼文、冰岛文的错误提示高度相等；中文仍为 Core 32.5 / 本地 32 DIP，
+  阿萨姆语 12h 为 50.25 / 48、24h 为 33.5 / 32 DIP。这些是相同文案和主字体下的排版缺口，未补偿。
+  整图仍 different，动态外部同步差异仍在；新增 native requestedFont 是诊断字段，不把两种字体描述对象字符串当作可比较字体身份。
 - 连续在小时、分钟输入无效的 `99`、`75` 后设置 `SelectedTime = new(5, 30)`：Core 的 `userOverride` 为 false，会跳过该次 hourValue 同步；回到小时仍显示 `99`，但有效时间已为 05:30。本地原有绑定行为显示 `05`，本次仅让未变更的分钟继续保留 `75` 与选区。
   推荐维护者保留按实际变化字段同步外部绑定的行为；严格复现上游会使有效值、合法性与编辑文本脱节。这个具体差异尚未批准，不能由既有 TimeOnly API 决定推断已接受。
 - 真实触摸外缘用例保留了 Core 命中、本地不命中的差异。现有共享决定只允许 `MaterialInteractiveSize.Minimum` 预留布局，未提供触摸命中扩张。
@@ -126,8 +133,8 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
   推荐维护者明确决定是否保留本地外部绑定同步；严格复现该上游行为会使 `picker.SelectedTime = new(0, 30)` 后的手柄与显示脱节。
   本次保持既有本地绑定行为，`reject` 用例保留证据；`field-transition` 则以初始 00:30 只切字段验证真实优先级。此推荐未获确认。
 - 切换后立即读取的新标签 selected 语义存在一次提交时序差异；中断后个别 Float 角度有最大约 1.2e-7 rad 的差异，未放宽精确门禁。
-- 选择器 Clear/Xor 的边缘透明度不同：Core PNG 有 alpha<255 的像素，Avalonia 捕获对应像素为 alpha=255，RGB 接近其预乘值。
-  例如 Core (223,218,232,185) 对应 Avalonia (162,158,168,255)。尚未证明是捕获目标或控件合成层的哪一环造成；不能按普通字体噪声忽略。
+- 选择器 Clear/Xor 曾出现预乘 RGB 被标记不透明的捕获错误，现已独立定位并修复共享宿主，详见下方。
+  剩余边缘栅格、默认祖先透明度合成差异仍需分别处理，不能按普通字体噪声忽略。
 - 时段静态顺序已修正；按压过程的形变/反馈图像、本地化文本（参考进程“上午/下午”，本地“AM/PM”）、
   字段数字基线及焦点描边差异仍保留证据。分隔符沿用上游 -4dp 偏移。
 - `Automatic` 在钟面上比较 TopLevel 客户区的宽高，并在客户区尺寸变化后，仅当横竖结果改变时重建。初次套用模板时如果还没有 TopLevel，会保持纵向，直到控件进入窗口。
@@ -140,8 +147,13 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
 新增 `time-picker-alpha` 自检 `20261104-155644-a400d926`：10 场景、14 采样，无执行错误，重复及额外截图稳定；几何全部相等，整图仍全部 different。
 显式整层合成的两例中，已检查的轨道与手柄内部像素分别精确对齐；默认逐次绘制模式仍保留合成差异，未改用例输入或容差来消除它。
 两画笔各 .5、没有父级 alpha 时，手柄空白点 Core 为 (0,0,85,192)，本地 PNG 为 (0,0,64,255)，后者符合预乘 RGB 被按不透明输出的特征。
-本机 Avalonia 源码 `HeadlessWindowImpl.GetLastRenderedFrame` 以 Opaque 构造副本；仍需核验锁定包及原 framebuffer，以区分捕获与组件混合层。
-推荐维护者决定共享捕获入口是否改为保留原 framebuffer 的 AlphaFormat（被动复制，不追加 Draw/Frame），这会影响所有含透明像素的 VisualParity 产物与比较；本次未更改测试宿主、基准或规范。
+本轮核验锁定 Avalonia.Headless 12.1.5 nuspec 对应的 5825bf8 源码及实际 framebuffer，独立 Src 绘制回归
+证明 GetLastRenderedFrame 的 Opaque 副本丢失 alpha。本轮依据用户扩大授权重新决定共享宿主保留原 AlphaFormat，
+见 [捕获决定](../../../../tests/VisualParity/DECISIONS.md#headless-framebuffer-的-alpha-保留)，组件混合绘制和祖先合成策略没有修改。
+当前 `framebuffer-alpha-current` 10 场景、14 采样全部捕获成功且重复/额外截图稳定，几何相等，整图仍 different。
+两画笔 .5 的手柄空白点（场景物理像素 656,636）两端均为 (0,0,85,192)；该场景整图仅 25 个像素 alpha 不同，
+最大差 1。opaque 及显式 ancestor-group/combined-group 的整图 alpha 已严格相同。
+默认 ancestor/combined 的手柄仍与整层合成不同，group 两例的该点精确一致；不能将捕获修复宣称为组件整体通过。
 字体布局、标签 Crossfade 及上文既有状态/输入差异不因本次画笔修复而消除。
 
 逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs` 和 `ClockKeyboardTests.cs`。

@@ -43,8 +43,7 @@ public sealed class NonInteractiveScrollBarCases
         foreach (var action in new[] { "idle", "restart", "configuration", "fits", "reattach" })
             yield return Data($"dynamic.{(horizontal ? "horizontal-rtl" : "vertical")}.{action}",
                 new(horizontal, Rtl: horizontal, Fade: true, Action: action, TrackColor: "#40224466"));
-        // FlushCoroutineDispatcher delegates delay(), but not withTimeout's invokeOnTimeout.
-        // Keep the real-delay cases above as evidence; zero delay independently exercises tween/interruption.
+        // Zero timeout is an immediate branch, independent of the scheduled idle expiry above.
         foreach (var horizontal in new[] { false, true })
         foreach (var action in new[] { "idle", "quick-restart", "configuration", "reattach" })
             yield return Data($"dynamic.zero-delay.{(horizontal ? "horizontal-rtl" : "vertical")}.{action}",

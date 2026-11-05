@@ -19,6 +19,32 @@ namespace Material3Expressive.Tests;
 public sealed class TimeInputPresentationTests
 {
     [AvaloniaTheory]
+    [InlineData("zh-CN", "小时值必须介于 1 到 12 间")]
+    [InlineData("pt-PT", "A hora tem de ser 1-12")]
+    [InlineData("id-ID", "Jam harus antara 1—12")]
+    public void RegionalErrorIsPresentedByTheRealEditorAndLiveRegion(string cultureName, string expected)
+    {
+        var previous = CultureInfo.CurrentUICulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
+        try
+        {
+            var picker = new TimeInput { Is24Hour = false, SelectedTime = new(2, 30) };
+            var window = Show(picker);
+            try
+            {
+                var editor = Part<TextBox>(picker, "HourInput");
+                editor.Text = "99"; Flush(window);
+                var label = Part<TextBlock>(picker, "HourSupportingText");
+                Assert.Equal(expected, label.Text);
+                Assert.Equal(expected, MaterialTextField.GetErrorMessage(editor));
+                Assert.Equal(AutomationLiveSetting.Polite, AutomationProperties.GetLiveSetting(label));
+            }
+            finally { window.Close(); }
+        }
+        finally { CultureInfo.CurrentUICulture = previous; }
+    }
+
+    [AvaloniaTheory]
     [InlineData(TimeSelection.Hour)]
     [InlineData(TimeSelection.Minute)]
     public void OnlySelectedFieldIsAnEditor_AndReceivesInitialFocus(TimeSelection selection)

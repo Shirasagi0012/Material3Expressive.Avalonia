@@ -107,6 +107,8 @@ issue.code 是配对/比较操作的结果，不是组件故障诊断。members 
 ## 图像与区域
 
 双端采集时将 PNG 规范化为 **sRGB、8-bit、straight alpha**，持久化比较实际使用的像素。
+Avalonia Snapshot 被动复制原 Headless framebuffer 并保留 AlphaFormat，避免 12.1.5 公开副本的 Opaque 标记丢失透明度。
+旧捕获中已丢失的 alpha 无法重比较恢复，需重新采集；依据及验证见 [捕获决定](DECISIONS.md#headless-framebuffer-的-alpha-保留)。
 只保存 PNG，比较时按 **straight sRGBA8、行优先、RGBA 通道顺序**解码到内存。
 逐通道比较包含 alpha 和透明像素 RGB；diff.png 为最大通道差灰度图。
 四通道绝对差可由双端 PNG 重算，不另存 diff.rgba。

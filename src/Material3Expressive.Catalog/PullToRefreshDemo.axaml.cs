@@ -22,6 +22,7 @@ public partial class PullToRefreshDemo : Window
         InitializeComponent();
         Circular.State = Expressive.State = _state;
         Gesture.State = new BouncyRefreshState();
+        BouncePreview.State = new BouncyRefreshState();
         Gesture.ScrollBehavior = _scroll;
         _scroll.RefreshRequested += (_, _) => Gesture.IsRefreshing = true;
         _ready = true;
@@ -60,6 +61,15 @@ public partial class PullToRefreshDemo : Window
         catch (OperationCanceledException) { } // Refresh state can supersede release settling.
     }
     private void CompleteRefresh(object? sender, RoutedEventArgs e) => Gesture.IsRefreshing = false;
+    private async void PreviewBounce(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await BouncePreview.State!.SnapToAsync(0);
+            await BouncePreview.State.AnimateToThresholdAsync();
+        }
+        catch (OperationCanceledException) { }
+    }
     private void ToggleTheme(object? sender, RoutedEventArgs e) =>
         RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
 

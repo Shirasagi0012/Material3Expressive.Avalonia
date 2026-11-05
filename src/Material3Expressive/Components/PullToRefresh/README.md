@@ -65,6 +65,7 @@ Indicator.State = new BouncyRefreshState();
 覆写 `AnimateToHiddenAsync` 可单独定制隐藏；覆写操作调用受保护的 `AnimateToAsync`，继续使用同一距离值、速度和取消生命周期。
 `SnapToAsync` 也可覆写；调用基类方法发布距离并取消已有动画。异步覆写必须传递取消令牌，不应另起未受控的后台动画。
 Catalog 下方的显式滚动示例使用这一高回弹状态。
+“预览越阈值回弹”按钮让右侧圆箭头保持拉动模式，展示距离动画反复跨越阈值时的透明度过渡；再次点击可中断重播。
 
 ## 使用限制与注意事项
 

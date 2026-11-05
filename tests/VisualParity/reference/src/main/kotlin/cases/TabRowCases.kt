@@ -76,6 +76,14 @@ class TabRowCases {
                 "content" -> {
                     mutate(1000,"grow-label") { scene.firstLabelWidth=90.0 }; times(16000,64000,400000,1000000)
                 }
+                "content-interrupt" -> {
+                    mutate(1000,"grow-label") { scene.firstLabelWidth=90.0 }; times(16000,32000,64000)
+                    mutate(65000,"shrink-label") { scene.firstLabelWidth=24.0 }; times(80000,96000,128000,400000,1000000)
+                }
+                "content-coalesce" -> {
+                    mutate(1000,"coalesced-growth") { scene.firstLabelWidth=90.0; scene.firstLabelWidth=56.0 }; times(16000,32000,64000)
+                    mutate(65000,"coalesced-reversal") { scene.firstLabelWidth=24.0; scene.firstLabelWidth=90.0 }; times(80000,96000,128000,400000,1000000)
+                }
                 "space", "enter", "directional" -> {
                     advance(1000); scene.requester.requestFocus(); host.draw(); sample("focus"); times(16000,80000)
                     val key=when(config.action) { "space" -> Key.Spacebar; "directional" -> Key.DirectionRight; else -> Key.Enter }

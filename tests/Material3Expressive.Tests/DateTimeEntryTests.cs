@@ -102,7 +102,7 @@ public class DateTimeEntryTests
             Assert.Equal(new TimeOnly(23,45),picker.SelectedTime);
             if(!clock24)
             {
-                Invoke(picker.GetVisualDescendants().OfType<Button>().Single(b=>Equals(b.Content,"AM"))); Flush(window);
+                Invoke(picker.GetVisualDescendants().OfType<Button>().Single(b=>Equals(b.Content,DateTimeStrings.Get("TimePickerAM")))); Flush(window);
                 Assert.Equal(new TimeOnly(11,45),picker.SelectedTime);
             }
             picker.SelectedTime=new(1,2); Flush(window);

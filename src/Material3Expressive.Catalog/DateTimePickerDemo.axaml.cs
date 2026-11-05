@@ -20,6 +20,12 @@ public partial class DateTimePickerDemo : Window
     private void ToggleTheme(object? sender,RoutedEventArgs e)=>RequestedThemeVariant=ActualThemeVariant==ThemeVariant.Dark?ThemeVariant.Light:ThemeVariant.Dark;
     private void ToggleDirection(object? sender,RoutedEventArgs e)=>FlowDirection=FlowDirection==FlowDirection.LeftToRight?FlowDirection.RightToLeft:FlowDirection.LeftToRight;
     private void ToggleClock(object? sender,RoutedEventArgs e)=>Dial.Is24Hour=!Dial.Is24Hour;
+    private void ToggleDateLanguage(object? sender, RoutedEventArgs e)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(Date.Culture.Name == "zh-CN" ? "en-US" : "zh-CN");
+        Date.Culture = culture;
+        Range.Culture = culture;
+    }
     private void ToggleEntryMode(object? sender, RoutedEventArgs e)
     {
         Uncontained.IsVisible = !Uncontained.IsVisible;

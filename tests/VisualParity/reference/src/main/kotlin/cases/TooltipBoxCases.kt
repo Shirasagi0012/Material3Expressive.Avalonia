@@ -67,7 +67,9 @@ import kotlinx.serialization.Serializable
                     times(816000+shift,960000+shift)
                 }
                 "timeout" -> {
-                    change(1000,"show-default"){scene.scope.launch {scene.state.show()}}
+                    change(1000,"show-default"){scene.scope.launch {
+                        try {scene.state.show()} catch (_:CancellationException) {scene.applicationCancelled=true}
+                    }}
                     times(16000,64000,400000,1500000,1501000,1520000,1584000,1904000)
                 }
                 "show" -> {change(1000,"show",::show);times(16000,32000,64000,112000,224000,400000);change(401000,"dismiss"){scene.state.dismiss()};times(416000,448000,512000,800000)}

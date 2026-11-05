@@ -21,4 +21,10 @@ public partial class TabRowDemo : Window
         row.SelectedIndex = row.Items.IndexOf(tab);
         foreach (var item in row.Items.OfType<Tab>()) item.IsSelected = ReferenceEquals(item, tab);
     }
+    private void OnChangeLabel(object? sender, RoutedEventArgs e)
+    {
+        var label = ChangingLabel.Text == "Inbox" ? "Unread messages" : "Inbox";
+        ChangingLabel.Text = label;
+        ChangingNativeTab.Header = label;
+    }
 }

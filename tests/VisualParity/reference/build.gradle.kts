@@ -40,3 +40,11 @@ tasks.register("resolveLocks") {
     // Dev/hot-reload configurations are not part of the producer and pull unrelated tools.
     doLast { listOf("compileClasspath", "runtimeClasspath").forEach { configurations.getByName(it).resolve() } }
 }
+
+val hostTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("parity.ComposeHostTestsKt")
+    systemProperty("java.awt.headless", "true")
+}
+tasks.check { dependsOn(hostTest) }

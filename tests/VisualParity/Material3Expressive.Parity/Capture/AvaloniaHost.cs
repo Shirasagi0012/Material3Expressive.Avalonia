@@ -21,6 +21,9 @@ public sealed class AvaloniaHost : IAsyncDisposable
     public const int RenderScale = 4;
     static readonly FieldInfo NextCommit = CompositionBatchField("_nextCommit");
     static readonly FieldInfo PendingBatch = CompositionBatchField("_pendingBatch");
+    static readonly Type HeadlessWindowType = typeof(AvaloniaHeadlessPlatform).Assembly.GetType("Avalonia.Headless.HeadlessWindowImpl", throwOnError: true)!;
+    static readonly FieldInfo Framebuffer = HeadlessField("_lastRenderedFrame", typeof(WriteableBitmap));
+    static readonly FieldInfo FramebufferSync = HeadlessField("_sync", typeof(object));
     readonly CaptureWriter writer;
     readonly ManualFrameSource clock = new(Dispatcher.UIThread.VerifyAccess);
     readonly ManualTimeProvider? delayTime;
@@ -157,10 +160,10 @@ public sealed class AvaloniaHost : IAsyncDisposable
         {
             var path = $"images/{id}.png";
             Directory.CreateDirectory(Path.Combine(writer.Output, "images"));
-            using var bitmap = Window.GetLastRenderedFrame() ?? throw new IOException("No rendered frame.");
+            using var bitmap = CopyLastRenderedFrame();
             using (var stream = File.Create(Path.Combine(writer.Output, path))) bitmap.Save(stream, PngBitmapEncoderOptions.Default);
             rasters = [PixelData.FromPng(writer.Output, "full", path)];
-            writer.Record(TimeUs, "capture", "passive bitmap read; no draw/frame");
+            writer.Record(TimeUs, "capture", "passive framebuffer copy preserving alpha format; no draw/frame");
         }
 
         return new(id, TimeUs, stage, points, rasters, FrameTimeUs,
@@ -168,6 +171,34 @@ public sealed class AvaloniaHost : IAsyncDisposable
             new("full", rasters.Length != 0 ? "captured" : "notRequested",
                 rasters.Length != 0 ? null : "Case requested a measurement-only sample.")
         ]);
+    }
+
+    WriteableBitmap CopyLastRenderedFrame()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        var platform = Window.PlatformImpl;
+        if (platform is null || platform.GetType() != HeadlessWindowType)
+            throw new NotSupportedException("Parity capture requires the verified Avalonia headless framebuffer.");
+        // Headless 12.1.5 GetLastRenderedFrame labels its premultiplied buffer Opaque.
+        // Copy the same completed frame under its original lock, preserving actual metadata.
+        // No pixels are inferred or changed and no render/animation work is requested here.
+        lock (FramebufferSync.GetValue(platform) ?? throw new IOException("No framebuffer lock."))
+        {
+            if (Framebuffer.GetValue(platform) is not WriteableBitmap source)
+                throw new IOException("No rendered frame.");
+            using var buffer = source.Lock();
+            return new WriteableBitmap(buffer.Format, buffer.AlphaFormat, buffer.Address,
+                buffer.Size, buffer.Dpi, buffer.RowBytes);
+        }
+    }
+
+    static FieldInfo HeadlessField(string name, Type expectedType)
+    {
+        var field = HeadlessWindowType.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field?.FieldType != expectedType)
+            throw new NotSupportedException($"Avalonia.Headless {HeadlessWindowType.Assembly.GetName().Version}: " +
+                $"expected {name} to be {expectedType.Name}; review the parity framebuffer copy.");
+        return field;
     }
 
     public async ValueTask DisposeAsync()

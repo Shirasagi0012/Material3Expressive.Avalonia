@@ -126,12 +126,19 @@ TabHeader 自身的颜色 Transition 保留，原生 TabItem 的选择时机也�
 该例的波纹差异在初始代码也存在。此对照仅证明该例，不推断全部波纹差异的原因。
 原始对照保留在 `tab-initial-source` 与 `tab-overlay-source` 运行目录。
 
-固定栏内容增宽在 64ms 的指示器也有尚未解决的时序差异：Core 宽 46，Avalonia 宽 39.5 DIP，
-其余采样收敛。`tab-initial-content` 在初始提交重现了 39.5 DIP，说明该例不是本次模板调整引入。
-建议进一步核对 intrinsic 更新、目标提交与动画首帧顺序；不归入原生选择适配，
-不通过修改时钟、容差或预期值绕过。
+固定栏内容增宽在 64ms 曾有时序差异：Core 宽 46，Avalonia 宽 39.5 DIP。
+本轮重新采集 `tab-content-before` 重现，并核对上述两个固定提交的 TabRow.kt（内容相同）：
+TabRowImpl 在布局中 setTabPositions 后立即测量指示器，TabIndicatorOffsetNode 直接启动目标动画，
+没有固定栏 intrinsic 变化专用的第二次等待。本轮依据用户扩大授权重新决定：删除该额外等待，
+保留共享的目标提交边界、弹簧规格和中断速度，不增加补帧或偏移。公开 API 不变，无迁移动作。
+控件回归在修改前固定栏两例失败、滚动栏两例通过；修改后 TabRowTests 24/24 通过。
 
-最终 `tab-overlay-final` 的 123 例全部捕获成功、重复及额外截图稳定：118 例在既有门禁内，
+当前 `tab-content-current` 完整 143 例捕获成功、重复和额外被动截图稳定：135 equal、
+6 withinTolerance、2 different（已确认的原生按下/方向焦点选择时机）。原有三个固定栏内容用例
+现已严格相等；新增 20 例覆盖内容增宽后反向缩窄、同次布局前合并修改、两入口、固定/滚动与 RTL，
+全部严格相等。结构化位置、指示器宽度和实际图像均参与比较，未改容差、时钟或基准。
+
+此前 `tab-overlay-final` 的 123 例全部捕获成功、重复及额外截图稳定：118 例在既有门禁内，
 5 例 different（上述 3 个固定栏内容变更例和 2 个已确认原生输入时机例）。90 个静态例严格相等。
 Badge/Tab 相关控件测试 67/67、控件库全量 2204/2204、整仓 Release 构建通过。
 首次全量测试曾在 ButtonLayoutTests 的清理阶段异常中止；未改测试，全量重跑得到上述通过结果。

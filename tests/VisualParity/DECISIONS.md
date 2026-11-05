@@ -38,7 +38,37 @@ composeEntry/avaloniaEntry、旧 compare 转换及别名，不保留兼容分支
 范围：视觉测试宿主的绘制同步，不修改 ComposeAnimation、生产组件或采样时间。
 确认：2026-10-02，维护者同意修复绘制完成判断、局部检查内部状态，并要求实施。
 
+## Compose 普通延迟与 timeout 共用宿主时间
+
+决定：参考进程在初始化协程与 Skia 前启用 coroutines 1.9.0 的 Main delay 路由；
+`ReferenceTimeoutClock` 仅将固定 Core `FlushCoroutineDispatcher`（以及显式 Main）上下文的
+timeout 转给当前宿主的 TestCoroutineScheduler。后台 IO / Skiko FrameWatcher 继续使用原始
+DefaultExecutor，宿主退出先取消场景任务，再解除测试调度器连接；同一进程只允许一个活动宿主。
+原因：固定 Core 只重写 scheduleResumeAfterDelay，withTimeout / withTimeoutOrNull 的默认
+invokeOnTimeout 原来走墙钟，导致 Tooltip 超时未发生和 ScrollBar 重复捕获不稳定。
+做法：保留 Core 的 trampoline/frame 队列和组件代码，不追加帧；advanceTo 先执行到期任务，
+frame 再发送原有的一批帧等待者。使用固定协程库的内部 DefaultExecutor 仅用于保持后台原始时间源；
+升级 Core 或协程版本时必须核对上下文类型与 DefaultDelay 路径，并运行 hostTest。
+范围：参考测试宿主，不改变生产组件或固定上游版本；不是修改组件动画时长或放宽比较门禁。
+确认：本轮依据用户扩大授权重新决定，替代 Tooltip / ScrollBar 文档中的待定方案。
+独立的真实 FrameRecomposer 测试先复现旧 timeout 不随虚拟时间结束，修复后覆盖普通延迟、
+同期限顺序、取消、被动截图、帧分离、卸载、连续宿主和后台时间隔离；真实组件另做双端 self-test。
+
 ## 自包含结果、PNG 与独立报告
+
+### Headless framebuffer 的 alpha 保留
+
+问题：锁定 Avalonia.Headless 12.1.5 的 GetLastRenderedFrame 将 Premul framebuffer 的副本标为 Opaque，
+导致半透明蓝色的原始 (0,0,128,128) 被输出成 (0,0,128,255)，完全透明像素也变为不透明。
+依据是锁定包 nuspec 的 [5825bf8 固定源码](https://github.com/AvaloniaUI/Avalonia/blob/5825bf8c66fba0c11e67c980d8ece6444576bffa/src/Headless/Avalonia.Headless/HeadlessWindowImpl.cs)
+以及独立 Skia Src 绘制、直接读取实际 framebuffer 和 PNG 的失败回归；不依据 TimePicker 目标图倒推颜色。
+决定：本轮依据用户扩大授权重新决定，Snapshot 在 Headless 原始同步锁内复制已完成 framebuffer，
+保留其实际 AlphaFormat，再沿用既有 PNG 规范化。调用仍为 host.Snapshot(...)，不请求 Draw/Frame。
+替代方案：公开 GetLastRenderedFrame 无法保留元数据；事后反推 alpha 会制造事实；升级依赖超出此修复。
+仅在测试宿主内集中检查私有字段类型，布局改变时明确失败并要求复核，不改生产控件或全局合成策略。
+验证：透明、半透明、不透明三例和被动重复采集通过；不透明 Tab 动画的六张原图与修改前逐像素相同。
+影响：含透明像素的 Avalonia 新产物纠正颜色和 alpha。历史 PNG 已丢失 alpha，不能靠 recompare 修复，
+需要重新 capture-actual 或 self-test；参考基线、容差及 straight-sRGBA8 比较规则保持不变。
 
 决定：Agent 按“用例概览 → 自包含的单采样点 YAML”读取结果，不依赖 inspect 查询接口或整包 agent.json。
 公共描述和值合并，保留双端来源、语义差异、原值和不可用原因；概览计数不代表完成百分比。

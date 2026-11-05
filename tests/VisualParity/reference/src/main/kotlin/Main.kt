@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 
 fun main(args: Array<String>) {
+    ReferenceTimeoutClock.initialize()
     val scenarios = ScenarioDiscovery.discover()
     if (args.contentEquals(arrayOf("--list-scenarios"))) {
         println(json.encodeToString(scenarios.keys.sortedWith(compareBy({ it.suite }, { it.scenario }))))
@@ -27,6 +28,7 @@ fun main(args: Array<String>) {
         "fontMediumSha256" to hash(File(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Medium.ttf")),
         "fontBoldSha256" to hash(File(root, "modules/MaterialTypography.Roboto/Assets/Roboto-Bold.ttf")),
         "compose" to "1.13.0-alpha01", "jdk" to System.getProperty("java.version"), "coroutineTimeResolution" to "1ms",
+        "coroutineTimeoutClock" to "host-test-scheduler",
         "dependencyLockSha256" to hash(File(root, "tests/VisualParity/reference/$dependencyLock")),
         "verificationMetadataSha256" to hash(File(root, "tests/VisualParity/reference/gradle/verification-metadata.xml")),
         "runnerJarSha256" to hash(runner), "classpath" to runner.parentFile.listFiles()!!.filter { it.extension == "jar" }

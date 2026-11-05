@@ -10,6 +10,16 @@
         <m3:Tab Content="Videos" Click="OnTabClick" />
         <m3:Tab Content="Photos" Click="OnTabClick" />
       </m3:TabRow>
+      <TextBlock Text="Changing labels" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <Button Content="Change selected label" HorizontalAlignment="Left" Click="OnChangeLabel" />
+      <m3:TabRow SelectedIndex="0">
+        <m3:Tab IsSelected="True"><TextBlock x:Name="ChangingLabel" Text="Inbox" /></m3:Tab>
+        <m3:Tab Content="Sent" />
+      </m3:TabRow>
+      <TabControl Height="100">
+        <TabItem x:Name="ChangingNativeTab" Header="Inbox"><TextBlock Text="The indicator follows the label width." Margin="16" /></TabItem>
+        <TabItem Header="Sent" />
+      </TabControl>
       <TextBlock Text="Stacked tabs · badge bounds" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow SelectedIndex="0">
         <m3:Tab Content="Inbox" IsSelected="True" Click="OnTabClick">

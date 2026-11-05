@@ -9,6 +9,7 @@
           <Button Content="Light / dark" Click="ToggleTheme" Margin="0,0,12,0" />
           <Button Content="LTR / RTL" Click="ToggleDirection" Margin="0,0,12,0" />
           <Button Content="12 / 24 hours" Click="ToggleClock" />
+          <Button Content="Date language: 中文 / English" Click="ToggleDateLanguage" Margin="12,0,0,0" />
         </WrapPanel>
         <TextBlock Text="Compose date content — calendar and input modes" FontSize="20" />
         <WrapPanel>

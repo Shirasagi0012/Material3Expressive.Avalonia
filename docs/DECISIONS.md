@@ -52,6 +52,15 @@
 - **适用范围与影响**：普通协程等待与确定的测试时间源；不改写动画引擎算法，不引入完整 Compose 运行时。
 - **确认依据**：2026-10-04 维护者在说明协程与动画职责后明确授权修改。
 
+### 帧末目标提交边界
+
+- **决定**：本轮依据用户扩大授权重新决定，新增 `AnimationScope.WaitForFrameEndAsync(ct)`，复用根 FrameClock 的当前批次状态和 UI dispatcher。帧内调用等当前批次，帧间调用等下一批次，随后允许调用方读取合并后的最新目标；取消同时连接作用域和调用方。
+- **原问题及依据**：PullToRefreshArrow 原先无条件 NextFrame + Yield，在距离动画当前帧越阈值时晚提交一帧。固定 AndroidX/Core 的 CircularArrowProgressIndicator 相同，animateFloatAsState 经 SideEffect 在本帧采样后提交。当前双端回弹复现了该问题。
+- **替代方案**：固定减帧或按 IsAnimating 猜测不能区分外部修改与帧内采样；另建调度器会重复根时钟；公开整个 FrameClock 无必要。新增能力只识别现有批次，不重写 Animatable 或重组系统，也不自动合并目标。
+- **调用与范围**：`await scope.WaitForFrameEndAsync(ct);` 后读取最新目标并执行已有 AnimateToAsync。首个真实调用方为下拉刷新箭头；其他组件不机械迁移。FrameScope 最小运行接口与旧 NextFrameAsync 语义不变，无破坏性迁移。
+- **验证**：作用域测试验证采样顺序、帧间等待、不追加帧、调用方取消和卸载；真实高回弹 State 验证越阈值首帧，既有合并/反向测试继续运行。帧末边界不是布局完成或渲染完成屏障。
+- **分配回归的夹具修正**：全量及独立运行曾报每帧额外 14.7–18.6 B。独立计数证明测量区间混入 HeadlessRenderTimer 的实时 tick；现仅在性能测量中停止该定时器并在 finally 恢复，同时断言测量区间 tick 为零。手动帧→dispatcher→动画链照常执行，原每帧 1024 B 上限和增量 <8 B 门禁均未修改；修正后动画模块 938 项通过。
+
 ---
 
 ## 6. 最小交互布局与工具栏对齐读数

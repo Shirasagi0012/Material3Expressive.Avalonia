@@ -234,6 +234,41 @@ public class TabRowTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(false, false)] [InlineData(false, true)]
+    [InlineData(true, false)] [InlineData(true, true)]
+    public void ContentResize_StartsIndicatorOnTheSameFrameForFixedAndScrollableRows(bool native, bool scrollable)
+    {
+        using var clock = new MotionTestClockScope();
+        var label = new Border { Width = 32, Height = 16 };
+        ItemsControl row = native ? new TabControl() : new TabRow();
+        row.Width = 300;
+        TabRowAppearance.SetIsScrollable(row, scrollable);
+        row.Items.Add(native ? new TabItem { Header = label } : new Tab { Content = label });
+        row.Items.Add(native ? new TabItem { Header = new Border { Width = 32, Height = 16 } }
+            : new Tab { Content = new Border { Width = 32, Height = 16 } });
+        var window = Show(row);
+        try
+        {
+            var content = row.GetVisualDescendants().OfType<TabRowContent>().Single();
+            clock.SendFrame(TimeSpan.Zero); window.UpdateLayout();
+            label.Width = 90; window.UpdateLayout();
+            Assert.Equal(32, content.IndicatorWidth);
+            clock.SendFrame(TimeSpan.FromMilliseconds(1)); window.UpdateLayout();
+            clock.SendFrame(TimeSpan.FromMilliseconds(16)); window.UpdateLayout();
+            Assert.Equal(32, content.IndicatorWidth); // The first animation sample keeps its start value.
+            clock.SendFrame(TimeSpan.FromMilliseconds(32)); window.UpdateLayout();
+            Assert.True(content.IndicatorWidth > 32, "Content remeasure must not insert an extra intrinsic-only frame.");
+            label.Width = 24; window.UpdateLayout();
+            for (var frame = 48; frame <= 800; frame += 16) { clock.SendFrame(TimeSpan.FromMilliseconds(frame)); window.UpdateLayout(); }
+            Assert.Equal(24, content.IndicatorWidth);
+            window.Content = null; window.UpdateLayout();
+            Assert.Equal(0, clock.PendingFrameCount);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaFact]
     public void Row_CustomSlotsAndEmptyItems_UseNormalTemplates()
     {

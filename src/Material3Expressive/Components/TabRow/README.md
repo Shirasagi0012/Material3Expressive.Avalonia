@@ -77,6 +77,10 @@ Primary 指示器随标签内容宽度，Secondary 覆盖整个 Tab。滚动栏�
 初次布局和选择变化会自动居中；同一选择下调整窗口/内容宽度不会主动重新居中。
 用户滚轮/滚动手势会取消正在进行的自动居中。
 
+更新已选 Tab.Content 或原生 TabItem.Header 时，指示器随重新测量后的内容宽度运动；
+动画中再次修改内容会保留当前速度并转向新目标。同次布局前的多次更新使用最终内容。
+Catalog 的 Changing labels 示例同时演示这两个入口，无需额外刷新或重设选择。
+
 内容布局通过 Tab.ContentLayout 或原生 TabItem 的 `TabAppearance.ContentLayout` 设置：
 
 - Stacked（默认）：只有标签或图标高 48 DIP，两者都有时至少 72 DIP，保留文字基线布局

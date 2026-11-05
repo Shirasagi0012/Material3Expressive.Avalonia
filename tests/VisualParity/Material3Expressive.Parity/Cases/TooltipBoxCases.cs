@@ -182,11 +182,10 @@ public sealed class TooltipBoxCases
                     Change(803000, "application-default", () => _ = ShowDefault());
                 }
                 Times(816000 + shift, 960000 + shift);
-                // End before the separate TooltipState 1500ms timeout, whose Core dispatcher
-                // timeout source is not virtualized by the current reference host.
+                // Long-press input lifecycle; the independent timeout case below covers expiry.
                 break;
             case "timeout":
-                Change(1000, "show-default", () => _ = state.ShowAsync());
+                Change(1000, "show-default", () => _ = ShowDefault());
                 Times(16000, 64000, 400000, 1500000, 1501000, 1520000, 1584000, 1904000);
                 break;
             case "show":

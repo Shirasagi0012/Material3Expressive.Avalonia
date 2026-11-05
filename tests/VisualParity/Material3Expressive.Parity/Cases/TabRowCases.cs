@@ -66,6 +66,18 @@ public sealed class TabRowCases
         foreach (var scrollable in new[] { false, true })
         foreach (var native in new[] { false, true })
             yield return Data($"dynamic.content.{(scrollable ? "scrollable" : "fixed")}.{(native ? "native" : "controlled")}", new(Scrollable: scrollable, Native: native, Action: "content"));
+        // Intrinsic target changes share the indicator node across both entry points and RTL.
+        foreach (var scrollable in new[] { false, true })
+        foreach (var native in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "content-interrupt", "content-coalesce" })
+            yield return Data($"dynamic.{action}.{(scrollable ? "scrollable" : "fixed")}.{(native ? "native" : "controlled")}.{(rtl ? "rtl" : "ltr")}",
+                new(Scrollable: scrollable, Native: native, Rtl: rtl, Action: action));
+        // Secondary fixed width does not depend on content; scrollable width does.
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "content-interrupt", "content-coalesce" })
+            yield return Data($"dynamic.{action}.secondary.scrollable.{(rtl ? "rtl" : "ltr")}",
+                new("secondary", Scrollable: true, Rtl: rtl, Action: action));
     }
     static CaseData<TabRowConfig> Data(string id, TabRowConfig config) => new(id, id.Replace('.', ' '), config);
 
@@ -111,6 +123,14 @@ public sealed class TabRowCases
                 Times(16000, 64000, 400000, 1000000); break;
             case "content":
                 Mutate(1000, "grow-label", () => scene.Labels[0].PreferredWidth = 90); Times(16000, 64000, 400000, 1000000); break;
+            case "content-interrupt":
+                Mutate(1000, "grow-label", () => scene.Labels[0].PreferredWidth = 90); Times(16000, 32000, 64000);
+                Mutate(65000, "shrink-label", () => scene.Labels[0].PreferredWidth = 24); Times(80000, 96000, 128000, 400000, 1000000); break;
+            case "content-coalesce":
+                Mutate(1000, "coalesced-growth", () => { scene.Labels[0].PreferredWidth = 90; scene.Labels[0].PreferredWidth = 56; });
+                Times(16000, 32000, 64000);
+                Mutate(65000, "coalesced-reversal", () => { scene.Labels[0].PreferredWidth = 24; scene.Labels[0].PreferredWidth = 90; });
+                Times(80000, 96000, 128000, 400000, 1000000); break;
             case "space": case "enter": case "directional":
                 Advance(1000); target.Focus(NavigationMethod.Tab); host.Draw(); Sample("focus"); Times(16000, 80000);
                 var key = config.Action == "space" ? Key.Space : config.Action == "directional" ? Key.Right : Key.Enter;

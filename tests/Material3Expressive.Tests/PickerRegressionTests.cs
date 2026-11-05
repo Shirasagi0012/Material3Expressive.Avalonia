@@ -27,6 +27,27 @@ namespace Material3Expressive.Tests;
 public class PickerRegressionTests
 {
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DateTitleTracksRegionalCultureAndKeepsExplicitContent(bool range)
+    {
+        TemplatedControl picker = range ? new DateRangePicker() : new DatePicker();
+        picker.SetValue(DatePicker.CultureProperty, CultureInfo.GetCultureInfo("en-US"));
+        var window = Show(picker);
+        try
+        {
+            ContentPresenter Title() => picker.GetVisualDescendants().OfType<ContentPresenter>().Single(p => p.Name == "PART_Title");
+            Assert.Equal(range ? "Select dates" : "Select date", Title().Content);
+            picker.SetValue(DatePicker.CultureProperty, CultureInfo.GetCultureInfo("zh-CN")); Draw(window);
+            Assert.Equal("选择日期", Title().Content);
+            picker.SetValue(DatePicker.TitleProperty, "Application title");
+            picker.SetValue(DatePicker.CultureProperty, CultureInfo.GetCultureInfo("pt-PT")); Draw(window);
+            Assert.Equal("Application title", Title().Content);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData(false, false, false)]
     [InlineData(true, false, false)]
     [InlineData(true, true, false)]

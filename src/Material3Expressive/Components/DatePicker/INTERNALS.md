@@ -27,6 +27,20 @@ UTC 当天零点毫秒数只留在与 Compose 对照时使用，不进入公开 
 
 ## 选择、输入与模式
 
+### 日期与时间共享译表
+
+本轮依据用户扩大授权重新决定并修复 DateTimeStrings 的区域键与导入：此前 JSON 使用 zhcn/ptpt 等
+Kotlin 函数名，查询却使用 zh-cn/pt-pt；as/in/is 的反引号函数也未被导入。问题影响日期、范围和三个时间入口。
+现在按固定 Core `l10n/Translations.kt` 的真实 localeTag 映射导入 84 个语言/地区、52 个日期时间字符串，
+保留全部原有翻译正文，补入缺失语言与 24 小时后缀。运行时先 language-region，再 language，最后英文，
+忽略脚本但保留地区（zh-Hant-HK → zh-HK），沿用 he/iw、id/in 别名。没有从未知中文区域猜测繁简体。
+这是 Core 桌面字符串平台分支；AndroidX 的 Android 资源选择不混入桌面规则。
+
+API 不变；以前依赖错误英文回退的应用将看到对应译文。显式 Title/Headline 仍可覆盖。
+维护导入及独立核验：`python scripts/update_datetime_strings.py --upstream <Core仓库路径> [--check]`，
+脚本只读取 docs/upstream-baseline.json 的固定提交，不消费本机 HEAD。对旧正文逐键检查无改动。
+真实 TimeInput editor/error live region 与 DatePicker/DateRangePicker 调用方共同验证共享查找。
+
 日历点选：单日直接替换。范围在没有终点或新日期早于起点时重新开始，否则补上终点。
 不可选日期、年份范围外的日期不改变当前值。`NormalizeSelection` 会去掉越界日期；范围缺少起点，或终点早于起点时，两端一起清空。
 

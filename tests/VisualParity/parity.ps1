@@ -22,13 +22,14 @@ try {
             exit $LASTEXITCODE
         } finally { Pop-Location }
     }
-    if ($Command -in @('build','prepare-reference','self-test')) {
+    if ($Command -in @('build','prepare-reference','self-test','test')) {
         Push-Location (Join-Path $PSScriptRoot 'reference')
         try {
+            $referenceTask = if ($Command -eq 'test') { 'hostTest' } else { 'installDist' }
             if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-                & ./gradlew.bat installDist --console plain --dependency-verification strict
+                & ./gradlew.bat $referenceTask --console plain --dependency-verification strict
             } else {
-                & sh ./gradlew installDist --console plain --dependency-verification strict
+                & sh ./gradlew $referenceTask --console plain --dependency-verification strict
             }
             if ($LASTEXITCODE -ne 0) { throw 'Compose reference build failed.' }
         } finally { Pop-Location }

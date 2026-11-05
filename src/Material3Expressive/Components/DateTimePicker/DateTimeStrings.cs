@@ -18,13 +18,16 @@ internal static class DateTimeStrings
     internal static string Get(string key,CultureInfo? culture=null,params object[] args)
     {
         culture ??= CultureInfo.CurrentUICulture;
+        // Fixed Core localeTagChain uses language + region, then language, then English.
+        // Scripts do not replace the region (zh-Hant-HK must still resolve zh-HK).
+        var language=culture.TwoLetterISOLanguageName.ToLowerInvariant();
+        language=language switch {"he"=>"iw","id"=>"in",_=>language};
+        var region=!culture.IsNeutralCulture && culture.Name.Length>0
+            ? new RegionInfo(culture.Name).TwoLetterISORegionName.ToLowerInvariant() : null;
         string? text=null;
-        for(var candidate=culture;candidate.Name.Length>0;candidate=candidate.Parent)
-        {
-            var name=candidate.Name.ToLowerInvariant();
-            name=name switch {"he"=>"iw","id"=>"in",_=>name};
-            if(Translations.TryGetValue(name,out var dictionary)&&dictionary.TryGetValue(key,out text))break;
-        }
+        if(region is not null && Translations.TryGetValue($"{language}-{region}",out var regional))
+            regional.TryGetValue(key,out text);
+        if(text is null && Translations.TryGetValue(language,out var neutral))neutral.TryGetValue(key,out text);
         text ??= Translations["en"][key];
         return args.Length==0?text:string.Format(culture,text,args);
     }
