@@ -7,9 +7,27 @@ using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
 
+/// <summary>The frame boundary at which a retained animation accepts its latest target.</summary>
+public enum AnimationCommitPhase
+{
+    /// <summary>Commit before sampling; a new run can join the arriving frame.</summary>
+    BeforeFrame,
+    /// <summary>Sample existing runs first, then commit, as in Compose animateValueAsState's SideEffect.</summary>
+    AfterFrame
+}
+
+/// <summary>How a new target replaces an active retained animation.</summary>
+public enum AnimationInterruptionMode
+{
+    /// <summary>Continue from the current velocity and last frame time, like Animatable.animateTo.</summary>
+    Continue,
+    /// <summary>Cancel the old run first and restart from its value with zero velocity and a fresh first frame.</summary>
+    Restart
+}
+
 /// <summary>
-/// Retained, target-driven animation state. Updates are coalesced before the next animation
-/// sample batch, including updates made during measure. A Visual owner reconnects across
+/// Retained, target-driven animation state. Updates are coalesced at the selected frame
+/// boundary, including updates made during measure. A Visual owner reconnects across
 /// scope rebuilds; a supplied scope owns the fixed connection's lifetime.
 /// </summary>
 public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimatedStateCommit
@@ -20,6 +38,8 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
     private readonly Optional<T> _threshold;
     private readonly IAnimationSpec<T> _defaultSpec;
     private readonly AnimationVector _vectorScratch;
+    private readonly AnimationCommitPhase _commitPhase;
+    private readonly AnimationInterruptionMode _interruptionMode;
     private readonly List<AnimatedStateConnection<T>> _connections = [];
 
     // Host connection. _scope is the live scope; _endingScope remembers the scope that just
@@ -61,7 +81,14 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
     public AnimatedState(Visual owner, T initialValue, ITwoWayConverter<T> converter,
         IAnimationSpec<T>? defaultAnimationSpec = null, Optional<T> visibilityThreshold = default,
         string? label = null)
-        : this(initialValue, converter, defaultAnimationSpec, visibilityThreshold, label)
+        : this(owner, initialValue, converter, AnimationCommitPhase.BeforeFrame,
+            AnimationInterruptionMode.Continue, defaultAnimationSpec, visibilityThreshold, label) { }
+
+    /// <summary>Connects to an owner with explicit target commit and interruption semantics.</summary>
+    public AnimatedState(Visual owner, T initialValue, ITwoWayConverter<T> converter,
+        AnimationCommitPhase commitPhase, AnimationInterruptionMode interruptionMode = AnimationInterruptionMode.Continue,
+        IAnimationSpec<T>? defaultAnimationSpec = null, Optional<T> visibilityThreshold = default, string? label = null)
+        : this(initialValue, converter, defaultAnimationSpec, visibilityThreshold, label, commitPhase, interruptionMode)
     {
         ArgumentNullException.ThrowIfNull(owner);
         _owner = owner;
@@ -87,7 +114,14 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
     public AnimatedState(AnimationScope scope, T initialValue, ITwoWayConverter<T> converter,
         IAnimationSpec<T>? defaultAnimationSpec = null, Optional<T> visibilityThreshold = default,
         string? label = null)
-        : this(initialValue, converter, defaultAnimationSpec, visibilityThreshold, label)
+        : this(scope, initialValue, converter, AnimationCommitPhase.BeforeFrame,
+            AnimationInterruptionMode.Continue, defaultAnimationSpec, visibilityThreshold, label) { }
+
+    /// <summary>Connects to a fixed scope with explicit target commit and interruption semantics.</summary>
+    public AnimatedState(AnimationScope scope, T initialValue, ITwoWayConverter<T> converter,
+        AnimationCommitPhase commitPhase, AnimationInterruptionMode interruptionMode = AnimationInterruptionMode.Continue,
+        IAnimationSpec<T>? defaultAnimationSpec = null, Optional<T> visibilityThreshold = default, string? label = null)
+        : this(initialValue, converter, defaultAnimationSpec, visibilityThreshold, label, commitPhase, interruptionMode)
     {
         ArgumentNullException.ThrowIfNull(scope);
         scope.VerifyActive();
@@ -96,10 +130,15 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
     }
 
     private AnimatedState(T initialValue, ITwoWayConverter<T> converter,
-        IAnimationSpec<T>? defaultSpec, Optional<T> threshold, string? label)
+        IAnimationSpec<T>? defaultSpec, Optional<T> threshold, string? label, AnimationCommitPhase commitPhase,
+        AnimationInterruptionMode interruptionMode)
     {
         Dispatcher.UIThread.VerifyAccess();
         ArgumentNullException.ThrowIfNull(converter);
+        if (!Enum.IsDefined(commitPhase)) throw new ArgumentOutOfRangeException(nameof(commitPhase));
+        _commitPhase = commitPhase;
+        if (!Enum.IsDefined(interruptionMode)) throw new ArgumentOutOfRangeException(nameof(interruptionMode));
+        _interruptionMode = interruptionMode;
         ArgumentOutOfRangeException.ThrowIfLessThan(converter.Dimension, 1);
         _converter = converter;
         _threshold = threshold;
@@ -228,7 +267,7 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
             _scope = scope;
             _connectionGeneration++;
             _failed = false;
-            _coordinator = AnimatedStateCoordinator.Get(scope);
+            _coordinator = AnimatedStateCoordinator.Get(scope, _commitPhase);
             _scopeResource = scope.RegisterResource(() => { if (scope.IsEnding) OnScopeEnding(scope); });
             // Old runs may still be unwinding. A fresh private runtime object avoids their
             // finally blocks clearing the replacement's restored velocity/timebase.
@@ -351,15 +390,24 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
                 : SnapshotSpec(snapshotSpec);
             if (!IsCurrent()) return;
 
+            var resumingSameTarget = resume is not null && Equal(snapshotTarget, _runTarget);
             _resumeState = null;
             _runTarget = snapshotTarget;
             _runSpec = runSpec;
             var run = ++_runGeneration;
+            // AnimateAsState.restartAnimation cancels its job before calling animateTo.
+            // Direct Animatable retargeting instead snapshots velocity/time before cancellation.
+            // Keep these independent from the commit phase; resuming the same target retains its snapshot.
+            var restart = !resumingSameTarget && _interruptionMode == AnimationInterruptionMode.Restart;
+            // Connect restored velocity/time onto a fresh idle runtime. If the target changed
+            // before that resume committed, StopAsync has no running task to reset that snapshot.
+            if (resume is not null && restart)
+                _animation = new Animatable<T>(_converter, _value, label: Label);
             SetRunning(true);
             if (!IsCurrent() || run != _runGeneration) return;
 
             var animation = _animation;
-            _ = scope.Launch(_ => DriveAsync(scope, animation, snapshotTarget, runSpec, snapshotSpec, run, generation), Label);
+            _ = scope.Launch(_ => DriveAsync(scope, animation, snapshotTarget, runSpec, snapshotSpec, run, generation, restart), Label);
         }
         catch (Exception error)
         {
@@ -370,7 +418,7 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
     // ---- Running the animation -----------------------------------------------------------------
 
     private async Task DriveAsync(AnimationScope scope, Animatable<T> animation, T runTarget,
-        IAnimationSpec<T> runSpec, IAnimationSpec<T> requestedSpec, int run, int generation)
+        IAnimationSpec<T> runSpec, IAnimationSpec<T> requestedSpec, int run, int generation, bool restart)
     {
         bool IsCurrent() => !_disposed && run == _runGeneration && generation == _connectionGeneration
             && ReferenceEquals(scope, ActiveScope);
@@ -378,6 +426,11 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
         Task<AnimationResult<T>>? task = null;
         try
         {
+            if (restart)
+            {
+                await animation.StopAsync();
+                if (!IsCurrent()) return;
+            }
             task = animation.AnimateToAsync(scope, runTarget, runSpec, block: track =>
             {
                 if (!IsCurrent()) return;

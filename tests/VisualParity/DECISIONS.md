@@ -4,6 +4,26 @@
 覆盖与采样规范见 [AUTHORING](AUTHORING.md)，测量与容差算法见 [MEASUREMENTS](MEASUREMENTS.md)。
 组件特有的适配及已接受差异随组件 README 保存，不由本文件扩大范围。
 
+## 主键指针时间与原生路由（2026-11-05）
+
+本轮依据用户扩大授权重新决定：AvaloniaHost.Input 统一使用共享测试适配器 HeadlessMouseInput，
+通过窗口自身的 MouseDevice/InputRoot/raw-input 路由送入逻辑毫秒时间，与 ComposeHost 的一秒原点相同。
+依据锁定 Avalonia 12.1.5 / `5825bf8` 的 HeadlessWindowImpl：公开鼠标扩展使用 Stopwatch.ElapsedMilliseconds。
+独立 PointerTimeTests 在旧实现要求 1001/1017/1033ms，实得 528/581/582ms；新实现核对精确时间、
+捕获后越界移动、同一指针身份、主键状态与不额外发帧。它不固定速度或组件结果。
+AppBar、Sheet、Swipe、Drawer、Modal Rail 的重复 raw-input 实现归入同一入口；仅测试项目共享源文件，
+不增加产品 API。测试调用为 `new HeadlessMouseInput(window).Send(timeMs, "move", point)`，绘制由夹具显式完成。
+改平台时间源会扩大到整个 Headless 实例，组件各自替换时间则掩盖真实输入，因此均不采用。
+主键 trace 增加实际送入的 pointerTimeMs；旧实际捕获不能靠 recompare 修复，需重新采集。
+
+新 pointer-velocity 双端用例使用真实 draggable / AppBarVerticalGesture，对照两点、三点、反向、
+同时间戳、暂停与内容随拖拽移动。前五种实际释放速度相等；移动内容保留差异：Core 约 -0.000584 DIP/s，
+Avalonia -1250.000732 DIP/s。固定 Core SyntheticEventSender 在布局后重送同时间戳的鼠标 Move，
+isDraggableZeroDeltaConsumptionEnabled 为 true；本地没有对应的场景输入重送协议。
+不向测试或组件补造重复样本来消除此差异，也不把原先墙钟偶然相等当成已验证。
+单个 enabled 策略行为测试改为明确暂停超过 40ms 后释放，隔离其原本要验证的禁用策略；立即释放的失败
+继续由上述真实双端用例及 search-app-bar.dynamic.drag 保留。此决定修复夹具时间，不接受或解决移动内容的速度差异。
+
 ## 独立用例、C# 定义与冻结配置
 
 决定：C# 是用例定义的唯一来源，普通循环/LINQ 与组件配置类型生成具体 CaseMetadata；JSON 只作为运行产物。

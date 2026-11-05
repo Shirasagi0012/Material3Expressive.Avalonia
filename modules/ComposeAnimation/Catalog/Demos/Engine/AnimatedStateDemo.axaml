@@ -10,7 +10,7 @@
     </UserControl.Resources>
 
     <StackPanel Classes="demo-root" Spacing="12">
-        <Border Classes="demo-stage" Height="210" MinWidth="360">
+        <Border Classes="demo-stage" Height="260" MinWidth="360">
             <StackPanel x:Name="Actors" Spacing="16" Margin="24">
                 <Border x:Name="FirstActor" Classes="demo-actor"
                         Width="80" Height="48" HorizontalAlignment="Left">
@@ -19,6 +19,10 @@
                 <Border x:Name="SecondActor" Classes="demo-actor"
                         Width="80" Height="48" HorizontalAlignment="Left">
                     <TextBlock Text="B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="ComposeActor" Classes="demo-actor"
+                        Width="80" Height="48" HorizontalAlignment="Left">
+                    <TextBlock Text="C" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
             </StackPanel>
         </Border>

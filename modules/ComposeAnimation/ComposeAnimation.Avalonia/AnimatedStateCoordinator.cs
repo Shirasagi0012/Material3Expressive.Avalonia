@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Avalonia.Threading;
 using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
@@ -9,25 +10,34 @@ internal interface IAnimatedStateCommit
     void RejectCommitFrame(Exception error, bool report);
 }
 
-// One queue and demand waiter per existing frame environment. DrainStale is registered
-// by AnimationScope first; these commits precede FrameClock's waiter snapshot.
+// One queue and demand waiter per phase in an existing frame environment. Before-frame
+// commits follow DrainStale; after-frame commits follow the complete waiter sample batch.
 internal sealed class AnimatedStateCoordinator
 {
-    private static readonly ConditionalWeakTable<FrameClock, AnimatedStateCoordinator> Coordinators = new();
+    private sealed class CoordinatorsForClock(FrameClock clock)
+    {
+        internal AnimatedStateCoordinator? Before;
+        internal AnimatedStateCoordinator? After;
+        internal AnimatedStateCoordinator Get(AnimationCommitPhase phase) => phase == AnimationCommitPhase.BeforeFrame
+            ? Before ??= new(clock, phase) : After ??= new(clock, phase);
+    }
+    private static readonly ConditionalWeakTable<FrameClock, CoordinatorsForClock> Coordinators = new();
     private readonly FrameClock _clock;
+    private readonly AnimationCommitPhase _phase;
     private readonly HashSet<IAnimatedStateCommit> _pending = [];
     private CancellationTokenSource? _wake;
     private bool _committing;
     private bool _failed;
 
-    private AnimatedStateCoordinator(FrameClock clock)
+    private AnimatedStateCoordinator(FrameClock clock, AnimationCommitPhase phase)
     {
         _clock = clock;
-        clock.RegisterBeforeFrame(Commit);
+        _phase = phase;
+        if (phase == AnimationCommitPhase.BeforeFrame) clock.RegisterBeforeFrame(Commit);
     }
 
-    public static AnimatedStateCoordinator Get(AnimationScope scope)
-        => Coordinators.GetValue(scope.FrameClock, static clock => new(clock));
+    public static AnimatedStateCoordinator Get(AnimationScope scope, AnimationCommitPhase phase)
+        => Coordinators.GetValue(scope.FrameClock, static clock => new(clock)).Get(phase);
 
     public void Schedule(IAnimatedStateCommit state)
     {
@@ -58,7 +68,20 @@ internal sealed class AnimatedStateCoordinator
     {
         try
         {
-            do { await _clock.WaitAsync(wake.Token); }
+            do
+            {
+                if (_phase == AnimationCommitPhase.BeforeFrame || !_clock.IsDispatchingFrame)
+                    await _clock.WaitAsync(wake.Token);
+                if (_phase == AnimationCommitPhase.AfterFrame)
+                {
+                    // Same boundary as AnimationScope.WaitForFrameEndAsync: an in-frame
+                    // target joins this frame's commit; an external target waits for a frame.
+                    // The old run samples first. Interruption policy belongs to the state.
+                    await Dispatcher.Yield(FrameClock.ResumePriority);
+                    wake.Token.ThrowIfCancellationRequested();
+                    Commit();
+                }
+            }
             while (_pending.Count != 0);
         }
         catch (OperationCanceledException) when (wake.IsCancellationRequested) { }

@@ -85,7 +85,7 @@ class ComposeHost(val writer:CaptureWriter, width:Int=240, height:Int=160, platf
             position*RenderScale.toFloat(), buttons=PointerButtons(isPrimaryPressed=pressed), timeMillis=1000+timeUs.coerceAtLeast(0)/1000,
             type=PointerType.Mouse, button=if(operation=="down" || operation=="up") PointerButton.Primary else null)
         scheduler.runCurrent(); writer.record(timeUs,"input","$operation (${position.x},${position.y})",buildJsonObject {
-            put("action",operation);put("x",position.x);put("y",position.y);put("unit","dip");put("space","scene");put("pointerType","mouse");
+            put("action",operation);put("x",position.x);put("y",position.y);put("unit","dip");put("space","scene");put("pointerType","mouse");put("pointerTimeMs",1000+timeUs.coerceAtLeast(0)/1000);
             put("button",if(operation=="move") JsonNull else JsonPrimitive("primary")) })
     }
     fun snapshot(id:String, stage:String, points:List<ProbePoint>, image:Boolean=true):Sample {

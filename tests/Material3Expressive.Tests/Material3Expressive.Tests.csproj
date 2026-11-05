@@ -25,6 +25,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Material3Expressive\Material3Expressive.csproj"/>
         <Compile Include="../Shared/AppBar/*.cs" Link="TestSupport/AppBar/%(Filename)%(Extension)" />
+        <Compile Include="../Shared/Input/*.cs" Link="TestSupport/Input/%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>

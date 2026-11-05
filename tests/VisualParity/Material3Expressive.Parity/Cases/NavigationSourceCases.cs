@@ -14,7 +14,7 @@ public sealed class NavigationSourceCases
     {
         foreach (var kind in new[] { "bar", "rail", "short-top", "short-start" })
         {
-            foreach (var action in new[] { "overlap", "replace", "disable", "hover-focus", "native-replace" })
+            foreach (var action in new[] { "overlap", "replace", "disable", "disable-coalesce", "hover-focus", "native-replace" })
                 yield return new($"dynamic.{kind}.{action}", $"{kind} {action}", new(kind, action));
             yield return new($"dynamic.{kind}.no-label-rtl", $"{kind} icon-only RTL mapping", new(kind, "overlap", "none", true, 32));
         }
@@ -95,6 +95,19 @@ public sealed class NavigationSourceCases
                     Change(65000, "disable", () => item.IsEnabled = false); At(80000); At(128000);
                     Change(129000, "external-release", () => source.Emit(new MaterialInteractionEvent.Release(first))); At(160000);
                     Change(193000, "enable", () => item.IsEnabled = true); break;
+                case "disable-coalesce":
+                    Change(65000, "disable", () => item.IsEnabled = false); At(80000); At(128000);
+                    Change(129000, "enable-disable-enable", () =>
+                    {
+                        item.IsEnabled = true; item.IsEnabled = false; item.IsEnabled = true;
+                    });
+                    At(144000); At(160000);
+                    Change(161000, "disable-enable-disable", () =>
+                    {
+                        item.IsEnabled = false; item.IsEnabled = true; item.IsEnabled = false;
+                    });
+                    Change(193000, "external-release", () => source.Emit(new MaterialInteractionEvent.Release(first)));
+                    break;
             }
         }
         At(256000); At(400000); At(800000);

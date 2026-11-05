@@ -86,10 +86,9 @@ ISelectionProvider 报告状态，不替应用维护互斥。
 
 `NavigationInteractionSourceTests` 覆盖身份配对、禁用、源替换、重挂和键盘输入；双端
 `navigation-source` 覆盖重叠按压、源替换、悬停/焦点交接、RTL 与非标准图标尺寸的映射。
-悬停/焦点交接相等；重叠波纹部分 Compose 自检不稳定，Avalonia 稳定。禁用和原生激活过程的颜色
-仍受已确认 AnimatedState 调度影响，例如禁用 128ms 的 alpha 为 Core 197 / Avalonia 165。
-时序缺口、推荐的共享调度评估及维护者决定边界见 [NavigationBar](../NavigationBar/INTERNALS.md#验证入口) 前的交互源说明；
-不将该颜色差或换源事件帧差异视为微小浮点适配。
+悬停/焦点交接相等；重叠波纹部分 Compose 自检不稳定，Avalonia 稳定。共享选择轨迹已改为
+AfterFrame + Restart，修正旧禁用 alpha 197/165 及反向恢复差异；源事件帧的即时状态差异仍保留。
+本轮依据用户扩大授权重新决定，固定上游证据和历史决定见 docs/DECISIONS §25。
 
 ## 验证入口
 
@@ -127,8 +126,6 @@ Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndi
 本次保留原有生命周期：模板替换或 detach 释放整个选择动画身份，重新挂载按当前状态初始化。
 这不同于长期保留 AnimatedState、仅替换输出连接的用法，是当前导航组件已有的重置语义。
 
-AnimatedState 的新运行在到达帧进入采样，不再额外等待原实现的 NextFrameAsync 路径；
-静止端点与 spring 参数保留。当前 AnimatedState 还会在目标替换时接续速度，
-旧本地实现则先 Stop 清零速度。维护者已确认采用当前 AnimatedState 默认行为，
-组件不添加中断或等帧补偿；固定上游的实际中断轨迹仍待独立研究，不据此声称逐帧相等。
-本次没有修改 Compose 参考或比较容差，也没有重新执行双端视觉验证。
+原 2026-10-15 选择了 AnimatedState 默认帧前提交与速度接续，当时未验证固定上游的中断轨迹。
+本轮依据用户扩大授权重新决定采用帧后提交及取消后重启；保留共享状态、规格、属性贡献和模板生命周期。
+详见 NavigationBar 的共享选择动画说明与 docs/DECISIONS §25；默认 AnimatedState 行为仍保留。

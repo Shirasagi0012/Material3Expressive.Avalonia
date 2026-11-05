@@ -89,6 +89,13 @@ class NavigationSourceCases {
                         change(129000,"external-release"){emit(PressInteraction.Release(first))};at(160000)
                         change(193000,"enable"){setEnabled(true)}
                     }
+                    "disable-coalesce" -> {
+                        change(65000,"disable"){setEnabled(false)};at(80000);at(128000)
+                        change(129000,"enable-disable-enable"){setEnabled(true);setEnabled(false);setEnabled(true)}
+                        at(144000);at(160000)
+                        change(161000,"disable-enable-disable"){setEnabled(false);setEnabled(true);setEnabled(false)}
+                        change(193000,"external-release"){emit(PressInteraction.Release(first))}
+                    }
                 }
             }
             at(256000);at(400000);at(800000)

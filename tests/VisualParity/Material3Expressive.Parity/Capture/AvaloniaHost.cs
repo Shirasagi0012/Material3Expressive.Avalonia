@@ -13,6 +13,7 @@ using System.Reflection;
 using ComposeAnimation.TestSupport;
 using MaterialSymbols.Avalonia;
 using MaterialTypography.Roboto;
+using Material3Expressive.TestSupport;
 
 namespace Material3Expressive.Parity;
 
@@ -27,6 +28,7 @@ public sealed class AvaloniaHost : IAsyncDisposable
     readonly CaptureWriter writer;
     readonly ManualFrameSource clock = new(Dispatcher.UIThread.VerifyAccess);
     readonly ManualTimeProvider? delayTime;
+    readonly HeadlessMouseInput mouseInput;
     public AnimationTestWindow Window { get; }
     public long TimeUs { get; private set; } = -2000;
     bool hasFrame;
@@ -47,6 +49,7 @@ public sealed class AvaloniaHost : IAsyncDisposable
         this.writer = writer;
         this.delayTime = delayTime;
         Window = new(clock, delayTime ?? TimeProvider.System) { Width = width, Height = height, Background = Brushes.White, RequestedThemeVariant = ThemeVariant.Light };
+        mouseInput = new(Window);
         // Load the theme assembly even when the first case mounts only native Avalonia controls.
         // A URI string alone does not ensure that the test runner has loaded this dependency.
         var themeAssembly = typeof(Components.MaterialSurface).Assembly.GetName().Name;
@@ -137,18 +140,14 @@ public sealed class AvaloniaHost : IAsyncDisposable
 
     public void Input(string operation, Point position)
     {
-        switch (operation)
-        {
-            case "down": Window.MouseDown(position, MouseButton.Left); break;
-            case "up": Window.MouseUp(position, MouseButton.Left); break;
-            case "move": Window.MouseMove(position); break;
-            default: throw new ArgumentException(operation);
-        }
+        var pointerTimeMs = checked((ulong)(1000 + Math.Max(0, TimeUs) / 1000));
+        mouseInput.Send(pointerTimeMs, operation, position);
+        Dispatcher.UIThread.RunJobs();
 
         writer.Record(TimeUs, "input", $"{operation} ({position.X},{position.Y})",
             new
             {
-                action = operation, x = position.X, y = position.Y, unit = "dip", space = "scene", pointerType = "mouse",
+                action = operation, x = position.X, y = position.Y, unit = "dip", space = "scene", pointerType = "mouse", pointerTimeMs,
                 button = operation == "move" ? null : "primary"
             });
     }

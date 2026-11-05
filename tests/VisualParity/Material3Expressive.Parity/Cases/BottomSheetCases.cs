@@ -142,7 +142,7 @@ public sealed class BottomSheetCases
     }
     private sealed class Scene
     {
-        private readonly AvaloniaHost _host; private readonly IMouseDevice _mouse; private bool _pressed; private int _dismissals;
+        private readonly AvaloniaHost _host; private int _dismissals;
         private readonly BottomSheet? _sheet;
         public BottomSheet Sheet => _sheet ?? Modal?.PresentedSheet ?? Scaffold!.GetVisualDescendants().OfType<BottomSheet>().Single();
         public ModalBottomSheet? Modal { get; }
@@ -156,7 +156,6 @@ public sealed class BottomSheetCases
             _host = host; CaseDefaults.SetThemeColors(host, c.Dark);
             host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.InverseSurface] = Color.Parse(c.Dark ? "#E6E0E9" : "#322F35");
             host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.InverseOnSurface] = Color.Parse(c.Dark ? "#322F35" : "#F5EFF7");
-            _mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
             // Compose size(24.dp) obeys the zero-height Box's maximum constraint. Avalonia's
             // explicit child Height can overflow its Border, so give the marker the same bound.
             Content = new Border { Height = c.ContentHeight, Background = Brush.Parse("#336699"), Child = new Border { Width = 24, Height = Math.Min(24, c.ContentHeight), Background = Brush.Parse("#FFD166"), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top } };
@@ -186,16 +185,7 @@ public sealed class BottomSheetCases
             }
             Root = new Border { Background = Brushes.White, Child = (Control?)Modal ?? (Control?)Scaffold ?? Sheet, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
-        public void Input(string action, Point p)
-        {
-            var type = action switch { "down" => RawPointerEventType.LeftButtonDown, "up" => RawPointerEventType.LeftButtonUp, _ => RawPointerEventType.Move };
-            var platform = _host.Window.PlatformImpl!;
-            var raw = (RawInputEventArgs)Activator.CreateInstance(typeof(RawPointerEventArgs), _mouse,
-                (ulong)(1000 + Math.Max(0, _host.TimeUs) / 1000), platform.GetType().GetProperty("InputRoot")!.GetValue(platform), type, p,
-                action == "move" && _pressed ? RawInputModifiers.LeftMouseButton : RawInputModifiers.None)!;
-            ((Action<RawInputEventArgs>)platform.GetType().GetProperty("Input")!.GetValue(platform)!)(raw);
-            if (action == "down") _pressed = true; if (action == "up") _pressed = false;
-        }
+        public void Input(string action, Point p) => _host.Input(action, p);
         public ProbePoint[] Measure()
         {
             Measurement[] Geometry(Control control) => AvaloniaMeasurements.Geometry(control, _host.Window).Where(m => m.Name is "box" or "size").ToArray();

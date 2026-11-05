@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Input.Raw;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Components;
@@ -100,8 +99,6 @@ public sealed class SwipeToDismissBoxCases
     private sealed class Scene
     {
         private readonly AvaloniaHost _host;
-        private readonly IMouseDevice _mouse;
-        private bool _pressed;
         private int _dismissals;
         private string _lastDismissal = "none";
         public SwipeToDismissBox Box { get; }
@@ -111,7 +108,6 @@ public sealed class SwipeToDismissBoxCases
         public Scene(AvaloniaHost host, SwipeToDismissConfig c)
         {
             _host = host;
-            _mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
             // Compose size(24.dp) obeys the parent's maximum width. Avalonia's explicit Width
             // can overflow a zero-width Border, so express that same fixture constraint here.
             _foreground = new Border { Background = Brush.Parse("#336699"), Child = new Border { Width = Math.Min(24, c.AutoSize ? 96 : c.Width), Height = 24, Background = Brush.Parse("#FFD166"), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center } };
@@ -128,16 +124,7 @@ public sealed class SwipeToDismissBoxCases
             Box.Dismissed += (_, e) => { _dismissals++; _lastDismissal = e.Direction.ToString(); };
             Root = new Border { Padding = new Thickness(32), Background = Brushes.White, Child = Box, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
-        public void Input(string action, Point p)
-        {
-            var type = action switch { "down" => RawPointerEventType.LeftButtonDown, "up" => RawPointerEventType.LeftButtonUp, _ => RawPointerEventType.Move };
-            var platform = _host.Window.PlatformImpl!;
-            var raw = (RawInputEventArgs)Activator.CreateInstance(typeof(RawPointerEventArgs), _mouse,
-                (ulong)(1000 + Math.Max(0, _host.TimeUs) / 1000), platform.GetType().GetProperty("InputRoot")!.GetValue(platform), type, p,
-                action == "move" && _pressed ? RawInputModifiers.LeftMouseButton : RawInputModifiers.None)!;
-            ((Action<RawInputEventArgs>)platform.GetType().GetProperty("Input")!.GetValue(platform)!)(raw);
-            if (action == "down") _pressed = true; if (action == "up") _pressed = false;
-        }
+        public void Input(string action, Point p) => _host.Input(action, p);
         public ProbePoint[] Measure()
         {
             Measurement[] Geometry(Control control) => AvaloniaMeasurements.Geometry(control, _host.Window).Where(m => m.Name is "box" or "size").ToArray();

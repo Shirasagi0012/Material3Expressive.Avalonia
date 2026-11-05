@@ -47,8 +47,10 @@ Menu.SelectedItemShape。溢出切换项的 ripple 始终使用同一 SelectedIt
 普通命令没有选择轨迹，直接更新内部禁用/普通内容色。
 
 模板布局 detach 时释放订阅和动画身份，重新 attach 按原生当前状态初始化。
-这与本轮 Bar / Rail 的生命周期一致。采用 AnimatedState 当前默认目标替换和采样行为，
-不加 Stop 清零速度或额外等帧。固定 Compose 的逐帧一致性仍需要独立研究。
+这与 Bar / Rail 的生命周期一致。原 2026-10-15 决定沿用默认帧前提交和速度接续；
+本轮依据用户扩大授权重新决定继续共享导航项的实际轨迹，采用 AfterFrame + Restart，
+按固定 AnimateAsState 的 SideEffect 与取消顺序执行。此变更不修改原生命令激活/溢出语义。
+共享依据见 docs/DECISIONS §25；CommandBar 是本地适配，不声明存在 Compose 同名组件的逐帧验收。
 
 ## 确认与边界
 

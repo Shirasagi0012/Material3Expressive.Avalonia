@@ -15,6 +15,13 @@ WindowInfo，Core 的桌面阴影光照会单独读取后者。显式非零窗�
 
 ## 用例分类与稳定输入
 
+鼠标主键场景通过 `host.AdvanceTo(timeUs); host.Input("down" / "move" / "up", position)` 发送，
+两端实际 PointerEvent 时间均为 `1000 + max(0, timeUs) / 1000` 毫秒，trace 的 `pointerTimeMs` 可核对。
+Avalonia 入口复用 Headless 窗口的原生 MouseDevice、InputRoot 和 raw-input 路由，保留捕获与按键状态；
+Input 本身不发送动画帧、不主动绘制，场景继续显式调用 Draw/Frame，输入前应已提交实际命中几何。
+不要用 Headless `Window.MouseMove/MouseDown/MouseUp` 编写需要时间一致的主键场景：这些扩展从真实秒表取时间，
+会使速度受截图和机器耗时影响。右键、触摸与键盘的专用入口不由这个主键适配器覆盖。
+
 涉及真实本地化文本时，应在元数据中显式指定语言/地区和字体，并在用例退出时恢复进程语言。
 不能把 JVM 默认语言与 .NET CurrentUICulture 当作天然相同，也不能用主字体哈希代替实际角色的字体配置。
 TimeInput 的错误文本读数曾独立证明中文/SansSerif 与英文/Roboto 的输入混淆；现有用例提供固定输入，

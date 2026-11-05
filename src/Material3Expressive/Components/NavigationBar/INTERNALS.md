@@ -88,10 +88,10 @@ WindowInsets 为宿主提供的物理 Thickness、桌面默认零，保留外部
 `NavigationInteractionSourceTests` 覆盖身份配对、禁用、源替换、重挂和键盘输入；双端
 `navigation-source` 覆盖重叠按压、源替换、悬停/焦点交接、RTL 与非标准图标尺寸的映射。
 悬停/焦点交接的事实与图像相等；重叠波纹部分 Compose 自检不稳定，抽查最大单通道差 1，Avalonia 稳定。
-禁用颜色仍复现既有 AnimatedState 提前采样：128ms 的 icon/label alpha 为 Core 197 / Avalonia 165，400ms 回到相等。
-该路径调用 `IconColor.UpdateTarget(disabledColor, effectsSpec)`，未加入组件局部补帧。
-若要恢复严格上游时序，需要维护者重新决定已确认的共享 AnimatedState 提交行为；建议独立评估该共享调度，
-影响导航选择、颜色及布局的到达帧和中断，不在交互源接入中改写决定。事件帧的 enabled/selected 即时更新差异也仍保留。
+禁用颜色使用 AnimatedState 的 AfterFrame + Restart：固定上游在 SideEffect 提交目标，并在新 animateTo 前取消旧 Job。
+旧报告 128ms alpha 197/165 的提前采样与反向恢复颜色差异已由共享机制修正；
+源事件帧的 enabled/selected 即时读数与 Core 重组缓存仍分别报告，不延迟原生输入来伪造相等。
+本轮依据用户扩大授权重新决定，范围、旧决定及方案比较见 docs/DECISIONS §25。
 
 ## 验证入口
 
@@ -128,8 +128,7 @@ Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndi
 本次保留原有生命周期：模板替换或 detach 释放整个选择动画身份，重新挂载按当前状态初始化。
 这不同于长期保留 AnimatedState、仅替换输出连接的用法，是当前导航组件已有的重置语义。
 
-AnimatedState 的新运行在到达帧进入采样，不再额外等待原实现的 NextFrameAsync 路径；
-静止端点与 spring 参数保留。当前 AnimatedState 还会在目标替换时接续速度，
-旧本地实现则先 Stop 清零速度。维护者已确认采用当前 AnimatedState 默认行为，
-组件不添加中断或等帧补偿；固定上游的实际中断轨迹仍待独立研究，不据此声称逐帧相等。
-本次没有修改 Compose 参考或比较容差，也没有重新执行双端视觉验证。
+原 2026-10-15 决定采用 AnimatedState 默认的帧前提交与速度接续，当时明确未经固定上游中断轨迹验证。
+本轮依据用户扩大授权重新决定：四条轨迹显式采用帧后提交及取消后重启；保留旧动画在提交帧的最后采样，
+新动画清零速度、从下一真实帧计时。动画参数、值连续性、模板释放及属性贡献不变。
+默认 AnimatedState API 的旧行为仍保留，其他消费者不随本决定自动迁移；详细依据见共享决定 §25。

@@ -41,7 +41,8 @@ internal sealed class AppBarWithSearchLayout : Decorator
         base.OnAttachedToVisualTree(e);
         _scope = AnimationScope.Get(this).CreateChild("Search app bar appearance");
         Observe();
-        _color = AnimatedState.Create(this, ContainerTarget, label: "Search app bar container color");
+        _color = AnimatedState.Create(this, ContainerTarget, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart, label: "Search app bar container color");
         _color.ValueChanged += Paint;
         Paint(_color.Value);
         _gesture = new AppBarVerticalGesture(() => _behavior?.DirectDragEnabled == true,

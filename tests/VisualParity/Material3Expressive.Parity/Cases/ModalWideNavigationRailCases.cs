@@ -132,7 +132,6 @@ public sealed class ModalWideNavigationRailCases
         private readonly AvaloniaHost _host;
         private readonly ModalWideNavigationRailConfig _config;
         private readonly Marker _page, _icon, _label;
-        private readonly IMouseDevice _mouse;
         private int _clicks;
         public ModalWideNavigationRail Rail { get; }
         public WideNavigationRailItem Item { get; }
@@ -153,7 +152,6 @@ public sealed class ModalWideNavigationRailCases
             });
             // Headless's existing mouse device, through its public runtime property.
             // The normal raw pipeline receives the same logical timestamps as Compose.
-            _mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
             _icon = new Marker { Icon = true, PreferredWidth = 24, PreferredHeight = 24 };
             _label = new Marker { PreferredWidth = config.LabelWidth, PreferredHeight = 16 };
             Item = new WideNavigationRailItem { Icon = _icon, Label = _label, IsSelected = true };
@@ -185,17 +183,7 @@ public sealed class ModalWideNavigationRailCases
                 FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
                 Child = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { Rail, _page } } } };
         }
-        public void Input(string action, Point position)
-        {
-            var type = action switch { "down" => RawPointerEventType.LeftButtonDown, "up" => RawPointerEventType.LeftButtonUp, _ => RawPointerEventType.Move };
-            var raw = (RawInputEventArgs)Activator.CreateInstance(typeof(RawPointerEventArgs), _mouse,
-                (ulong)(1000 + Math.Max(0, _host.TimeUs) / 1000), _host.Window.PlatformImpl!.GetType().GetProperty("InputRoot")!.GetValue(_host.Window.PlatformImpl), type, position,
-                action == "move" && _pressed ? RawInputModifiers.LeftMouseButton : RawInputModifiers.None)!;
-            var input = (Action<RawInputEventArgs>)_host.Window.PlatformImpl!.GetType().GetProperty("Input")!.GetValue(_host.Window.PlatformImpl)!;
-            input(raw);
-            if (action == "down") _pressed = true; if (action == "up") _pressed = false;
-        }
-        private bool _pressed;
+        public void Input(string action, Point position) => _host.Input(action, position);
         public void SetTheme(bool dark)
         {
             _host.Window.Resources[Sys.Color.Surface] = Color.Parse(dark ? "#141218" : "#FEF7FF");

@@ -14,6 +14,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.TestSupport;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -182,21 +183,26 @@ public class AppBarWithSearchTests
         var bar = new AppBarWithSearch { InputField = new Marker(360, 56), ScrollBehavior = behavior };
         var window = Show(bar);
         clock.SendFrame(TimeSpan.Zero);
-        window.MouseMove(new Point(300, 32));
-        window.MouseDown(new Point(300, 32), MouseButton.Left);
-        window.MouseMove(new Point(300, 12));
+        var mouse = new HeadlessMouseInput(window);
+        using (window.CaptureRenderedFrame()) { } // commit hit-test geometry before raw input
+        mouse.Send(1001, "move", new Point(300, 32));
+        mouse.Send(1001, "down", new Point(300, 32));
+        mouse.Send(1017, "move", new Point(300, 12));
         Flush(window);
         Assert.Equal(-19.875f, behavior.State.ScrollOffset);
         behavior.CanScroll = false;
         Assert.Equal(0, behavior.OnPreScroll(-20));
-        window.MouseUp(new Point(300, 12), MouseButton.Left);
+        // This test isolates the initial enabled policy: a stationary pause removes fling velocity.
+        // Immediate-release velocity and moving-content behavior are covered by pointer-velocity parity.
+        mouse.Send(1080, "up", new Point(300, 12));
         Frames(clock, window, 16, 1008);
         Assert.Equal(0, behavior.State.ScrollOffset);
-        window.MouseDown(new Point(300, 32), MouseButton.Left);
-        window.MouseMove(new Point(300, 12));
+        using (window.CaptureRenderedFrame()) { }
+        mouse.Send(2033, "down", new Point(300, 32));
+        mouse.Send(2049, "move", new Point(300, 12));
         Flush(window);
         Assert.Equal(-19.875f, behavior.State.ScrollOffset);
-        window.MouseUp(new Point(300, 12), MouseButton.Left);
+        mouse.Send(2112, "up", new Point(300, 12));
         window.Close();
         Assert.Equal(0, clock.PendingFrameCount);
     }

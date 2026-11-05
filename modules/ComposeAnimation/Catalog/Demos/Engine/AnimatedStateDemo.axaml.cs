@@ -12,6 +12,7 @@ namespace Catalog.Demos.Engine;
 public sealed partial class AnimatedStateDemo : DemoControlBase
 {
     private readonly AnimatedState<double> _width;
+    private readonly AnimatedState<double> _composeWidth;
     private Border _second;
     private IDisposable _secondConnection;
     private bool _expanded;
@@ -25,20 +26,43 @@ public sealed partial class AnimatedStateDemo : DemoControlBase
             defaultAnimationSpec: new TweenSpec<double>(TimeSpan.FromMilliseconds(280), easing: new LinearEasing()),
             label: "Shared actor width");
         _width.Bind(FirstActor, WidthProperty);
+        _composeWidth = AnimatedState.Create(this, 80d, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart,
+            defaultAnimationSpec: new TweenSpec<double>(TimeSpan.FromMilliseconds(280), easing: new LinearEasing()),
+            label: "Compose-style actor width");
+        _composeWidth.Bind(ComposeActor, WidthProperty);
         
         _secondConnection = _width.Bind(_second, WidthProperty);
         
         AddDiagnostic("宽度", () => _width.Value, () => _width.TargetValue, "DIP");
         AddDiagnostic("正在运行", () => _width.IsRunning);
+        AddDiagnostic("帧后提交宽度", () => _composeWidth.Value, () => _composeWidth.TargetValue, "DIP");
     }
 
     private void ToggleButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _expanded = !_expanded;
         _width.UpdateTarget(_expanded ? 280 : 80);
+        _composeWidth.UpdateTarget(_expanded ? 280 : 80);
     }
 
     private void ReplaceButton_OnClick(object? sender, RoutedEventArgs e) => Replace();
+
+    [DemoAction("比较帧前提交与帧后提交，反向后均到达目标")]
+    public async Task CompareCommitModes()
+    {
+        _width.UpdateTarget(280);
+        _composeWidth.UpdateTarget(280);
+        await AdvanceAsync(2);
+        Assert(_width.Value > _composeWidth.Value, "帧后提交不进入同一到达帧的采样");
+        await AdvanceAsync(5);
+        await CaptureAsync("commit-modes-in-flight");
+        _width.UpdateTarget(80);
+        _composeWidth.UpdateTarget(80);
+        await AdvanceAsync(22);
+        Assert(_width.Value == 80 && _composeWidth.Value == 80, "两个模式均完成反向运动");
+        await CaptureAsync("commit-modes-completed");
+    }
 
     private void ReconnectButton_OnClick(object? sender, RoutedEventArgs e)
     {

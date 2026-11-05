@@ -6,7 +6,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Avalonia.Input;
-using Avalonia.Input.Raw;
 using Material3Expressive.Components;
 using Material3Expressive.TestSupport;
 using Material3Expressive.Foundation.Rendering;
@@ -168,7 +167,6 @@ public sealed class AppBarCases
     }
     private sealed class Scene
     {
-        private bool _pressed;
         private readonly AvaloniaHost _host;
         private readonly AppBarConfig _config;
         private readonly Dictionary<string, Marker> _markers = [];
@@ -306,17 +304,7 @@ public sealed class AppBarCases
                     TopAppBar.ActionIconContentColorProperty, TopAppBar.SubtitleContentColorProperty }) bar.ClearValue(property);
             }
         }
-        internal void Input(string action, Point position)
-        {
-            var platform = _host.Window.PlatformImpl!;
-            var mouse = (IMouseDevice)platform.GetType().GetProperty("MouseDevice")!.GetValue(platform)!;
-            var type = action switch { "down" => RawPointerEventType.LeftButtonDown, "up" => RawPointerEventType.LeftButtonUp, _ => RawPointerEventType.Move };
-            var raw = (RawInputEventArgs)Activator.CreateInstance(typeof(RawPointerEventArgs), mouse,
-                (ulong)(1000 + Math.Max(0, _host.TimeUs) / 1000), platform.GetType().GetProperty("InputRoot")!.GetValue(platform), type, position,
-                action == "move" && _pressed ? RawInputModifiers.LeftMouseButton : RawInputModifiers.None)!;
-            ((Action<RawInputEventArgs>)platform.GetType().GetProperty("Input")!.GetValue(platform)!)(raw);
-            if (action == "down") _pressed = true; if (action == "up") _pressed = false;
-        }
+        internal void Input(string action, Point position) => _host.Input(action, position);
         internal ProbePoint[] Measure(bool state = false)
         {
             Measurement[] Geometry(Control control) => AvaloniaMeasurements.Geometry(control, _host.Window).Where(m => m.Name is "box" or "size").ToArray();

@@ -252,3 +252,14 @@
 - **替代方案**：三项 Snackbar 专属覆盖属性无法复用到 Tooltip；全布局树的 AlignmentLine 合并/传播需要重建任意面板定位规则，当前两个显式入口没有该需求。采用受限共享事实与既有组件布局，标准 Button 模板度量仍属 Snackbar。
 - **证据与影响**：固定 AndroidX/Core Snackbar.kt 的 FirstBaseline/LastBaseline 分支及 Tooltip.kt 的 paddingFromBaseline 构成消费契约；真实两组件、XAML/绑定、动态更新和双端几何用例验证该入口。无现有公开 API 删除；已有原生文字/原生 BaselineOffset 不需迁移。自定义内容需发布真实布局所得基线，不能拿常量伪造实际文本；未发布时仍保留上游缺基线分支。任意容器自动传播、Badge 文字判断及文字栅格一致性不在此决定范围。
 - **2026-11-05 BadgedBox 接入：本轮依据用户扩大授权重新决定。** Badge 原 10 月决定因全库 alignment-line 成本推迟转发，历史依据保留在其 INTERNALS。现在真实 Snackbar/RichTooltip 组合可以使用既有读取器；增加内部可选 `IMaterialTextBaselineProvider`，仅由了解自己测量布局的 BadgedBox 实现，按固定两端 Badge.kt 转发锚点而排除徽标。固定高度的居中偏移从当前测量尺寸得出，支持嵌套、原生多行文字、动态基线和内容替换；显式覆盖仍优先。用法为 `new Snackbar { Content = new BadgedBox { Content = text, Badge = badge } }`，无需手工同步基线。替代的任意树遍历无法知道布局语义，逐实例绑定则重复组件内部知识，均不采用。无需调用方迁移；旧手工覆盖可清除以恢复转发。仍不提供任意 Panel 的自动传播或文字栅格等价保证。
+
+
+## 25. AnimatedState 的提交阶段与取消后重启
+
+- **状态**：生效中；本轮依据用户扩大授权重新决定。
+- **原决定**：NavigationBar / Rail / CommandBar 于 2026-10-15 采用 AnimatedState 的帧前采样与速度接续，目标是复用长期状态及属性贡献，不再为每个控件包装任务。当时明确未证明固定 Compose 中断轨迹一致；原由保留在组件说明与 ComposeAnimation 的 ANIMATED_STATE 设计文档。
+- **证据**：固定 AndroidX `f3ed195f…` / Core `a9e47e8…` 的 `animation-core/AnimateAsState.kt` 通过 SideEffect 更新；`restartAnimation` 在新 `animateTo` 前取消旧 Job，`Animatable.endAnimation` 清零速度和 lastFrameTime。当前导航源禁用场景复现 128ms alpha 197/165；只改帧末提交解决首次禁用，但 256ms 恢复仍为 161/189。再保留取消顺序后，两处颜色读数相等，原超差图像进入既有门禁。
+- **决定**：为 AnimatedState 增加显式 `AnimationCommitPhase.AfterFrame` 及独立 `AnimationInterruptionMode.Restart`；每种阶段共享根队列与唤醒，复用既有 FrameClock/dispatcher 的帧末边界。旧动画先采样；Restart 等其取消清理后再起新运行，从新真实帧计时。重入、断开、Scope 恢复与异常仍走原有所有权协议。
+- **用法及范围**：`AnimatedState.Create(owner, initialColor, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)`。NavigationBar/Rail 与复用它们轨迹的 CommandBar 切换项、AppBarWithSearch 的容器颜色采用此组合。其他调用方及原重载继续 BeforeFrame + Continue；不扩大到 Transition、动画输入状态或完整 Compose 重组。
+- **替代方案**：统一延迟所有动画会破坏已有布局目标合同；组件各自 NextFrame/Stop 会重复状态合并、异常和生命周期；只延后首帧不能保留取消顺序，不能修复反向轨迹。两个选项分别表达提交与中断，避免把速度策略隐含在阶段名称里。
+- **兼容及边界**：原有公共构造函数和全部工厂重载签名保留，无外部强制迁移。采用新模式才改变时序。非帧输入后的原生 enabled 即时读数与 Core 重组缓存仍分别保留；不为它们延迟原生交互，也不将残留差异改记为通过。真实消费者、模块行为回归和双端 self-test 是验证依据，未改变基线或容差。

@@ -141,9 +141,7 @@ public sealed class NavigationDrawerCases
         private readonly Marker _icon = new() { PreferredWidth = 24, PreferredHeight = 24 };
         private readonly Marker _label = new() { PreferredWidth = 48, PreferredHeight = 16 };
         private readonly Marker _badge = new() { PreferredWidth = 20, PreferredHeight = 12 };
-        private readonly IMouseDevice _mouse;
         private int _clicks;
-        private bool _pressed;
         public DrawerState State { get; private set; }
         public NavigationDrawer Drawer { get; }
         public DrawerSheet Sheet { get; }
@@ -158,7 +156,6 @@ public sealed class NavigationDrawerCases
         public Scene(AvaloniaHost host, NavigationDrawerConfig c)
         {
             _host = host; _config = c; SetTheme(c.Dark);
-            _mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
             State = new(c.Open ? DrawerValue.Open : DrawerValue.Closed, _ => !c.Veto);
             Drawer = c.Kind switch { "modal" => new ModalNavigationDrawer { State = State, GesturesEnabled = c.Gestures },
                 "dismissible" => new DismissibleNavigationDrawer { State = State, GesturesEnabled = c.Gestures }, _ => new PermanentNavigationDrawer() };
@@ -188,16 +185,7 @@ public sealed class NavigationDrawerCases
             };
             Root = new Border { Padding = new Thickness(16), Background = Brushes.White, Child = Drawer, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
-        public void Input(string action, Point p)
-        {
-            var type = action switch { "down" => RawPointerEventType.LeftButtonDown, "up" => RawPointerEventType.LeftButtonUp, _ => RawPointerEventType.Move };
-            var platform = _host.Window.PlatformImpl!;
-            var raw = (RawInputEventArgs)Activator.CreateInstance(typeof(RawPointerEventArgs), _mouse,
-                (ulong)(1000 + Math.Max(0, _host.TimeUs) / 1000), platform.GetType().GetProperty("InputRoot")!.GetValue(platform), type, p,
-                action == "move" && _pressed ? RawInputModifiers.LeftMouseButton : RawInputModifiers.None)!;
-            ((Action<RawInputEventArgs>)platform.GetType().GetProperty("Input")!.GetValue(platform)!)(raw);
-            if (action == "down") _pressed = true; if (action == "up") _pressed = false;
-        }
+        public void Input(string action, Point p) => _host.Input(action, p);
         public void SetTheme(bool dark)
         {
             CaseDefaults.SetThemeColors(_host, dark);

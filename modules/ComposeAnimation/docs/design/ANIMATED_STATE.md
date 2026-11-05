@@ -202,6 +202,17 @@ var current = _size.Value;
 
 ## 5. 帧提交与按需唤醒
 
+本节原帧前提交决定继续作为默认行为；本轮依据用户扩大授权新增 `AnimationCommitPhase.AfterFrame`
+与独立的 `AnimationInterruptionMode.Restart`。依据固定 AndroidX/Core 的 AnimateAsState.kt：
+SideEffect 提交更新，restartAnimation 先取消旧 Job 再启动 animateTo；两端该算法相同。
+每个根环境按需持有每种阶段的一份队列/唤醒等待者，帧后分支沿用 FrameClock 的批次标记与 UI dispatcher，
+不修改 Runtime 求值器或根帧顺序。帧内更新在当前批次后合并；帧间更新等待下一批次后合并。
+提交期间的重入留到下一批，Dispose、Scope generation 与失败隔离仍先于提交。
+Restart 等旧动画取消清理完成再启动，新的 generation 阻止旧运行发通知；普通 Continue 不变。
+原决定的动机是布局目标能在到达帧开始采样，这仍适用于既有默认调用；新的选择服务于实际
+NavigationBar/Rail、CommandBar 选择轨迹与搜索顶栏颜色，不把其他使用者机械迁移。
+用法及兼容性见 [使用说明](../usage/animated-state.md)。以下原帧前顺序只描述 BeforeFrame 分支。
+
 每个现有根帧环境有一份待提交状态集合。它只协调 AnimatedState 的目标请求，不改变根时间戳、FrameClock.ResumePriority 或已有宿主的调度方式。
 
 采用当前帧前钩子，明确顺序：
@@ -455,7 +466,7 @@ AnimatedState<T> 保存初值、最新请求、输出状态、事件、单个 An
 | 相同目标不因 spec 变化重启 | 保留 |
 | 当前值/速度的中断接续 | 使用现有 Runtime，不独立重写 |
 | 最新完成回调 | 事件在有效完成时读取当前订阅 |
-| composition SideEffect 提交 | 适配为采样批次前的合并提交，不宣称等价于 composition commit |
+| composition SideEffect 提交 | 默认 BeforeFrame 保持历史合同；新增 AfterFrame 在旧采样后提交，仍不模拟完整重组 |
 | composition 身份和生命周期 | 适配为显式状态对象和宿主连接 |
 | 默认/显式 Spring visibility threshold | 按解析规则区分，不能丢失存在性 |
 | Label 动态改变/Converter 更换 | 首版固定构造配置，重新创建状态表达身份变化 |

@@ -43,6 +43,25 @@ protected override Size MeasureOverride(Size availableSize)
 
 帧前提交的新运行加入到达帧的采样批次，不先额外等待一次 NextFrameAsync。截止点之后收到的请求属于下一批；空闲时按需唤醒，稳定后停止请求帧。
 
+固定 Compose `animate*AsState` 的调用方可以显式选择另一组语义：
+
+```csharp
+var color = AnimatedState.Create(this, initialColor,
+    AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart,
+    label: "Container color");
+color.UpdateTarget(targetColor, colorSpec);
+```
+
+`AfterFrame` 等本批次的旧动画采样完毕后再提交，帧间更新等待下一批次，采样回调内的更新属于当前批次的帧末。
+首次运行从下一个真实帧取得起始时间；不添加或伪造帧。多个目标仍只提交截止点前的最后一个。
+这对应 SideEffect 的目标提交边界，不是布局/绘制完成屏障，也不模拟完整重组系统。
+
+`Restart` 在启动新目标前取消并等待旧运行清理，保留最后采样值，重置速度及起始帧；
+固定上游 AnimateAsState.restartAnimation 使用这条路径。`Continue` 则保持直接 Animatable.animateTo 的速度和上一帧时间。
+两项独立配置：帧后提交也可以保留速度。原有构造函数/工厂重载保持帧前提交与 Continue，源码和二进制签名保留，
+没有全局迁移要求。Scope 重建时若目标未变，仍保留恢复快照，Restart 不把宿主恢复误作新目标中断；
+恢复提交前目标已改变时，则从冻结值以零速度和新帧起点启动。
+
 这不是最终布局分支选择协议。组件仍负责识别哪些测量结果可成为目标；目标来自动画约束下的输出时要检查反馈关系，需要独立目标布局时使用 Lookahead。
 
 ## 属性输出与模板替换
@@ -140,4 +159,11 @@ Catalog 示例：
 dotnet run --project modules/ComposeAnimation/Catalog/Catalog.csproj -- --demo state/target
 ```
 
-演示的 Retarget、ReplaceTarget、ReconnectTarget 动作验证共享属性贡献与目标生命周期。手动帧/headless 数值验证不等于所有 native 平台的调度或逐像素一致性验证。
+演示的 Retarget、ReplaceTarget、ReconnectTarget 动作验证共享属性贡献与目标生命周期。
+第三个色块 C 使用 AfterFrame + Restart；CompareCommitModes 动作对照 A 的默认模式，检查首段进度和中途反向后的终值：
+
+```powershell
+dotnet run --project modules/ComposeAnimation/Catalog/Catalog.csproj -- --run state/target --action CompareCommitModes --out artifacts/animated-state-catalog
+```
+
+手动帧/headless 数值验证不等于所有 native 平台的调度或逐像素一致性验证。

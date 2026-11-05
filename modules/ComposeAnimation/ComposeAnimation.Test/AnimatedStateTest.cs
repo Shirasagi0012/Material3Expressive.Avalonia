@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -11,6 +11,141 @@ public class AnimatedStateTest
 {
     private static TimeSpan Ms(double value) => TimeSpan.FromMilliseconds(value);
     private static TweenSpec<double> Linear(double duration = 100) => new(Ms(duration), easing: new LinearEasing());
+
+    [Fact]
+    public Task AfterFrame_CoalescesAndStartsSamplingOnTheFollowingFrame() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, commitPhase: AnimationCommitPhase.AfterFrame);
+        var unused = new CountingSpec();
+        var used = new CountingSpec();
+        state.UpdateTarget(100, unused);
+        state.UpdateTarget(80, used);
+        Assert.Equal(0, used.Calls);
+        clock.Pump(Ms(0));
+        Assert.Equal(0, unused.Calls);
+        Assert.Equal(1, used.Calls);
+        Assert.True(state.IsRunning);
+        Assert.Equal(0, state.Value);
+        clock.Pump(Ms(16));
+        Assert.Equal(0, state.Value);
+        clock.Pump(Ms(50));
+        Assert.Equal(40, state.Value, 7);
+        clock.Pump(Ms(50));
+        Assert.Equal(80, state.Value);
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task AfterFrame_InterruptionSamplesOldRunBeforeAcceptingNewTarget() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, commitPhase: AnimationCommitPhase.AfterFrame);
+        state.UpdateTarget(100, Linear());
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(16));
+        clock.Pump(Ms(40));
+        Assert.Equal(40, state.Value, 7);
+        state.UpdateTarget(0, Linear());
+        clock.Pump(Ms(20));
+        Assert.Equal(60, state.Value, 7);
+        clock.Pump(Ms(50));
+        Assert.Equal(30, state.Value, 7);
+        clock.Pump(Ms(50));
+        Assert.Equal(0, state.Value);
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task RestartInterruptionUsesSampledValueButResetsFrameOrigin() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart);
+        state.UpdateTarget(100, Linear());
+        clock.Pump(Ms(0)); clock.Pump(Ms(16)); clock.Pump(Ms(40));
+        state.UpdateTarget(0, Linear());
+        clock.Pump(Ms(20));
+        Assert.Equal(60, state.Value, 7);
+        clock.Pump(Ms(16));
+        Assert.Equal(60, state.Value, 7);
+        clock.Pump(Ms(50));
+        Assert.Equal(30, state.Value, 7);
+        clock.Pump(Ms(50));
+        Assert.Equal(0, state.Value);
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task RestartSpring_MatchesFreshSpringFromLastSampleInsteadOfKeepingVelocity() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart);
+        var spring = new SpringSpec<double>(.8, 200, .001);
+        state.UpdateTarget(100, spring);
+        clock.Pump(Ms(0)); clock.Pump(Ms(16)); clock.Pump(Ms(40));
+        state.UpdateTarget(0, spring);
+        clock.Pump(Ms(16));
+        // An independently created spring has no previous velocity or frame origin.
+        // Compare its whole reverse segment with the interrupted retained state.
+        var reference = Animatable.Create(state.Value);
+        var reverse = reference.AnimateToAsync(window.AnimationRoot, 0, spring);
+        for (var i = 0; i < 80; i++)
+        {
+            clock.Pump(Ms(16));
+            Assert.Equal(reference.Value, state.Value, 7);
+        }
+        Assert.True(reverse.IsCompletedSuccessfully);
+        Assert.False(state.IsRunning);
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task AfterFrame_DisposeFromOldSamplePreventsQueuedTargetFromStarting() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart);
+        state.UpdateTarget(100, Linear());
+        clock.Pump(Ms(0)); clock.Pump(Ms(16));
+        var unused = new CountingSpec();
+        state.UpdateTarget(200, unused);
+        state.ValueChanged += _ => state.Dispose();
+        clock.Pump(Ms(40));
+        Assert.Equal(0, unused.Calls);
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task AfterFrame_TargetFromSamplingCommitsInThatBatchAndDisposeCancelsPendingWork() => OnUi(() =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var driver = AnimatedState.Create(window.AnimationRoot, 0d);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, commitPhase: AnimationCommitPhase.AfterFrame);
+        driver.ValueChanged += value => state.UpdateTarget(value, Linear());
+        driver.UpdateTarget(100, Linear());
+        clock.Pump(Ms(0));
+        clock.Pump(Ms(100));
+        Assert.True(state.IsRunning);
+        clock.Pump(Ms(16));
+        clock.Pump(Ms(50));
+        Assert.Equal(50, state.Value, 7);
+        state.Dispose();
+        Assert.Equal(0, clock.PendingFrameCount);
+        window.Close();
+    });
 
     [Fact]
     public Task InitialAndEqualTargets_AreIdleEvenWithNewSpecInstances() => OnUi(() =>
@@ -200,15 +335,18 @@ public class AnimatedStateTest
         Assert.Equal(.9, target.Opacity);
     });
 
-    [Fact]
-    public Task SameRootReparent_RestoresBindingBeforeSampling_AndKeepsVelocityTimebase() => OnUi(() =>
+    [Theory]
+    [InlineData(AnimationCommitPhase.BeforeFrame)]
+    [InlineData(AnimationCommitPhase.AfterFrame)]
+    public Task SameRootReparent_RestoresBindingBeforeSampling_AndKeepsVelocityTimebase(AnimationCommitPhase phase) => OnUi(() =>
     {
         var host = new Border { Opacity = .9 };
         using var scene = new ReparentFixture(host);
-        using var state = AnimatedState.Create(host, 0d);
+        using var state = AnimatedState.Create(host, 0d, phase, AnimationInterruptionMode.Restart);
         using var connection = state.Bind(host, Visual.OpacityProperty);
         state.UpdateTarget(1, Linear());
         scene.Step(0);
+        if (phase == AnimationCommitPhase.AfterFrame) scene.Step(0);
         scene.Step(40);
         var oldScope = AnimationScope.Get(host);
         var sawFrozenContribution = false;
@@ -218,6 +356,7 @@ public class AnimatedStateTest
                 sawFrozenContribution = Math.Abs(host.Opacity - .4) < 1e-7;
         });
         scene.Move();
+        if (phase == AnimationCommitPhase.AfterFrame) scene.Step(0);
         scene.Step(20);
         Assert.NotSame(oldScope, AnimationScope.Get(host));
         Assert.True(sawFrozenContribution);
@@ -226,13 +365,36 @@ public class AnimatedStateTest
     });
 
     [Fact]
-    public Task TrueDetach_FreezesAndDoesNotWake_UntilReattach() => OnUi(() =>
+    public Task RestartTargetChangedDuringReparent_UsesFreshTimebaseRatherThanResumingOldTarget() => OnUi(() =>
     {
         var host = new Border();
         using var scene = new ReparentFixture(host);
-        using var state = AnimatedState.Create(host, 0d);
+        using var state = AnimatedState.Create(host, 0d, AnimationCommitPhase.AfterFrame,
+            AnimationInterruptionMode.Restart);
+        state.UpdateTarget(100, Linear());
+        scene.Step(0); scene.Step(0); scene.Step(40);
+        Assert.Equal(40, state.Value, 7);
+        scene.Move();
+        state.UpdateTarget(0, Linear());
+        scene.Step(20); // commit the changed target, rather than resume the old run
+        Assert.Equal(40, state.Value, 7);
+        scene.Step(16); // first real sample establishes a fresh origin
+        Assert.Equal(40, state.Value, 7);
+        scene.Step(50);
+        Assert.Equal(20, state.Value, 7);
+    });
+
+    [Theory]
+    [InlineData(AnimationCommitPhase.BeforeFrame)]
+    [InlineData(AnimationCommitPhase.AfterFrame)]
+    public Task TrueDetach_FreezesAndDoesNotWake_UntilReattach(AnimationCommitPhase phase) => OnUi(() =>
+    {
+        var host = new Border();
+        using var scene = new ReparentFixture(host);
+        using var state = AnimatedState.Create(host, 0d, phase, AnimationInterruptionMode.Restart);
         state.UpdateTarget(100, Linear());
         scene.Step(0);
+        if (phase == AnimationCommitPhase.AfterFrame) scene.Step(0);
         scene.Step(40);
         scene.Detach();
         Dispatcher.UIThread.RunJobs();
@@ -242,6 +404,7 @@ public class AnimatedStateTest
         Assert.Equal(0, scene.Frames.PendingFrameCount);
         scene.Right.Children.Add(host);
         scene.Step(0);
+        if (phase == AnimationCommitPhase.AfterFrame) scene.Step(0);
         Assert.Equal(40, state.Value, 7);
         scene.Step(50);
         Assert.Equal(120, state.Value, 7);
@@ -519,12 +682,14 @@ public class AnimatedStateTest
         }
     }
 
-    [Fact]
-    public Task CanceledFrameSource_ReportsOnceWithoutSpinningDemandLoop() => OnUi(() =>
+    [Theory]
+    [InlineData(AnimationCommitPhase.BeforeFrame)]
+    [InlineData(AnimationCommitPhase.AfterFrame)]
+    public Task CanceledFrameSource_ReportsOnceWithoutSpinningDemandLoop(AnimationCommitPhase phase) => OnUi(() =>
     {
         var clock = new CanceledFrameSource();
         var window = new AnimationTestWindow(clock);
-        using var state = AnimatedState.Create(window.AnimationRoot, 0d);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, phase);
         var failures = 0;
         window.AnimationRoot.AnimationFailed += (_, _) => failures++;
         state.UpdateTarget(100, Linear());
@@ -539,14 +704,16 @@ public class AnimatedStateTest
         window.Close();
     });
 
-    [Fact]
-    public Task ForeignHookFailure_DoesNotPermanentlyDisableCommitCoordinator() => OnUi(() =>
+    [Theory]
+    [InlineData(AnimationCommitPhase.BeforeFrame)]
+    [InlineData(AnimationCommitPhase.AfterFrame)]
+    public Task ForeignHookFailure_DoesNotPermanentlyDisableCommitCoordinator(AnimationCommitPhase phase) => OnUi(() =>
     {
         using var clock = new ManualFrameSource();
         var window = new AnimationTestWindow(clock);
         var failure = new InvalidOperationException("before-frame hook");
         var hook = window.AnimationRoot.FrameClock.RegisterBeforeFrame(() => throw failure);
-        using var state = AnimatedState.Create(window.AnimationRoot, 0d);
+        using var state = AnimatedState.Create(window.AnimationRoot, 0d, phase);
         var errors = new List<Exception>();
         window.AnimationRoot.AnimationFailed += (_, e) => errors.Add(e.Exception);
         state.UpdateTarget(100, Linear());
@@ -556,6 +723,7 @@ public class AnimatedStateTest
         hook.Dispose();
         state.UpdateTarget(200, Linear());
         clock.Pump(Ms(0));
+        if (phase == AnimationCommitPhase.AfterFrame) clock.Pump(Ms(0));
         clock.Pump(Ms(100));
         Assert.Equal(200, state.Value);
         window.Close();

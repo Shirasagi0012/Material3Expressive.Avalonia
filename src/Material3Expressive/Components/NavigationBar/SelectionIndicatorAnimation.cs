@@ -19,10 +19,10 @@ internal sealed class SelectionIndicatorAnimation : IDisposable
     public SelectionIndicatorAnimation(Visual owner, bool isSelected, Color iconColor, Color textColor)
     {
         var selectionProgress = isSelected ? 1f : 0f;
-        IndicatorOpacity = AnimatedState.Create(owner, selectionProgress, label: "Selection indicator opacity");
-        IndicatorSize = AnimatedState.Create(owner, selectionProgress, label: "Selection indicator size");
-        IconColor = AnimatedState.Create(owner, iconColor, label: "Selection icon color");
-        TextColor = AnimatedState.Create(owner, textColor, label: "Selection text color");
+        IndicatorOpacity = AnimatedState.Create(owner, selectionProgress, label: "Selection indicator opacity", commitPhase: AnimationCommitPhase.AfterFrame, interruptionMode: AnimationInterruptionMode.Restart);
+        IndicatorSize = AnimatedState.Create(owner, selectionProgress, label: "Selection indicator size", commitPhase: AnimationCommitPhase.AfterFrame, interruptionMode: AnimationInterruptionMode.Restart);
+        IconColor = AnimatedState.Create(owner, iconColor, label: "Selection icon color", commitPhase: AnimationCommitPhase.AfterFrame, interruptionMode: AnimationInterruptionMode.Restart);
+        TextColor = AnimatedState.Create(owner, textColor, label: "Selection text color", commitPhase: AnimationCommitPhase.AfterFrame, interruptionMode: AnimationInterruptionMode.Restart);
     }
 
     public void UpdateTargets(

@@ -31,7 +31,7 @@
 
 `CreateWithGap` / `CreateContained` 只选择默认 motion 分支，不把主题解析时机移到工厂。实际主进度规格仍从挂载消费者模板的有效配置读取；内容 tween 保留上游固定时长和 easing。初始 Expanded 同时初始化主进度和内容至 1。
 
-搜索顶栏先测导航与操作，再为搜索分配剩余空间；搜索实际首选宽度仍由输入决定，不因为 Row 有权重就强行填至 720 DIP。默认左右搜索 padding 为 8、上下为 4，导航 start / 操作 end 为 4。外层 Surface 是矩形；`CornerRadius` 配置内部搜索。外层颜色复用 `AnimatedState<Color>`，内部 scrolled 搜索颜色按上游直接切换；初次挂载显式发布动画初值，避免初始 contentOffset 已重叠时错误显示基础色。颜色与 elevation 均以 Animation 优先级贡献投影，不覆写应用配置。直接操作项绕过 presenter 的逻辑继承，沿用 AppBar 已有的低优先级样式投影，移除项、换模板和卸载释放这些样式。
+搜索顶栏先测导航与操作，再为搜索分配剩余空间；搜索实际首选宽度仍由输入决定，不因为 Row 有权重就强行填至 720 DIP。默认左右搜索 padding 为 8、上下为 4，导航 start / 操作 end 为 4。外层 Surface 是矩形；`CornerRadius` 配置内部搜索。外层颜色复用 `AnimatedState<Color>` 的 AfterFrame + Restart，按固定 animateColorAsState 在旧采样后提交并先取消旧任务；内部 scrolled 搜索颜色按上游直接切换；初次挂载显式发布动画初值，避免初始 contentOffset 已重叠时错误显示基础色。颜色与 elevation 均以 Animation 优先级贡献投影，不覆写应用配置。直接操作项绕过 presenter 的逻辑继承，沿用 AppBar 已有的低优先级样式投影，移除项、换模板和卸载释放这些样式。
 
 `SearchBarState.expandsToFullScreen` 在全屏呈现控件接入时标记并保留，和上游一致。顶栏内部搜索在全屏收起途中隐藏，直到 CurrentValue 回到 Collapsed；导航和操作不随它隐藏。表面、输入和状态仍由现有 SearchBar / 全屏控件承担。
 
@@ -76,6 +76,16 @@
 
 **待决定的自动滚动接入**：现有 `AppBarScrollScope` / `AppBarSmoothScrollConnection` 仅连接 Top/BottomAppBar，包含 SmoothScroll 合成线程状态、消费顺序与 Scaffold 的类型约束，不能把 SearchBarScrollBehavior 直接塞入任一槽。建议扩展现有接入点，例如 `new AppBarScrollScope { SearchScrollBehavior = scrolling, Child = viewer }`（示意 API，尚不存在），明确与其他顶栏共存时的先后消费、剩余速度传递、状态归属和卸载中断，再连接同一套同步机制。影响已有嵌套滚动及 Scaffold；未新建共享协议或把方案记为已批准。当前组件可用显式 pre/post-scroll、post-fling 回调和直接拖动独立使用。
 
+**尚未实现：布局后的指针重送。** 固定 Core 的 SyntheticEventSender 在布局移动后重送同时间戳的鼠标 Move；
+本地场景输入没有对应协议。真实 `pointer-velocity` 对照的静止目标五种输入均相等，移动内容释放速度为
+Core 约 -0.000584 / Avalonia -1250.000732 DIP/s；`search-app-bar.dynamic.drag` 的 64ms 偏移为
+Core -17.1870956 / Avalonia -39.8286819 DIP。该差异未获接受，不能在 SearchBar 内重置速度或补造重复样本。
+后续共享输入接入需同时验证原生捕获、点击身份和其他拖拽组件。
+
+**输入验证边界。** 主键夹具现在使用与 Compose 相同的逻辑毫秒。旧 Headless 鼠标入口使用墙钟，
+所以下文历史“直接拖动相等”不再代表当前结论。禁用策略行为测试明确暂停超过 40ms 后释放以隔离速度影响；
+立即释放的差异保留在上述真实双端用例中。夹具依据见 [VisualParity DECISIONS](../../../../tests/VisualParity/DECISIONS.md#主键指针时间与原生路由2026-11-05)。
+
 ## 4. 验证入口
 
 - `tests/Material3Expressive.Tests/DockedSearchBarTests.cs`：旧布尔容器约束、窗口变化、模板延迟创建、反向动画、卸载、Escape 与 Token。
@@ -110,7 +120,7 @@
 
 contained 与顶栏组合在 1088000µs 的关闭样本中，两端主进度均为 0.500186920166，full-screen 标记为 true、请求的 search-visible 为 false，但 Core 图像仍绘制收起搜索胶囊，Avalonia 已隐藏。固定源码与实际参考字节码的可见性条件相同；持续绘制的具体提交/缓存原因尚未确定。`search-visible` 只比较当前状态表达式 / 本地 Opacity 请求值，不冒充 Core 实际图层 alpha；实际可见性由 Raster 独立验证。测量来源补充后的单例复核 `20261104-132247-f102bcef` 保留相同差异，执行错误为零且重复稳定。保留源代码条件和这些失败样本，不为匹配参考帧改写为延迟隐藏。
 
-**待维护者决定**：共享动画/属性/Insets 的提交边界与原生编辑行度量范围。推荐在 ComposeAnimation、MaterialWindowInsets 和 TextField 的现有能力内调查；例如 `state.SnapToAsync(.021f)` 在非帧时刻执行后，本地立即显示而 Core 在重组时显示，或 `WindowInsets="12,20,24,16"` 的初始传播顺序不同。改变共享协议会影响已有调用方，需要独立设计确认；不在搜索组件中补帧、补 2.5 DIP 或把差异记为已接受。新版状态 InputField 的具体推荐接入及影响见第 3 节。
+**共享提交边界的当前范围**：本轮依据用户扩大授权重新决定，AppBarWithSearch 的动画容器颜色已使用共享 AnimatedState 帧末提交及取消后重启，颜色反向场景所有帧采样图像相等；非帧输入时内部搜索背景即时变化的两张图像仍不同。其他属性/Insets 的提交边界与原生编辑行度量仍待解决。推荐在 ComposeAnimation、MaterialWindowInsets 和 TextField 的现有能力内调查；例如 `state.SnapToAsync(.021f)` 在非帧时刻执行后，本地立即显示而 Core 在重组时显示，或 `WindowInsets="12,20,24,16"` 的初始传播顺序不同。其共享影响需要独立验证；不在搜索组件中补帧、补 2.5 DIP 或把差异记为已接受。新版状态 InputField 的具体推荐接入及影响见第 3 节。
 
 搜索遮罩的采集场景显式把 Avalonia 根内容色设为黑色，匹配固定 Core `LocalContentColor` 的 Black 默认；Core 参考端未改动。Avalonia Window 主题会默认注入 OnSurface，而测试中的 Core Box 不提供 Surface 的内容色；不对齐这个外层环境会把正确继承外层色的波纹误判为组件颜色差异。组件自身并未固定为黑色，行为测试验证父级 Blue/Red 的实时继承。
 
