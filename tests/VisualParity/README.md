@@ -262,6 +262,12 @@ PNG 固定为 sRGB 8-bit straight alpha，取色通过 fast-png 直接解码，C
 该测试直接使用真实 FrameRecomposer，不依赖组件预期像素；检查 timeout 期限/取消、帧顺序、
 Draw/Snapshot 被动性、连续宿主与后台时间隔离。组件本身仍需独立双端验证。
 
+`hostTest` 还运行 `NativeShadowTests.kt`：直接对固定 Skiko 调用 `ShadowUtils`，比较四种高度的
+二次曲线/控制点折线阴影，以及两种坐标表达的圆形 ambient/显式 blur fallback，要求完整图像逐像素相等。
+它独立验证实际原生产物采用的算法分支，不依赖 Avalonia 或历史预期图像；Surface/FAB 的双端用例
+继续检查组件接入、几何、颜色、动画与真实截图。时钟初始化仍必须先于加载 Skiko，避免后台 dispatcher
+提前缓存普通墙钟。
+
 系统测试覆盖差分、语义冲突、缺失、协议与像素完整性，以及真实控件采集和时钟重复性。
 结果格式测试还验证 YAML 数值/字符串类型及精度、双端语义保留、同时间样本的原始执行次序、
 单端与失败结果、文件篡改，以及脱离原始采集包后的结果读取。

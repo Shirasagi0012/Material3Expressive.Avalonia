@@ -14,7 +14,7 @@ public sealed class FabSourceCases
     public static IEnumerable<CaseData<FabSourceConfig>> Configurations()
     {
         foreach (var kind in new[] { "icon", "extended", "content" })
-        foreach (var action in new[] { "overlap", "replace", "hover-replace", "native-replace", "configuration" })
+        foreach (var action in new[] { "overlap", "replace", "replace-before-frame", "replace-revert", "hover-replace", "native-replace", "configuration", "configuration-interrupt", "configuration-coalesce" })
             yield return new($"dynamic.{kind}.{action}", $"{kind} {action}", new(kind, "default", action));
         foreach (var size in new[] { "small", "medium", "large" })
         foreach (var kind in new[] { "icon", "extended" })
@@ -62,15 +62,46 @@ public sealed class FabSourceCases
             Change(641000, "unfocus", () => source.Emit(new MaterialInteractionEvent.Unfocus(focus))); At(800000); return;
         }
         Change(1000, "hover", () => source.Emit(hover)); At(16000); At(64000);
-        if (c.Action == "configuration")
+        if (c.Action.StartsWith("configuration", StringComparison.Ordinal))
         {
             Change(65000, "unused-height", () => fab.Elevation = new(2, 40, 60, 9)); At(80000); At(128000);
             Change(129000, "press", () => source.Emit(first)); At(160000); At(208000);
-            Change(209000, "active-height", () => fab.Elevation = new(2, 5, 60, 9)); At(224000); At(240000);
+            Change(209000, "active-height", () => fab.Elevation = new(2, 5, 60, 9));
+            if (c.Action == "configuration-coalesce")
+                Change(210000, "latest-height", () => fab.Elevation = new(2, 7, 60, 9));
+            At(224000);
+            if (c.Action == "configuration-interrupt")
+            {
+                Change(225000, "cancel-after-effect", () => source.Emit(new MaterialInteractionEvent.CancelPress(first)));
+                At(240000); At(256000); At(320000); At(400000); At(800000); return;
+            }
+            At(240000);
             Change(241000, "cancel", () => source.Emit(new MaterialInteractionEvent.CancelPress(first)));
             At(320000); At(400000); At(800000); return;
         }
         Change(65000, "press", () => source.Emit(first)); At(80000); At(128000);
+        if (c.Action is "replace-before-frame" or "replace-revert")
+        {
+            var original = source;
+            var skipped = new MaterialInteractionSource();
+            Change(129000, "replace-first", () => fab.InteractionSource = source = skipped);
+            if (c.Action == "replace-revert")
+            {
+                Change(130000, "restore-original", () => fab.InteractionSource = source = original);
+                Change(131000, "unobserved-focus", () => skipped.Emit(focus)); At(144000);
+                Change(145000, "original-cancel", () => original.Emit(new MaterialInteractionEvent.CancelPress(first)));
+            }
+            else
+            {
+                Change(130000, "replace-latest", () => fab.InteractionSource = source = new());
+                Change(131000, "skipped-press", () => skipped.Emit(second));
+                Change(132000, "unobserved-focus", () => source.Emit(focus));
+                Change(133000, "original-focus", () => original.Emit(focus)); At(144000);
+                Change(145000, "skipped-hover", () => skipped.Emit(hover));
+                Change(146000, "latest-hover", () => source.Emit(new MaterialInteractionEvent.HoverEnter()));
+            }
+            At(160000); At(208000); At(400000); At(800000); return;
+        }
         if (c.Action == "overlap")
         {
             Change(129000, "second-press", () => source.Emit(second)); At(160000);

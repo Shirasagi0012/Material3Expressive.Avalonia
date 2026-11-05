@@ -126,7 +126,7 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 共享决定按原文范围使用，不复制或扩大其授权：
 
 - [Tween / Bezier 精度](../../../../docs/DECISIONS.md)：Chip 的 double/Float 差异继续精确报告，不取整读数
-- [阴影坐标接入](../../../../docs/DECISIONS.md)：透明 AssistChip、6 DIP 阴影的 DIP+CTM / 物理像素路径 raster 差异
+- [阴影坐标接入](../../../../docs/DECISIONS.md)：历史 DIP+CTM 差异已由 §20 的物理像素路径与固定原生分支替代；具体 Chip 组合仍以当前运行验证
 - [Surface 圆角描边](../../../../docs/DECISIONS.md)：物理像素 ceil、内缩与不占用内容空间
 - [Core Desktop 焦点](../../../../docs/DECISIONS.md)：真实焦点影响 elevation，indication 单独过滤首次鼠标聚焦
 - [共享键盘职责](../../../../docs/DECISIONS.md)：保留原生 Enter 按下激活
@@ -147,6 +147,12 @@ raster 差异；观察器读取现有缓存 outline，不通过重新计算期�
 部分重叠 Press 的 Core 重复捕获与额外截图存在最大单通道 1 的不稳定像素，现有稳定性门禁仍保留失败。
 
 ## 4. 验证入口
+
+- 2026-11-06 共享阴影修正后的 `shadow-current-chip.dynamic.elevated-filter.morph.source-press`：
+  所有已请求图像精确相等或在原容差内、执行错误为零；仍有 5 个 double/Float 高度读数不同，
+  例如 32ms Core 为 2.0499308109283447、本地为 2.0499308072030544 DIP。
+  Core 重复截图仍有不稳定，不能记为用例整体通过。该实际调用方确认形变/重叠输入下的阴影接入，
+  不替代整个 Chip 族重测，也不把精度差异转为放宽比较规则。
 
 - `ChipTests`、`ChipTokenConfigurationTests` 检查完整配置、属性优先级、槽动画、选中请求、交互源及高度中断。
 - `ElevationSourceLifetimeTests` 检查 source、模板和卸载的状态归属。

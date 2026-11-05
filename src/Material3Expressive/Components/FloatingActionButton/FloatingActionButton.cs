@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.VisualTree;
+using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
 
@@ -28,6 +29,7 @@ public class FloatingActionButton : Button
     private FabIconContentLayout? _iconContentLayout;
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionSource? _source;
+    private IDisposable? _pendingSourceConnection;
 
     /// <summary>Optional shared input/feedback stream. External events do not invoke Click.</summary>
     public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
@@ -56,16 +58,35 @@ public class FloatingActionButton : Button
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _pendingSourceConnection?.Dispose();
+        _pendingSourceConnection = null;
         MaterialInteraction.GetOrCreate(this).ConnectSource(null);
         _source = null;
         base.OnDetachedFromVisualTree(e);
     }
 
-    private void ConnectSource()
+    private void ConnectSource(bool commit = false)
     {
         if (!this.IsAttachedToVisualTree()) return;
         var source = InteractionSource ?? _localSource;
-        if (ReferenceEquals(_source, source)) return;
+        if (ReferenceEquals(_source, source))
+        {
+            _pendingSourceConnection?.Dispose();
+            _pendingSourceConnection = null;
+            return;
+        }
+        if (_source is not null && !commit)
+        {
+            // remember(interactionSource), its collector and the indication node change
+            // together in composition. Keep the old connection until that commit; events
+            // emitted into an as-yet unobserved new source are not replayed.
+            _pendingSourceConnection ??= AnimationScope.Get(this).ScheduleFrameCommit(() =>
+            {
+                _pendingSourceConnection = null;
+                ConnectSource(commit: true);
+            });
+            return;
+        }
         var replacing = _source is not null;
         _source = source;
         var controller = MaterialInteraction.GetOrCreate(this);

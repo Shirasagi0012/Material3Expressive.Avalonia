@@ -11,6 +11,7 @@ import java.io.File
 // No additional test dependency is needed by the locked producer.
 fun main() {
     ReferenceTimeoutClock.initialize()
+    verifyNativeShadowCurves()
     val writer = CaptureWriter(CaseMetadata(4, "host.clock", "Host clock", "host", "clock", JsonObject(emptyMap())),
         File("unused-input"), File("unused-output"), File("."))
     val events = mutableListOf<String>()

@@ -71,6 +71,6 @@ public class TweenSpec<T> : IDurationBasedAnimationSpec<T>
     {
         ArgumentNullException.ThrowIfNull(converter);
 
-        return new VectorizedTweenSpec(Duration, Delay, Easing);
+        return new VectorizedTweenSpec(Duration, Delay, Easing, singlePrecision: converter is FloatConverter);
     }
 }

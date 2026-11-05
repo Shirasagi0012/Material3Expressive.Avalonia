@@ -91,6 +91,16 @@ var tween2 = new TweenSpec<double>(
 | `A` / `B` / `C` / `D` | `double`（get） | — | 四个控制点坐标 |
 | — | 实现 `IEquatable<CubicBezierEasing>` | — | 按控制点比较相等性与哈希 |
 
+`CubicBezierEasing` 的接口保留 double；单位区间内的计算按固定 Compose 转成 Float，
+使用 Cardano 求根、fastCbrt、1 ULP 输入下限与曲线自身垂直极值限制，仍允许上下过冲。
+控制点属性和相等性保留传入的 double，计算使用其 Float 投影；NaN 进度原样返回。
+它也影响直接消费 easing 的 AppBar、TextField 和 ProgressIndicator，不能只按 Tween 调用方评估。
+
+`TweenSpec<float>` 搭配内置 `FloatConverter` 时，纳秒比例、加权 lerp 与速度差分保留
+上游 Float 运算边界；`TweenSpec<double>` 和自定义转换器继续用 double 插值。
+无需迁移构造调用，依赖历史精确采样的调用方需重新核对结果。求根与插值不是统一的全引擎
+精度开关，spring/关键帧没有因此变成全 Float。依据与兼容范围见仓库 `docs/DECISIONS.md` §19。
+
 ### ComposeEasings
 
 Material/Compose 标准曲线，静态只读实例：

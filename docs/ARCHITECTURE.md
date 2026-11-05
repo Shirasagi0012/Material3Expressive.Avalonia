@@ -55,7 +55,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 
 - **颜色算法**：通过接入颜色工具算法生成调色板，`ColorScheme` 将算法计算结果桥接到系统 Token。
 - **可变字体图标**：由底层图标库提供字体轴支持，`MaterialSymbol` 作为统一控件入口。`MaterialSymbol.DefaultSize` 作为可继承的尺寸提示属性，由各组件在呈现位置提供默认值，显式宽高优先。
-- **阴影绘制**：基于 Skia 图元绘制阴影，支持平面的线段、二次曲线与局部轮廓；Surface 容器负责传入实际几何并处理物理像素换算。
+- **阴影绘制**：基于 Skia 图元绘制阴影，支持平面的线段、二次曲线与局部轮廓；Surface 传入 DIP 几何，MaterialSkiaShadow renderer 统一生成物理像素路径并从 CTM 消去 density。固定原生曲线分支、blur fallback 与平台验证范围见 [决定 §20](DECISIONS.md#20-阴影坐标接入与固定原生曲线分支)。
 
 ---
 
@@ -84,6 +84,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 
 - **作用域生命周期**：每个顶层窗口在初始化时调用 `AnimationScope.Initialize(topLevel)` 建立根时钟；控件通过 `AnimationScope.Get(owner)` 接入，并通过 `CreateChild(...)` 为独立动效派生子作用域。
 - **属性输出**：`scope.BindAnimatedValue(target, property, source)` 以 Animation 优先级贡献采样；源/目标类型不同时使用带纯 `project` 的重载。释放恢复底层值。`SubscribeValue` 适用于绘制失效或普通运行时字段，不用它直接覆写动画目标的 Avalonia 属性。
+- **重组消费的显示值**：`BindFrameCommittedValue` 与 `ScheduleFrameCommit` 共用现有帧末队列，先捕获本批显示值，再执行配置 effect；effect 的写入进入下一批。FAB 高度使用它区分运行时 snap 与已提交显示值，普通直接绘制消费不迁移。不是完整重组或渲染完成屏障。
 - **规格转换**：Token 中的弹簧参数通过规格引用在消费点转换为求值器，支持平滑中断与重定向。
 - **释放保证**：控件从视觉树断开或模板重建时，必须释放关联的子作用域，避免后台时钟泄漏。
 - **帧末目标提交**：`AnimationScope.WaitForFrameEndAsync(ct)` 在帧内调用时等待当前采样批次结束，帧间调用时等待下一批次结束；不额外推进动画帧，随作用域及调用方取消。它不等待布局或渲染，也不提供 Compose 重组运行时。下拉刷新箭头用它合并最新透明度目标，仍由调用方管理目标与中断策略。

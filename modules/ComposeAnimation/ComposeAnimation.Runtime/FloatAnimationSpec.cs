@@ -85,17 +85,24 @@ public sealed class FloatSpringSpec : IFloatAnimationSpec
 public sealed class FloatTweenSpec : IFloatAnimationSpec
 {
     private readonly Easing _easing;
+    private readonly bool _singlePrecision;
 
     public FloatTweenSpec(
         TimeSpan duration,
         TimeSpan delay = default,
         Easing? easing = null)
+        : this(duration, delay, easing, singlePrecision: false)
+    {
+    }
+
+    internal FloatTweenSpec(TimeSpan duration, TimeSpan delay, Easing? easing, bool singlePrecision)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(duration, TimeSpan.Zero);
         ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
         Duration = duration;
         Delay = delay;
         _easing = easing ?? ComposeEasings.FastOutSlowIn;
+        _singlePrecision = singlePrecision;
     }
 
     public TimeSpan Duration { get; }
@@ -104,6 +111,15 @@ public sealed class FloatTweenSpec : IFloatAnimationSpec
     public double GetValue(TimeSpan playTime, double initialValue, double targetValue, double initialVelocity)
     {
         var clampedPlayTime = ClampPlayTime(playTime);
+        if (_singlePrecision)
+        {
+            // Compose divides nanoseconds as Float and uses ui-util's weighted lerp.
+            // Keep each arithmetic boundary; narrowing only the final result is different.
+            var raw = Duration == TimeSpan.Zero ? 1f
+                : (float)(clampedPlayTime.Ticks * 100.0) / (float)(Duration.Ticks * 100.0);
+            var eased = (float)_easing.Ease(raw);
+            return (1f - eased) * (float)initialValue + eased * (float)targetValue;
+        }
         var rawFraction = Duration == TimeSpan.Zero
             ? 1.0
             : clampedPlayTime.TotalSeconds / Duration.TotalSeconds;
@@ -128,7 +144,8 @@ public sealed class FloatTweenSpec : IFloatAnimationSpec
         // Match Compose FloatTweenSpec: pass already-clamped times back into GetValue (which clamps again).
         var startNum = GetValue(clampedPlayTime - TimeSpan.FromMilliseconds(1), initialValue, targetValue, initialVelocity);
         var endNum = GetValue(clampedPlayTime, initialValue, targetValue, initialVelocity);
-        return (endNum - startNum) * 1000.0;
+        return _singlePrecision ? ((float)endNum - (float)startNum) * 1000f
+            : (endNum - startNum) * 1000.0;
     }
 
     private TimeSpan ClampPlayTime(TimeSpan playTime)

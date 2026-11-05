@@ -85,7 +85,12 @@ Elevation 记录最后一个实际 press/focus/hover，而非仅从相同高度�
 Tonal elevation 固定使用配置 Default；更换配置只在当前交互的目标高度改变时 snap，
 仅修改其他状态的高度不会提前结束正在运行的动画。
 动画优先级绑定随 scope 释放，不能让多个 FAB 共用运行状态。
-交互流直接启动 elevation 动画，不额外排队一个重组帧；elevation 配置变更独立等待下一帧提交。
+交互流直接启动 elevation 动画，不额外排队一个重组帧；elevation 配置变更独立进入帧末提交。
+运行值使用 Float Animatable，端点与中断值按 Dp 存储；共享 easing 求解器的精度边界保持不变。
+`BindFrameCommittedValue` 先捕获本批显示高度，再执行 `ScheduleFrameCommit` 中的配置更新。
+配置 snap 立即更新内部值，随后到来的交互从它启动；本帧 Surface 仍使用 effect 前捕获的值。
+这是固定上游 `shadowElevation(...).value` 在重组中读取、`LaunchedEffect` 随后更新状态的顺序，
+不是将配置和新交互一起延后一帧。共享决定见 [DECISIONS §26](../../../../docs/DECISIONS.md#26-重组消费的动画值与帧提交-effect)。
 共享控制器仅在完整源事件结束时调用 FAB 的交互收集路径，构建 ripple 和属性更新不会伪造额外交互。
 配置与交互分别对应固定上游 `updateElevation` / `animateElevation`；在等待配置提交时仍可处理真实交互。
 中断沿用 Animatable 的当前值及最后帧时间。固定 Core 的自定义高度 2/4/6/9 DIP 用例在 64ms hover
@@ -125,17 +130,33 @@ Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../.
 `FabInteractionSourceTests` 检查普通/Extended 的多 press 身份、最后交互高度、换源重置、原生取消及重挂。
 双端 `fab-source` 覆盖三种内容入口、四尺寸、RTL、重叠及换源；几何和真实截图使用既有 FAB 测量，
 另被动读取双方实际 Surface 阴影高度，不用模拟反馈代替组件。
-21 个交互源场景已完成双端捕获，执行错误为零。修正首帧后，小尺寸 RTL hover 的截图差异已进入既有容差；
-普通交互/换源用例后续连续帧的高度最大余差约 0.00000093 DIP，原始事实仍精确标记 different。
-换源及未完成 Focus 退出时的事件当帧，Avalonia 已应用重置/snap，Core 等下一重组帧，仍有明显高度差；
-后续帧收敛，不把这类时序差归入浮点适配。部分 Compose 重复采集或额外被动截图不稳定，Avalonia 自检稳定。
+`fab-source-frame-commit` 曾确认配置提交修复，但保留 Tween 精度差异。
+随后共享求根与 Float 插值补齐（[决定 §19](../../../../docs/DECISIONS.md#19-tween--bezier-精度历史保留与固定算法补齐)），
+`fab-source-fixed-math` 的 27 例确认数值算法补齐后，仅换源当帧仍有高度差异。
+本轮依据用户扩大授权，换源改为用现有 `ScheduleFrameCommit` 合并连接；它同时切换收集器、取消旧源
+原生交互并重建 indication / elevation，对应上游 `remember(interactionSource)` 与 collector 的重组生命周期。
+只延迟阴影初值会留下状态层/波纹和新源订阅窗口错误，因此没有采用单独延迟显示的替代方案。
+首次挂载仍同步连接；同帧换回原源取消提交，卸载释放待提交句柄，重挂以最新属性初始化。
+公共调用仍为 `fab.InteractionSource = next`；外部使用者不能再依赖 setter 返回时已经连接新源，
+应使用已连接源表达交互，并遵守事件流不重放的契约。
+
+`fab-source-lifecycle` 的 33 例全部结构化读数精确相等，24 withinTolerance / 9 different，执行错误为零。
+新加的 replace-before-frame / replace-revert 验证同帧换源、旧/新/中间源事件和回退原源的实际反馈。
+24 例重复稳定，9 例 Core 重复/额外截图仍不稳定，Avalonia 自检稳定。剩余 9 个不同用例都是高 elevation
+配置场景的阴影绘制，不能记为整个套件通过。
+随后由独立原生探针定位并修复共享曲线分支与物理像素路径（DECISIONS §20）。当前
+`fab-source-native-curve` 为 2 equal、31 withinTolerance、0 different，所有结构化读数精确相等，
+执行错误为零；26 例重复稳定，7 例 Core 重复/额外截图仍不稳定，Avalonia 自检稳定。
+高高度图像失败已消除，重复性门禁仍如实保留，不能将整个 self-test 记为完全通过。
 
 `configuration` 用例在同一 Compose elevation 工厂调用点修改参数。未使用状态高度更新时，两端都保留 hover 动画；
-活动目标变更仍有呈现时序缺口：209ms 执行 `fab.Elevation = new(2, 5, 60, 9)` 后，224ms Core 图层仍约
-39.23 DIP，Avalonia 已为 5 DIP，240ms 两端为 5 DIP。建议独立评估共享的属性提交/呈现阶段；
-简单再等一帧会改变这段间隔内新交互读取的配置与动画值，不能作为等价转换。本次未新增公共调度框架或局部补帧。
-该用例此前使用 40 DIP 自定义 pressed 高度，208ms 的阴影截图仍超出门禁；微小高度余差与大阴影渲染差异
-分别保留，不能把可见差异纳入已确认的微小浮点范围。这些问题仍需维护者决定共享能力的后续适用范围。
+活动目标变更的旧失败由 `fab-config-current-batch` 重新复现。当前实现 224ms 两端精确为
+39.23287582397461 DIP，240ms 均为 5；配置提交时序与这条路径的数值差异均已修复。
+新增 configuration-interrupt 在 225ms 取消按压，240ms 均从 5 开始，256ms 均为
+5.199723243713379，证明内部 snap 没有被一并延迟。configuration-coalesce 连续换配置只提交最后的 7。
+三种 FAB 内容入口的上述九例均重复稳定，所有高度读数精确相等，不做取整。
+该用例使用 40 DIP 自定义 pressed 高度，旧实现 208ms 的阴影截图超出门禁；共享阴影修正后
+该图像回到既有容差内。微小高度余差与大阴影渲染差异分别定位，未扩大历史微小浮点接受范围。
 
 [FloatingActionButtonTests](../../../../tests/Material3Expressive.Tests/FloatingActionButtonTests.cs) 覆盖尺寸、
 显隐、状态请求/automation、颜色角色、图标绑定、整数放置、受限菜单焦点、detach / reattach。
@@ -146,7 +167,7 @@ Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../.
 覆盖四尺寸/内容重载、主题、约束、RTL、elevation、输入、展开/反向、Toggle、菜单增项和显隐。
 本次 elevation 生命周期修正后的既有 111 例复测为 2 equal、108 withinTolerance、1 different，
 执行错误为零，重复捕获及额外被动截图稳定。剩余 `dynamic.menu.count` 在 append 事件当帧有结构差异；
-此结果不覆盖上述新增配置用例的时序和大阴影问题。
+这是阴影修正前的历史运行；本轮当前证据为上述新增配置与换源用例，不追认为全族当前已通过。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~FloatingActionButtonTests

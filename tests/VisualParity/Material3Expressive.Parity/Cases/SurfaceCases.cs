@@ -28,6 +28,14 @@ public sealed class SurfaceCases
         foreach (var kind in new[] { "surface", "button", "fab" })
         foreach (var position in new[] { ("left", 32d, 48d), ("center", 130d, 95d), ("right", 228d, 142d) })
             yield return new($"shadow.{kind}.{position.Item1}", "Window-relative point light", new(Kind: kind, X: position.Item2, Y: position.Item3, Elevation: 6));
+        // Isolate the high-elevation failure observed during FAB configuration changes:
+        // no animation, interaction layer or timing dependency; both umbra visibility modes.
+        foreach (var radius in new[] { 16d, 28d })
+        foreach (var elevation in new[] { 16d, 40d })
+        foreach (var transparent in new[] { false, true })
+            yield return new($"shadow.high.{radius}.{elevation}.{(transparent ? "transparent" : "filled")}",
+                "High-elevation shadow independent of FAB motion", new(Layer: transparent ? "transparent" : "fill",
+                    Elevation: elevation, Width: 56, Height: 56, Radius: radius));
         foreach (var (name, width, height, radius) in new[] {
                      ("small", 64d, 32d, 6d), ("morph", 64d, 32d, 7.6246843338012695),
                      ("round", 64d, 32d, 8d), ("pill", 64d, 32d, 16d),

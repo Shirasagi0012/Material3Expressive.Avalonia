@@ -10,6 +10,7 @@
     <Window.Resources>
         <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
         <m3:MaterialInteractionSource x:Key="SelectionPreviewSource" />
+        <m3:MaterialInteractionSource x:Key="FabElevationPreviewSource" />
     </Window.Resources>
     <Grid ColumnDefinitions="Auto,*">
         <m3:ModalWideNavigationRail x:Name="DemoNavigationRail">
@@ -39,6 +40,13 @@
                     <Button Content="Expand / collapse" Click="OnToggleExtendedFab" />
                     <Button Content="Show / hide" Click="OnToggleFabVisibility" />
                 </StackPanel>
+                <WrapPanel ItemSpacing="16" LineSpacing="12">
+                    <m3:FloatingActionButton x:Name="DemoElevationFab" Icon="{m3:Symbol Add}"
+                        InteractionSource="{StaticResource FabElevationPreviewSource}" AutomationProperties.Name="Elevation preview" />
+                    <Button Content="Hold / release hover" Click="OnFabElevationHover" />
+                    <Button Content="Change hover elevation" Click="OnFabElevationChange" />
+                    <Button Content="Replace interaction source" Click="OnFabElevationSourceChange" />
+                </WrapPanel>
                 <m3:FloatingActionButtonMenu x:Name="DemoFabMenu" HorizontalAlignment="Left">
                     <m3:FloatingActionButtonMenu.Button>
                         <m3:ToggleFloatingActionButton x:Name="DemoToggleFab" Size="Medium" CheckedChangeRequested="OnFabCheckedChange">

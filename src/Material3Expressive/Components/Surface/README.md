@@ -96,5 +96,8 @@ Button/RadioButton/CheckBox 角色；请给自定义内容设置有意义的 `Au
 真实阴影依赖项目固定的 Skia 后端，
 更换渲染后端不等于保留效果；共享适配和验证范围见 [INTERNALS](INTERNALS.md)。
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 包含嵌套 tonal elevation 示例。
+`SurfaceDemo` 同时提供透明低高度轮廓及 16/40 DIP 自定义阴影；例如 `ShadowElevation="40"`
+仍使用 DIP，调用方不应自行乘设备缩放。静态高阴影与透明轮廓已在固定 Windows raster 参考端验证，
+不扩大为所有 GPU 后端已验证。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

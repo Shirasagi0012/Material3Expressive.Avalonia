@@ -13,6 +13,27 @@ namespace Material3Expressive.Catalog;
 
 public partial class MainWindow : Window
 {
+    private MaterialInteractionEvent.HoverEnter? _fabElevationHover;
+    private void OnFabElevationHover(object? sender, RoutedEventArgs e)
+    {
+        var source = DemoElevationFab.InteractionSource!;
+        if (_fabElevationHover is { } hover)
+        {
+            source.Emit(new MaterialInteractionEvent.HoverExit(hover));
+            _fabElevationHover = null;
+        }
+        else source.Emit(_fabElevationHover = new MaterialInteractionEvent.HoverEnter());
+    }
+
+    private void OnFabElevationChange(object? sender, RoutedEventArgs e)
+        => DemoElevationFab.Elevation = new(6, 6, 6, DemoElevationFab.Elevation?.Hovered == 16 ? 8 : 16);
+
+    private void OnFabElevationSourceChange(object? sender, RoutedEventArgs e)
+    {
+        DemoElevationFab.InteractionSource = new();
+        _fabElevationHover = null;
+    }
+
     private MaterialInteractionEvent.HoverEnter? _selectionPreviewHover;
     private void OnSelectionHoverPreview(object? sender, RoutedEventArgs e)
     {

@@ -66,6 +66,28 @@ await alpha.AnimateToAsync(scope, latestTarget, spec, cancellationToken: cancell
 取消连接调用方和作用域。此入口用于目标提交，不保证布局/渲染已完成，也不是通用 Compose 重组实现。
 Material3Expressive 的 PullToRefreshArrow 是实际调用方；普通每帧循环继续使用 NextFrameAsync。
 
+### 分开采样值与提交后的 effect
+
+当上游先读取动画值构建视图，再执行更新动画的 effect 时，使用同一帧提交队列：
+
+```csharp
+scope.BindFrameCommittedValue(surface, MaterialSurface.ShadowElevationProperty,
+    elevation, static value => (double)value);
+scope.ScheduleFrameCommit(() =>
+    _ = scope.Launch(ct => elevation.SnapToAsync(newElevation, ct)));
+```
+
+绑定初值立即生效；后续通知合并，在帧采样后先捕获本批全部值，再执行本批 effect。
+effect 中的 snap 立即改变运行时值，后续输入可以读到它，但显示值在下一批提交。
+这保留 FAB 的 `shadowElevation(...).value` / `LaunchedEffect.updateElevation` 顺序，
+没有给动画补帧或改写时间。两入口共用 AnimatedState 的根级帧末队列，重入加入下一批；
+返回的 IDisposable 可取消尚未执行的 effect 或解除绑定，Scope 结束自动清理并恢复底层属性值。
+一个 effect 一次执行；配置合并和运行取消仍由组件负责。effect 异常通过 AnimationFailed 报告。
+后续投影异常仅释放该绑定、恢复底层属性值并报告，不取消同批其他绑定或 effect；初次投影异常在调用处抛出。
+
+此能力不模拟完整重组，也不是渲染屏障。直接在 draw 阶段读取动画的消费者继续用
+`BindAnimatedValue`；不要统一延后所有动画输出。现有入口与行为保持兼容。
+
 ## FrameScope：运行为什么接收 Scope
 
 `ComposeAnimation.Runtime` 不依赖 Avalonia，因此不认识 `AnimationScope`。运行入口接收它的基类 `FrameScope`：提供 `NextFrameAsync`、`Lifetime`（Scope 结束时取消）与有效 `DurationScale`。`AnimationScope` 就是一个 `FrameScope`，所以 `alpha.AnimateToAsync(AnimationScope.Get(this), …)` 直接可用；`SuspendAnimation` 等运行时辅助同样接收 `FrameScope`。

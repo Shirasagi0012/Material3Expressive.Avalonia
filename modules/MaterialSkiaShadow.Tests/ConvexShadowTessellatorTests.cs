@@ -6,20 +6,23 @@ namespace MaterialSkiaShadow.Tests;
 
 public sealed class ConvexShadowTessellatorTests
 {
-    [Fact]
-    public void CircleAmbientMeshIsFinite()
+    [Theory]
+    [InlineData(1f, 2f)]
+    [InlineData(2f, 1f)]
+    public void CircleAmbientRequestsNativeBlurFallback(float pathScale, float matrixScale)
     {
-        using var path = CreateCircle();
+        using var path = CreateCircle(pathScale);
 
         var mesh = ConvexShadowTessellator.MakeAmbient(
             path,
-            SKMatrix.CreateScale(2, 2),
+            SKMatrix.CreateScale(matrixScale, matrixScale),
             elevationPx: 12,
             transparent: false);
 
-        // The pinned native build subdivides the conics through handleQuad's
-        // Ganesh path, producing a valid circle mesh instead of a coarse fallback.
-        AssertValidViewportMesh(mesh);
+        // NativeShadowTests independently compares the locked ShadowUtils draw with
+        // its explicit ambient blur fallback, pixel-exact for both coordinate routes.
+        // Null requests that fallback; it is not a requirement that every circle tessellate.
+        Assert.Null(mesh);
     }
 
     [Fact]
@@ -144,12 +147,13 @@ public sealed class ConvexShadowTessellatorTests
         return builder.Detach();
     }
 
-    private static SKPath CreateCircle()
+    private static SKPath CreateCircle(float scale)
     {
         using var rounded = new SKRoundRect();
         rounded.SetRectRadii(
-            new SKRect(0, 0, 72, 72),
-            [new(36, 36), new(36, 36), new(36, 36), new(36, 36)]);
+            new SKRect(0, 0, 72 * scale, 72 * scale),
+            [new(36 * scale, 36 * scale), new(36 * scale, 36 * scale),
+                new(36 * scale, 36 * scale), new(36 * scale, 36 * scale)]);
         using var builder = new SKPathBuilder();
         builder.AddRoundRect(rounded, SKPathDirection.Clockwise);
         return builder.Detach();

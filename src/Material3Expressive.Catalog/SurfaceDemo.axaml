@@ -39,6 +39,12 @@
         <m3:MaterialSurface Width="64" Height="32" CornerRadius="16" Background="Transparent" ShadowElevation="1" />
         <m3:MaterialSurface Width="72" Height="72" CornerRadius="36" Background="Transparent" ShadowElevation="1" />
       </StackPanel>
+      <TextBlock Text="Custom elevation · 16 and 40" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <WrapPanel ItemSpacing="64" LineSpacing="48" Margin="40">
+        <m3:MaterialSurface Width="56" Height="56" CornerRadius="16" ShadowElevation="16" />
+        <m3:MaterialSurface Width="56" Height="56" CornerRadius="16" ShadowElevation="40" />
+        <m3:MaterialSurface Width="56" Height="56" CornerRadius="28" Background="Transparent" ShadowElevation="40" />
+      </WrapPanel>
     </StackPanel>
   </ScrollViewer>
 </Window>

@@ -197,7 +197,7 @@ flowchart TB
 1. **时钟注入**：Compose 依赖协程 `withFrameNanos`；此处抽象为 `IAnimationFrameClock`（生产默认帧源由根 Scope 内部提供，测试用 TestSupport 的 `ManualAnimationFrameClock`）。
 2. **线程模型**：所有公共 API 要求时钟线程（`VerifyAccess`）；状态变更经 `ObservableObject.PropertyChanged` 直接供 Avalonia 绑定消费（`Animatable.cs`）。
 3. **时间表示**：上游用 `Long`（纳秒）记录帧时间，此处用 `TimeSpan`；`AnimationConstants.UnspecifiedTime = TimeSpan.MinValue` 对应上游 `Long.MIN_VALUE`。
-4. **数值精度**：动画求解与向量存储用 `double`（上游向量用 `Float`）；颜色转换按固定上游保留 Float / Half 边界。velocity 经 `AnimationVector` 保留未投影精度（整数 / 颜色转换器）。
+4. **数值精度**：向量存储及多数求解用 `double`（上游向量用 `Float`）；CubicBezierEasing 与内置 FloatConverter 的 Tween 保留固定上游 Float 运算边界，颜色转换保留 Float / Half 边界。其余规格不能据此视为全 Float 对齐。velocity 经 `AnimationVector` 保留未投影精度（整数 / 颜色转换器）。
 5. **`MotionDurationScale`** 用 `AsyncLocal` 取代协程 context element。
 6. **颜色**：`ColorConverter` 输出固定 byte sRGB，`VisibilityThresholds` 因此不提供 Color 阈值（见 `VisibilityThresholds.cs` 注释）。
 7. **`Animatable.Stop`** 是取消信号而非 mutation，可在帧回调内安全调用（`Animatable.cs`）。

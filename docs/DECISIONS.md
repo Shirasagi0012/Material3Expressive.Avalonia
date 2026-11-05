@@ -193,23 +193,55 @@
 
 ---
 
-## 19. 本次保留 Tween / Bezier 精度差异
+## 19. Tween / Bezier 精度：历史保留与固定算法补齐
 
-- **状态**：生效中
-- **决定方案**：保留动画引擎单精度浮点运算与特定求根路径引起的极微小数值差异（约 0.0000006 DIP 的高度微差）。原始动效事实继续精确比较并如实记录差异。
+- **状态**：2026-11-06 部分替代；未迁移的 double 规格仍单独报告精度差异。
+- **历史决定方案**：保留动画引擎单精度浮点运算与特定求根路径引起的极微小数值差异（约 0.0000006 DIP 的高度微差）。原始动效事实继续精确比较并如实记录差异。
 - **原因与动机**：底层数学库的浮点实现与上游存在极微小舍入差别，不影响可见视觉效果与时序。
 - **适用范围与影响**：微小数值精度记录，不接受时序、布局或可见效果的其他偏离。
 - **确认依据**：2026-10-04 维护者确认保留该精度差异记录。
 
+- **本轮依据用户扩大授权重新决定**：重新读取固定 AndroidX/Core 的 `Easing.kt`、`Bezier.kt`、
+  `MathHelpers.kt` 与 `FloatAnimationSpec.kt` 后，确认差异包含本地 Newton/二分替代上游 Cardano 求根、
+  Float/Double 运算边界和加权 lerp 的实现差异，不能全部归因于底层数学库。
+  `CubicBezierEasing` 改为固定上游的求根顺序、fastCbrt、1 ULP 输入平移和垂直极值限制；
+  `TweenSpec<float>` 使用内置 `FloatConverter` 时保留 Float 纳秒比例、加权 lerp 和速度差分。
+- **方案与影响**：`new TweenSpec<float>(duration, easing: ComposeEasings.FastOutSlowIn)` 无需新参数；
+  FAB 高度是真实调用方。没有把所有 double 向量强行缩为 Float，因为 Avalonia 的几何/自定义转换器
+  已依赖其精度；`TweenSpec<double>`、公开标量/向量规格构造及未知转换器保持 double 插值。
+  不保留旧求根分支作为兼容开关，因为它会继续阻止固定算法对齐且没有已知独立需求。
+  公共签名和控制点相等性不变；外部调用方无需迁移源码，但依赖旧数值快照者应重新核对采样。
+- **验证依据**：`animation-tween` 双端 self-test 的 10 例、150 个采样全部精确相等且重复稳定，
+  包含延迟、零时长、退化曲线、平坦端点、上下过冲、速度和实际图像；本地 `EasingsTest`
+  固化固定 Core 的独立采样，并检查 double 插值仍保留 2²⁴ 以上的单位变化。
+  该结论不扩张到 spring、关键帧或其他仍使用 double 插值的规格。
+
 ---
 
-## 20. 本次保留阴影坐标接入差异
+## 20. 阴影坐标接入与固定原生曲线分支
 
-- **状态**：生效中
-- **决定方案**：保留阴影库设备独立像素路径及变换矩阵与上游物理像素路径的光栅化渲染差异。公开高度数值、光照与布局保持一致。
+- **状态**：2026-11-06 替代坐标接入方案；未验证平台继续单独报告。
+- **历史决定方案**：保留阴影库设备独立像素路径及变换矩阵与上游物理像素路径的光栅化渲染差异。公开高度数值、光照与布局保持一致。
 - **原因与动机**：原生路径细分器对路径坐标的离散敏感性导致两端存在细微光栅差异。
 - **适用范围与影响**：阴影光栅比对差异记录，不影响其他属性。
 - **确认依据**：2026-10-04 维护者确认保留并记录阴影光栅差异。
+
+- **本轮依据用户扩大授权重新决定**：当前 FAB 高高度阴影与 Surface 透明轮廓存在可见差异，
+  超出了原决定中“细微光栅差异”的依据。独立调用固定 Skiko `0.152.0-alpha02` 的 `ShadowUtils`
+  发现二次曲线与控制点/终点折线的阴影逐像素相同，对应固定 `SkShadowTessellator::handleQuad`
+  的 `!SK_GANESH` 分支；原本认为该产物采用 Ganesh 细分的假设不成立。
+  同一个 72 DIP 圆形的原生 ambient 绘制，与固定源码规定的 blur fallback 逐像素一致，
+  说明“所有圆形必须生成有效网格”的旧测试断言也不成立。上述证据由独立 `NativeShadowTests.kt`
+  验证，不读取本地组件或预期截图。
+- **方案与替代方案**：共享 tessellator 保留非 Ganesh 控制点顺序、轮廓分类、inset 和失败回退；
+  renderer 按固定 Core 的 physical-pixel outline 生成路径，并从 CTM 中仅消去 density。
+  只切换曲线分支仍保留 DIP 路径曾引入其他失败，不能据此否定原生分支；同时核对坐标后，
+  `surface-native-curve` 的 55 例由 10 个 different 改为 26 equal / 29 withinTolerance，全部重复稳定。
+  不采用人为增加 alpha、调整容差或按 elevation 特判，因为问题来自可直接保留的路径语义。
+- **调用与影响**：`MaterialSurface.ShadowElevation = 40` 及 `ComposeShadowRenderer.Draw(...)` 不变；
+  调用方仍传 DIP，由 renderer 统一换算，不能自行再乘 density。无源码迁移；依赖旧阴影外观的
+  应用应重新核对截图。GPU 快速解析绘制仍保留独立原生算法；当前验证是 Windows raster，
+  未把历史 GPU 探针或本次 raster 结果追认为当前所有 GPU/平台已验证。
 
 ---
 
@@ -263,3 +295,22 @@
 - **用法及范围**：`AnimatedState.Create(owner, initialColor, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)`。NavigationBar/Rail 与复用它们轨迹的 CommandBar 切换项、AppBarWithSearch 的容器颜色采用此组合。其他调用方及原重载继续 BeforeFrame + Continue；不扩大到 Transition、动画输入状态或完整 Compose 重组。
 - **替代方案**：统一延迟所有动画会破坏已有布局目标合同；组件各自 NextFrame/Stop 会重复状态合并、异常和生命周期；只延后首帧不能保留取消顺序，不能修复反向轨迹。两个选项分别表达提交与中断，避免把速度策略隐含在阶段名称里。
 - **兼容及边界**：原有公共构造函数和全部工厂重载签名保留，无外部强制迁移。采用新模式才改变时序。非帧输入后的原生 enabled 即时读数与 Core 重组缓存仍分别保留；不为它们延迟原生交互，也不将残留差异改记为通过。真实消费者、模块行为回归和双端 self-test 是验证依据，未改变基线或容差。
+
+## 26. 重组消费的动画值与帧提交 effect
+
+- **状态**：生效中；本轮依据用户扩大授权重新决定。
+- **原问题及依据**：FAB 原设计直接绑定 Animatable 值，配置单独等待下一帧；历史未证明呈现阶段等价。
+  固定 AndroidX/Core `FloatingActionButton.kt` 在重组中读取 `shadowElevation(...).value`，随后
+  `LaunchedEffect(this)` 调用 `updateElevation` / snap。当前双端复现 224ms 参考仍约 39.23、本地已为 5。
+- **决定**：扩展既有 AnimatedState 帧末队列，以 `BindFrameCommittedValue` 捕获本批全部显示值，
+  `ScheduleFrameCommit` 随后执行配置 effect。effect 写入运行时值立即生效，但显示进入下一批。
+  重入不加入当前快照；同根共享唤醒，scope/返回句柄释放取消待提交项并恢复底层属性。
+  首值立即生效，不提供完整 Compose 重组、布局屏障或源替换的节点重建协议。
+- **用法与替代方案**：`scope.BindFrameCommittedValue(surface, MaterialSurface.ShadowElevationProperty, value, v => (double)v)`；
+  `scope.ScheduleFrameCommit(updateConfiguration)`。仅额外 NextFrame 会使间隔内输入读取旧值；各组件复制呈现队列
+  会重复生命周期与唤醒；统一改变 BindAnimatedValue 则破坏直接绘制消费，因此均不采用。
+- **验证与影响**：FAB 普通/Extended/Content 的配置、连续替换、effect 后立刻输入已实际双端验证；
+  模块覆盖注册顺序、帧内加入、重入、取消、底层绑定恢复及异常。现有 API 无强制迁移，FAB 的时间线
+  不增加帧。投影失败仅释放自身贡献并上报，不能取消同批其他绑定或 effect。
+  后续 §19 的固定求根/Float 插值和 FAB 自身换源提交分别消除了已观测的高度余差及换源当帧差异；
+  大高度阴影另由 §20 的原生分支与坐标修正解决，不扩大历史接受范围。换源连接的组件职责及调用方时序迁移见 FAB INTERNALS。

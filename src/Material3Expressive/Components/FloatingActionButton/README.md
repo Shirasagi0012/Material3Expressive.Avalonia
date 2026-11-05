@@ -65,6 +65,8 @@ fab.AnimatedVisible = false;
 这里 `fab` 是视图中现有的 FloatingActionButton。默认 elevation 的静止/按压/焦点/悬停值为
 6/6/6/8 DIP，主题从各状态 Token 动态组装；上述显式配置把它整组替换为 1/1/1/3。
 使用 `fab.ClearValue(FloatingActionButton.ElevationProperty)` 恢复主题配置。阴影状态与 tonal elevation 的具体关联见维护说明。
+修改当前交互对应的高度时直接切换到新高度；只修改其他状态时保留正在运行的过渡。
+Catalog 首页的 **Hold / release hover**、**Change hover elevation** 与 **Replace interaction source** 可组合观察运行时配置和换源。
 
 普通与 Extended FAB 的 `InteractionSource` 可连接共享交互源，例如与 TooltipLabel 共用：
 
@@ -75,7 +77,9 @@ label.InteractionSource = source;
 ```
 
 这里 fab 和 label 是现有控件。null 使用内部源，外部事件只驱动波纹、状态层和高度，不执行点击。
-结束事件需引用对应的开始对象；替换源重新初始化反馈与高度，不重放旧事件。Toggle FAB 与菜单项不提供此入口。
+结束事件需引用对应的开始对象。已挂载 FAB 的换源在下一帧末提交，届时重新初始化反馈与高度、取消旧源原生交互；
+同帧多次赋值只连接最后的源，换回原源保留原状态。新源尚未连接时发出的事件不会重放。
+首次挂载直接连接；卸载取消待提交换源。Toggle FAB 与菜单项不提供此入口。
 Catalog 的 Tooltip 示例包含 Extended FAB 接入。
 
 ## 受控 Toggle 与菜单

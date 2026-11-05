@@ -74,12 +74,17 @@ public sealed class VectorizedTweenSpec : IVectorizedDurationBasedAnimationSpec
     public TimeSpan Duration { get; }
 
     public VectorizedTweenSpec(TimeSpan duration, TimeSpan delay = default, Easing? easing = null)
+        : this(duration, delay, easing, singlePrecision: false)
+    {
+    }
+
+    internal VectorizedTweenSpec(TimeSpan duration, TimeSpan delay, Easing? easing, bool singlePrecision)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(duration, TimeSpan.Zero);
         ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
         Duration = duration;
         Delay = delay;
-        _anim = new VectorizedFloatAnimationSpec(new FloatTweenSpec(duration, delay, easing));
+        _anim = new VectorizedFloatAnimationSpec(new FloatTweenSpec(duration, delay, easing, singlePrecision));
     }
 
     public void GetValue(

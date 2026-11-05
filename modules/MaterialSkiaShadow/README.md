@@ -19,6 +19,13 @@ validation, and ear clipping for transparent concave umbras. Canonical placement
 endpoint comparisons matter at low elevations: an equivalent geometric formula can change
 float rounding, fallback selection and raster edge coverage.
 
+Callers continue to supply DIP geometry. The renderer constructs physical-pixel outlines and
+removes only density from the canvas transform, matching Core's recorded outline coordinates.
+The general contour follows the locked Skiko artifact's non-Ganesh `handleQuad` branch
+(control point, then endpoint), including its conic conversion and convex/concave classification.
+This is an artifact-specific source branch, not a choice to approximate curves or a claim that
+every raster backend lacks Ganesh. The analytic GPU branch above is separate.
+
 The public API is unchanged. Cubics, perspective, tilted Z planes, directional lights and
 non-Skia backends remain outside the supported contract. A general-path API is not provided.
 
@@ -35,7 +42,6 @@ The managed adaptations follow these Skia sources under the included [BSD licens
 
 - `src/utils/SkShadowTessellator.cpp` and `src/utils/SkPolyUtils.cpp`
 - `src/core/SkDrawShadowInfo.h/.cpp`
-- `src/gpu/ganesh/geometry/GrPathUtils.cpp`
 - `src/gpu/ganesh/SurfaceDrawContext.cpp`
 - `src/gpu/ganesh/ops/ShadowRRectOp.cpp`
 - `src/gpu/ganesh/GrShadowGeoProc.cpp`
@@ -50,10 +56,25 @@ and `SKCanvas.DrawVertices`, with a shared immutable falloff image/shader.
 
 ## Validation boundary
 
-The FAB port corrected quadratic subdivision to the pinned native Ganesh path, including
-conics converted to quadratics. Module regression now checks that circles produce finite
-meshes; paired FAB captures exercise the correction through Compose's real RenderNode.
-The standalone probe counts below predate this correction and have not been rerun.
+The earlier FAB port selected Ganesh subdivision and required every circle to tessellate.
+On 2026-11-06, independent calls to the locked native artifact disproved that assumption:
+quad shadows exactly match control/end-point polylines, and a 72 DIP circle at density 2
+uses the native ambient blur fallback. `NativeShadowTests.kt` in VisualParity's `hostTest`
+retains both checks without Avalonia or stored expected images. Module tests preserve both
+coordinate routes for that fallback; all 8 module tests pass.
+
+Current Windows raster captures (`surface-native-curve`) cover 55 real Surface cases:
+26 equal, 29 within the existing tolerance, no differences/errors, all repeatable. They include
+transparent low-elevation contours and eight static 16/40 DIP high-elevation cases. The latter
+isolate failures previously seen during FAB elevation changes. Changing both the curve branch
+and coordinate representation removes all 10 previously failing Surface cases. The decision
+and alternatives are recorded in [DECISIONS §20](../../docs/DECISIONS.md#20-阴影坐标接入与固定原生曲线分支).
+The 33 `fab-source-native-curve` cases have exact structured facts and no raster failures;
+7 retain native repeatability failures. Selected Button/Chip draws exercise additional callers;
+Chip's remaining double elevation sample differences are separate from its passing images.
+
+The standalone probe counts below predate these corrections and have not been rerun. They
+are historical evidence only, particularly for GPU paths changed by physical-pixel outlines.
 
 Direct drawing was compared against native `ShadowUtils.drawShadow` in Skiko
 `0.152.0-alpha02` using temporary probes outside the project, independently of the renderer

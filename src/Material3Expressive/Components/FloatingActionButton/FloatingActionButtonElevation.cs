@@ -23,7 +23,7 @@ public sealed record FloatingActionButtonElevation(double Default, double Presse
 internal sealed class FloatingActionButtonElevationController : IDisposable
 {
     private readonly AnimationChildScope _scope;
-    private readonly Animatable<double> _value;
+    private readonly Animatable<float> _value;
     private FloatingActionButtonElevation _values;
     private InteractionState _last, _target;
     private bool _pending;
@@ -33,11 +33,13 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
     {
         _values = _nextValues = values;
         _scope = parent.CreateChild("FAB elevation");
-        _value = new Animatable<double>(new DoubleConverter(), values.Default, VisibilityThresholds.Double);
-        _scope.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _value);
+        // Dp.VectorConverter retains Float samples and endpoints for interruption.
+        // Widen only at the Avalonia sink; FloatConverter also selects Float tween arithmetic.
+        _value = new Animatable<float>(new FloatConverter(), (float)values.Default, VisibilityThresholds.Float);
+        _scope.BindFrameCommittedValue(surface, MaterialSurface.ShadowElevationProperty, _value, static value => (double)value);
         UpdateInteraction(interaction);
     }
-    private static double Target(FloatingActionButtonElevation values, InteractionState state) => (state switch
+    private static float Target(FloatingActionButtonElevation values, InteractionState state) => (float)(state switch
     {
         InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
         InteractionState.Focused => values.Focused, _ => values.Default
@@ -47,20 +49,22 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
         _nextValues = values;
         if (_pending || _values == values || _scope.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        _ = _scope.Launch(async ct =>
+        _scope.ScheduleFrameCommit(() =>
         {
             // LaunchedEffect(elevation) updates configuration during composition. Changing
             // an unused state's height must not snap or cancel the current animation.
-            await _scope.NextFrameAsync(ct);
             _pending = false;
             _values = _nextValues;
             var target = Target(_values, _target);
             if (_value.TargetValue != target)
             {
-                try { await _value.SnapToAsync(target, ct); }
-                finally { _last = _target; }
+                _ = _scope.Launch(async ct =>
+                {
+                    try { await _value.SnapToAsync(target, ct); }
+                    finally { _last = _target; }
+                }, "FAB elevation configuration");
             }
-        }, "FAB elevation configuration");
+        });
     }
     internal void UpdateInteraction(InteractionState interaction)
     {
@@ -80,7 +84,7 @@ internal sealed class FloatingActionButtonElevationController : IDisposable
                         await _value.SnapToAsync(target, ct);
                     else
                         await _value.AnimateToAsync(_scope, target,
-                            new TweenSpec<double>(TimeSpan.FromMilliseconds(interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
+                            new TweenSpec<float>(TimeSpan.FromMilliseconds(interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                                 easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)), cancellationToken: ct);
                 }
             }

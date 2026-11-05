@@ -110,7 +110,12 @@ public static class ComposeShadowRenderer
             if (!localToDevice.TryInvert(out var deviceToLocal))
                 return;
 
-            using var path = CreatePath(_shape);
+            using var path = CreatePath(_shape, (float)_renderScaling);
+            // Core records outlines in physical pixels. Retain the owner transform while
+            // removing only density from the path CTM, including for nested transforms.
+            localToDevice = SKMatrix.Concat(localToDevice,
+                SKMatrix.CreateScale(1f / (float)_renderScaling, 1f / (float)_renderScaling));
+            if (!localToDevice.TryInvert(out deviceToLocal)) return;
             // Preserve DrawShadow's device -> local -> device float rounding.
             var lightPosition = localToDevice.MapPoint(deviceToLocal.MapPoint(
                 new SKPoint(_lighting.LightX, _lighting.LightY)));
@@ -265,14 +270,14 @@ public static class ComposeShadowRenderer
             canvas.DrawPath(shadowPath, paint);
         }
 
-        private static SKPath CreatePath(ComposeShadowShape shape)
+        private static SKPath CreatePath(ComposeShadowShape shape, float density)
         {
             var bounds = shape.Bounds;
             var rect = new SKRect(
-                (float)bounds.Left,
-                (float)bounds.Top,
-                (float)bounds.Right,
-                (float)bounds.Bottom);
+                (float)bounds.Left * density,
+                (float)bounds.Top * density,
+                (float)bounds.Right * density,
+                (float)bounds.Bottom * density);
             using var builder = new SKPathBuilder();
             if (shape.Corners == default)
             {
@@ -283,10 +288,10 @@ public static class ComposeShadowRenderer
                 using var rounded = new SKRoundRect();
                 Span<SKPoint> radii =
                 [
-                    Radius(shape.Corners.TopLeft),
-                    Radius(shape.Corners.TopRight),
-                    Radius(shape.Corners.BottomRight),
-                    Radius(shape.Corners.BottomLeft)
+                    Radius(shape.Corners.TopLeft * density),
+                    Radius(shape.Corners.TopRight * density),
+                    Radius(shape.Corners.BottomRight * density),
+                    Radius(shape.Corners.BottomLeft * density)
                 ];
                 rounded.SetRectRadii(rect, radii);
                 builder.AddRoundRect(rounded, SKPathDirection.Clockwise);

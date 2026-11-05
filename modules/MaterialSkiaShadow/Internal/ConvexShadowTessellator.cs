@@ -5,7 +5,7 @@
  * found in the LICENSE.Skia.txt file.
  *
  * Managed, deliberately scoped adaptation of Skia m150 SkShadowTessellator.cpp,
- * SkPolyUtils.cpp, and GrPathUtils.cpp. This implementation accepts one flat simple contour
+ * SkPolyUtils.cpp. This implementation accepts one flat simple contour
  * containing lines, quadratics, and conics. Cubics, perspective, tilted Z planes, directional
  * lights fail explicitly.
  */
@@ -987,8 +987,6 @@ internal static class ConvexShadowTessellator
     private sealed class PathPolygon
     {
         private const float NearlyZero = 1f / 4096f;
-        private const float QuadraticTolerance = 0.2f;
-        private const float QuadraticToleranceSquared = 0.2f * 0.2f;
         private const float ConicTolerance = 0.25f;
 
         private float _area;
@@ -1137,57 +1135,10 @@ internal static class ConvexShadowTessellator
 
         private void HandleQuadratic(SKPoint first, SKPoint control, SKPoint last)
         {
-            // SkBaseShadowTessellator::handleQuad's Ganesh path. The pinned Skiko
-            // RenderNode's rounded outline uses this subdivision, including the
-            // degeneracy check and GrPathUtils point-count cap.
-            var v0 = Subtract(control, first);
-            var v1 = Subtract(last, first);
-            if (MathF.Abs(Cross(v0, v1)) <= NearlyZero) return;
-            GenerateQuadratic(first, control, last, QuadraticPointCount(first, control, last));
-        }
-
-        // GrPathUtils::quadraticPointCount uses Wang's formula to cap recursive subdivision.
-        // This cap is observable at small shadow radii: allowing the recursion a generic large
-        // budget makes rounded corners smoother than SkShadowTessellator's native mesh.
-        private static int QuadraticPointCount(SKPoint first, SKPoint control, SKPoint last)
-        {
-            var precision = 1f / QuadraticTolerance;
-            var x = first.X - 2f * control.X + last.X;
-            var y = first.Y - 2f * control.Y + last.Y;
-            // length_term_p2<2>(precision) = precision^2 / 16.
-            var power4 = (x * x + y * y) * (precision * precision * (1f / 16f));
-            var chopCount = NextLog16(power4);
-            return 1 << Math.Min(chopCount, 10);
-        }
-
-        // Bit-identical translation of wangs_formula::nextlog2/nextlog16. Using MathF.Log2 and
-        // Ceil changes exact-power-of-two and one-ULP boundary cases that affect vertex counts.
-        private static int NextLog16(float value)
-        {
-            if (value <= 1f)
-                return 0;
-
-            var bits = BitConverter.SingleToUInt32Bits(value);
-            bits += (1u << 23) - 1u;
-            var exponent = (int)((bits >> 23) & 0xffu) - 127;
-            var nextLog2 = exponent > 0 ? exponent : 0;
-            return (nextLog2 + 3) >> 2;
-        }
-
-        private void GenerateQuadratic(SKPoint first, SKPoint control, SKPoint last, int pointsLeft)
-        {
-            if (pointsLeft < 2 || DistanceToSegmentSquared(control, first, last) < QuadraticToleranceSquared)
-            {
-                HandleLine(last);
-                return;
-            }
-
-            var firstMid = Midpoint(first, control);
-            var secondMid = Midpoint(control, last);
-            var center = Midpoint(firstMid, secondMid);
-            pointsLeft >>= 1;
-            GenerateQuadratic(first, firstMid, center, pointsLeft);
-            GenerateQuadratic(center, secondMid, last, pointsLeft);
+            // The locked Skiko artifact follows SkShadowTessellator's !SK_GANESH
+            // branch: native quad shadows equal control/end-point polylines.
+            HandleLine(control);
+            HandleLine(last);
         }
 
         private void HandleLine(SKPoint point)
@@ -1264,26 +1215,6 @@ internal static class ConvexShadowTessellator
                 Clip.Add(point);
         }
 
-        private static float DistanceToSegmentSquared(SKPoint point, SKPoint first, SKPoint second)
-        {
-            var segment = Subtract(second, first);
-            var toPoint = Subtract(point, first);
-            var lengthSquared = Dot(segment, segment);
-            var projection = Dot(segment, toPoint);
-            if (projection <= 0)
-                return Dot(toPoint, toPoint);
-            if (projection > lengthSquared)
-            {
-                var toEnd = Subtract(second, point);
-                return Dot(toEnd, toEnd);
-            }
-
-            var determinant = Cross(segment, toPoint);
-            var result = determinant / lengthSquared;
-            result *= determinant;
-            return float.IsFinite(result) ? result : Dot(toPoint, toPoint);
-        }
-
         private static bool Duplicate(SKPoint first, SKPoint second)
         {
             var delta = Subtract(first, second);
@@ -1294,8 +1225,6 @@ internal static class ConvexShadowTessellator
         private static float Dot(SKPoint first, SKPoint second) => first.X * second.X + first.Y * second.Y;
         private static float Cross(SKPoint first, SKPoint second) => first.X * second.Y - first.Y * second.X;
         private static SKPoint Subtract(SKPoint first, SKPoint second) => new(first.X - second.X, first.Y - second.Y);
-        private static SKPoint Midpoint(SKPoint first, SKPoint second) => new(
-            (float)(0.5 * ((double)first.X + second.X)),
-            (float)(0.5 * ((double)first.Y + second.Y)));
+
     }
 }

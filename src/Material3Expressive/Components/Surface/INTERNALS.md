@@ -127,9 +127,17 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
   morph 轮廓内部渐变，本地则没有。物理像素路径替代 DIP+CTM 的实验图像不变；直接采用
   `SkShadowTessellator::handleQuad` 的非 Ganesh 控制点分支虽令该样本相等，却令整个 Surface 族
   出现 8 个不同用例，且使既有圆形 ambient 网格测试失败。这不足以证明固定原生构建采用该分支，
-  两项实验均撤回；保留原始 Ganesh 算法及全部门禁。准确分歧仍待定位，不能将这些内部渐变
+  当时两项实验均撤回；保留 Ganesh 算法及全部门禁。那轮尚未定位的内部渐变不能
   归入 DECISIONS §20 已接受的坐标栅格差异。实验报告 `shadow-quad-surface`、`chip-shadow-quad`
-  只用于说明被否决方案，当前结论以 `shadow-contour-current` 为准。
+  只用于说明当时被否决的单项修改，不再作为当前实现结论。
+- 2026-11-06 本轮依据用户扩大授权重新决定共享阴影接入，详见 DECISIONS §20。
+  独立固定 Skiko 的 quad/control-point 全图比较及 circle/blur fallback 比较确认原生曲线分支，
+  随后同时保留该分支与 Core 的物理像素路径；不增加 alpha、不按高度特判、不调整门禁。
+  修复前 `surface-high-elevation` 的 55 例有 10 different；修复后 `surface-native-curve` 为
+  26 equal、29 withinTolerance、0 different，零执行错误且全部重复稳定，结构化读数全部相等。
+  新增 8 例是 56×56 DIP、16/28 DIP 圆角、16/40 DIP elevation、实色/透明填充，
+  全部在原门禁内；原先 5 个透明低高度失败也全部消除。已查看实际高阴影图像。
+  `SurfaceDemo` 提供相应样本；公开 DIP 用法不变。当前是 raster 验证，GPU/DPI 切换仍需独立验证。
 - 2026-11-04 `interactive-surface` 最终运行 `20261104-081657-a2237b4f`：111 例执行错误 0，
   92 例像素完全相等、19 例容差内、超差 0；覆盖三个入口的静态颜色/尺寸/描边/阴影与输入/换源/重挂。
   105 例稳定，6 例 Core 波纹重叠时不稳定：click.keys / keys-reverse、select.keys-reverse、toggle.keys

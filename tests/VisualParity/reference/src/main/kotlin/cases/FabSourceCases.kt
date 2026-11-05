@@ -18,7 +18,7 @@ class FabSourceCases {
             scene.interactions=MutableInteractionSource()
             // Keep the elevation factory's composition call site stable while changing
             // its parameters; switching factory branches would test a different lifetime.
-            if(c.action=="configuration")scene.sourceElevations=listOf(2f,4f,6f,9f)
+            if(c.action.startsWith("configuration"))scene.sourceElevations=listOf(2f,4f,6f,9f)
             host.mount{scene.Content()};host.draw();host.frame(-1000);host.frame(0)
             fun sample(id:String) {
                 // Observe the already-applied layer without executing its block or advancing time.
@@ -69,13 +69,38 @@ class FabSourceCases {
                 change(641000,"unfocus"){emit(FocusInteraction.Unfocus(focus))};at(800000);return
             }
             change(1000,"hover"){emit(hover)};at(16000);at(64000)
-            if(c.action=="configuration") {
+            if(c.action.startsWith("configuration")) {
                 change(65000,"unused-height"){scene.sourceElevations=listOf(2f,40f,60f,9f)};at(80000);at(128000)
                 change(129000,"press"){emit(first)};at(160000);at(208000)
-                change(209000,"active-height"){scene.sourceElevations=listOf(2f,5f,60f,9f)};at(224000);at(240000)
+                change(209000,"active-height"){scene.sourceElevations=listOf(2f,5f,60f,9f)}
+                if(c.action=="configuration-coalesce")change(210000,"latest-height"){scene.sourceElevations=listOf(2f,7f,60f,9f)}
+                at(224000)
+                if(c.action=="configuration-interrupt") {
+                    change(225000,"cancel-after-effect"){emit(PressInteraction.Cancel(first))}
+                    at(240000);at(256000);at(320000);at(400000);at(800000);return
+                }
+                at(240000)
                 change(241000,"cancel"){emit(PressInteraction.Cancel(first))};at(320000);at(400000);at(800000);return
             }
             change(65000,"press"){emit(first)};at(80000);at(128000)
+            if(c.action=="replace-before-frame"||c.action=="replace-revert") {
+                val original=checkNotNull(scene.interactions)
+                val skipped=MutableInteractionSource()
+                change(129000,"replace-first"){scene.interactions=skipped}
+                if(c.action=="replace-revert") {
+                    change(130000,"restore-original"){scene.interactions=original}
+                    change(131000,"unobserved-focus"){check(skipped.tryEmit(focus))};at(144000)
+                    change(145000,"original-cancel"){check(original.tryEmit(PressInteraction.Cancel(first)))}
+                } else {
+                    change(130000,"replace-latest"){scene.interactions=MutableInteractionSource()}
+                    change(131000,"skipped-press"){check(skipped.tryEmit(second))}
+                    change(132000,"unobserved-focus"){emit(focus)}
+                    change(133000,"original-focus"){check(original.tryEmit(focus))};at(144000)
+                    change(145000,"skipped-hover"){check(skipped.tryEmit(hover))}
+                    change(146000,"latest-hover"){emit(HoverInteraction.Enter())}
+                }
+                at(160000);at(208000);at(400000);at(800000);return
+            }
             if(c.action=="overlap") {
                 change(129000,"second-press"){emit(second)};at(160000)
                 change(193000,"first-release"){emit(PressInteraction.Release(first))};at(208000);at(240000)
