@@ -92,6 +92,10 @@ Basic 默认宽度为 280–560 DIP，无默认高度；显式 `Width` / `MinWid
 AlertDialog 自带 24 DIP 容器留白。图标居中；有图标时标题居中，否则靠 start。
 正文使用剩余高度但不主动撑满，不自动滚动；较长正文应自行使用 `ScrollViewer`。
 按钮横排时 LTR 下取消在左、确认在右，空间不足则确认在上；RTL 调整水平位置。
+`m3:MaterialInteractiveSize.Minimum="40"` 可设置动作的最小交互尺寸；换行时默认行间距随环境调整，
+40 DIP 对应 8 DIP 间距，44 对应 4，48 或更大对应 0。该环境可从祖先继承并动态修改。
+`Comp.Dialog.ActionVerticalSpacing` 的有限数值覆盖仍表示最终行间距；默认 NaN 表示自动计算。
+直接读取该 Token 的自定义模板需处理 NaN，或设置明确的有限间距；标准模板已处理，无其他迁移动作。
 
 用 `Background` / `CornerRadius` 定制容器，`IconForeground` / `TitleForeground` /
 `TextForeground` 定制对应槽。默认提供 HeadlineSmall / BodyMedium / LabelLarge 文字环境，
@@ -103,7 +107,7 @@ AlertDialog 自带 24 DIP 容器留白。图标居中；有图标时标题居中
 
 ## 使用边界
 
-系统/IME inset、平台安全窗口选项和自定义最小交互尺寸环境尚未实现；正文不会自动避让软键盘。
+系统/IME inset 和平台安全窗口选项尚未实现；正文不会自动避让软键盘。
 真实输入法、屏幕阅读器模态隔离、触屏、多显示器 DPI 切换与跨平台冻结行为尚未完成验收。
 Catalog 的 [AlertDialogDemo](../../../Material3Expressive.Catalog/AlertDialogDemo.axaml) 提供带完整
 打开、确认、取消和关闭请求处理的例子；测试范围见 [INTERNALS](INTERNALS.md#一致性边界与验证)。

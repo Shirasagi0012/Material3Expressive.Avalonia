@@ -32,6 +32,9 @@ public sealed class SwipeToDismissBoxCases
                 StartToEnd: action != "drag-single-direction", Gestures: action != "drag-disabled", Action: action));
         yield return Data("dynamic.rtl-drag-dismiss", new(Rtl: true, Action: "drag-dismiss"));
         yield return Data("dynamic.end-to-start", new(Action: "dismiss-end"));
+        yield return Data("dynamic.remove-end-anchor", new(Action: "remove-end-anchor"));
+        yield return Data("dynamic.rtl-remove-anchor", new(Rtl: true, Action: "remove-anchor"));
+        yield return Data("dynamic.rtl-remove-end-anchor", new(Rtl: true, Action: "remove-end-anchor"));
     }
     private static CaseData<SwipeToDismissConfig> Data(string id, SwipeToDismissConfig c) => new(id, id.Replace('.', ' '), c);
 
@@ -57,13 +60,14 @@ public sealed class SwipeToDismissBoxCases
         void Mutate(long t, string id, Action action, bool sample = true) { Advance(t); action(); writer.Record(t, "mutation", id); host.Draw(); if (sample) Sample(id); }
         void Input(long t, string action, Point p) { Advance(t); scene.Input(action, p); host.Draw(); }
         Sample("initial");
-        if (c.Action is "dismiss" or "dismiss-end" or "reset" or "reverse" or "resize" or "remove-anchor" or "drag-interrupt")
+        if (c.Action is "dismiss" or "dismiss-end" or "reset" or "reverse" or "resize" or "remove-anchor" or "remove-end-anchor" or "drag-interrupt")
         {
-            Mutate(1000, "state-change", () => { _ = c.Action == "reset" ? scene.Box.State.ResetAsync() : scene.Box.State.DismissAsync(c.Action == "dismiss-end" ? SwipeToDismissBoxValue.EndToStart : SwipeToDismissBoxValue.StartToEnd); });
+            Mutate(1000, "state-change", () => { _ = c.Action == "reset" ? scene.Box.State.ResetAsync() : scene.Box.State.DismissAsync(c.Action is "dismiss-end" or "remove-end-anchor" ? SwipeToDismissBoxValue.EndToStart : SwipeToDismissBoxValue.StartToEnd); });
             Times(16000, 64000, 96000);
             if (c.Action == "reverse") Mutate(97000, "reverse", () => { _ = scene.Box.State.DismissAsync(SwipeToDismissBoxValue.EndToStart); });
             if (c.Action == "resize") Mutate(97000, "resize", () => scene.Box.Width = 280, false);
             if (c.Action == "remove-anchor") Mutate(97000, "remove-anchor", () => scene.Box.EnableDismissFromStartToEnd = false, false);
+            if (c.Action == "remove-end-anchor") Mutate(97000, "remove-end-anchor", () => scene.Box.EnableDismissFromEndToStart = false, false);
             if (c.Action == "drag-interrupt")
             {
                 Input(98000, "down", new Point(220, 64)); Sample("interrupt-down");

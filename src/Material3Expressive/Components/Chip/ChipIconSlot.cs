@@ -95,7 +95,7 @@ internal sealed class ChipIconSlot : Decorator
         _width = transition.AnimateValue(new ChipWidthConverter(), WidthTarget, SizeSpec);
         var alpha = transition.AnimateValue(new FloatConverter(), state => state == EnterExitState.Visible ? 1f : 0f, AlphaSpec);
         scope.SubscribeValue(_width, _ => InvalidateMeasure());
-        scope.SubscribeValue(alpha, value => Opacity = Math.Clamp(value, 0, 1));
+        scope.BindAnimatedValue(this, OpacityProperty, alpha, static value => (double)Math.Clamp(value, 0, 1));
         void Finished(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
             if (args.PropertyName == nameof(Transition.IsRunning) && !transition.IsRunning
@@ -153,7 +153,6 @@ internal sealed class ChipIconSlot : Decorator
         {
             _initialized = true;
             _transitionPresent = _visibilityTarget = requestedPresent;
-            Opacity = requestedPresent ? 1 : 0;
             CreateTransition(requestedPresent ? EnterExitState.Visible : EnterExitState.PreEnter);
             InvalidateMeasure();
         }

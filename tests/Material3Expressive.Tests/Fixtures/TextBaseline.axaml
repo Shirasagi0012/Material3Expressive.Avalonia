@@ -1,0 +1,5 @@
+<Border xmlns="https://github.com/avaloniaui"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        m3:MaterialTextBaseline.First="12.25" m3:MaterialTextBaseline.Last="32.25">
+  <TextBlock Text="Child" />
+</Border>

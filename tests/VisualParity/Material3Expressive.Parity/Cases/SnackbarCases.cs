@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Typography;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -13,13 +14,25 @@ namespace Material3Expressive.Parity;
 public sealed record SnackbarConfig(bool HasAction = true, bool HasDismiss = false, bool NewLine = false,
     bool Dark = false, bool Rtl = false, bool Buttons = false, double ContentWidth = 64, double ContentHeight = 12,
     double DismissWidth = 24, int HostWidth = 720, double? Width = null, double? Height = null,
-    double MinimumWidth = 0, string Colors = "default", string Mutation = "none");
+    double MinimumWidth = 0, string Colors = "default", string Mutation = "none",
+    double? FirstBaseline = null, double? LastBaseline = null, double? ActionBaseline = null, bool LastOnlyWrapper = false);
 
 [ParitySuite("snackbar")]
 public sealed class SnackbarCases
 {
     public static IEnumerable<CaseData<SnackbarConfig>> StaticConfigurations()
     {
+        foreach (var newLine in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"static.baseline.wrapper.{newLine}.{rtl}".ToLowerInvariant(),
+                new(NewLine: newLine, Rtl: rtl, ContentHeight: 40, FirstBaseline: 10,
+                    LastBaseline: 30, ActionBaseline: 16, LastOnlyWrapper: true));
+        foreach (var newLine in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var multiline in new[] { false, true })
+            yield return Data($"static.baseline.{newLine}.{rtl}.{multiline}".ToLowerInvariant(),
+                new(NewLine: newLine, Rtl: rtl, ContentHeight: 40, FirstBaseline: 10,
+                    LastBaseline: multiline ? 30 : 10, ActionBaseline: 16));
         foreach (var action in new[] { false, true })
         foreach (var dismiss in new[] { false, true })
         foreach (var newLine in action ? new[] { false, true } : new[] { false })
@@ -42,6 +55,11 @@ public sealed class SnackbarCases
     }
     public static IEnumerable<CaseData<SnackbarConfig>> DynamicConfigurations()
     {
+        foreach (var newLine in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.baseline.{newLine}.{rtl}".ToLowerInvariant(),
+                new(NewLine: newLine, Rtl: rtl, ContentHeight: 40, FirstBaseline: 10,
+                    LastBaseline: 30, ActionBaseline: 16, Mutation: "baseline"));
         foreach (var mutation in new[] { "slots", "new-line", "resize", "colors", "theme" }) yield return Data($"dynamic.{mutation}", new(Mutation: mutation));
         foreach (var mutation in new[] { "action", "dismiss" }) yield return Data($"dynamic.{mutation}", new(HasDismiss: true, Buttons: true, Mutation: mutation));
     }
@@ -56,7 +74,16 @@ public sealed class SnackbarCases
         var content = new Marker(config.ContentWidth, config.ContentHeight);
         var action = new Marker(config.Buttons ? 40 : 80, config.Buttons ? 16 : 24);
         var dismiss = new Marker(config.DismissWidth, 24);
-        var snackbar = new Snackbar { Content = content, ActionOnNewLine = config.NewLine, MinWidth = config.MinimumWidth,
+        MaterialTextBaseline.SetFirst(content, config.FirstBaseline);
+        MaterialTextBaseline.SetLast(content, config.LastBaseline);
+        MaterialTextBaseline.SetFirst(action, config.ActionBaseline);
+        Control message = content;
+        if (config.LastOnlyWrapper)
+        {
+            message = new Grid { Margin = new Thickness(0, 3, 0, 0), Children = { content } };
+            MaterialTextBaseline.SetLast(message, config.LastBaseline);
+        }
+        var snackbar = new Snackbar { Content = message, ActionOnNewLine = config.NewLine, MinWidth = config.MinimumWidth,
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         if (config.Width is { } width) snackbar.Width = width;
         if (config.Height is { } height) snackbar.Height = height;
@@ -100,6 +127,11 @@ public sealed class SnackbarCases
         void Times(params long[] times) { foreach (var time in times) { Advance(time); host.Draw(); Sample($"time-{time}"); } }
         switch (config.Mutation)
         {
+            case "baseline":
+                Change(1000, "first", () => MaterialTextBaseline.SetFirst(content, 14));
+                Change(2000, "single-line", () => MaterialTextBaseline.SetLast(content, 14));
+                Change(3000, "clear", () => { content.ClearValue(MaterialTextBaseline.FirstProperty); content.ClearValue(MaterialTextBaseline.LastProperty); });
+                break;
             case "slots": Change(1000, "dismiss-only", () => Slots(false, true)); Change(2000, "both", () => Slots(true, true)); Change(3000, "none", () => Slots(false, false)); break;
             case "new-line": Change(1000, "new-line", () => snackbar.ActionOnNewLine = true); Change(2000, "row", () => snackbar.ActionOnNewLine = false); break;
             case "resize": Change(1000, "wide", () => content.Size = new(400, 12)); Change(2000, "tall", () => content.Size = new(20, 80)); break;

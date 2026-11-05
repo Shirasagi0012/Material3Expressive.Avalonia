@@ -13,6 +13,10 @@ import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
@@ -20,7 +24,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class SnackbarConfig(val hasAction:Boolean=true,val hasDismiss:Boolean=false,val newLine:Boolean=false,
     val dark:Boolean=false,val rtl:Boolean=false,val buttons:Boolean=false,val contentWidth:Double=64.0,val contentHeight:Double=12.0,
     val dismissWidth:Double=24.0,val hostWidth:Int=720,val width:Double?=null,val height:Double?=null,
-    val minimumWidth:Double=0.0,val colors:String="default",val mutation:String="none")
+    val minimumWidth:Double=0.0,val colors:String="default",val mutation:String="none",
+    val firstBaseline:Double?=null,val lastBaseline:Double?=null,val actionBaseline:Double?=null,val lastOnlyWrapper:Boolean=false)
 
 @ParitySuite("snackbar") class SnackbarCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
@@ -36,6 +41,7 @@ import kotlinx.serialization.Serializable
             fun change(time:Long,id:String,action:()->Unit) {advance(time);action();writer.record(time,"mutation",id);host.frame(time);host.draw();sample(id)}
             fun times(vararg times:Long) {times.forEach {advance(it);host.draw();sample("time-$it")}}
             when(config.mutation) {
+                "baseline" -> {change(1000,"first") {s.firstBaseline=14.0};change(2000,"single-line") {s.lastBaseline=14.0};change(3000,"clear") {s.firstBaseline=null;s.lastBaseline=null}}
                 "slots" -> {change(1000,"dismiss-only") {s.hasAction=false;s.hasDismiss=true};change(2000,"both") {s.hasAction=true};change(3000,"none") {s.hasAction=false;s.hasDismiss=false}}
                 "new-line" -> {change(1000,"new-line") {s.newLine=true};change(2000,"row") {s.newLine=false}}
                 "resize" -> {change(1000,"wide") {s.width=400.0};change(2000,"tall") {s.width=20.0;s.height=80.0}}
@@ -56,11 +62,22 @@ import kotlinx.serialization.Serializable
         var newLine by mutableStateOf(config.newLine);var dark by mutableStateOf(config.dark)
         var width by mutableStateOf(config.contentWidth);var height by mutableStateOf(config.contentHeight)
         var colors by mutableStateOf(config.colors)
+        var firstBaseline by mutableStateOf(config.firstBaseline);var lastBaseline by mutableStateOf(config.lastBaseline)
         val probes=linkedMapOf("snackbar" to Probe(),"content" to Probe(),"action" to Probe(),"dismiss" to Probe())
         val painted=mutableMapOf<String,Color>();var actions=0;var dismissals=0
         @Composable fun marker(name:String,width:Double,height:Double) {
             val color=LocalContentColor.current
-            Canvas(checkNotNull(probes[name]).modifier().size(width.toFloat().dp,height.toFloat().dp)) {painted[name]=color;drawRect(color)}
+            val first=if(name=="content") firstBaseline else if(name=="action") config.actionBaseline else null
+            val last=if(name=="content") lastBaseline else first
+            val modifier=checkNotNull(probes[name]).modifier().layout {measurable,constraints ->
+                val child=measurable.measure(constraints)
+                val lines=buildMap<AlignmentLine,Int> {
+                    if(first!=null) put(FirstBaseline,first.toFloat().dp.roundToPx())
+                    if(last!=null) put(LastBaseline,last.toFloat().dp.roundToPx())
+                }
+                layout(child.width,child.height,lines) {child.place(0,0)}
+            }.size(width.toFloat().dp,height.toFloat().dp)
+            Canvas(modifier) {painted[name]=color;drawRect(color)}
         }
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
@@ -82,7 +99,15 @@ import kotlinx.serialization.Serializable
                         Snackbar(modifier=modifier,action=actionSlot,dismissAction=dismissSlot,actionOnNewLine=newLine,
                             containerColor=background,contentColor=if(colors=="custom") Color.Red else SnackbarDefaults.contentColor,
                             actionContentColor=actionColor,dismissActionContentColor=dismissColor,
-                            shape=if(colors=="custom") RoundedCornerShape(12.dp) else SnackbarDefaults.shape) {marker("content",width,height)}
+                            shape=if(colors=="custom") RoundedCornerShape(12.dp) else SnackbarDefaults.shape) {
+                            if(config.lastOnlyWrapper) {
+                                Box(Modifier.padding(top=3.dp).layout {measurable,constraints ->
+                                    val child=measurable.measure(constraints)
+                                    val lines:Map<AlignmentLine,Int> = lastBaseline?.let {mapOf(LastBaseline to it.toFloat().dp.roundToPx())} ?: emptyMap()
+                                    layout(child.width,child.height,lines) {child.place(0,0)}
+                                }) {marker("content",width,height)}
+                            } else marker("content",width,height)
+                        }
                     }
                 }
             }

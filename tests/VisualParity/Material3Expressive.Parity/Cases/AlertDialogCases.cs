@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Interaction;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -19,7 +20,7 @@ public sealed record AlertDialogConfig(bool Basic = false, bool Icon = true, boo
     bool Dismiss = true, bool Dark = false, bool Rtl = false, bool PlatformWidth = true,
     double? Width = null, double? Height = null, int HostWidth = 520, int HostHeight = 360,
     double ContentWidth = 160, double ContentHeight = 40, double ButtonWidth = 80,
-    string Colors = "default", string Action = "none", bool AllowDismiss = true);
+    string Colors = "default", string Action = "none", bool AllowDismiss = true, double? MinimumInteractiveSize = null);
 
 [ParitySuite("alert-dialog")]
 public sealed class AlertDialogCases
@@ -47,6 +48,10 @@ public sealed class AlertDialogCases
         yield return Data("static.width.explicit-small", new(Width: 180));
         foreach (var color in new[] { "custom", "surface", "transparent" })
             yield return Data($"static.colors.{color}", new(Colors: color));
+        foreach (var minimum in new[] { 0d, 40, 44, 48, 64 })
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"static.buttons.minimum-{minimum}.{(rtl ? "rtl" : "ltr")}",
+                new(Rtl: rtl, ButtonWidth: 180, MinimumInteractiveSize: minimum));
     }
 
     public static IEnumerable<CaseData<AlertDialogConfig>> DynamicConfigurations()
@@ -57,6 +62,8 @@ public sealed class AlertDialogCases
             yield return Data($"dynamic.{action}.disabled", new(Action: action, AllowDismiss: false));
         yield return Data("dynamic.transition.rtl", new(Action: "transition", Rtl: true));
         yield return Data("dynamic.transition.dark", new(Action: "transition", Dark: true));
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.buttons.minimum.{(rtl ? "rtl" : "ltr")}", new(Action: "minimum", Rtl: rtl, ButtonWidth: 180));
     }
 
     internal static CaseData<AlertDialogConfig> Data(string id, AlertDialogConfig config) => new(id, id.Replace('.', ' '), config);
@@ -121,6 +128,7 @@ internal sealed class AlertDialogScene
         });
         mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
         Dialog = config.Basic ? new BasicAlertDialog() : new AlertDialog();
+        MaterialInteractiveSize.SetMinimum(Dialog, config.MinimumInteractiveSize);
         Dialog.AnimateTransition = config.Action is "transition" or "interrupt" or "immediate";
         Dialog.IsOpen = !Dialog.AnimateTransition;
         Dialog.UsePlatformDefaultWidth = config.PlatformWidth;
@@ -232,6 +240,11 @@ internal sealed class AlertDialogScene
         }
         switch (config.Action)
         {
+            case "minimum":
+                Change(1000, "minimum-40", () => MaterialInteractiveSize.SetMinimum(scene.Dialog, 40));
+                Change(2000, "minimum-44", () => MaterialInteractiveSize.SetMinimum(scene.Dialog, 44));
+                Change(3000, "minimum-64", () => MaterialInteractiveSize.SetMinimum(scene.Dialog, 64));
+                Change(4000, "minimum-default", () => scene.Dialog.ClearValue(MaterialInteractiveSize.MinimumProperty)); break;
             case "theme": Change(1000, "dark", () => scene.SetTheme(true)); Change(2000, "light", () => scene.SetTheme(false)); break;
             case "slots":
                 var alert = (AlertDialog)scene.Dialog;

@@ -81,8 +81,6 @@ internal sealed class AlertDialogButtons : Panel
         var children = Children.Where(c => c.IsVisible).ToArray();
         var width = children.Sum(c => c.DesiredSize.Width) + Math.Max(0, children.Length - 1) * HorizontalSpacing;
         _stacked = width > availableSize.Width;
-        // Default LocalMinimumInteractiveComponentSize (48) - ButtonDefaults.MinHeight
-        // (40) consumes the full 8 DIP cross-axis spacing, leaving zero.
         return _stacked
             ? new Size(children.Max(c => c.DesiredSize.Width), children.Sum(c => c.DesiredSize.Height) + Math.Max(0, children.Length - 1) * CrossAxisSpacing)
             : new Size(width, children.Max(c => c.DesiredSize.Height));

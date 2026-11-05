@@ -100,6 +100,9 @@ public abstract class NavigationDrawer : ContentControl
     private void AttachState()
     {
         if (!this.IsAttachedToVisualTree() || _attachedState == AnimatedState) return;
+        // Finish the input owned by the previous state before rebinding. A captured
+        // move/release must never reach a replacement whose anchors are not laid out yet.
+        CancelPointer();
         _focusGeneration++;
         if (_attachedState is { } old) { old.PropertyChanged -= StateChanged; old.Detach(this); }
         _attachedState = AnimatedState;

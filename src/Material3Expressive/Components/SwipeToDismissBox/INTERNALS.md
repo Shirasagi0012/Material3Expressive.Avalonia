@@ -28,12 +28,27 @@
 ## 3. 已确认决定与已知差异
 
 - 引入提交 `b806d7f3` 保留组件私有锚点算法及现有动画、速度追踪能力。
-- 未解决的 `dynamic.remove-anchor` 会使固定 Core 抛出 `AnchoredDraggableUninitializedException`。带目标操作重启后仍使用原始 target 提交，目标已删除时 offset 变为 NaN。本地保留该算法及严格检查，改变取消结果、最终状态或回调次数仍待维护者决定。
+- **目标锚点移除适配**：本轮依据用户扩大授权重新决定，带目标动画完成时提交本次重启的 `latestTarget`。
+  既有 `ApplyAnchors` 在目标被删除时选择 Settled，仍从最新 offset、速度按原 300ms tween 重启；
+  完成后 Task 正常结束，状态为 Settled，不发 Dismissed。显式请求一个从未存在的锚点仍保留上游的无位移状态提交分支。
+  固定 AndroidX/Core `AnchoredDraggableState.anchoredDrag(targetValue)` 的动画体使用 latestTarget，
+  最终却写回原 targetValue；原目标已删除时会写 NaN，实际参考随后在 requireOffset 抛异常。
+  原实现照搬这一终值提交，本轮回归在两个方向及早/晚移除时均复现布局异常。
+  替代方案是取消任务后另开恢复动画或保留已删除锚点；前者引入第二次操作生命周期，后者违背方向配置，均未采用。
+  这是对历史待定项作出的本地适配，不宣称修复了参考端，不删除原失败场景或放宽严格 offset 检查。
 - Tween/Easing 的 Double 中间运算与 Compose Float 存在精确数值差异，普通消除 64ms 样本约为 0.000008 DIP。共享运行时的精度变更尚未批准。
 - 尚未移植废弃 confirmValueChange API。触屏、多指、完整嵌套滚动仲裁、跨屏 DPI 及非 Windows 桌面未经双端验证。
-- 已有 Windows 样本的可完成场景画面一致，严格状态比较仍有上述差异。原验证使用仓外缓存及同版本依赖产物，正式 locked restore 的包哈希验证受包源鉴权阻塞。
+- 历史验证使用仓外缓存及同版本依赖产物，当时 locked restore 受包源鉴权阻塞；本轮已能按锁文件恢复，不沿用该旧阻塞作为当前结论。
 
 ## 4. 验证入口
+
+2026-11-05 当前实现的 Swipe / AnchoredContainerInput 39 项测试通过，包含两个方向的早/晚移除、
+任务完成且不发 Dismissed、重新启用后可再次消除。`swipe-anchor-regression` 与
+`lifecycle-isolated-swipe-to-dismiss.*` 合并覆盖 47 例：31 equal、12 different、4 参考端异常。
+可完成的 43 例均重复/额外截图稳定，different 为原始 motion 精度读数，不放宽比较。
+四个 remove-anchor / remove-end-anchor × LTR/RTL 场景在固定 Core 抛 AnchoredDraggableUninitializedException，
+无法给出端到端相等结论。`lifecycle-actual-{1,2}-swipe-to-dismiss.dynamic.*remove*` 两次本地捕获
+均完成；每例 18 个图像/样本文件哈希一致，终态 offset=0、Settled、无消除回调。
 
 - `AnchoredContainerInputTests` 与双端 `anchored-child-input` 验证按住子按钮后关闭父手势，再释放仍产生一次点击；
   另覆盖原生 Thumb 拖动，行为测试使用真实 Slider。原生 Thumb 的 `DragStarted` 结束父级候选手势，

@@ -5,6 +5,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
 
@@ -69,7 +70,8 @@ internal sealed class RichTooltipLayout : Panel
             var childHeight = Px(size.Height);
             if (i < 2 && !simpleText)
             {
-                var baseline = FirstBaseline(slot.Child, scale);
+                var first = MaterialTextBaseline.Read(slot.Child, scale).First;
+                var baseline = first == int.MinValue ? 0 : first;
                 top = Math.Clamp(Px(i == 0 ? SubheadFirstBaselineOffset : TextFirstBaselineOffset) - baseline, 0,
                     Math.Max(0, maximum - childHeight - bottom));
                 // Even an unspecified "after" uses zero in alignmentLineOffsetMeasure.
@@ -100,17 +102,4 @@ internal sealed class RichTooltipLayout : Panel
         return finalSize;
     }
 
-    // Native text and explicit native baselines are available without a shared
-    // alignment-line framework. Missing baselines follow Compose's zero fallback.
-    private static int FirstBaseline(Control? child, double scale)
-    {
-        if (child is null) return 0;
-        if (child.IsSet(TextBlock.BaselineOffsetProperty))
-            return MathUtils.DipToPx(child.Margin.Top + TextBlock.GetBaselineOffset(child), scale);
-        if (child is TextBlock text && text.TextLayout.TextLines is { Count: > 0 } lines)
-            return MathUtils.DipToPx(text.Margin.Top + text.Padding.Top + lines[0].Baseline, scale);
-        if (child is ContentPresenter presenter)
-            return MathUtils.DipToPx(presenter.Margin.Top + presenter.Padding.Top, scale) + FirstBaseline(presenter.Child, scale);
-        return 0;
-    }
 }

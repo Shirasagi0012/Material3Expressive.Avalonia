@@ -131,8 +131,9 @@ public class SnackbarHost : TemplatedControl
                     new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float, "Snackbar opacity"),
                     new Animatable<float>(new FloatConverter(), .8f, VisibilityThresholds.Float, "Snackbar scale"));
                 _items.Add(item); _panel?.Children.Add(presenter);
-                itemScope.SubscribeValue(item.Opacity, value => presenter.Opacity = value);
-                itemScope.SubscribeValue(item.Scale, value => presenter.RenderTransform = new ScaleTransform(value, value));
+                itemScope.BindAnimatedValue(presenter, OpacityProperty, item.Opacity, static value => (double)value);
+                itemScope.BindAnimatedValue(presenter, RenderTransformProperty, item.Scale,
+                    static value => new ScaleTransform(value, value));
             }
         }
         foreach (var item in _items.ToArray())

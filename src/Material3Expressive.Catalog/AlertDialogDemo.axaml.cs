@@ -9,6 +9,8 @@ public partial class AlertDialogDemo : Window
 {
     public AlertDialogDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void OnOpenAlert(object? sender, RoutedEventArgs e) => Alert.IsOpen = true;
+    private void OnOpenCompact(object? sender, RoutedEventArgs e) => Compact.IsOpen = true;
+    private void OnCloseCompact(object? sender, RoutedEventArgs e) => Compact.IsOpen = false;
     private void OnOpenBasic(object? sender, RoutedEventArgs e) => Basic.IsOpen = true;
     private void OnCloseBasic(object? sender, RoutedEventArgs e) => Basic.IsOpen = false;
     private void OnConfirm(object? sender, RoutedEventArgs e) { Result.Text = "Record deleted"; Alert.IsOpen = false; }

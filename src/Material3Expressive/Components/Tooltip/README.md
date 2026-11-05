@@ -60,7 +60,9 @@ RichTooltip 的 Title / TitleTemplate、Content / ContentTemplate、Action / Act
 
 Background、CornerRadius、Padding 和 elevation 可定制表面。RichTooltip 的 Foreground、TitleForeground、ActionForeground 分别控制三个槽，默认文字角色为 BodyMedium、TitleSmall、LabelLarge。
 `Comp.RichTooltip` 支持标题与正文首基线距离、正文留白及动作区最小高度和底部留白的动态 Token 覆盖。默认值为 28、24、16 / 4、36、8 DIP。
-普通 TextBlock 自动提供基线。复杂自定义槽可在根控件上调用 `TextBlock.SetBaselineOffset(control, baseline)`，由调用方随布局更新该值。
+普通 TextBlock 自动提供基线。复杂自定义槽可在根控件上调用 `MaterialTextBaseline.SetFirst(control, baseline)`
+（`Material3Expressive.Foundation.Typography`），由调用方随布局更新从顶边起算、排除 Margin 的 DIP 值。
+尺寸不变时也会重新布局；清除/设 null 恢复自动读取。已有 `TextBlock.SetBaselineOffset` 保留兼容，显式 First 优先于它。
 
 **TooltipLabel：跟随交互的标签**
 

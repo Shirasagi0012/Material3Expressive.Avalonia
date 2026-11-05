@@ -30,6 +30,22 @@
                     Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnCustomAction" />
           </m3:Snackbar.Action>
         </m3:Snackbar>
+        <TextBlock Text="Custom content publishes its first and last text baselines. Change the message without replacing its container." TextWrapping="Wrap" />
+        <Button Content="Toggle custom message lines" Click="OnToggleLines" HorizontalAlignment="Left" />
+        <m3:Snackbar HorizontalAlignment="Stretch">
+          <m3:Snackbar.Content>
+            <Border x:Name="CompositeMessage">
+              <Grid ColumnDefinitions="Auto,*">
+                <Border Width="16" Height="16" CornerRadius="8" Background="{Binding Foreground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Margin="0,0,12,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="CompositeText" Grid.Column="1" Text="Custom message&#10;Measured text baselines" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+          </m3:Snackbar.Content>
+          <m3:Snackbar.Action>
+            <Button Content="Got it" Theme="{StaticResource MaterialSnackbarActionButtonTheme}"
+                    Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnCustomAction" />
+          </m3:Snackbar.Action>
+        </m3:Snackbar>
       </StackPanel>
     </ScrollViewer>
     <m3:SnackbarHost x:Name="Messages" Grid.Row="1" HorizontalAlignment="Stretch">

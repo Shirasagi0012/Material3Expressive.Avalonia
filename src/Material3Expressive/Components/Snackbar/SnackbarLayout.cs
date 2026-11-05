@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
 
@@ -144,23 +145,20 @@ internal sealed class SnackbarLayout : Panel
         }
     }
 
-    // Native paragraphs and the existing standard Button template are the supported automatic
-    // alignment-line sources. General custom-container propagation/explicit overrides are backlog.
+    // Shared explicit/native baseline facts plus the existing standard Button template adapter.
     private static (int First, int Last) Baselines(Control control, double scale)
     {
         int Px(double value) => MathUtils.DipToPx((float)value, (float)scale);
-        if (control is TextBlock text && text.TextLayout.TextLines is { Count: > 0 } lines)
-        {
-            var y = text.Margin.Top + text.Padding.Top;
-            return (Px(y + lines[0].Baseline), Px(y + lines.Take(lines.Count - 1).Sum(line => line.Height) + lines[^1].Baseline));
-        }
+        var baselines = MaterialTextBaseline.Read(control, scale);
+        if (baselines.First != int.MinValue && baselines.Last != int.MinValue) return baselines;
+        var automatic = (First: int.MinValue, Last: int.MinValue);
         if (control is ContentPresenter { Child: { } child } presenter)
         {
-            var pair = Baselines(child, scale);
-            return pair.First == int.MinValue ? pair : (pair.First + Px(presenter.Padding.Top), pair.Last + Px(presenter.Padding.Top));
+            automatic = Offset(Baselines(child, scale), Px(presenter.Margin.Top + presenter.Padding.Top));
         }
-        if (control is Grid grid && grid.Children.Where(c => c.IsVisible).ToArray() is [var only]) return Baselines(only, scale);
-        if (control is Button button && button.GetVisualDescendants().OfType<ButtonLayout>().FirstOrDefault() is { } layout
+        else if (control is Grid grid && grid.Children.Where(c => c.IsVisible).ToArray() is [var only])
+            automatic = Offset(Baselines(only, scale), Px(grid.Margin.Top));
+        else if (control is Button button && button.GetVisualDescendants().OfType<ButtonLayout>().FirstOrDefault() is { } layout
             && button.GetVisualDescendants().OfType<ButtonContentPresenter>().FirstOrDefault() is { Child: TextBlock } label)
         {
             var pair = Baselines(label, scale);
@@ -175,8 +173,15 @@ internal sealed class SnackbarLayout : Panel
                 _ => 0
             };
             var y = Px(button.Margin.Top) + containerY + contentY;
-            return (pair.First + y, pair.Last + y);
+            automatic = Offset(pair, y);
         }
-        return (int.MinValue, int.MinValue);
+        // A Last-only override must not suppress the first baseline provided by the
+        // existing Grid/Button adapters, including when wrapped by a presenter.
+        return (baselines.First == int.MinValue ? automatic.First : baselines.First,
+            baselines.Last == int.MinValue ? automatic.Last : baselines.Last);
+
+        static (int First, int Last) Offset((int First, int Last) pair, int y) =>
+            (pair.First == int.MinValue ? int.MinValue : pair.First + y,
+             pair.Last == int.MinValue ? int.MinValue : pair.Last + y);
     }
 }

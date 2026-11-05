@@ -63,7 +63,7 @@ DialogTokens.ContainerElevation 保留 Level3，但固定 AlertDialogContent
 以下组件选择的确认依据来自 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/AlertDialog/README.md)，不从现有代码推定授权：
 2026-10-04 维护者批准 `BasicAlertDialog : Dialog`、`AlertDialog : BasicAlertDialog`、正文 Content
 和上述槽 API，以原生尺寸与模板表达接入；同时确认按固定 Core precision-pointer no-op 的默认 false 分支。
-这不代表 Android 紧凑分支或可自定义最小交互尺寸环境已完成。
+这不代表 Android 紧凑分支已完成；可自定义最小交互尺寸环境的后续接入见下方决定。
 
 跨组件宿主、平台宽度/Escape 和退出冻结分别由以下共享决定维护，本文不重复扩大其范围：
 
@@ -73,19 +73,21 @@ DialogTokens.ContainerElevation 保留 Level3，但固定 AlertDialogContent
 
 ## 一致性边界与验证
 
-尚未实现系统/IME inset、平台安全窗口选项、Android precision-pointer 紧凑分支及
-LocalMinimumInteractiveComponentSize 自定义环境；Foundation 的其他缺口见
+尚未实现系统/IME inset、平台安全窗口选项及 Android precision-pointer 紧凑分支；Foundation 的其他缺口见
 [Overlays 当前边界](../../Foundation/Overlays/README.md#当前边界)。
 未经验证的范围包括文字像素、真实 OS IME、屏幕阅读器隔离、触屏、多显示器 DPI 切换和跨平台冻结。
 Headless 和离屏双端结果不构成真实桌面验收。
 
-**自定义交互尺寸的待定接入**：上游按钮换行间距为
-`clamp(8 - (minimumInteractiveSize - 40), 0, 8)`；当前 `ActionVerticalSpacing` 的默认 0
-表示最终间距，不能把它静默改为参与减法的原始 8，否则已有 Token 覆盖的含义改变。
-推荐保留显式 Token 覆盖的最终间距语义，只让默认值随 `MaterialInteractiveSize.Minimum`
-更新，例如 `<m3:AlertDialog m3:MaterialInteractiveSize.Minimum="40" ... />` 默认采用 8 DIP。
-实施前需确定默认值与环境变更的依赖接入；共享按钮面板还服务 DatePickerDialog，后者的独立间距不能被连带改变。
-这是待维护者确认的 Token 默认值职责方案，本次未改实现或登记为已批准。
+**自定义交互尺寸接入决定**：本轮依据用户扩大授权重新决定，采用原建议的环境派生默认值，
+保留 `ActionVerticalSpacing` 有限覆盖值的最终间距语义。Token 默认改为 NaN（自动），
+模板 MultiBinding 同时观察 Token 和继承的 `MaterialInteractiveSize.Minimum`，按固定两端
+`AlertDialog.kt` 的 `clamp(8 - (minimumInteractiveSize - 40), 0, 8)` 计算默认间距。
+例如 `<m3:AlertDialog m3:MaterialInteractiveSize.Minimum="40" ... />` 为 8 DIP。
+共享最小尺寸 API 的 null/NaN 仍表示组件默认 48；使用 0 关闭最小留白，不重新解释既有公共环境。
+若把所有 Token 值都减去交互留白，会破坏显式 0/13 等覆盖；若仅检查值是否为 0，无法区分默认与显式覆盖。
+因此选用 NaN 自动值，不新增 Token 解析协议、资源查找旁路或第二个面板。
+直接读取默认 Token 的外部自定义模板需处理 NaN；有限覆盖不需迁移。DatePickerDialog 继续直接消费自己的间距，
+共享 `AlertDialogButtons` 不负责环境求值。行为测试覆盖真实按钮、继承/局部环境、动态更新、覆盖清除及 DatePickerDialog 回归。
 
 已跟踪入口：
 
@@ -106,3 +108,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 运行前按 [VisualParity](../../../../tests/VisualParity/README.md) 准备其参考环境，按
 [公共接入](../../../../docs/GETTING_STARTED.md) 解析当前依赖。这些命令是复现入口，实际结果需以新生成报告为准。
+
+2026-11-05 当前实现的 `dialog-interactive-spacing` 完整 self-test：71 例，63 equal、8 withinTolerance，
+零执行错误，全部重复/额外截图稳定。新增 0/40/44/48/64 DIP × LTR/RTL 和动态 40→44→64→清除场景均 equal；
+真实按钮与继承/局部环境行为测试也通过。已检查双端 40 DIP 堆叠按钮图像及对应间距读数。

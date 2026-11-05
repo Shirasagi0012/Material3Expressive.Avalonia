@@ -216,7 +216,8 @@ public sealed class SwipeToDismissBoxState : AvaloniaObject
                 {
                     using var restart = CancellationTokenSource.CreateLinkedTokenSource(mutation.Token);
                     _restart = restart;
-                    var target = Position(fling ? ComputeTarget(velocity) : _dragTarget!.Value);
+                    var latestTarget = fling ? ComputeTarget(velocity) : _dragTarget!.Value;
+                    var target = Position(latestTarget);
                     var initial = float.IsNaN(_offset) ? 0 : _offset;
                     var animation = new AnimationState<float>(new FloatConverter(), fling ? 0 : initial, AnimationVector.From([velocity]));
                     try
@@ -243,10 +244,10 @@ public sealed class SwipeToDismissBoxState : AvaloniaObject
                         if (fling) CompleteAtClosest();
                         else
                         {
-                            // The target-accepting upstream overload commits its original target,
-                            // even if the anchor update restarted the animation toward a new one.
-                            DragTo(Position(value), _velocity);
-                            SetSettled(value);
+                            // Commit the target used by this restart. The pinned upstream commits
+                            // the original target here, writing NaN if that anchor was removed.
+                            DragTo(Position(latestTarget), _velocity);
+                            SetSettled(latestTarget);
                         }
                         break;
                     }

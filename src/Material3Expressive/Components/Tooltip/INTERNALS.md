@@ -86,7 +86,10 @@ RichTooltip 按标题、正文、动作顺序分配剩余高度，三槽分别�
 标题和正文保留 alignmentLineOffsetMeasure 顺序，缺失基线按零计算，before/after 依次受剩余空间限制；未指定 after 的零距离仍参与计算。
 动作的最小高度在底部留白之前应用，受限时保持 requiredHeightIn 的居中溢出。
 
-普通 TextBlock、显式原生 BaselineOffset 和 ContentPresenter 可提供基线。复杂容器应在槽根提供实际基线，自动透传任意布局需要全库 alignment-line 合约。
+普通 TextBlock、显式原生 BaselineOffset 和 ContentPresenter 可提供基线。2026-11-05 本轮依据用户扩大授权重新决定，
+与 Snackbar 共用 `MaterialTextBaseline` 读取器；自定义槽根的显式 First 优先于原生 BaselineOffset，清除后恢复。
+共享属性变更会使祖先重新测量，涵盖尺寸不变的基线变化。它是有限范围的显式基线合约，不自动透传任意布局，
+详见 [共享决定](../../../../docs/DECISIONS.md#24-自定义内容的显式文字基线)。
 
 TooltipLabel 的 HandleInteractions 保留有序 start 列表、按对象身份移除与 wasVisible 聚合边沿；Press、Drag、Hover 任一活跃即显示，Focus 不计入。外部 dismiss 只隐藏，不重置 collector，尚有活动交互时新 start 不会重开。
 上游每个 Label 使用私有 MutatorMutex，只有 collector 发起 UserInput show，无超时或公开 Show API；本地以局部显隐状态表达同一所有权，不引入等待任务或全局互斥。
@@ -113,6 +116,7 @@ RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分�
 
 - `NativeToolTipTests` 检查原生服务和静态主题。
 - `PlainTooltipTests`、`RichTooltipTests` 检查尺寸、槽位、文字角色、基线及 Token 覆盖。RichTooltip 的 density 回归覆盖动态资源、RTL、动作最小高度及槽位切换。
+- 2026-11-05 `shared-baseline-tooltip-final` 完整 rich-tooltip self-test：41 例，1 equal、40 withinTolerance，零执行错误，全部重复/额外截图稳定。新增显式 0/7/32 DIP 及 LTR/RTL 下同根基线 7→3→32→清除的结构化读数均相等；检查了清除后的实际图像。`TextBaselineIntegrationTests` 另验证原生入口优先级、清除恢复、嵌套 presenter Margin/Padding 与尺寸不变时失效。
 - `TooltipPositionTests`、`TooltipStateTests`、`TooltipBoxTests` 检查定位、互斥、输入、动画与卸载。
 - 手动普通时钟覆盖 500/750ms 长按、时长中途修改、真实捕获转移、短按/禁用/换状态/卸载、1500ms 显示超时与不同优先级，以及释放先于/晚于超时的关闭顺序；检查取消后的计时器和帧等待清理。
 - 双端族为 `plain-tooltip`、`rich-tooltip`、`native-tooltip`、`tooltip-box`。Rich 的 show / interrupt / resize 位于 TooltipBox 族，运动截图按已确认的时序差异单独读取。

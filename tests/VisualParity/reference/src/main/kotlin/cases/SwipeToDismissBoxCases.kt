@@ -44,14 +44,15 @@ class SwipeToDismissBoxCases {
             fun mutate(t:Long,id:String,sampleNow:Boolean=true,action:()->Unit) { advance(t); action(); writer.record(t,"mutation",id); host.scheduler.runCurrent(); host.draw(); if(sampleNow) sample(id) }
             fun input(t:Long,action:String,p:Offset) { advance(t); host.input(action,p); host.draw() }
             sample("initial")
-            if(c.action in listOf("dismiss","dismiss-end","reset","reverse","resize","remove-anchor","drag-interrupt")) {
+            if(c.action in listOf("dismiss","dismiss-end","reset","reverse","resize","remove-anchor","remove-end-anchor","drag-interrupt")) {
                 mutate(1000,"state-change") { scene.scope.launch {
-                    if(c.action=="reset") scene.state.reset() else scene.state.dismiss(if(c.action=="dismiss-end") SwipeToDismissBoxValue.EndToStart else SwipeToDismissBoxValue.StartToEnd)
+                    if(c.action=="reset") scene.state.reset() else scene.state.dismiss(if(c.action in listOf("dismiss-end","remove-end-anchor")) SwipeToDismissBoxValue.EndToStart else SwipeToDismissBoxValue.StartToEnd)
                 } }
                 times(16000,64000,96000)
                 if(c.action=="reverse") mutate(97000,"reverse") { scene.scope.launch { scene.state.dismiss(SwipeToDismissBoxValue.EndToStart) } }
                 if(c.action=="resize") mutate(97000,"resize",false) { scene.width=280.0 }
                 if(c.action=="remove-anchor") mutate(97000,"remove-anchor",false) { scene.startToEnd=false }
+                if(c.action=="remove-end-anchor") mutate(97000,"remove-end-anchor",false) { scene.endToStart=false }
                 if(c.action=="drag-interrupt") {
                     input(98000,"down",Offset(220f,64f)); sample("interrupt-down")
                     input(114000,"move",Offset(150f,64f)); sample("interrupt-move")
@@ -81,6 +82,7 @@ class SwipeToDismissBoxCases {
         lateinit var scope:CoroutineScope
         var width by mutableStateOf(c.width)
         var startToEnd by mutableStateOf(c.startToEnd)
+        var endToStart by mutableStateOf(c.endToStart)
         var gestures by mutableStateOf(c.gestures)
         var dismissals=0
         var lastDismissal="none"
@@ -93,7 +95,7 @@ class SwipeToDismissBoxCases {
                     Box(Modifier.fillMaxSize().background(Color.White).padding(32.dp)) {
                         SwipeToDismissBox(state=state,
                             modifier=container.modifier().then(if(c.autoSize) Modifier else Modifier.size(width.toFloat().dp,64.dp)),
-                            enableDismissFromStartToEnd=startToEnd,enableDismissFromEndToStart=c.endToStart,gesturesEnabled=gestures,
+                            enableDismissFromStartToEnd=startToEnd,enableDismissFromEndToStart=endToStart,gesturesEnabled=gestures,
                             onDismiss={ dismissals++; lastDismissal=it.name },
                             backgroundContent={ Box(background.modifier().fillMaxSize().background(Color(0xFF993344))) }) {
                             Box(foreground.modifier().then(if(c.autoSize) Modifier.size(96.dp,40.dp) else Modifier.fillMaxSize()).background(Color(0xFF336699))) {

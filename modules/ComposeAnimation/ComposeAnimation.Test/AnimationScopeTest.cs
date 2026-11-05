@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 using Avalonia.Threading;
 using ComposeAnimation.Runtime;
 
@@ -245,6 +246,38 @@ public class AnimationScopeTest
         Assert.Equal(1, count);
         Assert.Same(handlerError, root.Diagnostics.LastDiagnosticError);
         Assert.Equal(0, root.Diagnostics.ActiveChildCount);
+        window.Close();
+    });
+
+    [Fact]
+    public Task ProjectedBinding_PreservesUnderlyingBindingAndStopsProjectingAtScopeEnd() => OnUi(async () =>
+    {
+        var window = new AnimationTestWindow();
+        var scope = window.AnimationRoot.CreateChild();
+        var source = new Sample { Value = .8 };
+        var underlying = new Border { Width = .2 };
+        var target = new Border();
+        using var ordinary = target.Bind(Visual.OpacityProperty, underlying.GetObservable(Layoutable.WidthProperty));
+        var projections = 0;
+        var binding = scope.BindAnimatedValue(target, Visual.OpacityProperty, source, value => { projections++; return value / 2; });
+        Assert.True(target.IsAnimating(Visual.OpacityProperty));
+        Assert.Equal(.4, target.Opacity);
+        underlying.Width = .25;
+        source.Value = .6; source.Publish(nameof(Sample.Value));
+        Assert.Equal(.3, target.Opacity);
+        // A source notification during contribution cleanup must not reenter the projection.
+        target.PropertyChanged += (_, e) => { if (e.Property == Visual.OpacityProperty) source.Publish(nameof(Sample.Value)); };
+        var beforeEnd = projections;
+        await scope.Diagnostics.EndAsync();
+        source.Publish(nameof(Sample.Value));
+        Assert.Equal(beforeEnd, projections);
+        Assert.False(target.IsAnimating(Visual.OpacityProperty));
+        Assert.Equal(.25, target.Opacity);
+        underlying.Width = .7;
+        Assert.Equal(.7, target.Opacity);
+        Assert.Equal(0, scope.Diagnostics.SubscriptionCount);
+        Assert.Equal(0, scope.Diagnostics.BindingCount);
+        binding.Dispose();
         window.Close();
     });
 

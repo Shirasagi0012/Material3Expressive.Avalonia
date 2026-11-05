@@ -152,7 +152,9 @@ public sealed class SnackbarHostCases
 
         IDataTemplate Template(double width) => new FuncDataTemplate<ISnackbarData>((data, _) =>
         {
-            var button = new Button { Width = width, Height = 48, FocusAdorner = null,
+            // Compose's marker is an unclipped Canvas. TemplatedControl defaults to clipping,
+            // which cuts fractional scaled edges even though the Host itself is unclipped.
+            var button = new Button { Width = width, Height = 48, FocusAdorner = null, ClipToBounds = false,
                 Theme = new ControlTheme(typeof(Button)),
                 Template = new FuncControlTemplate<Button>((_, _) =>
                 {

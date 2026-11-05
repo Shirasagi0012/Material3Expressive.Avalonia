@@ -5,6 +5,7 @@
     <StackPanel Margin="32" Spacing="16" HorizontalAlignment="Left">
       <TextBlock Text="AlertDialog" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
       <Button Content="Open alert dialog" Click="OnOpenAlert" />
+      <Button Content="Open stacked actions (40 DIP targets)" Click="OnOpenCompact" />
       <Button Content="Open custom basic dialog" Click="OnOpenBasic" Theme="{StaticResource MaterialTonalButtonTheme}" />
       <TextBlock x:Name="Result" Text="Choose an action" />
     </StackPanel>
@@ -12,6 +13,12 @@
       <TextBlock Text="The selected record will be removed. You can cancel to keep it." TextWrapping="Wrap" />
       <m3:AlertDialog.ConfirmButton><Button Content="Delete" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.ConfirmButton>
       <m3:AlertDialog.DismissButton><Button Content="Cancel" Click="OnCancel" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.DismissButton>
+    </m3:AlertDialog>
+    <m3:AlertDialog x:Name="Compact" Title="Confirm this action?" m3:MaterialInteractiveSize.Minimum="40"
+                    DismissRequested="OnDismissRequested">
+      <TextBlock Text="Long actions wrap onto separate rows. The row spacing follows the minimum interactive size." TextWrapping="Wrap" />
+      <m3:AlertDialog.ConfirmButton><Button Width="220" Content="Confirm and continue" Click="OnCloseCompact" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.ConfirmButton>
+      <m3:AlertDialog.DismissButton><Button Width="220" Content="Return to editing" Click="OnCloseCompact" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.DismissButton>
     </m3:AlertDialog>
     <m3:BasicAlertDialog x:Name="Basic" DismissRequested="OnDismissRequested" UsePlatformDefaultWidth="False" Width="380">
       <m3:MaterialSurface Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHigh}}" CornerRadius="28" Padding="24">

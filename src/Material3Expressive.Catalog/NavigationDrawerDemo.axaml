@@ -5,6 +5,7 @@
     <StackPanel Orientation="Horizontal" Spacing="12">
       <Button Content="Light / dark" Click="ToggleTheme" />
       <Button Content="LTR / RTL" Click="ToggleDirection" />
+      <Button Content="Replace drawer states" Click="ReplaceStates" />
       <CheckBox x:Name="Gestures" Content="Gestures" IsChecked="True" />
     </StackPanel>
     <TabControl Grid.Row="1">

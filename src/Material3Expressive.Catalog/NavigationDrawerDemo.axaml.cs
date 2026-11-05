@@ -15,6 +15,11 @@ public partial class NavigationDrawerDemo : Window
     public NavigationDrawerDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void ToggleTheme(object? sender, RoutedEventArgs e) => RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     private void ToggleDirection(object? sender, RoutedEventArgs e) => FlowDirection = FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+    private void ReplaceStates(object? sender, RoutedEventArgs e)
+    {
+        Modal.State = new DrawerState(DrawerValue.Open);
+        Dismissible.State = new DrawerState(DrawerValue.Open);
+    }
     private async void ToggleDrawer(object? sender, RoutedEventArgs e)
     {
         var state = (sender as Control)?.Tag as string == "modal" ? Modal.State : Dismissible.State;

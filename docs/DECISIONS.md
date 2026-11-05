@@ -230,6 +230,7 @@
 - **原因与动机**：普通赋值无法在动画结束后正确恢复控件先前的样式或绑定值，破坏了 Avalonia 属性系统的优先级覆盖契约。
 - **适用范围与影响**：所有依赖动效引擎驱动属性的组件动画。
 - **确认依据**：2026-10-14 维护者明确拒绝使用普通赋值，并确认必须采用动画优先级贡献形式。
+- **2026-11-05 接入补齐**：本轮依据用户扩大授权，为现有 `BindAnimatedValue` 增加纯采样投影重载，解决 Float 动画到 Avalonia double/Transform 属性的类型转换，不另建动画、观察器包装或时间通道。SnackbarHost 的 opacity/scale、ChipIconSlot 的 opacity 与 FloatingToolbar 的 shadow elevation 迁移到该入口；移除会覆盖底层值的初始化赋值。动画中仍覆盖普通配置，作用域释放后恢复其最新值。源算法、规格、采样和中断顺序保持不变，已有同类型重载继续可用；无调用方迁移要求。Catalog 的 Point→X/Y 及组件卸载/过渡重建回归验证实际调用。
 
 ---
 
@@ -240,3 +241,13 @@
 - **原因与动机**：避免退出期间的实际收缩尺寸污染共享元素的最终目标，同时保留已有隐藏测量契约与动画中断连续性。
 - **适用范围与影响**：可见性容器与相关过渡效果。
 - **确认依据**：2026-10-16 维护者确认类型与调用顺序方案并要求实施。
+
+---
+
+## 24. 自定义内容的显式文字基线
+
+- **状态**：生效中；2026-11-05 本轮依据用户扩大授权重新决定。
+- **原决定与问题**：Snackbar 原移植将手动基线覆盖留作 backlog，不建立共享 AlignmentLine 框架；当消息为复杂容器、动作有文字基线时，Legacy 布局会出现异常对齐。RichTooltip 已有原生 BaselineOffset 入口，两个组件各自读取文字及 ContentPresenter。原始依据保留在 Snackbar INTERNALS，未追认为过去已批准新 API。
+- **决定方案**：新增 `MaterialTextBaseline.First/Last` 附加属性，供自定义内容根发布实际首末基线；共享原生文字/内容呈现器读取器由 Snackbar 与 RichTooltip 使用。`SetFirst(content, 14); SetLast(content, 34);` 表示根顶边下 14/34 DIP，Margin 在消费时加入。属性不继承；null 恢复自动读取；变化使祖先重测，支持尺寸不变的基线更新。保留原生 BaselineOffset，显式 First 优先。
+- **替代方案**：三项 Snackbar 专属覆盖属性无法复用到 Tooltip；全布局树的 AlignmentLine 合并/传播需要重建任意面板定位规则，当前两个显式入口没有该需求。采用受限共享事实与既有组件布局，标准 Button 模板度量仍属 Snackbar。
+- **证据与影响**：固定 AndroidX/Core Snackbar.kt 的 FirstBaseline/LastBaseline 分支及 Tooltip.kt 的 paddingFromBaseline 构成消费契约；真实两组件、XAML/绑定、动态更新和双端几何用例验证该入口。无现有公开 API 删除；已有原生文字/原生 BaselineOffset 不需迁移。自定义内容需发布真实布局所得基线，不能拿常量伪造实际文本；未发布时仍保留上游缺基线分支。任意容器自动传播、Badge 文字判断及文字栅格一致性不在此决定范围。

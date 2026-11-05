@@ -15,6 +15,47 @@ namespace Material3Expressive.Tests;
 
 public class SwipeToDismissBoxTests
 {
+    [AvaloniaTheory]
+    [InlineData(SwipeToDismissBoxValue.StartToEnd, 5)]
+    [InlineData(SwipeToDismissBoxValue.StartToEnd, 15)]
+    [InlineData(SwipeToDismissBoxValue.EndToStart, 5)]
+    [InlineData(SwipeToDismissBoxValue.EndToStart, 15)]
+    public void RemovingActiveTarget_CompletesAtFallbackWithoutDismissal(SwipeToDismissBoxValue direction, int frames)
+    {
+        using var clock = new MotionTestClockScope();
+        var box = Create(); var window = DialogTests.Show(box);
+        var dismissals = new List<SwipeToDismissBoxValue>();
+        box.Dismissed += (_, e) => dismissals.Add(e.Direction);
+        try
+        {
+            var operation = box.State.DismissAsync(direction);
+            Advance(clock, window, frames);
+            Assert.NotEqual(0, box.State.RequireOffset());
+            if (direction == SwipeToDismissBoxValue.StartToEnd) box.EnableDismissFromStartToEnd = false;
+            else box.EnableDismissFromEndToStart = false;
+            window.UpdateLayout();
+            Advance(clock, window, 25);
+            Assert.True(operation.IsCompletedSuccessfully);
+            Assert.Equal(0, box.State.RequireOffset());
+            Assert.Equal(SwipeToDismissBoxValue.Settled, box.State.CurrentValue);
+            Assert.Equal(SwipeToDismissBoxValue.Settled, box.State.SettledValue);
+            Assert.Equal(SwipeToDismissBoxValue.Settled, box.State.TargetValue);
+            Assert.Empty(dismissals);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+
+            // The removed direction can subsequently be enabled and used normally.
+            box.EnableDismissFromStartToEnd = box.EnableDismissFromEndToStart = true;
+            window.UpdateLayout();
+            var next = box.State.DismissAsync(direction);
+            Advance(clock, window, 25);
+            Assert.True(next.IsCompletedSuccessfully);
+            Assert.Equal(direction, box.State.SettledValue);
+            Assert.Equal([direction], dismissals);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void DisablingAnAncestorCancelsActiveDragAndReleasesCapture()
     {

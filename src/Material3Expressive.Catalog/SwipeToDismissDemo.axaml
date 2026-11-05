@@ -5,6 +5,8 @@
     <TextBlock Text="Swipe to dismiss" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <TextBlock Text="Drag the card in either direction. Completion reports a request; the application decides whether to remove or restore it."
                TextWrapping="Wrap" />
+    <TextBlock Text="Disable a direction while its dismiss animation is running to return the card to Settled without a dismissal request."
+               TextWrapping="Wrap" />
     <Border ClipToBounds="True">
       <m3:SwipeToDismissBox x:Name="Swipe" Height="112" Dismissed="OnDismissed">
         <m3:SwipeToDismissBox.BackgroundContent>

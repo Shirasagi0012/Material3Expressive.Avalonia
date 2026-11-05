@@ -24,7 +24,7 @@ data class AlertDialogConfig(val basic:Boolean=false,val icon:Boolean=true,val t
     val dismiss:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,val platformWidth:Boolean=true,
     val width:Double?=null,val height:Double?=null,val hostWidth:Int=520,val hostHeight:Int=360,
     val contentWidth:Double=160.0,val contentHeight:Double=40.0,val buttonWidth:Double=80.0,
-    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true)
+    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val minimumInteractiveSize:Double?=null)
 
 @ParitySuite("alert-dialog")
 class AlertDialogCases {
@@ -70,6 +70,12 @@ private suspend fun captureAlertDialog(writer:CaptureWriter,dynamic:Boolean) {
             times.forEach { advance(it); host.draw(); sample("time-$it") }
         }
         when(config.action) {
+            "minimum" -> {
+                change(1000,"minimum-40") {scene.minimumInteractiveSize=40.0}
+                change(2000,"minimum-44") {scene.minimumInteractiveSize=44.0}
+                change(3000,"minimum-64") {scene.minimumInteractiveSize=64.0}
+                change(4000,"minimum-default") {scene.minimumInteractiveSize=null}
+            }
             "theme" -> { change(1000,"dark") {scene.dark=true}; change(2000,"light") {scene.dark=false} }
             "slots" -> { change(1000,"remove-icon-title") {scene.icon=false;scene.title=false}; change(2000,"restore") {scene.icon=config.icon;scene.title=config.title} }
             "resize" -> { change(1000,"wide") {scene.buttonWidth=220.0}; change(2000,"restore") {scene.buttonWidth=config.buttonWidth} }
@@ -123,13 +129,15 @@ private class AlertDialogScene(val config:AlertDialogConfig) {
     var icon by mutableStateOf(config.icon)
     var title by mutableStateOf(config.title)
     var buttonWidth by mutableStateOf(config.buttonWidth)
+    var minimumInteractiveSize by mutableStateOf(config.minimumInteractiveSize)
     var requests=0;var confirms=0;var dismisses=0
     val container=Probe()
     val probes=mutableMapOf<String,Probe>()
     val painted=mutableMapOf<String,Color>()
     @Composable fun Content() {
         MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(surface=Color(0xFFFFFBFE))) {
-            CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                LocalMinimumInteractiveComponentSize provides (minimumInteractiveSize?.toFloat()?.dp ?: 48.dp)) {
                 Box(Modifier.fillMaxSize().background(Color.White))
                 if(open) {
                     var modifier=container.modifier()

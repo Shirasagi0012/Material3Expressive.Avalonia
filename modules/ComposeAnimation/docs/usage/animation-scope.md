@@ -179,11 +179,21 @@ stateDiagram-v2
 var progress = Animatable.Create(0d);
 using var binding = motion.BindAnimatedValue(bar, ProgressBar.ValueProperty, progress);
 using var subscription = motion.SubscribeValue(progress, value => UpdateDrawing(value));
+
+// 采样类型与目标属性不同，或一个动画值提供多个属性时，使用纯投影。
+var position = Animatable.Create(new Point(0, 0));
+var transform = new TranslateTransform();
+using var x = motion.BindAnimatedValue(transform, TranslateTransform.XProperty, position, p => p.X);
+using var y = motion.BindAnimatedValue(transform, TranslateTransform.YProperty, position, p => p.Y);
 ```
 
 建立关系立即发布当前值，响应 Value、null 或空属性名通知，不额外合并相等值。订阅不拥有外部传入的动画对象。
 
 `BindAnimatedValue` 以单向 Animation 优先级贡献采样值，不建立额外过渡。释放只移除自己的贡献，恢复普通绑定、样式或本地值。两类资源可提前释放，也会在 Scope 结束时统一撤销。Ending 后同步重入或排队通知不再通过受管消费端更新。
+
+带 `project` 的重载要求纯转换函数，不改变源的数值算法、时间或生命周期，不拥有源对象。
+例如保留 Float 动画后投影到 Avalonia double 属性，或投影为 Transform；不要在 SubscribeValue 回调中用普通属性赋值替代动画绑定。
+Catalog `engine/spec-gallery` 的七条 Point 动画通过此重载分别驱动 X/Y。
 
 ## 结束与临时效果
 

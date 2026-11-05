@@ -11,7 +11,7 @@ public sealed class NavigationDrawerGestureCases
     public static IEnumerable<CaseData<NavigationDrawerConfig>> Configurations()
     {
         foreach (var kind in new[] { "modal", "dismissible" })
-        foreach (var action in new[] { "state", "direction", "gestures", "child", "native-thumb", "child-press" })
+        foreach (var action in new[] { "state", "state-child-press", "direction", "gestures", "child", "native-thumb", "child-press" })
         foreach (var rtl in new[] { false, true })
         {
             var id = $"dynamic.{kind}.{action}.{(rtl ? "rtl" : "ltr")}";
@@ -44,9 +44,12 @@ public sealed class NavigationDrawerGestureCases
         var sign = config.Rtl ? -1 : 1;
         if (config.Action is "child" or "native-thumb") sign = -sign;
         var origin = new Point(config.Rtl ? 240 : 280, 250);
-        if (config.Action == "child-press")
+        if (config.Action is "child-press" or "state-child-press")
         {
-            origin = scene.Item.TranslatePoint(new Point(80, 28), host.Window)!.Value;
+            // Compose's fixture selects a physical offset from the scene-space box.
+            // TranslatePoint(80, 28) would mirror that offset in Avalonia RTL.
+            var box = new Rect(scene.Item.Bounds.Size).TransformToAABB(scene.Item.TransformToVisual(host.Window)!.Value);
+            origin = box.TopLeft + new Vector(80, 28);
             sign = 0;
         }
         Sample("initial");
@@ -55,7 +58,7 @@ public sealed class NavigationDrawerGestureCases
         Advance(33000);
         switch (config.Action)
         {
-            case "state": scene.ReplaceState(); break;
+            case "state": case "state-child-press": scene.ReplaceState(); break;
             case "direction": scene.Root.FlowDirection = config.Rtl ? FlowDirection.LeftToRight : FlowDirection.RightToLeft; break;
             case "gestures": case "child-press": ((DismissibleNavigationDrawer)scene.Drawer).GesturesEnabled = false; break;
         }

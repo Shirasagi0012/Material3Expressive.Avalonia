@@ -97,6 +97,14 @@ public partial class SpecGalleryDemo : DemoControlBase
 
         Click(PlayAllButton);
         await AdvanceAsync(15);
+        // Canvas children do not contribute a desired width. Verify the complete stage,
+        // including spring overshoot, remains inside the root captured by the runner.
+        foreach (var actor in new[] { BallSpringNoBounce, BallSpringLow, BallSpringHigh, BallTweenLinear, BallTweenFosi, BallKeyframes, BallArc })
+        {
+            var origin = actor.TranslatePoint(default, this)!.Value;
+            Assert(origin.X >= 0 && origin.X + actor.Bounds.Width <= Bounds.Width,
+                "截图须包含完整的小球及弹簧过冲，不能只捕获行标题");
+        }
         await CaptureAsync("mid");
 
         var mid = _rows.Select(row => row.Animatable.Value).ToArray();
@@ -151,11 +159,8 @@ public partial class SpecGalleryDemo : DemoControlBase
             ball.RenderTransform = transform;
 
             var row = new SpecRow(name, animatable, target, spec);
-            clock.SubscribeValue(animatable, point =>
-            {
-                transform.X = point.X;
-                transform.Y = point.Y;
-            });
+            clock.BindAnimatedValue(transform, TranslateTransform.XProperty, animatable, static point => point.X);
+            clock.BindAnimatedValue(transform, TranslateTransform.YProperty, animatable, static point => point.Y);
             return row;
         }
 

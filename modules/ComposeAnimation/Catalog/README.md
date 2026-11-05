@@ -51,6 +51,11 @@ dotnet run --project Catalog/Catalog.csproj -- --verify-ui artifacts/catalog-ui
 
 `DemoFrame` 负责实例生命周期与展开栏，`CatalogWindow` 负责导航与主题，`CatalogTheme.axaml` 维护统一的视觉样式。已有 demo ID 与动作名称保持稳定，可继续使用原来的调用方式。
 
+`engine/spec-gallery` 使用 `BindAnimatedValue(..., project)` 将七条 Point 动画投影为 TranslateTransform 的 X/Y，
+不逐帧覆盖普通属性。该页显式保留 720 DIP 的舞台最小宽度，因为 Canvas 子项不提供自然宽度；
+`PlayAndCompare` 也检查途中小球及弹簧过冲位于截图范围，避免仅捕获行标题却将动作判为通过。
+2026-11-05 当前动作产生 initial/mid/settled 三张实际截图，50 项断言通过。
+
 ## 弹层与新增页面
 
 - `popup/flyout`（显隐过渡）：`Flyout` 中的 `AnimatedVisibility`。`--run` 使用真实桌面平台，弹层是真实的 `PopupRoot`，与窗口共用 `ProbeFrameSource`，因此动作是确定性的。页面只做公开可见的检查（推进、途中关闭后重新打开、所有者上的 `DurationScale` 继承到弹层内容）；内容 Scope 的父级身份与 `AnimationFailed` 计数需要内部 API，由单元测试覆盖（`AnimationScopeRebuildTest.FlyoutContent_ParentsToTheOwnerControlsScope` 等）。

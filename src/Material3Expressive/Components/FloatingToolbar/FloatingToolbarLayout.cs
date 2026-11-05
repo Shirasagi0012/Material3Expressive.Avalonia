@@ -96,8 +96,7 @@ internal sealed class FloatingToolbarLayout : Panel
             if (!scope.Lifetime.IsCancellationRequested) _ = scope.Launch(ct => transition.RunAsync(scope, ct), "Floating toolbar transition");
         }, DispatcherPriority.Normal);
         _elevation = new Animatable<float>(new FloatConverter(), (float)ElevationTarget, VisibilityThresholds.Float);
-        scope.SubscribeValue(_elevation, value => Surface.ShadowElevation = value);
-        Surface.ShadowElevation = _elevation.Value;
+        scope.BindAnimatedValue(Surface, MaterialSurface.ShadowElevationProperty, _elevation, static value => (double)value);
         UpdateTarget();
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

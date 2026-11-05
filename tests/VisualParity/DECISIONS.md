@@ -105,3 +105,20 @@ recompare 不把复用证据或旧重复性结论当作本轮执行。结果自�
 原因：消除逐例启动和重复处理，以明确执行边界支撑扩容，控制维护复杂度。
 范围：千级视觉测试准备与执行；共享产物库、精细依赖、并行执行和断点续跑延期，按阶段计时后再决定。
 确认：2026-10-03，维护者认可精简方案并要求落地；旧 345 用例 26 分钟为维护者报告，不作为本轮计时证据。
+
+## 2026-11-05：输入坐标与基线变更夹具的等价性修复
+
+- Drawer 子按压：Compose 从场景包围框左边取 80 DIP，Avalonia 的局部 TranslatePoint 在 RTL 会镜像此偏移。
+  修复前相同用例 trace 为 x=236 / x=412，图像波纹向相反方向扩展。改为两端都从场景包围框左边取物理偏移，
+  已重跑原 child-press 和新增 state-child-press；没有更改控件、容差或采样时序。
+- RichTooltip 动态显式基线：Avalonia 在同一槽根清除附加属性；参考夹具原来从提供基线的 Layout 分支切换到 Canvas，
+  实际测试了内容节点替换，固定 Core 此时残留旧基线布局。SharedBaseline 场景改为保持 Layout，清空其 alignmentLines map，
+  与本地操作保持相同身份及事实变更。原生 BaselineOffset 静态用例保留原分支；静态无基线尺寸 122 DIP 与清除后的读数一致。
+  原失败报告 `shared-baseline-tooltip` 保留，修复后 `shared-baseline-tooltip-final` 不增加任何帧；两端结构化读数相等。
+以上为本轮依据用户扩大授权修复的夹具问题，不把固定 Core 的节点替换行为或抽屉/滑动锚点异常改写成通过。
+
+SnackbarHost 超时交接的夹具随后独立核验：固定 Avalonia 12.1.5 的 TemplatedControl 将 ClipToBounds 默认设为 true，
+空主题 Button 继承它；参考 Canvas 没有裁剪。4096000µs 时两层 alpha/scale 完全相等，但本地 y=73/246 的边缘为白色，
+参考为 (175,160,241)，原始 864 个不同像素全部落在这两条边缘。仅把标记 Button 的 ClipToBounds 显式设为 false 后，
+16 个 Host 场景所有像素及结构事实均 equal（`snackbar-host-unclipped`），重复稳定。
+生产属性绑定修复另在 `snackbar-host-bound` 验证仍 16 equal。该修复保留真实内容与原时序；它不是共享渲染器或阴影算法的改动。

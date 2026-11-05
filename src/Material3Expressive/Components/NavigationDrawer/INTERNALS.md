@@ -102,24 +102,39 @@ GesturesEnabled / FlowDirection 更新在下一动画组合帧取消旧周期；
 
 ## 尚未实现与未经验证
 
-**待维护者决定：活动拖动中替换 State**。双端 `navigation-drawer-gesture.dynamic.*.state.*` 的四个
-参考端捕获均在 `AnchoredDraggableNode.update → processDragCancel → settle → requireOffset` 抛出未初始化 offset；
-新状态尚未布局就被旧输入的取消回调消费。本地仍有旧输入继续操作新状态的缺口，未交付临时规避。
-推荐在 `drawer.State = nextState` 时先结束旧输入，再连接新状态，保证后续 move/up 不写新状态；
-需要决定旧状态是否继续零速度回弹、是否保留其最后 offset，以及换状态和布局提交的顺序。
-这不同于上游当前的重绑定顺序，尚未批准；失败用例保留且应逐例运行，避免参考 JVM 终止影响其他用例。
+**已决定的状态替换适配**：本轮依据用户扩大授权重新决定，在 `AttachState` 中先结束旧输入，
+再解绑旧状态并连接新状态。旧输入沿既有零速度取消路径收尾；旧状态失去最后一个容器时由已有
+`Detach` 取消动画并保留最后 offset，仍有容器持有时允许其完成收尾。子按钮的独立 capture 不被释放。
+调用仍为 `drawer.State = nextState`，下一次按下才开始新状态的拖动，无公共 API 迁移。
+这是对原待定方案的当前决定，不追认为过去已经批准。维持原顺序会使旧 move/up 修改新状态；
+延迟换状态会让公开属性和实际输入目标分离，额外保活旧状态则违反既有最后消费者卸载规则，均未采用。
+固定 Core `AnchoredDraggableNode.update` 先替换 state 再取消输入；实际锁定制品在
+`processDragCancel → settle → requireOffset` 读取尚未布局的新状态并抛异常。
+`drawer-state-replacement` 当前复跑确认该异常，故此边界明确属于已选择的本地适配，不能宣称双端一致。
+四个原失败场景继续保留；普通拖动、手势开关和方向取消不因该适配改变。
 
 predictive-back 连续变形/取消恢复尚未实现；焦点陷阱与关闭后恢复焦点也不是当前容器能力。
 真实字体排版、系统触摸投递、硬件触摸和屏幕阅读器未经验收。用几何标记替代文字的 parity 不证明真实文字一致。
 
 ## 验证入口
 
-当前容器修订已执行 `navigation-drawer` 原有 110 例完整 self-test：31 equal、65 withinTolerance、14 different，
+2026-11-05 本轮状态替换修复由 `NavigationDrawerTests` 45 项通过验证，包含 Modal/Dismissible × LTR/RTL
+的拖动中替换、旧指针继续移动/释放、新状态布局前安全性及后续新拖动，并保留子按钮按压。
+当前 `drawer-lifecycle-regression` 与 `lifecycle-isolated-navigation-drawer-gesture.*` 合并覆盖全部 28 例：
+8 equal、8 withinTolerance、8 different、4 参考端异常；可完成场景全部重复/额外截图稳定。
+新增 state-child-press 四例均 withinTolerance，子按钮点击数一致。原 state 四例仍在固定 Core 抛初始化异常，
+单独运行避免污染后续用例，不算双端通过；`lifecycle-actual-{1,2}-navigation-drawer-gesture.*.state.*`
+两次本地捕获的图像及样本 YAML 哈希逐一相同（每例 20 个文件）。
+RTL 子按压夹具原本把局部 x=80 镜像成物理 x=412，而 Compose 从包围框左侧取 x=236；
+现统一从场景包围框左上角取偏移，保留两端相同输入定义。修复前图像的波纹方向相反、trace 坐标不同，
+修复后实际图像及读数一致；没有改变控件命中算法或比较容差。
+
+前轮容器修订执行过 `navigation-drawer` 原有 110 例完整 self-test：31 equal、65 withinTolerance、14 different，
 全部零执行错误、重复捕获与额外被动截图稳定。different 字段为手势收尾 offset 与打开过冲的变换布局框，
 分别在约 0.000031 / 0.000032 DIP 范围；截图均通过既有比较。保留上述原始数值报告，不宣称整族严格一致。
 
 `NavigationDrawerTests` 补充方向/手势开关中断、后代消费移动、真实 Slider 拖动、子按钮 capture 和卸载时取消焦点等待。
-`NavigationDrawerGestureCases.cs` / `.kt` 的 24 个用例覆盖 Modal / Dismissible × LTR / RTL：
+前轮 `NavigationDrawerGestureCases.cs` / `.kt` 的 24 个用例覆盖 Modal / Dismissible × LTR / RTL：
 4 个后代消费与 4 个原生 Thumb 场景 equal，4 个子按钮场景 withinTolerance；8 个方向/开关中断场景 different，
 均零执行错误且重复/额外截图稳定。中断后的几何与截图一致，方向修改事件当帧仍有即时属性与重组提交差异，
 后续 offset 存在约 0.000004 DIP 的 Tween 精度差，未修改采样、容差或基准。

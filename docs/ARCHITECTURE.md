@@ -47,6 +47,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 - **角色聚合**：使用 `MaterialText.Style` 指定文字排版角色，按需将字体族、粗细、行高与字号批量投影到目标控件。
 - **默认值级联**：容器通过 `MaterialText.DefaultStyle` 逐字段向下游提供环境继承，已显式声明的字段优先，未声明字段保留原生继承。
 - **单位换算**：排版配置统一以设备独立像素存储，比例缩放与相对单位在解析消费点执行换算，不替换原生文本排版引擎。
+- **显式基线**：自定义槽根通过 `MaterialTextBaseline.First/Last` 发布相对自身顶边、排除 Margin 的 DIP 基线，供 Snackbar / RichTooltip 消费；属性不继承，变化使祖先重新测量。共享读取器只处理显式值、原生文字与内容呈现器，不推断任意容器内部布局。用法见 [Typography](../src/Material3Expressive/Foundation/Typography/README.md#自定义内容的文字基线)。
 
 ---
 
@@ -82,6 +83,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 动画系统统一接入底层动画引擎：
 
 - **作用域生命周期**：每个顶层窗口在初始化时调用 `AnimationScope.Initialize(topLevel)` 建立根时钟；控件通过 `AnimationScope.Get(owner)` 接入，并通过 `CreateChild(...)` 为独立动效派生子作用域。
+- **属性输出**：`scope.BindAnimatedValue(target, property, source)` 以 Animation 优先级贡献采样；源/目标类型不同时使用带纯 `project` 的重载。释放恢复底层值。`SubscribeValue` 适用于绘制失效或普通运行时字段，不用它直接覆写动画目标的 Avalonia 属性。
 - **规格转换**：Token 中的弹簧参数通过规格引用在消费点转换为求值器，支持平滑中断与重定向。
 - **释放保证**：控件从视觉树断开或模板重建时，必须释放关联的子作用域，避免后台时钟泄漏。
 - **帧末目标提交**：`AnimationScope.WaitForFrameEndAsync(ct)` 在帧内调用时等待当前采样批次结束，帧间调用时等待下一批次结束；不额外推进动画帧，随作用域及调用方取消。它不等待布局或渲染，也不提供 Compose 重组运行时。下拉刷新箭头用它合并最新透明度目标，仍由调用方管理目标与中断策略。

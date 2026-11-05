@@ -25,6 +25,76 @@ namespace Material3Expressive.Tests;
 public class NavigationDrawerTests
 {
     [AvaloniaTheory]
+    [InlineData("modal", false)]
+    [InlineData("modal", true)]
+    [InlineData("dismissible", false)]
+    [InlineData("dismissible", true)]
+    public void ReplacingStateDuringDrag_EndsOldInputBeforeAttachingNewState(string kind, bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, true);
+        drawer.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        var window = Show(drawer);
+        try
+        {
+            var origin = new Point(rtl ? 240 : 280, 240);
+            var movement = new Vector(rtl ? 40 : -40, 0);
+            window.MouseMove(origin); window.MouseDown(origin, MouseButton.Left);
+            window.MouseMove(origin + movement, RawInputModifiers.LeftMouseButton);
+            var previous = drawer.State;
+            Assert.InRange(previous.CurrentOffset, -41, -39);
+            var previousOffset = previous.CurrentOffset;
+            var replacement = new DrawerState(DrawerValue.Open);
+            drawer.State = replacement;
+            ((DismissibleDrawerSheet)drawer.DrawerContent!).State = replacement;
+            // Move/up can arrive before the replacement has had its first layout.
+            window.MouseMove(origin + movement * 2, RawInputModifiers.LeftMouseButton);
+            window.MouseUp(origin + movement * 2, MouseButton.Left);
+            window.UpdateLayout();
+            Advance(clock, window, 30);
+            Assert.Equal(0, replacement.CurrentOffset);
+            Assert.Equal(DrawerValue.Open, replacement.CurrentValue);
+            Assert.False(replacement.IsAnimationRunning);
+            Assert.Equal(previousOffset, previous.CurrentOffset);
+            Assert.False(previous.IsAnimationRunning);
+
+            // The next press belongs to the replacement and can drag normally.
+            window.MouseDown(origin, MouseButton.Left);
+            window.MouseMove(origin + movement, RawInputModifiers.LeftMouseButton);
+            Assert.InRange(replacement.CurrentOffset, -41, -39);
+            window.MouseUp(origin + movement, MouseButton.Left);
+            Advance(clock, window, 30);
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("modal")]
+    [InlineData("dismissible")]
+    public void ReplacingStateDuringChildPress_PreservesChildCapture(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var drawer = (DismissibleNavigationDrawer)Create(kind, true);
+        var window = Show(drawer);
+        try
+        {
+            var item = drawer.GetVisualDescendants().OfType<NavigationDrawerItem>().Single();
+            var clicks = 0;
+            item.Click += (_, _) => clicks++;
+            var point = item.TranslatePoint(new Point(80, 28), window)!.Value;
+            window.MouseMove(point); window.MouseDown(point, MouseButton.Left);
+            drawer.State = new DrawerState(DrawerValue.Open);
+            window.UpdateLayout();
+            window.MouseUp(point, MouseButton.Left);
+            Assert.Equal(1, clicks);
+            Assert.Equal(0, drawer.State.CurrentOffset);
+            Assert.False(drawer.State.IsAnimationRunning);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData("modal")]
     [InlineData("dismissible")]
     public void DisablingDrawerGestures_DoesNotReleaseChildButtonCapture(string kind)

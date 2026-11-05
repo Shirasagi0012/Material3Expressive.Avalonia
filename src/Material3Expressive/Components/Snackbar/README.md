@@ -91,8 +91,17 @@ Snackbar 也可独立使用，其 `Content`、`Action`、`DismissAction` 各有�
 全局调整见[主题与 Token 接入](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
 普通单行默认高 48 DIP，多行文字至少 68 DIP，最终尺寸仍受内容与约束影响。
-默认使用固定基线的 Legacy 布局；复杂自定义容器没有通用文字基线传播，也没有手动基线覆盖 API。
-尤其消息读不到基线而动作有基线时可能产生异常对齐，详见 [INTERNALS](INTERNALS.md#布局与内容不变量)。
+默认使用固定基线的 Legacy 布局。普通 TextBlock 自动提供首末基线；复杂自定义消息或动作可以在槽根发布实际基线：
+
+```csharp
+MaterialTextBaseline.SetFirst(customContent, 14);
+MaterialTextBaseline.SetLast(customContent, 34); // 单行内容只需 First
+```
+
+类型位于 `Material3Expressive.Foundation.Typography`，XAML 对应 `m3:MaterialTextBaseline.First/Last`。
+数值是从根控件顶边起算、排除 Margin 的 DIP；由调用方随真实内容布局更新。清除或设 null 恢复自动读取，
+变更不要求控件尺寸改变。没有通用的任意容器自动传播；消息缺基线而动作有基线时仍保留上游异常对齐分支，
+应为复杂消息提供实际基线。详见 [共享用法](../../Foundation/Typography/README.md#自定义内容的文字基线)。
 
 当前项提供 Pane automation、Invoke 关闭与 Polite live setting，实际屏幕阅读器播报尚未经验证。
 文字像素一致性、实体桌面与其他操作系统验收也未完成。

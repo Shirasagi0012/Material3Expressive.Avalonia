@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using ComposeAnimation;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Catalog;
 
@@ -16,6 +19,14 @@ public partial class SnackbarDemo : Window
     {
         AnimationScope.Initialize(this);
         InitializeComponent();
+        CompositeMessage.LayoutUpdated += (_, _) =>
+        {
+            if (CompositeText.TextLayout.TextLines is not { Count: > 0 } lines ||
+                CompositeText.TranslatePoint(default, CompositeMessage) is not { } origin) return;
+            var top = origin.Y + CompositeText.Padding.Top;
+            MaterialTextBaseline.SetFirst(CompositeMessage, top + lines[0].Baseline);
+            MaterialTextBaseline.SetLast(CompositeMessage, top + lines.Take(lines.Count - 1).Sum(line => line.Height) + lines[^1].Baseline);
+        };
         Closed += (_, _) => { _requests.Cancel(); _requests.Dispose(); };
     }
 
@@ -39,4 +50,6 @@ public partial class SnackbarDemo : Window
     }
     private void OnRetry(object? sender, RoutedEventArgs e) => Result.Text = "Custom action: retry";
     private void OnCustomAction(object? sender, RoutedEventArgs e) => Result.Text = "Custom action: got it";
+    private void OnToggleLines(object? sender, RoutedEventArgs e) => CompositeText.Text =
+        CompositeText.Text?.Contains('\n') == true ? "Custom message" : "Custom message\nMeasured text baselines";
 }

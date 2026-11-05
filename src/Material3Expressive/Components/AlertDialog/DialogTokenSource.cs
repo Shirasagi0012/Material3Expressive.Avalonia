@@ -16,7 +16,9 @@ public sealed class DialogTokenSource : ITokenSource
         [Comp.Dialog.HeadlineBottomSpacing] = 16d,
         [Comp.Dialog.SupportingTextBottomSpacing] = 24d,
         [Comp.Dialog.ActionHorizontalSpacing] = 8d,
-        [Comp.Dialog.ActionVerticalSpacing] = 0d,
+        // NaN means derive the default from the inherited minimum interactive size.
+        // Finite overrides retain their existing meaning: final spacing between rows.
+        [Comp.Dialog.ActionVerticalSpacing] = double.NaN,
         [Comp.Dialog.MaxWidth] = 560d,
         [Comp.Dialog.MinWidth] = 280d,
         [Comp.Dialog.ActionLabelTextColor] = new TokenRef(Sys.Color.Primary),

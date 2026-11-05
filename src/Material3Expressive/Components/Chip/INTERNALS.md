@@ -81,6 +81,18 @@ Filter/Input 槽以 Transition 的 size/alpha 轨迹进入退出，退出保留�
 四条 motion 规格是独立模板配置，不随 Shapes 切换。模板替换和 detach 取消旧 effect/作用域，
 释放调用方图标的父级关系，重新挂载按当前状态建立动画。
 
+2026-11-05 补齐共享动画属性契约：图标 alpha 保留 Transition<Float> 与原 Clamp 顺序，
+经 `BindAnimatedValue` 投影到 Opacity，不再逐帧或在重建前普通赋值。作用域清理恢复底层属性，
+过渡重建不会把调用方局部 opacity 改写为 0/1。该内部部件仍由图标显隐动画拥有有效 alpha，
+没有新增 Chip 外部 API；头像包装的禁用透明度是独立配置，未改成该显隐轨迹。
+`ComponentMotionContributionTests` 验证退出、重新进入、过渡重建和卸载后的恢复。
+
+当前 `chip-animation-contribution` 完整 self-test 共 247 例：162 equal、31 withinTolerance、54 different，
+零执行错误；240 例重复/额外截图稳定。8 个 Filter/Input × fixed/morph 的 icons/reverse-icons 动态场景均
+withinTolerance 且稳定，头像替换 equal。全族剩余差异包括 shadowElevation 读数（本轮最大 1 DIP）、
+三处 clicks/selected 读数以及部分图像，未由此次属性绑定修改解决；不能以编译或图标回归推广为全族一致。
+7 个 source-press 场景在 Core 的重复或额外截图中有 raster 变化，Avalonia 自检稳定，原始诊断保留在报告 `.work`。
+
 Elevation 选择最后活跃的 press/focus/hover/drag；禁用 snap。
 进入为 120ms FastOutSlowIn，退出 150ms Bezier(0.4,0,0.6,1)，hover 退出 120ms。
 选中不改变高度策略；平面 Filter 默认 hover 为 0 而 Elevated 为 3 DIP。

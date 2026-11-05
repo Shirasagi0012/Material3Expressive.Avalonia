@@ -18,8 +18,8 @@ class NavigationDrawerGestureCases {
             }
             fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure()))
             fun input(time:Long,action:String,point:Offset) { advance(time); host.input(action,point); host.draw() }
-            val sign=if(c.action=="child-press") 0 else (if(c.rtl) -1 else 1)*(if(c.action in listOf("child","native-thumb")) -1 else 1)
-            val origin=if(c.action=="child-press") {
+            val sign=if(c.action in listOf("child-press","state-child-press")) 0 else (if(c.rtl) -1 else 1)*(if(c.action in listOf("child","native-thumb")) -1 else 1)
+            val origin=if(c.action in listOf("child-press","state-child-press")) {
                 val box=checkNotNull(scene.item.geometry().first { it.name=="box" }.numbers)
                 Offset(box[0].toFloat()+80f,box[1].toFloat()+28f)
             } else Offset(if(c.rtl) 240f else 280f,250f)
@@ -28,7 +28,7 @@ class NavigationDrawerGestureCases {
             input(18000,"move",origin-Offset(40f*sign,0f)); sample("drag-start")
             advance(33000)
             when(c.action) {
-                "state" -> scene.stateGeneration++
+                "state", "state-child-press" -> scene.stateGeneration++
                 "direction" -> scene.rtl=!c.rtl
                 "gestures", "child-press" -> scene.gestures=false
             }

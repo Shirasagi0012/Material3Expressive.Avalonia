@@ -16,6 +16,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> HeadlineBottomSpacing = new("md.comp.dialog.headline-bottom-spacing");
             public static readonly MaterialTokenKey<double> SupportingTextBottomSpacing = new("md.comp.dialog.supporting-text-bottom-spacing");
             public static readonly MaterialTokenKey<double> ActionHorizontalSpacing = new("md.comp.dialog.action-horizontal-spacing");
+            /// <summary>Final action-row spacing in DIP. NaN (default) derives spacing from MaterialInteractiveSize.Minimum.</summary>
             public static readonly MaterialTokenKey<double> ActionVerticalSpacing = new("md.comp.dialog.action-vertical-spacing");
 
             public static readonly MaterialTokenKey<double> MaxWidth = new("md.comp.dialog.maxwidth");

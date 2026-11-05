@@ -46,9 +46,12 @@ ContentPresenter 和单子项 Grid，并读取已有标准 Button 的实际容�
 默认字符串复用现有 ButtonContentPresenter 的段落测量适配；消息采用 BodyMedium，
 动作槽采用 LabelLarge，各槽保留各自内容颜色环境。
 
-**维护者决定（本次移植）：手动基线覆盖 API 留作 backlog。** 不加入
-ContentFirstBaseline、ContentLastBaseline、ActionFirstBaseline，也不新增共享基线框架。
-复杂自定义容器的基线传播尚未实现；无可读取基线时沿用 Legacy 缺少基线的分支。
+**2026-11-05，本轮依据用户扩大授权重新决定**：使用共享 `MaterialTextBaseline.First/Last`
+在自定义槽根发布实际基线，不新增三项 Snackbar 专属覆盖属性。原先因没有共同基线合约而推迟的方案，
+现有 Snackbar 首末基线和 RichTooltip 首基线两个真实调用方；共享显式输入解决复杂内容入口，
+不引入完整 AlignmentLine 引擎。原生文字/ContentPresenter 读取复用 Foundation；标准 Button 模板适配仍留在 Snackbar。
+First 单独设置表示单行；Last 显式覆盖末基线，null 恢复自动读取。变化使消费者重新测量，即使 DesiredSize 不变。
+复杂自定义容器的自动传播尚未实现；无可读取基线时沿用 Legacy 缺少基线的分支。
 该分支在“消息没有基线、动作却有基线”时本身可能产生异常放置，本实现保留其计算。
 自定义复杂内容宜使用相应模板或不依赖该对齐关系的布局。
 
@@ -73,13 +76,18 @@ State 立即变化；Host 在下一动画帧提交新呈现，保留固定 Compo
 Host 保留退出项，使用 FastEffects/FastSpatial spring 淡入淡出和缩放；透明度应用于完整子树
 的合成结果，避免重叠内容改变效果。作用域由 ComposeAnimation 管理。
 
+2026-11-05 补齐既有 Animation 优先级契约：Float opacity/scale 通过共享 `BindAnimatedValue` 投影到
+double opacity / ScaleTransform，保留源的 Float 算法、时序和整层合成。作用域结束恢复底层本地值/绑定，
+不再由逐帧普通赋值覆盖它们。`AnimatedPresenterValuesPreserveLocalValuesUntilDetach` 在修复前失败、修复后通过，
+同时验证卸载不取消应用请求和重新挂载创建新呈现。公开 Host API 无需迁移。
+
 Avalonia 没有 Compose 的 dismiss 语义入口，当前项 Pane AutomationPeer 通过 Invoke 提供关闭，
 设置 Polite live setting；退出项为 Off。实际屏幕阅读器播报尚未验证。
 
 ## 确认依据与共享能力
 
-手动基线覆盖留作 backlog 的确认依据来自 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Snackbar/README.md)；
-其范围是本次 Snackbar，不能据此宣称复杂容器已完整保留 Compose AlignmentLine，
+原先手动基线覆盖留作 backlog 的确认依据来自 [拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Snackbar/README.md)；
+本轮替代决定见 [共享显式基线](../../../../docs/DECISIONS.md#24-自定义内容的显式文字基线)。不能据此宣称复杂容器已完整保留 Compose AlignmentLine，
 也不能将已观察到的缺基线异常放置升级为“已接受视觉差异”。
 排版与 Surface 描边分别复用[共享文字决定](../../../../docs/DECISIONS.md#聚合-textstyle-与-token-层文字单位换算)
 和 [Surface 决定](../../../../docs/DECISIONS.md#surface-圆角描边)。
@@ -87,8 +95,8 @@ Avalonia 没有 Compose 的 dismiss 语义入口，当前项 Pane AutomationPeer
 
 ## 一致性边界与验证
 
-尚未实现复杂自定义容器基线传播、手动 ContentFirstBaseline/ContentLastBaseline/ActionFirstBaseline，
-也没有通用基线框架。未实现 Compose dismiss 语义入口，以 Invoke 暴露当前项关闭；实际辅助技术
+尚未实现复杂自定义容器自动基线传播；手动覆盖由共享附加属性提供，没有通用基线布局框架。
+未实现 Compose dismiss 语义入口，以 Invoke 暴露当前项关闭；实际辅助技术
 体验未经验证。文字像素、实体桌面、其他操作系统也未经验证。
 
 - [SnackbarHostStateTests](../../../../tests/Material3Expressive.Tests/SnackbarHostStateTests.cs)：默认时长、FIFO、当前/排队取消、自定义数据与幂等结果
@@ -114,8 +122,23 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 
 参考环境与报告解释见 [VisualParity](../../../../tests/VisualParity/README.md)。
 
-`snackbar-host` 的 16 个双端用例执行错误为零、重复和额外截图稳定；15 withinTolerance、1 different。
+2026-11-05 显式基线接入：`TextBaselineIntegrationTests` 与两组件既有测试合计 29 项通过；全库当前 2267 项通过。
+最终 `shared-baseline-complete` 的 63 例全部零执行错误、重复/额外截图稳定：61 withinTolerance、2 different。
+8 个静态首末基线组合、4 个 Last-only 包装槽及 4 个动态序列中，有效首末基线和换行分支的全部几何读数相等。
+Last-only 包装槽保留已有 Grid 单子项适配提供的 First，并正确计入顶部 margin；真实多行 TextBlock 测试另覆盖零/非零 margin。
+两例 different 仅发生在同行布局清除消息基线、保留动作基线之后：上游用 Int.MinValue 参与动作坐标计算，
+最终场景坐标为 -536870848 DIP，本地 double 场景变换为 536870990 DIP；动作在两端都移出屏幕，图像仍在既定容差内。
+该极端缺基线分支未修复、未接受为视觉兼容，也没有用清除动作基线来隐藏原输入。新的显式 API 使有效复杂内容可提供真实基线。
+真实文字仍只由行为测试检查布局，非文字 marker 的 parity 不证明字形栅格相同。
+
+前轮 `snackbar-host` 的 16 个双端用例执行错误为零、重复和额外截图稳定；15 withinTolerance、1 different。
 新增 timeout-* 六例的全部状态、队列计数、alpha/scale 和尺寸读数相等。timeout-queue 在 4096000µs
 两层交接时的上下边缘有图像差异，固定容差未通过；这不是已接受差异，也不影响超时状态一致的结论。
 两层 scale 分别为 0.900037407875061 / 0.8999626040458679，双端数值相等；尚需核验变换后的层边缘栅格化。
 结果：`artifacts/visual-parity/runs/20261104-181018-f2fed506`。真实桌面及文字栅格未由这些几何场景验证。
+
+本轮先在 `snackbar-host-current` 复现该失败，再确认其来自夹具：空主题原生 Button 继承了
+TemplatedControl 默认 ClipToBounds=true，Compose Canvas 无裁剪。固定 Avalonia 12.1.5 程序集默认值及
+上下边缘像素证明该输入差异；对齐为不裁剪后 `snackbar-host-unclipped` 全部 16 equal。
+完成生产属性绑定迁移后的 `snackbar-host-bound` 仍为 16 equal，全部重复/额外截图稳定，零执行错误。
+没有放宽 raster 容差、改变动画、增加帧或裁掉内容；原来缺失的抗锯齿边缘像素现与参考一致。

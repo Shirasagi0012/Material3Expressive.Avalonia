@@ -65,6 +65,16 @@ OnPostFlingAsync 仅由自定义宿主显式调用；设置新 behavior、detach
 触摸探索由宿主提供；automation 的 forceCollapse 独立于应用状态，Expand 只清除此标志。
 普通入口 Offset 非零时临时抑制后代焦点，恢复时释放旧属性值而不是强制写默认值。
 
+2026-11-05 阴影高度输出改用共享 `BindAnimatedValue` 的 Float→double 纯投影，补齐已有 Animation
+优先级契约；取消逐帧普通赋值及冗余初值写入。目标仍来自 ExpandedShadowElevation /
+CollapsedShadowElevation，浮点计算、弹簧、目标提交帧不变；卸载时恢复内部 Surface 的底层值。
+`ComponentMotionContributionTests` 覆盖展开→收起→反向和卸载，公开配置及调用方无需迁移。
+
+当前 `toolbar-animation-contribution` 完整 self-test 共 172 例：164 withinTolerance、8 different，
+零执行错误，全部重复/额外截图稳定。8 例为双向 balanced-padding / 普通 reverse / FAB start、end expand；
+普通反向的 box/size 读数差最多 0.5 DIP，另有 FAB 进入过程 raster 差异。此处如实保留当前失败，
+不以历史同名用例的结果替代当前结论，不增加偏移、补帧或舍入豁免。
+
 ## 历史问题与验证入口
 
 早期 ComposeAnimation 0.2.2-alpha 的 Transition 空闲唤醒缺口曾令 FAB 在同一 64ms 输入下

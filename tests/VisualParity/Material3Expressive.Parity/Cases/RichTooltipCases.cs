@@ -4,13 +4,14 @@ using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Typography;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
 
 public sealed record RichTooltipConfig(bool Title = true, bool Action = true, bool Dark = false, bool Rtl = false,
     double ContentWidth = 64, double ContentHeight = 8, double? Width = null, double? Height = null,
-    double Maximum = 320, double? Baseline = null, string Colors = "default", string Mutation = "none");
+    double Maximum = 320, double? Baseline = null, string Colors = "default", string Mutation = "none", bool SharedBaseline = false);
 
 [ParitySuite("rich-tooltip")]
 public sealed class RichTooltipCases
@@ -23,7 +24,10 @@ public sealed class RichTooltipCases
         foreach (var rtl in new[] { false, true })
             yield return Data($"static.slots.{title}-{action}.{(dark ? "dark" : "light")}.{(rtl ? "rtl" : "ltr")}", new(title, action, dark, rtl));
         foreach (var baseline in new[] { 0d, 7d, 32d })
+        {
             yield return Data($"static.baseline.{baseline}", new(Baseline: baseline));
+            yield return Data($"static.shared-baseline.{baseline}", new(Baseline: baseline, SharedBaseline: true));
+        }
         foreach (var size in new[] { (0d, 0d), (400d, 8d), (8d, 64d) })
             yield return Data($"static.content.{size.Item1}-{size.Item2}", new(ContentWidth: size.Item1, ContentHeight: size.Item2));
         foreach (var height in new[] { 12d, 60d, 100d, 200d })
@@ -36,6 +40,8 @@ public sealed class RichTooltipCases
     }
     public static IEnumerable<CaseData<RichTooltipConfig>> DynamicConfigurations()
     {
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.baseline.{rtl}", new(Baseline: 7, SharedBaseline: true, Rtl: rtl, Mutation: "baseline"));
         foreach (var mutation in new[] { "slots", "theme", "colors", "content" })
             yield return Data($"dynamic.{mutation}", new(Mutation: mutation));
     }
@@ -52,8 +58,10 @@ public sealed class RichTooltipCases
         var title = new Marker(32, 10); var content = new Marker(config.ContentWidth, config.ContentHeight); var action = new Marker(24, 12);
         if (config.Baseline is { } baseline)
         {
-            TextBlock.SetBaselineOffset(title, baseline); TextBlock.SetBaselineOffset(content, baseline);
+            if (config.SharedBaseline) SetBaseline(baseline);
+            else { TextBlock.SetBaselineOffset(title, baseline); TextBlock.SetBaselineOffset(content, baseline); }
         }
+        void SetBaseline(double? value) { MaterialTextBaseline.SetFirst(title, value); MaterialTextBaseline.SetFirst(content, value); }
         var tooltip = new RichTooltip { Title = config.Title ? title : null, Content = content, Action = config.Action ? action : null,
             TooltipMaxWidth = config.Maximum, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         if (config.Width is { } width) tooltip.Width = width;
@@ -84,6 +92,10 @@ public sealed class RichTooltipCases
         }
         switch (config.Mutation)
         {
+            case "baseline":
+                Change(1000, "first", () => SetBaseline(3));
+                Change(2000, "beyond-height", () => SetBaseline(32));
+                Change(3000, "clear", () => SetBaseline(null)); break;
             case "slots":
                 Change(1000, "text-only", () => { tooltip.Title = null; tooltip.Action = null; });
                 Change(2000, "action", () => tooltip.Action = action);

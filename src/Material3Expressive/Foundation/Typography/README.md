@@ -126,6 +126,30 @@ NavigationRail 的标签 Presenter 提供 LabelMedium，图标分支不设置标
 
 ## 实现与验证边界
 
+### 自定义内容的文字基线
+
+Snackbar 和 RichTooltip 支持自定义内容根控件上的 `MaterialTextBaseline.First/Last`。
+它们是可绑定、不继承的 `double?` 附加属性，单位为 DIP，从该控件顶边开始、排除 Margin。
+有限负值和超过内容高度的值按上游布局计算，不夹紧为内容边界；null 表示没有显式覆盖。
+
+```xml
+<Border m3:MaterialTextBaseline.First="14" m3:MaterialTextBaseline.Last="34">
+  <!-- 调用方保证这里的真实内容基线与发布值一致 -->
+</Border>
+```
+
+First 单独指定时以同一个值作为末基线，表示单行内容；同时指定 Last 可表示多行内容。
+仅指定 Last 时保留自动读取的首基线。First 优先于兼容入口 `TextBlock.BaselineOffset`；
+清除覆盖恢复原生文字或兼容入口。原生 TextBlock 自动读取 TextLayout 的首末行，ContentPresenter
+转发其内容的基线并加入自身 Margin/Padding。转换到布局像素时使用已有 Compose 舍入方式。
+复杂控件负责在测量/排版后发布真实基线，参考 Catalog `SnackbarDemo` 的图标与多行文字组合。
+属性变化使控件和视觉祖先重新测量，即使内容 DesiredSize 不变；不持有消费者注册表或生命周期订阅。
+
+这不是 Compose AlignmentLine 的全布局树实现，不自动搜索任意面板中的文字，也不更改 Badge 等组件。
+已有原生文字与原生 BaselineOffset 调用无需迁移。新增共享决定及原始推迟原因见 [DECISIONS §24](../../../../docs/DECISIONS.md#24-自定义内容的显式文字基线)。
+
+### 文字样式边界
+
 本层提供 TextStyle 的选择、合并、角色查找和 Avalonia 属性投影，不替换 Avalonia 文本排版器。
 Compose 的 LineHeightStyle 对齐/首尾裁剪、PlatformTextStyle、字体合成、阴影及文本变换等未实现；
 TextWrapping、TextTrimming、MaxLines 继续使用控件自身 API。Rich text 的段内样式仍使用 Avalonia Inline。

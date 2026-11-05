@@ -61,7 +61,9 @@ await swipe.State.ResetAsync();
 ## 使用限制与注意事项
 
 动画操作应在控件挂载和布局后调用。首次布局前 CurrentOffset 为 NaN，RequireOffset 会报告未初始化。
-消除动画进行中移除目标方向会触发已知异常，应等操作结束后再修改方向配置。
+消除动画进行中关闭目标方向会从当前位置回到 `Settled`，不会发出 `Dismissed`。
+该操作的 Task 在回弹完成后结束；需要判断是否实际消除时读取 `SettledValue` 或处理 `Dismissed`。
+例如 `box.EnableDismissFromStartToEnd = false` 可撤回尚在进行的向末端消除。
 触屏、完整嵌套滚动仲裁及非 Windows 平台尚未双端验收。
 [Catalog 示例](../../../Material3Expressive.Catalog/SwipeToDismissDemo.axaml)可用 `--swipe-to-dismiss` 启动。
 

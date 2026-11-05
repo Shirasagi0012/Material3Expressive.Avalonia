@@ -13,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
@@ -22,7 +23,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RichTooltipConfig(val title:Boolean=true,val action:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val contentWidth:Double=64.0,val contentHeight:Double=8.0,val width:Double?=null,val height:Double?=null,
-    val maximum:Double=320.0,val baseline:Double?=null,val colors:String="default",val mutation:String="none")
+    val maximum:Double=320.0,val baseline:Double?=null,val colors:String="default",val mutation:String="none",val sharedBaseline:Boolean=false)
 
 @ParitySuite("rich-tooltip")
 class RichTooltipCases {
@@ -38,6 +39,7 @@ class RichTooltipCases {
                 host.advanceTo(time);action();writer.record(time,"mutation",id);host.frame(time);sample(id)
             }
             when(config.mutation) {
+                "baseline" -> {change(1000,"first") {s.baseline=3.0};change(2000,"beyond-height") {s.baseline=32.0};change(3000,"clear") {s.baseline=null}}
                 "slots" -> {
                     change(1000,"text-only") {s.title=false;s.action=false}
                     change(2000,"action") {s.action=true}
@@ -53,6 +55,7 @@ class RichTooltipCases {
         var title by mutableStateOf(config.title);var action by mutableStateOf(config.action)
         var dark by mutableStateOf(config.dark);var colors by mutableStateOf(config.colors)
         var width by mutableStateOf(config.contentWidth);var height by mutableStateOf(config.contentHeight)
+        var baseline by mutableStateOf(config.baseline)
         val probes=linkedMapOf("tooltip" to Probe(),"title" to Probe(),"content" to Probe(),"action" to Probe())
         val painted=mutableMapOf<String,Color>()
         val position=object:PopupPositionProvider {
@@ -62,10 +65,14 @@ class RichTooltipCases {
         @Composable fun marker(name:String,width:Double,height:Double) {
             val foreground=LocalContentColor.current
             val modifier=checkNotNull(probes[name]).modifier().size(width.toFloat().dp,height.toFloat().dp)
-            if(config.baseline!=null && name!="action") {
+            val first=baseline
+            // SharedBaseline changes a fact on the same custom content root. Keep that Layout
+            // alive when clearing the fact; replacing it with Canvas tests node removal instead.
+            if((config.sharedBaseline || first!=null) && name!="action") {
                 Layout(content={Canvas(Modifier.fillMaxSize()) {painted[name]=foreground;drawRect(foreground)}},modifier=modifier) {measurables,constraints ->
                     val child=measurables.single().measure(constraints)
-                    layout(child.width,child.height,mapOf(FirstBaseline to config.baseline.toFloat().dp.roundToPx())) {child.place(0,0)}
+                    val lines:Map<AlignmentLine,Int> = if(first==null) emptyMap() else mapOf(FirstBaseline to first.toFloat().dp.roundToPx())
+                    layout(child.width,child.height,lines) {child.place(0,0)}
                 }
             } else Canvas(modifier) {painted[name]=foreground;drawRect(foreground)}
         }

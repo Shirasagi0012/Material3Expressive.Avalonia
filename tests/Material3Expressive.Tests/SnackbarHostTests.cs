@@ -16,6 +16,50 @@ namespace Material3Expressive.Tests;
 public class SnackbarHostTests
 {
     [AvaloniaFact]
+    public async Task AnimatedPresenterValuesPreserveLocalValuesUntilDetach()
+    {
+        using var clock = new MotionTestClockScope();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var host = Host();
+        var request = host.State.ShowSnackbarAsync("message", duration: SnackbarDuration.Indefinite, cancellationToken: cancellation.Token);
+        var root = new Grid { Children = { host } };
+        var window = DialogTests.Show(root);
+        try
+        {
+            Advance(clock, window, 3);
+            var layer = Layers(host).Single();
+            var alpha = layer.Opacity;
+            var scale = layer.RenderTransform;
+            var localTransform = new TranslateTransform(7, 9);
+            layer.Opacity = .37;
+            layer.RenderTransform = localTransform;
+            Assert.True(layer.IsAnimating(Visual.OpacityProperty));
+            Assert.True(layer.IsAnimating(Visual.RenderTransformProperty));
+            Assert.Equal(alpha, layer.Opacity);
+            Assert.Same(scale, layer.RenderTransform);
+            Advance(clock, window, 3);
+            Assert.NotEqual(alpha, layer.Opacity);
+            Assert.IsType<ScaleTransform>(layer.RenderTransform);
+
+            root.Children.Remove(host); Flush(window);
+            Assert.False(layer.IsAnimating(Visual.OpacityProperty));
+            Assert.False(layer.IsAnimating(Visual.RenderTransformProperty));
+            Assert.Equal(.37, layer.Opacity);
+            Assert.Same(localTransform, layer.RenderTransform);
+            Assert.Equal(0, clock.PendingFrameCount);
+            Assert.False(request.IsCompleted);
+            root.Children.Add(host); Flush(window); Advance(clock, window, 30);
+            Assert.NotSame(layer, Layers(host).Single());
+            Assert.Equal(1, Layers(host).Single().Opacity);
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => request);
+            Advance(clock, window, 30);
+            Assert.Empty(Layers(host));
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public async Task KeepsOutgoingDataUntilOpacityFinishes_WhileNextRequestEnters()
     {
         using var clock = new MotionTestClockScope();

@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Interaction;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -19,6 +20,27 @@ namespace Material3Expressive.Tests;
 
 public class AlertDialogTests
 {
+    [AvaloniaFact]
+    public void MinimumInteractiveSize_ReachesRealActionButtonsAndRestoresDefault()
+    {
+        using var clock = new MotionTestClockScope();
+        var confirm = new Button { Width = 180, Content = "Confirm" };
+        var dismiss = new Button { Width = 180, Content = "Cancel" };
+        var dialog = new AlertDialog { ConfirmButton = confirm, DismissButton = dismiss, IsOpen = true, AnimateTransition = false };
+        var window = DialogTests.Show(new Grid { Children = { dialog } });
+        try
+        {
+            MaterialInteractiveSize.SetMinimum(dialog, 40); Flush(window);
+            var panel = window.GetVisualDescendants().OfType<AlertDialogButtons>().Single();
+            Assert.Equal(40, confirm.Bounds.Height);
+            Assert.Equal(48, dismiss.TranslatePoint(default, panel)!.Value.Y - confirm.TranslatePoint(default, panel)!.Value.Y);
+            dialog.ClearValue(MaterialInteractiveSize.MinimumProperty); Flush(window);
+            Assert.Equal(48, confirm.Bounds.Height);
+            Assert.Equal(48, dismiss.TranslatePoint(default, panel)!.Value.Y - confirm.TranslatePoint(default, panel)!.Value.Y);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(300, 320)]
     [InlineData(480, 440)]
