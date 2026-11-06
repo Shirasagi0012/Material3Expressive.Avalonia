@@ -86,13 +86,38 @@ public sealed class MutatorMutex
             _current = current;
         }
 
-        var task = ExecuteAsync(current, mutation, interruptedResult);
+        var task = interruptedResult is null
+            ? ExecuteCoroutineAsync(current, mutation)
+            : ExecuteResultAsync(current, mutation, interruptedResult);
         current.Task = task;
         return task;
     }
 
-    private Task<TResult> ExecuteAsync<TResult>(Current current,
-        Func<CancellationToken, Task<TResult>> mutation, Func<TResult>? interruptedResult)
+    private async Task<TResult> ExecuteCoroutineAsync<TResult>(Current current,
+        Func<CancellationToken, Task<TResult>> mutation)
+    {
+        // Ordinary coroutine callers retain the original exception, cancellation token and
+        // canceled task status. Explicit stop results use the nonthrowing management path below.
+        try
+        {
+            var token = current.Cancellation.Token;
+            if (!await WaitSectionAsync(token).ConfigureAwait(true))
+                throw new OperationCanceledException(token);
+            try
+            {
+                return await mutation(token).ConfigureAwait(true);
+            }
+            finally { ReleaseSection(); }
+        }
+        finally
+        {
+            lock (_gate) { if (ReferenceEquals(_current, current)) _current = null; }
+            current.Cancellation.Dispose();
+        }
+    }
+
+    private Task<TResult> ExecuteResultAsync<TResult>(Current current,
+        Func<CancellationToken, Task<TResult>> mutation, Func<TResult> interruptedResult)
     {
         var completion = new TaskCompletionSource<TResult>();
         _ = Execute();
@@ -121,24 +146,22 @@ public sealed class MutatorMutex
                 catch (Exception error) { failure = failure is null ? error : new AggregateException(failure, error); }
                 lock (_gate) { if (ReferenceEquals(_current, current)) _current = null; }
             }
-            var token = current.Cancellation.Token;
             current.Cancellation.Dispose();
             if (failure is not null) completion.TrySetException(failure);
             else if (operation?.IsFaulted == true) completion.TrySetException(operation.Exception!.InnerExceptions);
             else if (operation?.IsCompletedSuccessfully == true) completion.TrySetResult(operation.Result);
-            else if (operation?.IsCanceled == true && interruptedResult is not null)
+            else if (operation?.IsCanceled == true)
             {
                 // An async body turns even an unrelated OCE into a canceled Task. Bodies using
                 // the explicit-state contract return their stop result; never hide their throws.
                 try { operation.GetAwaiter().GetResult(); }
                 catch (Exception error) { completion.TrySetException(error); }
             }
-            else if (interruptedResult is not null)
+            else
             {
                 try { completion.TrySetResult(interruptedResult()); }
                 catch (Exception error) { completion.TrySetException(error); }
             }
-            else completion.TrySetCanceled(token.IsCancellationRequested ? token : new CancellationToken(true));
         }
     }
 

@@ -4,6 +4,31 @@ namespace ComposeAnimation.Test;
 
 public class MutatorMutexTest
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CoroutineCancellation_PreservesStatusExceptionAndToken(bool asynchronous)
+    {
+        var mutex = new MutatorMutex();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var expected = new OperationCanceledException("mutation cancellation detail", cancellation.Token);
+        var task = mutex.MutateAsync<int>(_ => asynchronous ? ThrowAsync() : throw expected);
+
+        async Task<int> ThrowAsync()
+        {
+            await Task.Yield();
+            throw expected;
+        }
+
+        var actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        Assert.True(task.IsCanceled);
+        Assert.Same(expected, actual);
+        Assert.Equal(cancellation.Token, actual.CancellationToken);
+        Assert.Null(mutex.CurrentCompletion);
+        Assert.Equal(42, await mutex.MutateAsync(_ => Task.FromResult(42)));
+    }
+
     [Fact]
     public async Task EqualPriority_InterruptsCurrentMutation()
     {
