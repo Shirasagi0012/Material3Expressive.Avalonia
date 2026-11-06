@@ -1,9 +1,13 @@
 using System.Linq;
+using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using ComposeAnimation;
@@ -22,6 +26,17 @@ public partial class CarouselDemo : Window
         HorizontalViewer.Template = NativeTemplate(false);
         VerticalViewer.Template = NativeTemplate(true);
         GridViewer.Template = NativeTemplate(false);
+        foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained })
+        for (var i = 0; i < 8; i++)
+            carousel.Items.Add(new CarouselItem
+            {
+                CornerRadius = new(24), Background = new[] { Brushes.CornflowerBlue, Brushes.Coral, Brushes.DarkSeaGreen, Brushes.Plum }[i % 4],
+                Content = new StackPanel { Margin = new(24), Spacing = 12, Children =
+                {
+                    new TextBlock { Text = $"Destination {i + 1}", FontSize = 24 },
+                    new Button { Content = "Explore", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left }
+                } }
+            });
     }
 
     private static FuncControlTemplate<ScrollViewer> NativeTemplate(bool vertical) => new((owner, scope) =>
@@ -43,5 +58,44 @@ public partial class CarouselDemo : Window
     {
         foreach (var item in HorizontalItems.Children.Concat(VerticalItems.Children).OfType<MultiAspectCarouselItem>())
             item.CornerRadius = item.CornerRadius.TopLeft == 0 ? new(24) : default;
+    }
+    private async void PreviousClassic(object? sender, RoutedEventArgs e) => await MoveClassic(-1);
+    private async void NextClassic(object? sender, RoutedEventArgs e) => await MoveClassic(1);
+    private async Task MoveClassic(int delta)
+    {
+        try { await Task.WhenAll(new[] { MultiBrowse, CenteredHero, Uncontained }.Select(c => c.AnimateScrollToItemAsync(c.CurrentItem + delta))); }
+        catch (OperationCanceledException) { /* A newer navigation or closing the window supersedes this request. */ }
+    }
+    private void ToggleClassicDirection(object? sender, RoutedEventArgs e)
+    {
+        foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained })
+            carousel.FlowDirection = carousel.FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+    }
+    private void SetFlingMode(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string value } && Enum.TryParse<CarouselFlingMode>(value, out var mode))
+            foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained }) carousel.FlingMode = mode;
+    }
+    private async void FlingClassic(object? sender, RoutedEventArgs e)
+    {
+        // Begin between focal positions, as after a drag. Exactly on a snap point, the
+        // upstream SingleAdvance behavior can consume velocity without moving a page.
+        foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained })
+        {
+            carousel.ScrollToItem(carousel.CurrentItem);
+            carousel.ScrollOffset += 45;
+        }
+        try { await Task.WhenAll(new[] { MultiBrowse, CenteredHero, Uncontained }.Select(c => c.FlingAsync(1400))); }
+        catch (OperationCanceledException) { }
+    }
+    private void AccessibilityPage(object? sender, RoutedEventArgs e)
+    {
+        var amount = sender is Button { Tag: "-1" } ? ScrollAmount.LargeDecrement : ScrollAmount.LargeIncrement;
+        foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained })
+            ControlAutomationPeer.CreatePeerForElement(carousel)!.GetProvider<IScrollProvider>()?.Scroll(amount, ScrollAmount.NoAmount);
+    }
+    private void ToggleUserScrolling(object? sender, RoutedEventArgs e)
+    {
+        foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained }) carousel.UserScrollEnabled = !carousel.UserScrollEnabled;
     }
 }

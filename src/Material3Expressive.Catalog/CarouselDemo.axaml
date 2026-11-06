@@ -1,8 +1,35 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Catalog.CarouselDemo" Title="Multi-aspect carousel" Width="780" Height="880">
+        x:Class="Material3Expressive.Catalog.CarouselDemo" Title="Carousels" Width="780" Height="880">
   <ScrollViewer>
   <StackPanel Margin="24" Spacing="16">
+    <TextBlock Text="Keyline carousels" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="三种布局按视口自动分配大、中、小项目。触屏可拖动并释放；按钮和位置滑块也可浏览。单项与多项吸附、无吸附衰减使用同一套物理动画。" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="上一项" Click="PreviousClassic" />
+      <Button Content="下一项" Click="NextClassic" />
+      <Button Content="LTR / RTL" Click="ToggleClassicDirection" />
+      <Button Content="释放速度 +1400" Click="FlingClassic" />
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="默认模式" Tag="Default" Click="SetFlingMode" />
+      <Button Content="单项吸附" Tag="SingleAdvance" Click="SetFlingMode" />
+      <Button Content="多项吸附" Tag="MultiBrowse" Click="SetFlingMode" />
+      <Button Content="无吸附" Tag="NoSnap" Click="SetFlingMode" />
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="辅助技术：前一页" Tag="-1" Click="AccessibilityPage" />
+      <Button Content="辅助技术：后一页" Tag="1" Click="AccessibilityPage" />
+      <Button Content="开启／禁用用户滚动" Click="ToggleUserScrolling" />
+    </StackPanel>
+    <TextBlock Text="Multi-browse" />
+    <m3:HorizontalCarousel x:Name="MultiBrowse" Height="160" ItemWidth="250" ItemSpacing="12" />
+    <Slider Minimum="0" Maximum="{Binding MaximumScrollOffset, ElementName=MultiBrowse}"
+            Value="{Binding ScrollOffset, ElementName=MultiBrowse, Mode=TwoWay}" />
+    <TextBlock Text="Centered hero · 两侧留白" />
+    <m3:HorizontalCarousel x:Name="CenteredHero" Height="160" Variant="CenteredHero" ContentPadding="24,0,24,0" ItemSpacing="12" />
+    <TextBlock Text="Uncontained" />
+    <m3:HorizontalCarousel x:Name="Uncontained" Height="140" Variant="Uncontained" ItemWidth="220" ItemSpacing="12" />
     <TextBlock Text="Multi-aspect carousel" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <TextBlock Text="不同宽高比的内容在视口边缘被压缩；内容保留原尺寸并产生视差。横向区域可按 Shift 滚轮，或使用位置滑块。" TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Spacing="12">

@@ -61,6 +61,8 @@ public partial class App : Application
                 ? new SearchAppBarDemo()
                 : System.Array.IndexOf(desktop.Args ?? [], "--search-contained") >= 0
                 ? new ExpandedSearchBarDemo(SearchPresentation.Contained)
+                : System.Array.IndexOf(desktop.Args ?? [], "--carousel") >= 0
+                ? new CarouselDemo()
                 : new MainWindow();
         }
 
