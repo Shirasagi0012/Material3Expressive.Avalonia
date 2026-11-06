@@ -1,8 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:smooth="using:SmoothScroll.Avalonia.Controls"
         x:Class="Material3Expressive.Catalog.ScrollBarDemo"
-        Title="ScrollBar" Width="640" Height="500">
+        Title="ScrollBar &amp; ScrollView" Width="680" Height="780">
     <StackPanel Margin="24" Spacing="16">
         <TextBlock Text="ScrollBar" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="24">
@@ -18,7 +19,7 @@
             </StackPanel>
         </Grid>
         <TextBlock Text="只读滚动指示：滚动时显示，停止后淡出" />
-        <Grid Height="220">
+        <Grid Height="200">
         <ScrollViewer Name="IndicatorViewport" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
             <Grid Width="900" Height="500" ColumnDefinitions="*,*,*" RowDefinitions="*,*">
                 <Border Background="#F3EDF7" Padding="24"><TextBlock Text="Top left" /></Border>
@@ -37,5 +38,46 @@
                                    ViewportSize="{Binding #IndicatorViewport.Viewport.Width}"
                                    ScrollOffset="{Binding #IndicatorViewport.Offset.X}" />
         </Grid>
+        <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+            <TextBlock Text="ScrollView 画布查看器：Ctrl + 滚轮缩放，鼠标左键/中键拖拽漫游" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="-" Click="OnZoomOutClick" />
+                <Button Content="100%" Click="OnZoomResetClick" />
+                <Button Content="+" Click="OnZoomInClick" />
+            </StackPanel>
+        </Grid>
+        <Border Height="220" BorderBrush="#CAC4D0" BorderThickness="1" CornerRadius="12" ClipToBounds="True">
+            <smooth:ScrollView Name="CanvasViewer"
+                               IsZoomEnabled="True"
+                               MinZoomFactor="0.25"
+                               MaxZoomFactor="4"
+                               HorizontalContentAlignment="Center"
+                               VerticalContentAlignment="Center"
+                               IsHorizontalMeasureInfinite="True"
+                               IsVerticalMeasureInfinite="True">
+                <Border Width="960" Height="540" CornerRadius="16" Background="#F3EDF7" Padding="24">
+                    <Grid RowDefinitions="*,Auto,*" ColumnDefinitions="*,Auto,*">
+                        <Border Width="180" Height="110" CornerRadius="12" Background="#E8DEF8" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="16">
+                            <TextBlock Text="NW (0, 0)" />
+                        </Border>
+                        <Border Grid.Column="2" Width="180" Height="110" CornerRadius="12" Background="#D0BCFF" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="16">
+                            <TextBlock Text="NE (960, 0)" HorizontalAlignment="Right" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" CornerRadius="16" Background="#EADDFF" Padding="28,20">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="Photo / Canvas Viewport (960 × 540)" m3:MaterialText.Style="{m3:Typography TitleMedium}" HorizontalAlignment="Center" />
+                                <TextBlock Name="ZoomStatusText" Text="Zoom: 1.00x — 拖拽画布或 Ctrl + 滚轮缩放" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="2" Width="180" Height="110" CornerRadius="12" Background="#CCC2DC" HorizontalAlignment="Left" VerticalAlignment="Bottom" Padding="16">
+                            <TextBlock Text="SW (0, 540)" VerticalAlignment="Bottom" />
+                        </Border>
+                        <Border Grid.Row="2" Grid.Column="2" Width="180" Height="110" CornerRadius="12" Background="#FFD8E4" HorizontalAlignment="Right" VerticalAlignment="Bottom" Padding="16">
+                            <TextBlock Text="SE (960, 540)" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+                        </Border>
+                    </Grid>
+                </Border>
+            </smooth:ScrollView>
+        </Border>
     </StackPanel>
 </Window>

@@ -85,7 +85,7 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Styles.Resources>
-    
+
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Components/Carousel/Carousel.axaml" />
     <StyleInclude Source="/Components/ScrollField/ScrollField.axaml" />
@@ -116,6 +116,7 @@
     <StyleInclude Source="/Components/Slider/Slider.axaml" />
     <StyleInclude Source="/Components/ScrollBar/ScrollBar.axaml" />
     <StyleInclude Source="/Components/ScrollViewer/ScrollViewer.axaml" />
+    <StyleInclude Source="/Components/ScrollView/ScrollView.axaml" />
     <StyleInclude Source="/Components/CheckBox/CheckBox.axaml" />
     <StyleInclude Source="/Components/Divider/Divider.axaml" />
     <StyleInclude Source="/Components/DragHandle/DragHandle.axaml" />
