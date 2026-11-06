@@ -6,6 +6,48 @@ namespace ComposeAnimation.Test;
 
 public class ClockDrivenAnimationTest
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task InitializationStop_WaitsForCallbackAndPreservesFailures(bool fail) => OnUi(async () =>
+    {
+        using var source = new ManualFrameSource();
+        var window = new AnimationTestWindow(source);
+        using var cancellation = new CancellationTokenSource();
+        try
+        {
+            var order = new List<string>();
+            var initializationError = new InvalidOperationException("initialization failed");
+            var cleanupError = new InvalidOperationException("cleanup failed");
+            var driver = new ClockAnimation(window.AnimationRoot, cancellation.Token,
+                () => AnimationEndReason.Canceled,
+                (_, _) => order.Add("unexpected sample"),
+                _ =>
+                {
+                    order.Add("cleanup");
+                    if (fail) throw cleanupError;
+                });
+            driver.Start(initialize: () =>
+            {
+                order.Add("initialize");
+                cancellation.Cancel();
+                Assert.False(driver.Completion.IsCompleted);
+                order.Add("callback exits");
+                if (fail) throw initializationError;
+            });
+
+            if (fail)
+            {
+                var errors = await Assert.ThrowsAsync<AggregateException>(() => driver.Completion);
+                Assert.Equal(new Exception[] { initializationError, cleanupError }, errors.InnerExceptions);
+            }
+            else Assert.Equal(AnimationEndReason.Canceled, await driver.Completion);
+            Assert.Equal(new[] { "initialize", "callback exits", "cleanup" }, order);
+            Assert.Equal(0, source.PendingFrameCount);
+        }
+        finally { window.Close(); }
+    });
+
     [Fact]
     public Task SamplesKeepTheirOwnOperationContextOnTheSharedClock() => OnUi(async () =>
     {

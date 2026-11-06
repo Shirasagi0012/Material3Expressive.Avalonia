@@ -394,6 +394,42 @@ public class InfiniteTransitionTest
     });
 
     [Fact]
+    public Task ZeroScaleStartupFault_UnsubscribesPlaybackAndAllowsAnotherRun() => OnUi(async () =>
+    {
+        using var clock = new ManualFrameSource();
+        var window = new AnimationTestWindow(clock);
+        using var transition = new InfiniteTransition();
+        try
+        {
+            window.AnimationRoot.DurationScale = 0;
+            var value = transition.AnimateDouble(0, 100, Repeat(Tween<double>(1000)));
+            var expected = new InvalidOperationException("initial snap notification failed");
+            System.ComponentModel.PropertyChangedEventHandler handler = (_, e) =>
+            {
+                if (e.PropertyName == nameof(value.Value) && value.Value != 0) throw expected;
+            };
+            value.PropertyChanged += handler;
+            var failed = transition.RunAsync(window.AnimationRoot);
+            Assert.Same(expected, await Assert.ThrowsAsync<InvalidOperationException>(() => failed));
+            value.PropertyChanged -= handler;
+
+            window.AnimationRoot.DurationScale = 1;
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, clock.PendingFrameCount);
+            Assert.False(transition.IsRunning);
+
+            using var cancellation = new CancellationTokenSource();
+            var next = transition.RunAsync(window.AnimationRoot, cancellation.Token);
+            clock.Pump(Ms(16));
+            Assert.True(transition.IsRunning);
+            cancellation.Cancel();
+            Assert.Equal(AnimationEndReason.Canceled, await next);
+            Assert.Equal(0, clock.PendingFrameCount);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
     public Task Dispose_IsIdempotentAndDoesNotSnapValue() => OnUi(async () =>
     {
         var clock = new ManualFrameSource();

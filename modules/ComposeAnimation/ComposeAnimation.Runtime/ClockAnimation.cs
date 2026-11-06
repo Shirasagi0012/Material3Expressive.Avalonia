@@ -39,13 +39,25 @@ internal sealed class ClockAnimation
     internal Task<AnimationEndReason> Completion => _completion.Task;
     internal bool IsStopping => _ending.HasValue || _ended || _stopToken.IsCancellationRequested || _scope.IsEnding;
 
-    internal void Start(bool requestFrame = true, TimeSpan? initialFrame = null)
+    internal void Start(bool requestFrame = true, TimeSpan? initialFrame = null, Action? initialize = null)
     {
         _lifetimeRegistration = _scope.Lifetime.Register(RequestStop);
         if (_ended) { _lifetimeRegistration.Dispose(); return; }
         _stopRegistration = _stopToken.Register(RequestStop);
         if (_ended) { _stopRegistration.Dispose(); return; }
         if (_scope.IsEnding || _stopToken.IsCancellationRequested) { RequestStop(); return; }
+        // Initialization can notify users and reenter stopping just like a frame sample.
+        // Keep it in the same critical section and failure/cleanup path.
+        if (initialize is not null)
+        {
+            if (_executionContext is null) SampleCore(initialize);
+            else ExecutionContext.Run(_executionContext, static state =>
+            {
+                var (run, initialize) = ((ClockAnimation, Action))state!;
+                run.SampleCore(initialize);
+            }, (this, initialize));
+            if (IsStopping) return;
+        }
         if (initialFrame is { } frame) Sample(frame);
         else if (requestFrame) RequestFrame();
     }
@@ -82,12 +94,16 @@ internal sealed class ClockAnimation
         else ExecutionContext.Run(_executionContext, static state => ((ClockAnimation)state!).SampleCore(), this);
     }
 
-    private void SampleCore()
+    private void SampleCore(Action? initialize = null)
     {
         if (IsStopping) { RequestStop(); return; }
         Exception? failure = null;
         _sampling = true;
-        try { _sample(_frame, this); }
+        try
+        {
+            if (initialize is not null) initialize();
+            else _sample(_frame, this);
+        }
         catch (Exception error) { failure = error; }
         finally { _sampling = false; }
         if (failure is not null) End(AnimationEndReason.Interrupted, failure);

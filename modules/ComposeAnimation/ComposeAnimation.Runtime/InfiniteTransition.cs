@@ -140,8 +140,9 @@ public sealed class InfiniteTransition : ObservableObject, IDisposable
             });
         _activeLoop = driver;
         playback = scope.RegisterPlaybackChanged(this, static animation => animation.WakeLoop());
-        driver.Start(requestFrame: HasWork && EffectiveDurationScale(scope.EffectiveDurationScale) != 0);
-        if (!driver.IsStopping && EffectiveDurationScale(scope.EffectiveDurationScale) == 0) Mutate(SkipToEndAll);
+        var zeroScale = EffectiveDurationScale(scope.EffectiveDurationScale) == 0;
+        driver.Start(requestFrame: HasWork && !zeroScale,
+            initialize: zeroScale ? () => Mutate(SkipToEndAll) : null);
         return driver.Completion;
     }
 
