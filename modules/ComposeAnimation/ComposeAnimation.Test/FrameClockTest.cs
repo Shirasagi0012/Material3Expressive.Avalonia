@@ -95,6 +95,43 @@ public sealed class FrameClockTest
     });
 
     [Fact]
+    public Task RestartBeforeCanceledSourceContinuation_ReceivesNextFrame() => Run(() =>
+    {
+        var source = new ManualFrameSource();
+        using var clock = new FrameClock(source);
+        using var cancellation = new CancellationTokenSource();
+        var first = clock.WaitAsync(cancellation.Token).AsValueTask().AsTask();
+        cancellation.Cancel();
+        var next = clock.WaitAsync(default).AsValueTask().AsTask();
+        Assert.True(first.IsCanceled);
+        Assert.Equal(1, source.PendingFrameCount);
+        Advance(source);
+        Assert.True(next.IsCompletedSuccessfully);
+        Assert.Equal(Frame, next.Result);
+        Assert.Equal(0, source.PendingFrameCount);
+    });
+
+    [Fact]
+    public Task CancellationContinuationCanRegisterNextWaitWithoutCancelingItsSource() => Run(() =>
+    {
+        var source = new ManualFrameSource();
+        using var clock = new FrameClock(source);
+        using var cancellation = new CancellationTokenSource();
+        async Task<TimeSpan> Restart()
+        {
+            try { await clock.WaitAsync(cancellation.Token); }
+            catch (OperationCanceledException) { }
+            return await clock.WaitAsync(default);
+        }
+        var next = Restart();
+        cancellation.Cancel();
+        Assert.Equal(1, source.PendingFrameCount);
+        Advance(source);
+        Assert.True(next.IsCompletedSuccessfully);
+        Assert.Equal(Frame, next.Result);
+    });
+
+    [Fact]
     public Task CanceledWaiter_IsNotGivenTheFrame() => Run(() =>
     {
         var source = new ManualFrameSource();

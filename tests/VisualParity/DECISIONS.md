@@ -163,3 +163,13 @@ Chip 自定义颜色夹具另有选择器范围错误：`:disabled` 没有限定
 仅把三条状态选择器限定为 `Is<Chip>()`，保留用户指定的状态颜色、原内容和时序。五种实际 Chip 的
 后代隔离回归通过；原 10 个自定义颜色组合在 `chip-colors-*` 全部逐像素/结构精确相等且重复稳定。
 这些证据与 `chip-spring-all` 的旧五个颜色失败一起保留，不属于重新定义基准或组件行为变更。
+
+## 2026-11-06：ScrollField 数字项目的必要文字覆盖
+
+原规则排除普通组件文字，是为了不把字体、排版和栅格后端差异混进无关组件几何验证；日期与时间选择器已有真实文字例外。
+本轮维护者明确授权修订历史决定。新增公开 ScrollFieldNumber 对应固定 ScrollFieldDefaults.Item，核心功能是本地化数字和选中排版动画，
+非文字替代物无法验证该功能，因此仅把 `scroll-field-number` 纳入真实文字例外。滚动容器、触摸与滚轮套件继续用非文字内容。
+数字内容、实际字号与字重分别读取；文字图像按原容差比较，失败保留且不记为已接受差异。
+参考明确使用固定 Core 的 `Typography(fontFamily=...)` 30-role 构造和 Expressive motion，与本地 token 输入一致；
+无参 Typography 的兼容构造会把 emphasized 映射为普通角色，默认 MaterialTheme motion 为 Standard，不能拿这组不同输入反推产品参数。
+另为 ScrollField 自绘 Marker 禁用 Avalonia 自动镜像，使双端 Canvas 的物理坐标相同；窄宽度仍保留真实越界绘图，不隐藏裁剪问题。

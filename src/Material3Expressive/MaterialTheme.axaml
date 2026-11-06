@@ -77,6 +77,7 @@
                     <m3:TimePickerTokenSource />
                     <m3:TimeInputTokenSource />
                     <m3:TimeScrollTokenSource />
+                    <m3:ScrollFieldTokenSource />
                     <m3:SearchBarTokenSource />
                     <m3:PullToRefreshTokenSource />
                     <m3:TimePickerDialogTokenSource />
@@ -87,6 +88,7 @@
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
     <StyleInclude Source="/Components/Carousel/Carousel.axaml" />
+    <StyleInclude Source="/Components/ScrollField/ScrollField.axaml" />
     <StyleInclude Source="/Components/PullToRefresh/PullToRefresh.axaml" />
     <StyleInclude Source="/Components/ListItem/ListItem.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />

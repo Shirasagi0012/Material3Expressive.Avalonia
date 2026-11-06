@@ -1,0 +1,45 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:ScrollFieldPage}" TargetType="m3:ScrollFieldPage"
+                  BasedOn="{StaticResource {x:Type m3:ClickableSurface}}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Panel Background="Transparent">
+            <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+            <m3:MaterialSurface x:Name="PART_Container" Background="Transparent"
+                                StateLayerBrush="{TemplateBinding Foreground}" IsHitTestVisible="False" />
+          </Panel>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:ScrollField}" TargetType="m3:ScrollField">
+      <Setter Property="Focusable" Value="True" />
+      <Setter Property="FocusAdorner" Value="{x:Null}" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Large}}" />
+      <Setter Property="SelectedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="UnselectedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+      <Setter Property="ItemHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ScrollField.ItemHeight}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <!-- The pager panel clips the main axis and preserves cross-axis elevation room. -->
+          <Panel>
+            <Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" />
+            <m3:ScrollFieldPanel x:Name="PART_Pages" />
+          </Panel>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:ScrollFieldNumber}" TargetType="m3:ScrollFieldNumber">
+      <Setter Property="SelectedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="UnselectedContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
+      <Setter Property="UnselectedStyle" Value="{m3:Typography DisplayMedium}" />
+      <Setter Property="SelectedStyle" Value="{m3:Typography DisplayLargeEmphasized}" />
+      <Setter Property="SelectionAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}" />
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

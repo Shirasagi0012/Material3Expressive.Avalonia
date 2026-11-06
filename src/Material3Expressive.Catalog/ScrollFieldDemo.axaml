@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:local="using:Material3Expressive.Catalog"
+        x:Class="Material3Expressive.Catalog.ScrollFieldDemo" Width="760" Height="560" Title="Scroll fields">
+  <StackPanel Margin="32" Spacing="20">
+    <TextBlock Text="Scroll fields" m3:MaterialText.Style="{m3:Typography HeadlineMedium}" />
+    <TextBlock Text="Choose a value with ↑ / ↓, the mouse wheel, a neighbouring item, or a touch drag."
+               TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="32">
+      <m3:ScrollField x:Name="Numbers" Width="130" Height="200" AutomationProperties.Name="Amount, zero to fifty-nine" />
+      <m3:ScrollField x:Name="Units" Width="180" Height="200" AutomationProperties.Name="Unit">
+        <m3:ScrollField.ItemTemplate>
+          <DataTemplate DataType="m3:ScrollFieldItem" x:DataType="m3:ScrollFieldItem">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <CheckBox IsChecked="{Binding IsSelected, Mode=OneWay}" IsHitTestVisible="False" Focusable="False" />
+              <TextBlock Text="{Binding Index, Converter={x:Static local:ScrollFieldDemo.UnitName}}" VerticalAlignment="Center" FontSize="24" />
+            </StackPanel>
+          </DataTemplate>
+        </m3:ScrollField.ItemTemplate>
+      </m3:ScrollField>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="20">
+      <TextBlock Text="Reusable number item" VerticalAlignment="Center" />
+      <m3:ScrollFieldNumber Index="2026" IsSelected="{Binding IsChecked, ElementName=SelectedNumber}" />
+      <CheckBox x:Name="SelectedNumber" Content="Selected" IsChecked="True" VerticalAlignment="Center" />
+    </StackPanel>
+    <TextBlock x:Name="Status" />
+    <WrapPanel Orientation="Horizontal">
+      <Button Content="Animate to 45" Click="Animate" Margin="0,0,12,0" />
+      <Button Content="Reset to 00" Click="Reset" Margin="0,0,12,0" />
+      <Button Content="Toggle RTL" Click="ToggleRtl" />
+    </WrapPanel>
+  </StackPanel>
+</Window>

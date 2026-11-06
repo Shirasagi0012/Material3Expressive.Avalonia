@@ -83,6 +83,7 @@
                 <Button Content="Loading Indicator demo" Click="OnLoadingIndicatorDemo" HorizontalAlignment="Left" />
                 <Button Content="Pull to refresh indicators" Click="OnPullToRefreshDemo" HorizontalAlignment="Left" />
                 <Button Content="Multi-aspect carousel" Click="OnCarouselDemo" HorizontalAlignment="Left" />
+                <Button Content="Scroll fields" Click="OnScrollFieldDemo" HorizontalAlignment="Left" />
                 <Button Content="List items demo" Click="OnListItemDemo" HorizontalAlignment="Left" />
 
                 <Button Content="FloatingToolbar demo" Click="OnFloatingToolbarDemo" HorizontalAlignment="Left" />

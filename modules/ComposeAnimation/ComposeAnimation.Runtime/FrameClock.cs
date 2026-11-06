@@ -53,6 +53,8 @@ internal sealed class FrameClock : IDisposable
     private readonly HookList _beforeFrame = new();
     private readonly HookList _afterWaiter = new();
     private CancellationTokenSource? _sourceWait;
+    private Task<TimeSpan>? _sourceTask;
+    private int _pumpGeneration;
     // Reused across frames while never cancelled (TryReset); a cancelled one is replaced.
     private CancellationTokenSource? _spareSourceWait;
     private bool _pumping;
@@ -97,10 +99,13 @@ internal sealed class FrameClock : IDisposable
         {
             _waiters.Add(waiter);
             waiter.Register(cancellationToken, secondToken);
-            if (!_pumping)
+            // A canceled source can already be finished while its dispatcher hop is still
+            // queued. Restart now so a replacement animation cannot miss the next frame.
+            // Only a completed cancellation permits this: live source waits never overlap.
+            if (!_pumping || _sourceWait is { IsCancellationRequested: true } && _sourceTask is { IsCanceled: true })
             {
                 _pumping = true;
-                _ = PumpAsync();
+                _ = PumpAsync(++_pumpGeneration);
             }
         }
         return new FrameAwaitable(waiter);
@@ -160,10 +165,11 @@ internal sealed class FrameClock : IDisposable
         if (waiter.IsCompleted || waiter.Version != version) return;
         var wasLast = _waiters.Remove(waiter) && _waiters.Count == 0;
         waiter.Complete(default, new OperationCanceledException(token));
-        if (wasLast) _sourceWait?.Cancel();
+        // Completing inline may register a replacement waiter.
+        if (wasLast && _waiters.Count == 0) _sourceWait?.Cancel();
     }
 
-    private async Task PumpAsync()
+    private async Task PumpAsync(int generation)
     {
         try
         {
@@ -175,11 +181,18 @@ internal sealed class FrameClock : IDisposable
                 Task<TimeSpan> frame;
                 try { frame = _source.NextFrameAsync(sourceWait.Token).AsTask(); }
                 catch (Exception error) { frame = Task.FromException<TimeSpan>(error); }
+                _sourceTask = frame;
 
                 // The single resumption decision point: one post at ResumePriority.
                 await new DispatcherHop(frame);
 
+                if (generation != _pumpGeneration)
+                {
+                    sourceWait.Dispose();
+                    return;
+                }
                 _sourceWait = null;
+                _sourceTask = null;
                 var canceledByClock = sourceWait.IsCancellationRequested;
                 if (!canceledByClock && sourceWait.TryReset()) _spareSourceWait = sourceWait;
                 else sourceWait.Dispose();
@@ -205,7 +218,7 @@ internal sealed class FrameClock : IDisposable
         }
         finally
         {
-            _pumping = false;
+            if (generation == _pumpGeneration) _pumping = false;
         }
     }
 

@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 55 个组件的全局索引全景图。
+本文为系统全部 56 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：55 个
+- **已纳管组件总数**：56 个
 
 ---
 
@@ -42,6 +42,7 @@
 | `RadioButton` | 原生单选按钮、组互斥与非交互状态展示 | [README](../src/Material3Expressive/Components/RadioButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/RadioButton/INTERNALS.md) | |
 | `Switch` | 原生滑动开关、非交互展示与滑块图标动画 | [README](../src/Material3Expressive/Components/Switch/README.md) | [INTERNALS](../src/Material3Expressive/Components/Switch/INTERNALS.md) | |
 | `Slider` | 原生滑块与连续数值选择 | [README](../src/Material3Expressive/Components/Slider/README.md) | [INTERNALS](../src/Material3Expressive/Components/Slider/INTERNALS.md) | |
+| `ScrollField` | 循环选择、虚拟页、触摸/滚轮吸附与可复用数字动画 | [README](../src/Material3Expressive/Components/ScrollField/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollField/INTERNALS.md) | 设备专用触控板/滚轮元数据及嵌套滚动尚未实现 |
 | `DatePicker` | 月历选择、日期文本输入与日期范围选择 | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | |
 | `TimePicker` | 钟面指针交互、时间文本输入与滚动时间选择 | [README](../src/Material3Expressive/Components/TimePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePicker/INTERNALS.md) | |
 | `DateTimePicker` | 原生日期/时间选择器的 Material 外观主题 | [README](../src/Material3Expressive/Components/DateTimePicker/README.md) | - | |

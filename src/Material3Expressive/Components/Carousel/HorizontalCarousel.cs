@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Input;
 
 namespace Material3Expressive.Components;
 
@@ -206,7 +207,7 @@ public partial class HorizontalCarousel : ItemsControl
             try
             {
                 using var binding = scope.BindAnimatedValue(this, ScrollOffsetProperty, _scrollPosition);
-                var remaining = await CarouselFling.RunAsync(scope, (float)velocity * density, decay, snap,
+                var remaining = await SnapFling.RunAsync(scope, (float)velocity * density, decay, snap,
                     delta => _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density),
                     (speed, decayOffset) => mode == CarouselFlingMode.NoSnap ? decayOffset
                         : panel.ApproachOffset(_scrollPosition.Position, speed, decayOffset, mode),

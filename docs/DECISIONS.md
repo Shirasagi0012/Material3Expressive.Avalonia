@@ -366,3 +366,17 @@
 - **决定**：SurfaceOutline 增加内部显式 UsePathOutline，复用 Foundation/Rendering/PathBorderMask 生成物理像素 alpha 遮罩，纯色描边按上游方式着色并直接裁取位图，其他画笔通过 opacity mask 绘制。保留 BorderCache 对原始布局尺寸与路径尺寸的不同处理，缩小时复用较大缓冲区；缓存键包含实际/原始尺寸、圆角、描边、density、颜色和填充模式，卸载释放位图。PathLayoutSize 保留原始布局尺寸对描边上限的影响。
 - **范围与影响**：当前仅 Carousel 的圆角 MaskShape 开启此分支；普通 Surface 和其他调用方不改变默认路径、布局或公开 API，无仓内调用迁移。它不是任意 Shape API。颜色与画笔透明度只施加一次；复杂画笔及第三方渲染后端仍需专项验证。
 - **验证**：真实双端边框用例原最大降采样通道差 48，新增上游路径后通过既有容差；没有更改基准或放宽门禁。
+
+
+## 30. Pager 组件的吸附动画复用
+
+- **依据与授权**：2026-11-06 剩余移植任务授权新增组件及必要共享能力。ScrollField 和 Carousel 都消费固定 Foundation SnapFlingBehavior 的 approach → snap 流程；原实现位于 Carousel 目录，新的调用方构成实际复用需求。
+- **决定**：将无组件依赖的内部算法原样移至 `Foundation/Input/SnapFling.cs`，保留消费回调、衰减/吸附选择、速度与取消规则。Carousel 的模式枚举和定位算法仍留在组件，ScrollField 的固定页定位由其状态负责。
+- **影响**：仅迁移内部调用，不新增公共滚动框架，不改变 Carousel 规格或边界。ScrollField 使用 Pager 默认的整数可见阈值，Carousel 继续使用原 Float 规格；两者不能因共享流程而统一参数。
+- **目标观察**：补上固定源码已有的 remaining-distance 回调，供 ScrollField 的 PagerWrapper 更新目标页。Carousel 不提供该回调，行为保持不变。
+
+## 31. 取消后立即重启动画的帧请求
+
+- **依据与授权**：2026-11-06 本轮授权必要共享修复。新 ScrollField 反向动画的真实双端采样暴露一帧延迟；两个独立 FrameClock 回归证明，最后一个 waiter 取消后、旧 dispatcher continuation 执行前注册的新 waiter 没有向 source 请求下一帧。取消 continuation 内注册新 waiter 还会被旧 wasLast 标志误取消。
+- **决定**：仅当旧 source task 已完成取消时同步启动新 pump；generation 防止旧 continuation 清除新 pump 的状态。source 尚在等待时不并发请求；原 D4 单次 dispatcher hop、批处理次序与闲置零请求理由保持不变。取消 waiter 后重新检查队列，保留 inline continuation 注册的新 waiter。
+- **影响与验证**：没有公开 API 或采样补偿；ScrollField 反向轨迹恢复精确相等。FrameClock 21 项及 ComposeAnimation 全模块 974 项测试通过。旧决定不是改成即时派发，修订仅解决完成取消与新注册之间的空窗。
