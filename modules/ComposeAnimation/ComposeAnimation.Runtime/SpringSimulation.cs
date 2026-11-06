@@ -37,9 +37,10 @@ internal sealed class SpringSimulation
     }
 
     /// <summary>Returns the spring position and velocity after <paramref name="deltaT"/>.</summary>
-    public Motion UpdateValues(double lastDisplacement, double lastVelocity, double deltaT)
+    public Motion UpdateValues(double lastDisplacement, double lastVelocity, double deltaT, bool singlePrecision = false)
     {
-        var adjustedDisplacement = lastDisplacement - FinalPosition;
+        var adjustedDisplacement = singlePrecision
+            ? (float)lastDisplacement - (float)FinalPosition : lastDisplacement - FinalPosition;
         var dampingRatioSquared = DampingRatio * DampingRatio;
         var r = -DampingRatio * _naturalFreq;
 
@@ -84,6 +85,8 @@ internal sealed class SpringSimulation
                 Math.Exp(r * deltaT) * (-dampedFreq * cosCoeff * Math.Sin(dFdT) + dampedFreq * sinCoeff * Math.Cos(dFdT));
         }
 
-        return new Motion(displacement + FinalPosition, currentVelocity);
+        return singlePrecision
+            ? new Motion((float)(displacement + FinalPosition), (float)currentVelocity)
+            : new Motion(displacement + FinalPosition, currentVelocity);
     }
 }

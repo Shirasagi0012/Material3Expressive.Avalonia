@@ -65,6 +65,18 @@ ListItem / SegmentedListItem 的焦点环使用当前动画轮廓，支持共享
 
 ## 验证入口
 
+按压波纹复用同一个交互源及子动画作用域。短按先完成扩张再淡出；新按压要求旧波纹结束，
+但不会立即删除尚在扩张的旧波纹。原点、半径与中心在物理像素中保留固定上游的 Float 运算，
+仅在 Avalonia 绘制边界转为 DIP；公共 `RippleAnimation` 的 DIP 参数和 Double 读数签名不变。
+首次绘制锁定几何与 Switch 的跟随中心适配仍按共享决定 §13 执行。
+Catalog **Interactive surfaces → Ripple origin and quick taps** 可实际操作边缘按压及重复短按。
+
+`RippleAnimationTests` 覆盖固定 Core 中间采样、短按、首绘尺寸、取消与生命周期；
+`ripple` 双端套件在真实 ClickableSurface 上读取活动波纹，覆盖非方形、短按、取消、重叠与卸载。
+`ripple-float` 的六例结构化事实全部精确相等，四例图像 equal、两例 withinTolerance，执行错误 0。
+其中重叠例的 Core 额外被动截图仍不稳定，Avalonia 自检稳定；不把两端容差内改记为重复性通过。
+按钮组 connected 的既有布局/像素差异没有由此解决。
+
 [InsetFocusRingTests](../../../../tests/Material3Expressive.Tests/InsetFocusRingTests.cs) 检查主题与局部覆盖、
 Desktop 输入模式、快速反向、Source 配对/重建、卸载取消、跟随形变、布局不变及
 100% / 125% / 150% / 200% 物理像素取整。

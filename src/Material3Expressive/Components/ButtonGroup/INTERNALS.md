@@ -114,8 +114,13 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 执行错误 0；本轮仅 RTL repress 的 Core 额外被动截图不稳定，其余 79 例稳定。
 
 当前保留的观测：动态 `content-0` / `content-2` 有居中取整差异，组和项目的分配几何、回调状态一致。
-`connected` 在 release / time-96000、`disable` 在 disabled 至 time-400000 仍有像素差异，
-尚未证明全部属于上述舍入范围；不把这些失败归入半像素豁免。
+历史 `connected` 在 release / time-96000、`disable` 在 disabled 至 time-400000 有像素差异，
+不能归入半像素豁免。当前 `ripple-button-group-current` 的 disable 已没有该图像差异；
+connected 的 96ms 内容块过期来自夹具缺少 Foreground 绘制失效依赖，独立像素测试先失败后通过。
+`button-group-marker-current` 修复后该帧逐像素相等；release 的 81ms 原生选中色即时更新与 Core
+组合缓存差异仍保留，未修改组件或补帧。夹具证据见 VisualParity DECISIONS。
+本轮已重跑全部 110 个场景；固定最小高度传播、居中取整及非帧状态变化仍按实际失败报告，
+没有因为修复内容颜色而缩减覆盖。原 fixture 的失败证据保留在 `ripple-button-group-current`。
 两个方向的 `repress` 在 Compose 额外被动截图检查中出现最大 1 通道值变化，普通重复捕获与 Avalonia 自检稳定。
 保留不稳定标记和原始产物，不放宽门禁。任意自定义内容的固有尺寸查询
 尚未由当前宽度用例证明；Avalonia 以自然尺寸测量适配 Compose 固有查询，不存在通用 intrinsic 接口。
@@ -130,7 +135,7 @@ ButtonGroup 相关测试 **32/32** 通过。Catalog 新增 Minimum width。
 所有实际几何、状态与图像完全相等，执行错误 0 且重复稳定。运行 ID 分别为
 `20261105-064526-05852dfa`、`20261105-064534-bc9f2d42`、`20261105-064540-a0a2ddfa`、`20261105-064545-66e9e027`。
 
-**待维护者决定：最小高度向内容传播。** 补充 26 个双端高度场景（LTR/RTL，Height / MinHeight 为 16 / 64，
+**已获本轮技术决策授权、尚未实现：最小高度向内容传播。** 补充 26 个双端高度场景（LTR/RTL，Height / MinHeight 为 16 / 64，
 全可见 / 部分溢出 / 全溢出，MaxHeight=16）。`20261105-064104-c320a803` 中 18 例完全相等、8 例不同，
 全部重复稳定、无执行错误。Height / MinHeight=64 且存在可见项目时，上游把最小高度传给内容，
 本地只扩大外层槽：例如 `new ButtonGroup { Height = 64, MaxWidth = 100 }` 内首项自然高 24，
@@ -139,6 +144,7 @@ ButtonGroup 相关测试 **32/32** 通过。Catalog 新增 Minimum width。
 推荐在现有布局能力中明确“父级最小约束”与原生控件自身 MinHeight 的传播契约，再由 ButtonGroup 传入。
 调用方仍使用现有 `Height` / `MinHeight`，不需要新组件 API；实现将影响 ButtonLayout、模板中间层及任意 CustomItem，
 必须说明局部 Height、对齐和嵌套自定义布局如何响应。直接改写子控件 MinHeight 会覆盖调用方配置且不等价于 Compose constraints，
-单纯拉伸槽也不能改变内容测量，因此未采用这些近似。此项未获批准，没有把失败用例删除或改为成功。
+单纯拉伸槽也不能改变内容测量，因此未采用这些近似。本轮用户扩大授权已覆盖该技术取舍，
+无需再次逐项确认；当前缺口仍是任意自定义内容的最小约束传递，尚未实施，没有把失败用例删除或改为成功。
 同一次 106 例运行也复核原有 80 例；原有反复按压两方向的 Core 额外截图不稳定仍保留，
 不能把新增静态场景稳定推广到整个组件。

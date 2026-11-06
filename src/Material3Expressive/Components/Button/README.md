@@ -226,13 +226,26 @@ C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 ```
 
 设 `m3:MaterialButton.Elevation="{x:Null}"` 会移除按钮的交互高度策略，恢复模板本身的高度值。
+运行期间可替换整组高度配置；禁用切到 Disabled 高度，恢复启用后使用当前活动交互。
+高度更新按显示帧合并；相同帧内连续设置以最后一组为准。
 普通用户 Style、局部值和绑定都会覆盖相应的主题默认配置，包括尺寸 class 与禁用状态选择的默认值。
 因此固定设置颜色或描边后，禁用时也保留该设置；需要禁用差异时再用自己的状态样式或 Token 表达。
 清除局部值（例如 `button.ClearValue(Button.PaddingProperty)`，`button` 为按钮实例）后，
 恢复剩余用户样式或当前尺寸的主题默认值，而非创建时的旧值。
 默认配置中的 Token 会随资源、主题和所在作用域更新；显式覆盖保持生效，移除后重新使用实时默认值。
-状态层和 ripple 的墨色来自主题 Token，不能假定修改 `Foreground` 会同时重配它们。
-需要保持各状态联动时，优先按[共享接入说明](../../../../docs/GETTING_STARTED.md)使用 Token 覆盖。
+状态层和 ripple 默认使用当前 `Foreground`；修改内容色会同步改变反馈墨色，禁用时也遵循当前有效值。
+默认模板不再消费独立的 `Comp.*Button.*StateLayerColor` Token。原先只覆盖这些 Token 的应用，
+若要同时改变内容与反馈，可改用 `Foreground` 或对应 `ContentColor` Token；需要保留独立墨色时，
+可在视图 Styles 中显式配置已有 Surface 入口（`custom-ink` 为按钮 Classes）：
+
+```xml
+<Style Selector="Button.custom-ink /template/ m3|MaterialSurface#PART_Container">
+  <Setter Property="StateLayerBrush" Value="#805020" />
+</Style>
+```
+
+旧 Token 定义和解析保留，可在这个 Setter 中继续使用 Token 扩展。独立按压/悬停颜色可加
+`:pressed` / `:pointerover` 选择器；外部交互源不改变原生伪类，统一墨色默认不依赖它们。
 
 ## 使用边界
 

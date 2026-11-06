@@ -23,10 +23,28 @@ public partial class DragHandleDemo : Window
         Handle.InteractionSource = _source;
         LinkedCard.InteractionSource = _source;
         LinkedChip.InteractionSource = _source;
+        LinkedCard.Bind(IsEnabledProperty, new Avalonia.Data.Binding("IsChecked") { Source = FeedbackEnabled });
+        LinkedChip.Bind(IsEnabledProperty, new Avalonia.Data.Binding("IsChecked") { Source = FeedbackEnabled });
         CustomHandle.Sizes = new(new Size(8, 40), new Size(14, 56), new Size(20, 64));
         CustomHandle.Shapes = new(new CornerRadius(3), new CornerRadius(4), new CornerRadius(6));
         CustomHandle.Colors = new(Colors.SlateBlue, Colors.DarkSlateBlue, Colors.MediumPurple);
         Closed += (_, _) => EndDrag(cancelled: true);
+    }
+
+    private bool _customElevations;
+    private void OnChangeElevations(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _customElevations = !_customElevations;
+        if (_customElevations)
+        {
+            LinkedCard.Elevation = new() { Default = 2, Pressed = 3, Focused = 4, Hovered = 5, Dragged = 12.5, Disabled = 1 };
+            LinkedChip.Elevation = new(2, 3, 4, 5, 12.5, 1);
+        }
+        else
+        {
+            LinkedCard.ClearValue(Card.ElevationProperty);
+            LinkedChip.ClearValue(Chip.ElevationProperty);
+        }
     }
 
     private void OnPressed(object? sender, PointerPressedEventArgs e)

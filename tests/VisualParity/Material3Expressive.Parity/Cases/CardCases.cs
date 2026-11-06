@@ -186,6 +186,7 @@ public sealed class CardCases
     sealed class CardScene
     {
         readonly AvaloniaHost host;
+        readonly bool observeAmbient;
         readonly List<Marker> markers = [];
         int clicks, childClicks;
         public Card Card { get; }
@@ -194,6 +195,10 @@ public sealed class CardCases
         public CardScene(AvaloniaHost host, CardConfig config)
         {
             this.host = host; SetColors(host, config.Dark);
+            observeAmbient = config.Custom == "ambient";
+            // Compose's outer LocalContentColor is black; Avalonia Window defaults to OnSurface.
+            // Supply the same ambient input, leaving Card's fallback and role mapping untouched.
+            if (observeAmbient) TextElement.SetForeground(host.Window, Brushes.Black);
             if (config.Rtl) host.Window.FlowDirection = FlowDirection.RightToLeft;
             Card = config.Kind switch { "elevated" => new ElevatedCard(), "outlined" => new OutlinedCard(), _ => new Card() };
             Card.IsClickable = config.Clickable; Card.IsEnabled = config.Enabled;
@@ -231,6 +236,8 @@ public sealed class CardCases
         }
         public ProbePoint[] Measure() => [new("card", "card", null,
             [.. AvaloniaMeasurements.Geometry(Card, host.Window).Where(m => m.Name is "box" or "size"),
+                .. observeAmbient ? new[] { Ink("ambientColor", TextElement.GetForeground((Control)Card.Parent!), "card.ambient-content-color"),
+                    Ink("contentColor", Card.Foreground, "card.content-color") } : [],
                 Measurement.Numeric("shadowElevation", Card.GetVisualDescendants().OfType<MaterialSurface>().Single(s => ReferenceEquals(s.TemplatedParent, Card)).ShadowElevation,
                     "dip", category: "motion", definition: "card.shadow-elevation", source: "Surface.ShadowElevation"),
                 Measurement.Numeric("clicks", clicks, "count", definition: "card.click-callback-count")]),
@@ -239,6 +246,11 @@ public sealed class CardCases
                     Measurement.Numeric("clicks", childClicks, "count", definition: "card.child-click-callback-count")])],
             .. markers.Select((marker, index) => new ProbePoint($"content-{index}", "content", Child is null ? "card" : "child",
                 AvaloniaMeasurements.Geometry(marker, host.Window).Where(m => m.Name is "box" or "size").ToArray()))];
+        private static Measurement Ink(string name, IBrush? brush, string definition)
+        {
+            var color = ((ISolidColorBrush)brush!).Color;
+            return Measurement.Vector(name, "color", [color.R, color.G, color.B, color.A], "srgba8", "none", "properties", definition);
+        }
     }
     // Card additionally consumes these roles. Use the fixed Compose palette inputs, as in
     // CaseDefaults, so a color-scheme generator difference is not attributed to the component.

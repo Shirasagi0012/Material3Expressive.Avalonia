@@ -30,20 +30,27 @@ public interface IFloatAnimationSpec
 public sealed class FloatSpringSpec : IFloatAnimationSpec
 {
     private readonly SpringSimulation _spring;
+    private readonly bool _singlePrecision;
 
     public FloatSpringSpec(
         double dampingRatio = Spring.DampingRatioNoBouncy,
         double stiffness = Spring.StiffnessMedium,
         double visibilityThreshold = Spring.DefaultDisplacementThreshold)
+        : this(dampingRatio, stiffness, visibilityThreshold, singlePrecision: false)
+    {
+    }
+
+    internal FloatSpringSpec(double dampingRatio, double stiffness, double visibilityThreshold, bool singlePrecision)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(dampingRatio);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(stiffness);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(visibilityThreshold);
 
-        DampingRatio = dampingRatio;
-        Stiffness = stiffness;
-        VisibilityThreshold = visibilityThreshold;
-        _spring = new SpringSimulation { DampingRatio = dampingRatio, Stiffness = stiffness };
+        _singlePrecision = singlePrecision;
+        DampingRatio = singlePrecision ? (float)dampingRatio : dampingRatio;
+        Stiffness = singlePrecision ? (float)stiffness : stiffness;
+        VisibilityThreshold = singlePrecision ? (float)visibilityThreshold : visibilityThreshold;
+        _spring = new SpringSimulation { DampingRatio = DampingRatio, Stiffness = Stiffness };
     }
 
     public double DampingRatio { get; }
@@ -55,13 +62,16 @@ public sealed class FloatSpringSpec : IFloatAnimationSpec
     public double GetValue(TimeSpan playTime, double initialValue, double targetValue, double initialVelocity)
     {
         _spring.FinalPosition = targetValue;
-        return _spring.UpdateValues(initialValue, initialVelocity, playTime.TotalSeconds).Value;
+        // Fixed FloatSpringSpec truncates nanos to whole milliseconds before SpringSimulation.
+        var seconds = _singlePrecision ? (playTime.Ticks / TimeSpan.TicksPerMillisecond) / 1000.0 : playTime.TotalSeconds;
+        return _spring.UpdateValues(initialValue, initialVelocity, seconds, _singlePrecision).Value;
     }
 
     public double GetVelocity(TimeSpan playTime, double initialValue, double targetValue, double initialVelocity)
     {
         _spring.FinalPosition = targetValue;
-        return _spring.UpdateValues(initialValue, initialVelocity, playTime.TotalSeconds).Velocity;
+        var seconds = _singlePrecision ? (playTime.Ticks / TimeSpan.TicksPerMillisecond) / 1000.0 : playTime.TotalSeconds;
+        return _spring.UpdateValues(initialValue, initialVelocity, seconds, _singlePrecision).Velocity;
     }
 
     public double GetEndVelocity(double initialValue, double targetValue, double initialVelocity)
@@ -72,8 +82,8 @@ public sealed class FloatSpringSpec : IFloatAnimationSpec
         return SpringEstimation.EstimateDuration(
             Stiffness,
             DampingRatio,
-            initialVelocity / VisibilityThreshold,
-            (initialValue - targetValue) / VisibilityThreshold,
+            _singlePrecision ? (float)initialVelocity / (float)VisibilityThreshold : initialVelocity / VisibilityThreshold,
+            _singlePrecision ? ((float)initialValue - (float)targetValue) / (float)VisibilityThreshold : (initialValue - targetValue) / VisibilityThreshold,
             1);
     }
 }

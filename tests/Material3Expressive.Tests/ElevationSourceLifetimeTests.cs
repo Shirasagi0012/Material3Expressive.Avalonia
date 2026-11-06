@@ -56,12 +56,14 @@ public class ElevationSourceLifetimeTests
             var drag = new MaterialInteractionEvent.DragStart(); source.Emit(drag); Frame(); Frame();
             clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
             Assert.Equal(9, Surface().ShadowElevation);
+            Surface().ShadowElevation = 13; // Underlying value must survive the pending snap.
             control.IsEnabled = false; Frame();
             var oldSurface = Surface(); Assert.Equal(9, oldSurface.ShadowElevation);
             var template = control.Template;
             control.Template = null; window.UpdateLayout(); control.Template = template; window.UpdateLayout();
             Assert.NotSame(oldSurface, Surface()); Assert.Equal(1, Surface().ShadowElevation);
-            Frame(); Assert.Equal(9, oldSurface.ShadowElevation);
+            Frame(); Assert.Equal(13, oldSurface.ShadowElevation);
+            Assert.False(oldSurface.IsAnimating(MaterialSurface.ShadowElevationProperty));
             control.IsEnabled = true; Frame(); Frame(); clock.AdvanceBy(TimeSpan.FromMilliseconds(200));
             Assert.Equal(9, Surface().ShadowElevation);
             control.Template = null; window.UpdateLayout(); control.Template = template; window.UpdateLayout();

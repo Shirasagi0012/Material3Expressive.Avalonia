@@ -216,6 +216,27 @@
   固化固定 Core 的独立采样，并检查 double 插值仍保留 2²⁴ 以上的单位变化。
   该结论不扩张到 spring、关键帧或其他仍使用 double 插值的规格。
 
+- **共享波纹接入：本轮依据用户扩大授权重新决定。** 固定两端 `material3-ripple/RippleAnimation.kt`
+  的三个 Animatable、半径和中心均为 Float；本地 Double 动画及 DIP 几何使实际中间读数不同。
+  复用上述 Float tween，内部在实际 density 的物理像素中保留 `ui-util.lerp` 加权运算与 Float 距离，
+  绘制时才换回 DIP。公开 `RippleAnimation(origin, bounds, scope, bounded, radius)` 签名与 DIP 单位不变；
+  组件 controller 通过内部入口提供实际 density。全库强制缩窄 Double 求值器会影响无关几何，未采用。
+  六个真实 Surface 双端场景的结构化读数由不同变为精确相等，119 项波纹/交互/生命周期/开关回归通过；
+  Catalog 提供边缘按压和短按示例。重叠波纹的 Core 被动截图不稳定仍保留，非 Windows 与运行中 DPI 切换未经验证。
+  不扩大 §13 的首绘锁定和 Switch 跟随中心适配；无需源码迁移，精确数值快照需要按固定上游重核。
+
+- **Float spring 补齐：本轮依据用户扩大授权重新决定。** 上述历史许可未证明 spring 的参数和
+  时间边界等价。固定两端 `FloatAnimationSpec.kt` / `SpringSimulation.kt` 先以 Float 相减，
+  参数也是 Float，采样时间截为整毫秒，解析求解保留 Double 后输出 Float。本地此前只有最终
+  converter 缩窄，Chip 161/176ms 圆角存在 1 ULP 差异。
+  仅 `SpringSpec<float>` + 内置 `FloatConverter` 进入等价路径，复用现有求解器和时长估计；
+  其他规格/转换器保持原 Double 契约。替代的组件圆角取整会掩盖求解差异，全引擎缩窄会丢失
+  Avalonia 几何精度，均不采用。用法为 `new SpringSpec<float>(.9, 700.25, .01f)`，无源码迁移；
+  精确样本和亚毫秒时间行为变化需更新调用方快照。
+  `spring-float-current` 六例 90 个采样全部 equal 且稳定，含值、速度、时长、完成状态和实际图像；
+  `chip-spring-current` 的实际禁用/反向形变圆角与高度精确一致、图像在原容差内，不能推论其他
+  未运行组件全部一致。固定数值回归同时确保 Double 保留亚毫秒求值和 2²⁴ 以上单位精度。
+
 ---
 
 ## 20. 阴影坐标接入与固定原生曲线分支
@@ -314,3 +335,13 @@
   不增加帧。投影失败仅释放自身贡献并上报，不能取消同批其他绑定或 effect。
   后续 §19 的固定求根/Float 插值和 FAB 自身换源提交分别消除了已观测的高度余差及换源当帧差异；
   大高度阴影另由 §20 的原生分支与坐标修正解决，不扩大历史接受范围。换源连接的组件职责及调用方时序迁移见 FAB INTERNALS。
+
+- **Button / Card / Chip 接入：本轮依据用户扩大授权重新决定。** 固定 AndroidX/Core 的三个组件
+  都在组合读取高度后启动目标 effect。旧 Card/Chip snap 临时撤销绑定并写普通属性，导致底层绑定
+  被覆盖；旧 Button 禁用首帧提前呈现新高度。复用本节两个入口并保留 Float Dp 运算，移除组件内
+  手工 NextFrame/解绑/重连补偿。Button 取消并等待旧 effect，Card 保留目标高度反推，Chip 保留
+  成功完成后更新 lastInteraction 的区别，不合成通用高度控制器。
+  用法仍为 `chip.Elevation = new(2, 3, 4, 5, 9, 1)` 或 `MaterialButton.SetElevation(button, values)`；
+  公开 double 配置不变，显示在帧批之间与固定重组顺序一致，无外部源码迁移。
+  九个真实组件双端配置/禁用/合并场景高度精确一致，实际底层绑定、模板和卸载回归验证所有权；
+  Button 的独立墨色图像差异及原生 enabled 非帧即时读数继续报告，不由此扩大通过范围。

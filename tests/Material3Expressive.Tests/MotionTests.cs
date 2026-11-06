@@ -215,6 +215,9 @@ public class MaterialMotionTests
         button.IsEnabled = false;
         Dispatcher.UIThread.RunJobs();
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        // Composition consumes the old animation value before the disabled effect snaps.
+        Assert.True(Surface(button).ShadowElevation > 0);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(0, Surface(button).ShadowElevation);
         // Fixed CommonRipple receives PressInteraction.Cancel on disabling: it finishes
         // the existing entry/fade-out animation rather than removing the wave immediately.
@@ -226,6 +229,8 @@ public class MaterialMotionTests
         Assert.Equal(0, controller.RippleCount);
         button.IsEnabled = true;
         Dispatcher.UIThread.RunJobs();
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(0, Surface(button).ShadowElevation);
         clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
         Assert.Equal(1, Surface(button).ShadowElevation);
         window.Close();

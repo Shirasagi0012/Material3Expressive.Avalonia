@@ -105,8 +105,9 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 原生 Press 坐标为 owner DIP，呈现时映射到内部 Surface。
 
 新高度目标先让旧动画采样当前帧，再取消并等待旧 effect 结束；lastInteraction 仅在动画或 snap 成功完成后更新。
-立即 snap 分支保留 Surface 当帧显示高度，下一组合帧重连 BindAnimatedValue。模板替换和卸载释放绑定，
-延迟提交检查 Surface 和动画身份。Source API 的授权见引入提交 e89f5fc8。
+高度使用 Float Animatable/Tween；`BindFrameCommittedValue` 捕获当帧显示值后，
+`ScheduleFrameCommit` 再执行 effect。立即 snap 的结果在下一批呈现，全程保持动画优先级贡献。
+模板替换和卸载释放绑定及提交句柄，恢复底层属性源。Source API 的授权见引入提交 e89f5fc8。
 
 ## 3. 已确认决定与已知差异
 
@@ -133,20 +134,38 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 
 尚未实现任意路径/切角 Shape 和通用 Arrangement。文字栅格和真实辅助技术未经验证。
 
-未解决且未接受的 `morph.source-disable` 阴影差异涉及 Filter、ElevatedFilter 和 Input。
+历史未解决且未接受的 `morph.source-disable` 阴影差异涉及 Filter、ElevatedFilter 和 Input。
 复现使用 `new ChipElevation(2, 3, 4, 5, 9, 1)`，外部 Press 后 65ms 禁用，在 160ms 捕获。
 2026-11-05 本轮依据用户扩大授权继续核验：`chip-shadow-outline` 当前捕获确认 160ms 的尺寸、
 1 DIP 高度和实际圆角 `7.6246843338012695` DIP 都相等，仍有 raster 差异。新增 Surface 静态透明容器
 用例可独立复现，因此不能归因于 Chip 禁用/形变时序，也不属于已接受的高度精度差异。
 固定 Skiko 的独立 ambient-only 原生绘制复现内部渐变；详见 [Surface 记录](../Surface/INTERNALS.md)。
 物理像素路径实验没有改善；替换 quadratic 分支仅改善部分样本且导致回归，均已撤回。
-共享 tessellator 的准确分歧点尚未定位，不要求再次取得技术授权，也未宣布该差异已获接受。
+该历史诊断随后由共享决定 §20 的固定非 Ganesh 分支与物理像素坐标证据替代；不能继续把旧报告当作当前失败。
 新增圆角观察器在全部 10 个 fixed/morph source-disable 配置运行成功，零执行错误且全部稳定；
 运行目录为 `shadow-observation-<kind>.<fixed|morph>`。这些用例仍报告真实时序、Float/double 和
 raster 差异；观察器读取现有缓存 outline，不通过重新计算期望轮廓来代替实际呈现状态。
 部分重叠 Press 的 Core 重复捕获与额外截图存在最大单通道 1 的不稳定像素，现有稳定性门禁仍保留失败。
 
 ## 4. 验证入口
+
+- Float spring 修正后的全族 `chip-spring-all` 共 247 例：165 equal、71 withinTolerance、11 different，
+  执行错误为零；7 例参考端重复/额外截图不稳定，不能把状态计数等同于全部通过。
+  相比高度修正后的 `chip-elevation-current`，三个形变 source-disable 的圆角余差已消除。
+  剩余为五个平面 Filter hover 默认适配、一个 Enter 激活时序及五个自定义颜色图像场景；
+  自定义颜色夹具后续修正及独立证据见 VisualParity DECISIONS，不改容差或源事件时间。
+  原 10 个自定义颜色组合在 `chip-colors-*` 修正选择器范围后全部 equal、稳定且无错误；
+  其五个旧图像失败已消除。其余六个 different 对应已记录的平面 Filter hover 与 Enter 时序适配，
+  Core 部分重叠 Press 的重复性失败仍独立存在，不能据此宣称整族通过。
+
+- 2026-11-06 本轮依据用户扩大授权复用决定 §19/§26，修复高度 Float 运算和 snap 时丢失底层绑定。
+  `elevation-commit-three` 三个 Chip 配置/禁用/合并场景读数精确相等、图像容差内、重复稳定。
+  `chip-elevation-frame` 的 elevated-filter.morph.source-disable 所有高度读数精确相等，图像全部
+  相等或容差内且稳定；当时 161/176ms 圆角仍有约 4.77×10⁻⁷ DIP 的独立差异。
+  该余差随后由共享 Float spring 边界修复消除，`chip-spring-current` 高度和圆角均精确相等、
+  图像在原容差内且稳定，未改门禁或补帧；范围及 Double 保留规则见共享决定 §19。
+  该结果仅覆盖实际执行组合，不推论全部 Chip 或 GPU。无公开 API 迁移；贡献与生命周期测试验证
+  禁用和模板替换后恢复最新底层绑定。
 
 - 2026-11-06 共享阴影修正后的 `shadow-current-chip.dynamic.elevated-filter.morph.source-press`：
   所有已请求图像精确相等或在原容差内、执行错误为零；仍有 5 个 double/Float 高度读数不同，

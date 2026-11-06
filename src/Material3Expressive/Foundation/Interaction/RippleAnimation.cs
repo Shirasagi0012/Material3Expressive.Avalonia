@@ -33,11 +33,11 @@ public sealed class RippleAnimation : IDisposable
     private static readonly TimeSpan FadeOut = TimeSpan.FromMilliseconds(150);
 
     /// <summary>A bounded ripple grows 10dp past the container's corner.</summary>
-    private const double BoundedExtraRadius = 10;
+    private const float BoundedExtraRadius = 10;
 
-    private readonly Animatable<double> _alpha;
-    private readonly Animatable<double> _radiusFraction;
-    private readonly Animatable<double> _centerFraction;
+    private readonly Animatable<float> _alpha;
+    private readonly Animatable<float> _radiusFraction;
+    private readonly Animatable<float> _centerFraction;
     private readonly TaskCompletionSource _finishSignal = new();
     private readonly AnimationChildScope _motion;
     internal AnimationChildScope Motion => _motion;
@@ -45,8 +45,9 @@ public sealed class RippleAnimation : IDisposable
 
     private Point _origin;
     private Point _center;
-    private double _startRadius;
-    private readonly double _endRadius;
+    private float _startRadius;
+    private readonly float _endRadius;
+    private readonly float _density;
     private readonly bool _bounded;
     private readonly Size _initialBounds;
     private bool _drawInitialized;
@@ -59,21 +60,27 @@ public sealed class RippleAnimation : IDisposable
     /// <summary>Creates a ripple in its own child scope; disposing it leaves the parent active.</summary>
     public RippleAnimation(Point origin, Size bounds, AnimationScope parentScope,
         bool bounded = true, double? radius = null)
+        : this(origin, bounds, parentScope, bounded, radius, 1f) { }
+
+    internal RippleAnimation(Point origin, Size bounds, AnimationScope parentScope,
+        bool bounded, double? radius, float density)
     {
         ArgumentNullException.ThrowIfNull(parentScope);
         _motion = parentScope.CreateChild("Ripple");
         _bounded = bounded;
+        _density = density;
         _initialBounds = bounds;
-        _center = new Point(bounds.Width / 2, bounds.Height / 2);
+        var pixels = PixelSize(bounds);
+        _center = new Point((float)pixels.Width / 2f, (float)pixels.Height / 2f);
         // CommonRipple deliberately discards the press position for an unbounded ripple. It
         // starts in the centre and therefore has no centre drift at all.
-        _origin = bounded ? origin : _center;
-        _startRadius = StartRadius(bounds);
-        _endRadius = radius ?? EndRadius(bounds, bounded);
+        _origin = bounded ? new Point((float)(origin.X * density), (float)(origin.Y * density)) : _center;
+        _startRadius = StartRadius(pixels);
+        _endRadius = radius is { } explicitRadius ? (float)explicitRadius * density : EndRadiusPixels(pixels, bounded, density);
 
-        _alpha = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
-        _radiusFraction = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
-        _centerFraction = new Animatable<double>(new DoubleConverter(), 0d, VisibilityThresholds.Double);
+        _alpha = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
+        _radiusFraction = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
+        _centerFraction = new Animatable<float>(new FloatConverter(), 0f, VisibilityThresholds.Float);
         _motion.SubscribeValue(_alpha, _ => _onFrame?.Invoke());
         _motion.SubscribeValue(_radiusFraction, _ => _onFrame?.Invoke());
         _motion.SubscribeValue(_centerFraction, _ => _onFrame?.Invoke());
@@ -91,13 +98,18 @@ public sealed class RippleAnimation : IDisposable
     public bool IsBounded => _bounded;
 
     /// <summary>The fully expanded radius, including an explicit per-call-site override.</summary>
-    public double TargetRadius => _endRadius;
+    public double TargetRadius => _endRadius / _density;
 
-    public double Radius => MathUtils.Lerp(_startRadius, _endRadius, _radiusFraction.Value);
+    public double Radius => Lerp(_startRadius, _endRadius, _radiusFraction.Value) / _density;
 
     public Point Center => new(
-        MathUtils.Lerp(_origin.X, _center.X, _centerFraction.Value),
-        MathUtils.Lerp(_origin.Y, _center.Y, _centerFraction.Value));
+        Lerp((float)_origin.X, (float)_center.X, _centerFraction.Value) / _density,
+        Lerp((float)_origin.Y, (float)_center.Y, _centerFraction.Value) / _density);
+
+    // ui-util lerp(Float), including its rounding boundaries. Geometry is evaluated in
+    // physical pixels like DrawScope; only the Avalonia drawing boundary converts to DIP.
+    private static float Lerp(float start, float stop, float fraction) => (1f - fraction) * start + fraction * stop;
+    private Size PixelSize(Size size) => new((float)(size.Width * _density), (float)(size.Height * _density));
 
     /// <summary>
     /// Requests completion. The fade-out starts only after all three fade-in animations finish.
@@ -125,17 +137,17 @@ public sealed class RippleAnimation : IDisposable
         try
         {
             await Task.WhenAll(
-                _alpha.AnimateToAsync(_motion, 1, new TweenSpec<double>(FadeIn, easing: ComposeEasings.Linear),
+                _alpha.AnimateToAsync(_motion, 1, new TweenSpec<float>(FadeIn, easing: ComposeEasings.Linear),
                     cancellationToken: token),
-                _radiusFraction.AnimateToAsync(_motion, 1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
+                _radiusFraction.AnimateToAsync(_motion, 1, new TweenSpec<float>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
                     cancellationToken: token),
-                _centerFraction.AnimateToAsync(_motion, 1, new TweenSpec<double>(RadiusGrowth, easing: ComposeEasings.Linear),
+                _centerFraction.AnimateToAsync(_motion, 1, new TweenSpec<float>(RadiusGrowth, easing: ComposeEasings.Linear),
                     cancellationToken: token));
 
             // All three curves must finish, including the 225ms expansion on a quick tap.
             _finishedFadingIn = true;
             await _finishSignal.Task.WaitAsync(token);
-            await _alpha.AnimateToAsync(_motion, 0, new TweenSpec<double>(FadeOut, easing: ComposeEasings.Linear),
+            await _alpha.AnimateToAsync(_motion, 0, new TweenSpec<float>(FadeOut, easing: ComposeEasings.Linear),
                 cancellationToken: token);
             IsComplete = true;
         }
@@ -168,7 +180,7 @@ public sealed class RippleAnimation : IDisposable
         // CommonRipple first creates color.copy(alpha = pressedAlpha), which packs sRGB
         // alpha to 8 bits, then RippleAnimation.draw copies color.alpha * animatedAlpha.
         // Combining those operations before quantization changes the interior by one byte.
-        var alpha = Value * MaterialInteractionRendering.ComposeOpacity(opacity);
+        var alpha = (float)Value * (float)MaterialInteractionRendering.ComposeOpacity(opacity);
         if (alpha <= 0)
             return;
 
@@ -184,22 +196,27 @@ public sealed class RippleAnimation : IDisposable
         // The target radius was already resolved by CommonRipple when the press was added.
         if (!_drawInitialized)
         {
-            _startRadius = StartRadius(size);
-            _center = new Point(size.Width / 2, size.Height / 2);
+            var pixels = PixelSize(size);
+            _startRadius = StartRadius(pixels);
+            _center = new Point((float)pixels.Width / 2f, (float)pixels.Height / 2f);
             if (!_bounded) _origin = _center;
             _drawInitialized = true;
         }
     }
 
     /// <summary>Per the spec, the ripple starts at 30% of the container's largest dimension.</summary>
-    private static double StartRadius(Size bounds)
+    private static float StartRadius(Size bounds)
     {
-        return Math.Max(bounds.Width, bounds.Height) * 0.3;
+        return Math.Max((float)bounds.Width, (float)bounds.Height) * 0.3f;
     }
 
-    internal static double EndRadius(Size bounds, bool bounded)
+    internal static double EndRadius(Size bounds, bool bounded) => EndRadiusPixels(bounds, bounded, 1);
+
+    private static float EndRadiusPixels(Size bounds, bool bounded, float density)
     {
-        var covering = Math.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height) / 2;
-        return bounded ? covering + BoundedExtraRadius : covering;
+        var width = (float)bounds.Width;
+        var height = (float)bounds.Height;
+        var covering = MathF.Sqrt(width * width + height * height) / 2f;
+        return bounded ? covering + BoundedExtraRadius * density : covering;
     }
 }

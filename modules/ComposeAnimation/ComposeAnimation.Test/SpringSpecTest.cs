@@ -4,6 +4,35 @@ namespace ComposeAnimation.Test;
 
 public class SpringSpecTest
 {
+    // Captured from fixed Core a9e47e8, SpringCases / FloatSpringSpec; no local solver generates these.
+    [Theory]
+    [InlineData(.9, 700.25, 2, 40, 3, 16, 4.6782450675964355, 290.4378662109375, 380)]
+    [InlineData(.9, 700.25, 2, 40, 3, 64, 22.417015075683594, 337.6917419433594, 380)]
+    [InlineData(.7, 380, 1, 0, 5, 16, 1.0218394994735718, -1.7974401712417603, 375)]
+    [InlineData(.9, 700.25, 16777216, 3, -2, 16, 15609151, -127683312, 926)]
+    public void FloatSamplesPreservePinnedCoreArithmetic(double damping, double stiffness, float from, float to,
+        float velocity, double milliseconds, double expectedValue, double expectedVelocity, int duration)
+    {
+        var animation = new TargetBasedAnimation<float>(new SpringSpec<float>(damping, stiffness, .01f),
+            new FloatConverter(), from, to, velocity);
+        Assert.Equal(expectedValue, (double)animation.GetValue(TimeSpan.FromMilliseconds(milliseconds)));
+        Assert.Equal(expectedVelocity, (double)animation.GetVelocity(TimeSpan.FromMilliseconds(milliseconds)));
+        Assert.Equal(TimeSpan.FromMilliseconds(duration), animation.Duration);
+    }
+
+    [Fact]
+    public void FloatUsesWholeMillisecondsWhileDoubleKeepsSubmillisecondTimeAndPrecision()
+    {
+        var single = new TargetBasedAnimation<float>(new SpringSpec<float>(.9, 700.25, .01f), new FloatConverter(), 2, 40, 3);
+        var wide = Animate(new SpringSpec<double>(.9, 700.25, .01), 2, 40, 3);
+        var fraction = TimeSpan.FromTicks(9990);
+        Assert.Equal(single.GetValue(TimeSpan.Zero), single.GetValue(fraction));
+        Assert.Equal(single.GetVelocity(TimeSpan.Zero), single.GetVelocity(fraction));
+        Assert.NotEqual(wide.GetValue(TimeSpan.Zero), wide.GetValue(fraction));
+        var precise = Animate(new SpringSpec<double>(), 16777217, 16777218);
+        Assert.Equal(16777217d, precise.GetValue(TimeSpan.Zero));
+    }
+
     private static TargetBasedAnimation<double> Animate(
         SpringSpec<double> spec,
         double from = 0,

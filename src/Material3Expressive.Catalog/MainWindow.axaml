@@ -456,6 +456,14 @@
                 <Button Theme="{StaticResource MaterialOutlinedButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
                 <Button Theme="{StaticResource MaterialTextButtonTheme}" HorizontalAlignment="Center">Welcome to Avalonia!</Button>
 
+                <TextBlock Text="Custom content and feedback color" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <TextBlock Text="Hover, focus or press: feedback follows the current Foreground, including a custom disabled style." TextWrapping="Wrap" />
+                <WrapPanel ItemSpacing="16" LineSpacing="12">
+                    <Button Content="Morph and reverse" Background="#F0E8FF" Foreground="#503080" CornerRadius="20" m3:MaterialButton.PressedCornerRadius="4" />
+                    <Button Content="Blue ink" Theme="{StaticResource MaterialElevatedButtonTheme}" Foreground="#205080" />
+                    <Button Content="Outlined ink" Theme="{StaticResource MaterialOutlinedButtonTheme}" Foreground="#805020" />
+                </WrapPanel>
+
                 <m3:IconButton Theme="{StaticResource MaterialFilledIconButtonTheme}" Symbol="HomeAndGarden"
                                Classes="medium">
                 </m3:IconButton>

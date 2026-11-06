@@ -33,6 +33,12 @@ _ = motion.Launch(ct => alpha.AnimateToAsync(motion, 1, cancellationToken: ct), 
 
 ## 异步模型与中断
 
+使用 `new SpringSpec<float>(.9, 700.25, .01f)` 配合内置 `FloatConverter` 时，弹簧保留固定 Compose 的
+Float 参数、位移差、速度与输出边界，并把采样时间截到整毫秒。解析求解中的 Double 中间运算仍保留。
+`SpringSpec<double>`、其他转换器及直接构造的标量/向量规格继续使用 Double 和完整 TimeSpan 精度；
+不能把整个引擎强制缩窄为 Float。公共签名不变；依赖旧 float 精确数值或亚毫秒样本的应用需重新核对快照。
+双端 `animation-spring` 覆盖三种阻尼、反向初速度、大位移和静止，Material3 的实际形状消费者另行验证。
+
 所有动画方法返回 `Task`（方法名带 `Async` 后缀），例如 `Animatable<T>.AnimateToAsync` 返回 `Task<AnimationResult<T>>`，正常完成时 `AnimationResult<T>` 携带结束状态快照（`EndState`）与结束原因（`EndReason`：`Finished` 或 `BoundReached`）。
 
 **打断是常态，不是异常。**当动画被更新的动画、`Stop()` 或 `SnapToAsync` 打断时，旧 Task 以 `OperationCanceledException` 结束——`await` 动画必须捕获它：

@@ -325,6 +325,7 @@ public sealed class ButtonGroupCases
 
     private sealed class Marker(double width, double height, IBrush? brush = null) : Control
     {
+        static Marker() => AffectsRender<Marker>(Avalonia.Controls.Documents.TextElement.ForegroundProperty);
         protected override Size MeasureOverride(Size availableSize) => new Size(width, height).Constrain(availableSize);
         public override void Render(DrawingContext context) => context.FillRectangle(brush ?? Avalonia.Controls.Documents.TextElement.GetForeground(this)!, new Rect(Bounds.Size));
     }

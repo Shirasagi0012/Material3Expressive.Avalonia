@@ -55,8 +55,9 @@ Default，即使后来替换 Elevation 或默认 Token；模式切换/重挂才�
 替换源时先取消旧原生输入，再退订旧源并订阅新源；保留外部交互及运行中的高度动画，indication 独立重建。
 模式切换和卸载清空高度列表，模板重建保留。源事件只参与反馈。
 
-禁用等立即 snap 分支保留 Surface 当帧已提交高度，下一组合帧重新连接动画绑定。模板替换和卸载释放绑定，
-延迟提交检查 Surface 与动画对象身份。同类型新开始对象由共享状态层按身份重新启动动画。
+高度使用 Float Animatable/Tween，通过 `BindFrameCommittedValue` 保持动画属性贡献；
+`ScheduleFrameCommit` 在捕获当帧显示值后运行 effect，禁用 snap 在下一批呈现。
+模板替换和卸载释放绑定及待提交句柄，恢复底层属性源。同类型新开始对象由共享状态层按身份重新启动动画。
 
 ## 3. 已确认决定与已知差异
 
@@ -70,8 +71,8 @@ effect 取消和首帧时序已修复，该许可不覆盖时序偏离。共享�
 [Tween / Bezier 精度](../../../../docs/DECISIONS.md)，
 Card 的数值适配范围以组件确认记录为准。
 
-半透明 `static.custom.elevated.colors.enabled / disabled` 有可见阴影差异。
-该阴影问题保留为未解决观测，维护者此前允许暂缓处理。
+历史半透明 `static.custom.elevated.colors.enabled / disabled` 曾有可见阴影差异，维护者此前允许暂缓。
+当前 `card-elevation-current` 已验证这两个场景图像在原容差内；旧失败不再作为当前未解决依据。
 已确认共享阴影坐标适配的范围仅见
 [阴影坐标决定](../../../../docs/DECISIONS.md)，保留实际失败结果。
 
@@ -82,6 +83,19 @@ Card 的数值适配范围以组件确认记录为准。
 尚未实现任意路径/切角 Shape 和完整 ColumnScope。文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
 
 ## 4. 验证入口
+
+当前全族 `card-elevation-current` 共 97 例：68 equal、27 withinTolerance、2 different，
+全部重复稳定且无执行错误。剩余为 filled.enter 原生键盘激活时序及 filled.ambient-color 内容色，
+不属于高度或半透明阴影失败；仍保留实际门禁结果。
+后者已通过新增实际 ambient/content 读数定位为夹具的宿主输入不等价：Core 默认黑色、本地 Window
+默认 OnSurface。只统一该场景的环境输入后，`card-ambient-matched` 颜色、几何、图像全部精确相等
+且稳定；组件的 ContentColorFor 没有改动。证据与输入范围见 VisualParity DECISIONS。
+
+2026-11-06 本轮依据用户扩大授权复用共享决定 §19/§26：移除 snap 时临时写普通属性、下一帧
+重连绑定的路径。`elevation-commit-three` 的三个 Card 配置变更/禁用/帧内合并场景与
+`card-elevation-frame` 的 elevated.source-disable 均读数精确相等、图像在既有容差内且重复稳定。
+历史 double 精度许可不再作为这些当前场景的差异依据。`ComponentMotionContributionTests` 与
+`ElevationSourceLifetimeTests` 验证底层动态绑定恢复、模板替换和待提交项清理；无公开 API 迁移。
 
 - `CardTests` 覆盖普通/可点击模式、子控件输入、命令、布局、颜色、交互源和高度顺序。
 - `ElevationSourceLifetimeTests` 与 `StateLayerTests` 覆盖独立 collector 生命周期和重叠交互中断。

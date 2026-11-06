@@ -21,7 +21,7 @@ public class ButtonInteractionSourceTests
     [InlineData("Elevated")]
     [InlineData("Outlined")]
     [InlineData("Text")]
-    public void DisabledExternalPress_UsesDisabledContentTokenForRipple(string variant)
+    public void ExternalPress_TracksCurrentContentBrushAcrossDisableAndOverride(string variant)
     {
         using var clock = new MotionTestClockScope();
         var source = new MaterialInteractionSource(); var button = new Button();
@@ -29,12 +29,31 @@ public class ButtonInteractionSourceTests
         var window = DialogTests.Show(new Grid { Children = { button } });
         button.Theme = (ControlTheme)window.FindResource($"Material{variant}ButtonTheme")!; Flush(window);
         var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+        Assert.Equal(button.Foreground, surface.StateLayerBrush);
+        button.Styles.Add(new Style { Setters = { new Setter(Button.ForegroundProperty, Avalonia.Media.Brushes.Blue) } });
+        Flush(window);
+        Assert.Same(Avalonia.Media.Brushes.Blue, surface.StateLayerBrush);
         source.Emit(new MaterialInteractionEvent.Press(new(24, 20)));
         button.IsEnabled = false; Flush(window);
         Assert.Equal(button.Foreground, surface.StateLayerBrush);
         Assert.Equal(1, MaterialInteraction.GetOrCreate(button).RippleCount);
         button.Foreground = Avalonia.Media.Brushes.Red; Flush(window);
-        Assert.NotEqual(button.Foreground, surface.StateLayerBrush);
+        Assert.Same(button.Foreground, surface.StateLayerBrush);
+        button.ClearValue(Button.ForegroundProperty); Flush(window);
+        Assert.Same(Avalonia.Media.Brushes.Blue, surface.StateLayerBrush);
+        button.Styles.Clear(); Flush(window);
+        Assert.Equal(button.Foreground, surface.StateLayerBrush);
+        button.IsEnabled = true; Flush(window);
+        Assert.Equal(button.Foreground, surface.StateLayerBrush);
+        window.Styles.Add(new Style(selector => selector.OfType<Button>().Class("custom-ink")
+            .Template().OfType<MaterialSurface>().Name("PART_Container"))
+        { Setters = { new Setter(MaterialSurface.StateLayerBrushProperty, Avalonia.Media.Brushes.Green) } });
+        button.Classes.Add("custom-ink"); Flush(window);
+        Assert.Same(Avalonia.Media.Brushes.Green, surface.StateLayerBrush);
+        button.Foreground = Avalonia.Media.Brushes.Red; Flush(window);
+        Assert.Same(Avalonia.Media.Brushes.Green, surface.StateLayerBrush);
+        button.Classes.Remove("custom-ink"); Flush(window);
+        Assert.Same(Avalonia.Media.Brushes.Red, surface.StateLayerBrush);
         window.Close();
     }
 

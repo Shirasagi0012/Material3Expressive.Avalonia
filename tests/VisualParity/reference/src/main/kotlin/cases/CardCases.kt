@@ -13,6 +13,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
@@ -141,6 +142,8 @@ class CardCases {
         var changedElevation by mutableStateOf(false)
         var clicks=0
         var childClicks=0
+        var ambientColor=Color.Unspecified
+        var contentColor=Color.Unspecified
         val probe=Probe()
         val childProbe=Probe()
         val childRequester=FocusRequester()
@@ -148,6 +151,7 @@ class CardCases {
         val requester=FocusRequester()
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme()) {
+                ambientColor=LocalContentColor.current
                 CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
                         var modifier=probe.modifier()
@@ -194,6 +198,7 @@ class CardCases {
         @Composable private fun Markers() {
             contentProbes.forEachIndexed {index,p ->
                 val color=LocalContentColor.current
+                contentColor=color
                 Canvas(p.modifier().size((config.contentWidth/(if(index==0) 1 else 2)).toFloat().dp,(config.contentHeight/(if(index==0) 1 else 2)).toFloat().dp)) {drawRect(color)}
             }
         }
@@ -208,7 +213,14 @@ class CardCases {
                 }
                 coordinator=field(coordinator,"wrapped")
             }
-            return listOf(ProbePoint("card","card",null,probe.geometry().filter {it.name=="box" || it.name=="size"}+listOf(
+            fun ink(name:String,color:Color,definition:String):Measurement {
+                val argb=color.toArgb()
+                return vector(name,"color",listOf((argb ushr 16 and 255).toDouble(),(argb ushr 8 and 255).toDouble(),
+                    (argb and 255).toDouble(),(argb ushr 24).toDouble()),"srgba8","none","properties",definition)
+            }
+            return listOf(ProbePoint("card","card",null,probe.geometry().filter {it.name=="box" || it.name=="size"}+
+                (if(config.custom=="ambient") listOf(ink("ambientColor",ambientColor,"card.ambient-content-color"),
+                    ink("contentColor",contentColor,"card.content-color")) else emptyList())+listOf(
                 number("shadowElevation",elevation/ComposeHost.RenderScale,"dip",category="motion",definition="card.shadow-elevation",source="Surface graphics layer shadowElevation / density"),
                 number("clicks",clicks.toDouble(),"count",definition="card.click-callback-count"))))+
                 (if(config.action.startsWith("nested-")) listOf(ProbePoint("child","button","card",

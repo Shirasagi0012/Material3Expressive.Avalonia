@@ -345,16 +345,18 @@ public sealed record ButtonElevation
 /// <summary>Per-button playback of Button.kt's elevation policy.</summary>
 internal sealed class ButtonElevationController : IDisposable
 {
-    private readonly Animatable<double> _elevation;
+    private readonly Animatable<float> _elevation;
     private readonly AnimationChildScope _motion;
     private (ButtonElevation Values, InteractionState Interaction, bool Enabled) _pending;
     private bool _commitPending;
+    private CancellationTokenSource? _effect;
+    private Task? _effectTask;
 
     internal ButtonElevationController(MaterialSurface surface, AnimationScope parentScope, double initial)
     {
         _motion = parentScope.CreateChild("Elevation");
-        _elevation = new Animatable<double>(new DoubleConverter(), initial, VisibilityThresholds.Double);
-        _motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        _elevation = new Animatable<float>(new FloatConverter(), (float)initial, VisibilityThresholds.Float);
+        _motion.BindFrameCommittedValue(surface, MaterialSurface.ShadowElevationProperty, _elevation, static value => (double)value);
     }
 
     internal static double Target(ButtonElevation values, InteractionState interaction, bool enabled) =>
@@ -372,45 +374,52 @@ internal sealed class ButtonElevationController : IDisposable
         if (_commitPending || _motion.Lifetime.IsCancellationRequested)
             return;
         _commitPending = true;
-        _ = _motion.Launch(async ct =>
+        _motion.ScheduleFrameCommit(() =>
         {
             // Button.kt's LaunchedEffect runs after composition. Coalesce changes in that frame.
-            await _motion.NextFrameAsync(ct);
             _commitPending = false;
             var pending = _pending;
             Apply(pending.Values, pending.Interaction, pending.Enabled);
-        }, "Elevation composition");
+        });
     }
 
     private void Apply(ButtonElevation values, InteractionState interaction, bool enabled)
     {
-        var target = Target(values, interaction, enabled);
-        if (!enabled)
-        {
-            _ = _motion.Launch(ct => _elevation.SnapToAsync(target, ct), "Elevation snap");
-            return;
-        }
+        var target = (float)Target(values, interaction, enabled);
         if (_elevation.TargetValue == target)
             return;
 
         // Button.kt infers the outgoing interaction from the previous target, in this order.
         // Equal heights therefore behave like Compose even when several states share a token.
-        var from = _elevation.TargetValue == values.Pressed ? InteractionState.Pressed
-            : _elevation.TargetValue == values.Hovered ? InteractionState.Hovered
-            : _elevation.TargetValue == values.Focused ? InteractionState.Focused
+        var from = _elevation.TargetValue == (float)values.Pressed ? InteractionState.Pressed
+            : _elevation.TargetValue == (float)values.Hovered ? InteractionState.Hovered
+            : _elevation.TargetValue == (float)values.Focused ? InteractionState.Focused
             : InteractionState.None;
-        if (from == InteractionState.None && interaction == InteractionState.None)
+        // LaunchedEffect(target) cancels and joins the previous job before restarting.
+        // Animatable's direct retargeting would instead retain its last frame and velocity.
+        _effect?.Cancel();
+        var previous = _effectTask;
+        _effectTask = _motion.Launch(async token =>
         {
-            _ = _motion.Launch(ct => _elevation.SnapToAsync(target, ct), "Elevation snap");
-            return;
-        }
-
-        // material3/internal/Elevation.kt: incoming 120ms; outgoing hover 120ms, others 150ms.
-        var incoming = interaction != InteractionState.None;
-        _ = _motion.Launch(ct => _elevation.AnimateToAsync(_motion, target,
-            new TweenSpec<double>(TimeSpan.FromMilliseconds(incoming || from == InteractionState.Hovered ? 120 : 150),
-                easing: incoming ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
-            cancellationToken: ct), "Elevation");
+            if (previous is not null) { try { await previous; } catch (OperationCanceledException) { } }
+            using var effect = CancellationTokenSource.CreateLinkedTokenSource(token);
+            _effect = effect;
+            try
+            {
+                if (!enabled || from == InteractionState.None && interaction == InteractionState.None)
+                    await _elevation.SnapToAsync(target, effect.Token);
+                else
+                {
+                    // internal/Elevation.kt: incoming 120ms; outgoing hover 120ms, others 150ms.
+                    var incoming = interaction != InteractionState.None;
+                    await _elevation.AnimateToAsync(_motion, target,
+                        new TweenSpec<float>(TimeSpan.FromMilliseconds(incoming || from == InteractionState.Hovered ? 120 : 150),
+                            easing: incoming ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
+                        cancellationToken: effect.Token);
+                }
+            }
+            finally { if (ReferenceEquals(_effect, effect)) _effect = null; }
+        }, "Elevation");
     }
 
     public void Dispose()

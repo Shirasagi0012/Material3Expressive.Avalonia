@@ -287,9 +287,9 @@ public sealed class ChipCases
             },
         });
         Add(null, "#B0336699", "#126E60", "#925210", "#643399");
-        Add(new Style(s => s.Class(":selected")).Selector, "#B0882255", "#336622", "#992255", "#225599");
-        Add(new Style(s => s.Class(":disabled")).Selector, "#50336699", "#70556677", "#70925210", "#70643399");
-        Add(new Style(s => s.Class(":disabled").Class(":selected")).Selector, "#50882255", "#70556677", "#70925210", "#70643399");
+        Add(new Style(s => s.Is<Chip>().Class(":selected")).Selector, "#B0882255", "#336622", "#992255", "#225599");
+        Add(new Style(s => s.Is<Chip>().Class(":disabled")).Selector, "#50336699", "#70556677", "#70925210", "#70643399");
+        Add(new Style(s => s.Is<Chip>().Class(":disabled").Class(":selected")).Selector, "#50882255", "#70556677", "#70925210", "#70643399");
     }
     sealed class Marker(Size size) : Control
     {

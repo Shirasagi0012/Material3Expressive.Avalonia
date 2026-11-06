@@ -166,13 +166,15 @@ Input 的 `Padding` 仍随头像/图标组合选择默认值。普通用户 Styl
 ```
 
 只改默认悬停高度时也可覆盖 `Comp.Chip.FlatFilterHoverElevation`，其余高度仍跟随主题。
+运行时可以替换整组高度配置；更新按显示帧合并，禁用使用 Disabled，恢复启用后跟随仍活动的交互。
+Catalog **Drag handle demo** 提供配置切换、启用开关及与 Card 共享的拖动反馈。
 透明背景下恢复 1 DIP 阴影可能重新出现已观察到的 GPU 内部灰环，详见维护说明。
 
 ## 使用限制与注意事项
 
 Selectable Chip 默认最大宽度 1000 DIP，显式 Width / MinWidth 保留调用方约束。
 形状配置使用圆角矩形，布局支持前后槽间距。共享焦点环可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用。
-透明平面 Filter 恢复 1 DIP 悬浮阴影可能出现已知 GPU 灰环，自定义禁用高度也存在已记录的阴影差异。
+透明平面 Filter 恢复 1 DIP 悬浮阴影可能出现已知 GPU 灰环；当前双端验证范围见维护说明。
 四族、Elevated、头像和禁用组合见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

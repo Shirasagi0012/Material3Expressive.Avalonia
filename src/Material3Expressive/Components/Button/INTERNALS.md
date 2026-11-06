@@ -60,7 +60,7 @@ ButtonSizesTokenSource 与各外观 TokenSource 保存基线和 TokenRef；主�
 - owner 的尺寸/最小尺寸传给 ButtonLayout；背景、描边、静止/按压圆角传给 Surface
 - owner 的 `Foreground` 通过 `TextElement.Foreground` 显式传给 Surface，防止 Surface 自身主题遮蔽按钮内容色
 - 尺寸的 `LabelTextStyle` 作为 `MaterialText.DefaultStyle` 传入内容；聚合排版的共享规则见[对应决定](../../../../docs/DECISIONS.md#聚合-textstyle-与-token-层文字单位换算)
-- 伪类样式选择状态层墨色，顺序为 hover、focus-visible、pressed；透明度时序和 ripple 属于共享交互层
+- Surface.StateLayerBrush 绑定当前 Foreground，与固定 Ripple.kt 的 LocalContentColor 默认相同；透明度时序和 ripple 属于共享交互层
 - Surface 绘制描边而不消耗内容尺寸，具体实现与适用范围见[Surface 圆角描边决定](../../../../docs/DECISIONS.md#surface-圆角描边)
 
 默认值应沿用 Composable 的计算关系，不能直接把整张原始 Token 表搬到模板：
@@ -141,14 +141,15 @@ elevation 的列表位于 effect 外，换源保留开始对象，Release/Exit/U
 内部 ElevationInteraction 读数仅给已有 ButtonElevationController 选目标，不创建新的动画模型。
 indication 换源清空状态层与波纹，但保留形状和高度作用域。真正卸载模板则断开并清理所有本地收集器。
 
-禁用时普通按钮的 ripple 墨色取该外观的禁用内容 Token 候选，避免外部 held press 继续使用启用色；
-不覆盖应用的 Foreground。原生禁用取消自己的 starts，外部 held press 必须由发送者配对结束。
+普通按钮的 ripple 墨色取当前 Foreground，包括禁用默认、Style、绑定和显式覆盖。
+原生禁用取消自己的 starts，外部 held press 必须由发送者配对结束。
 测试入口为 `ButtonInteractionSourceTests` 与双端 `button-source`；后者保留属性即时更新首帧及浮点精度的真实差异，
 不作为这些差异已获接受的依据。
 
 `ButtonElevation` 是可共享的配置，每个按钮的 `ButtonElevationController` 才持有运行状态：
 
-- 目标在下一共享时钟帧合并提交，保留重组后 effect 的更新顺序；禁用直接 snap
+- 目标通过 `ScheduleFrameCommit` 合并提交；先由 `BindFrameCommittedValue` 捕获当前显示值，再运行 effect。禁用 snap 的值在下一提交批呈现，始终保持动画优先级贡献
+- 内部高度和 Tween 使用 Float，公开 DIP 配置仍为 double；新目标取消并等待旧 effect 清理后开始，保留固定上游 LaunchedEffect 的中断顺序
 - 离开状态按上一个目标值推断，依次比较 Pressed、Hovered、Focused，保留多个状态高度相同时的上游策略
 - 进入交互为 120ms；离开 hover 为 120ms，其余离开为 150ms；缓动与 target 选择均在控制器中
 - 配置移除、模板替换或呈现者解绑时清理旧作用域及动画绑定，恢复原 Surface 属性，不能共享播放状态
@@ -176,6 +177,13 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
 
 ### 共享决定索引
 
+本轮依据用户扩大授权重新决定普通 Button 墨色接入。原模板按伪类选择独立 Token，意图保留
+状态色定制，但自定义 Foreground 后反馈仍取默认色。固定两端 Button.kt 向 Surface 传 contentColor，
+Ripple.kt 默认读取 LocalContentColor；新黑色内容用例实际复现白色 ripple。沿用 Toggle/Split 已有的
+Foreground→Surface.StateLayerBrush 模板绑定，删除重复状态 Setter。保留旧 Token 数据定义供显式
+模板样式使用；按有效属性优先级猜测用户是否覆盖会引入隐含分支，也无法表达“内容和墨色独立”，
+不采用。现有独立 StateLayerBrush 入口已经足够，无新 API；使用者迁移示例见 README。
+
 以下决定由共享文档维护，组件不另行复制或扩大其理由、授权及范围：
 
 - [共享交互反馈与键盘激活职责](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)：包括普通 Button 的 Enter 按下激活适配
@@ -187,6 +195,21 @@ indication 换源清空状态层与波纹，但保留形状和高度作用域。
 - [本次保留阴影坐标接入差异](../../../../docs/DECISIONS.md#本次保留阴影坐标接入差异)
 
 ## 一致性边界与验证
+
+2026-11-06 本轮依据用户扩大授权，将高度接入既有共享帧提交能力（决定 §26），替代仅等待
+NextFrame 的方案；没有新增组件队列或公开 API。`elevation-commit-three` 的三个 Button 配置/禁用/
+合并场景高度读数全部精确相等且重复稳定；其暴露的自定义 Foreground 墨色差异随后由内容色接入修正。
+`elevation-commit-ink` 九个真实组件场景均图像在原容差内、读数精确一致、重复稳定。
+`button-elevation-frame` 的 elevated.disable 已消除 80/208ms 高度差异；65/193ms 非帧输入后的
+原生 enabled 即时属性/颜色与 Core 重组缓存差异仍精确报告。不能把高度修复当成整个用例通过。
+`ComponentMotionContributionTests` 验证禁用期间底层绑定保持、卸载恢复其最新值及零待处理帧。
+`button-ink-background` 的五种外观在所有实际帧采样中内容颜色精确一致、图像相等或原容差内，
+覆盖半透明颜色替换、清除覆盖、外部 held press 与禁用；全部重复稳定。129/193/257/321ms 的
+非帧修改仍报告原生属性立即更新与 Core 组合缓存的差别，所以五例整体均为 different。
+`ButtonInteractionSourceTests` 还验证旧独立墨色可通过 README 的模板 Style 迁移，并恢复内容色绑定。
+`button-source-current` 对普通、Toggle、Split 共享源的 73 例全量复核为 1 equal、17 withinTolerance、
+55 different，执行错误为零；18 例含 Core 重复/额外截图不稳定。该运行早于后续 Float spring 修正，
+保留换源、非帧属性与其他组件形状的实际失败，不用九个高度场景推论整个按钮族已经一致。
 
 可选 InsetRing 已由 Surface 的独立视觉部件接入；配置与通用维护规则见
 [Interaction](../../Foundation/Interaction/README.md)。默认仍为 Opacity，原生 FocusAdorner 保持关闭。

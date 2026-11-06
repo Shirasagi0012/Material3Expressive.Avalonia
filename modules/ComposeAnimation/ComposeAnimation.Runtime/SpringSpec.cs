@@ -40,6 +40,7 @@ public class SpringSpec<T> : IFiniteAnimationSpec<T>
             converter.To(VisibilityThreshold, threshold);
         }
 
-        return new VectorizedSpringSpec(DampingRatio, Stiffness, threshold.AsSpan(), converter.Dimension);
+        return new VectorizedSpringSpec(DampingRatio, Stiffness, threshold.AsSpan(), converter.Dimension,
+            singlePrecision: converter is FloatConverter);
     }
 }

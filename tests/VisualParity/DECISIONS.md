@@ -142,3 +142,24 @@ SnackbarHost 超时交接的夹具随后独立核验：固定 Avalonia 12.1.5 �
 参考为 (175,160,241)，原始 864 个不同像素全部落在这两条边缘。仅把标记 Button 的 ClipToBounds 显式设为 false 后，
 16 个 Host 场景所有像素及结构事实均 equal（`snackbar-host-unclipped`），重复稳定。
 生产属性绑定修复另在 `snackbar-host-bound` 验证仍 16 equal。该修复保留真实内容与原时序；它不是共享渲染器或阴影算法的改动。
+
+## 2026-11-06：ButtonGroup 自绘内容的颜色失效
+
+本轮依据用户扩大授权修复 Marker 夹具：它在 Render 中读取继承 Foreground，却没有登记 AffectsRender。
+独立 `ButtonGroupMarkerRepaintsInheritedInkWithoutLayoutOrAnimationFrames` 在没有 ButtonGroup、Button、
+波纹或后续动画帧的场景中，把父级红色改成蓝色；修复前像素保持红色，修复后变蓝，几何不变。
+只补登记绘制依赖，未改组件、内容面积、时间线或门禁。原 connected 的 96ms 波纹/背景原本相等，
+内容块颜色过期；`button-group-marker-current` 该帧现逐像素相等。81ms 非帧释放后的组合缓存差异仍保留。
+
+Card ambient-color 另确认是宿主输入不等价。`card-ambient-inputs` 直接记录外层与组件实际颜色：
+Core 外层 LocalContentColor 和 Card 内容均为 [0,0,0,255]；Avalonia Window 默认继承 OnSurface，
+外层和内容均为 [29,27,32,255]。两端各自正确保留 ambient，不能修改 ContentColorFor 来消除输入差。
+该场景显式给 Avalonia 宿主黑色前景，组件仍自行走非角色容器的 ambient 回退。`card-ambient-matched`
+的颜色、几何和全部图像精确相等且重复稳定；继续保留实际 ambient/content 读数，未改比较器或隐藏内容。
+
+Chip 自定义颜色夹具另有选择器范围错误：`:disabled` 没有限定类型，匹配了所有被禁用的模板后代，
+将同一 `#50336699` 背景写入多个 Border。独立回归确认 Chip、Surface 及其有效背景已正确取禁用色，
+但本应透明的四个后代 Border 也收到该色，修复前断言失败；因此不能调整 Surface alpha 或阴影来补偿。
+仅把三条状态选择器限定为 `Is<Chip>()`，保留用户指定的状态颜色、原内容和时序。五种实际 Chip 的
+后代隔离回归通过；原 10 个自定义颜色组合在 `chip-colors-*` 全部逐像素/结构精确相等且重复稳定。
+这些证据与 `chip-spring-all` 的旧五个颜色失败一起保留，不属于重新定义基准或组件行为变更。

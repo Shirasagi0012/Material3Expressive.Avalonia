@@ -328,7 +328,8 @@ internal sealed partial class MaterialInteractionController
             presenter.Bounds.Size,
             motion,
             IsRippleBounded,
-            RippleRadius);
+            RippleRadius,
+            (float)Avalonia.Layout.LayoutHelper.GetLayoutScale(presenter));
         _ripples.Add(ripple);
         _ = ripple.Motion.Launch(async ct =>
         {

@@ -101,13 +101,15 @@ Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard
 普通卡片会记住初次挂载的 Default elevation；后来替换 Elevation 或默认 Token 不会更新此高度，
 切换模式或重新挂载才重建，单独替换模板不重置。可点击卡片跟随最后一个活动交互更新高度，
 禁用时直接切到目标值。这里控制的是阴影高度，不是 tonal elevation。
+可点击卡片支持运行时替换整组高度配置，更新按显示帧合并；Catalog **Drag handle demo**
+提供配置切换和启用开关，并与 InputChip 共享拖动交互。
 
 ## 使用限制与注意事项
 
 形状配置使用四角 CornerRadius。可在条目或祖先设置 `MaterialInteraction.FocusFeedback="InsetRing"`。
 Catalog **Inset focus ring** 提供三种可点击卡片的键盘焦点示例；普通卡片不会显示自身焦点环。
 普通卡片记住首次挂载的默认阴影高度，模式切换或重挂后重新读取。
-半透明 ElevatedCard 的阴影仍有已知视觉差异。
+当前已验证的半透明颜色组合及其他一致性边界见维护说明。
 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)展示三种外观，Drag handle demo 展示共享拖动反馈。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

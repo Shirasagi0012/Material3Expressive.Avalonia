@@ -115,6 +115,23 @@ public class ComposeOpacityTests
 public class RippleAnimationTests
 {
     [AvaloniaFact]
+    public void GeometryAndAlpha_KeepFixedCoreFloatSamples()
+    {
+        // Fixed Core RippleAnimation, 97x53 DIP at density 4; first animation frame
+        // at 16ms, sample at 32ms (ripple.dynamic.hold). These are observed values,
+        // not a second local implementation of its easing or geometry algorithm.
+        using var clock = new MotionTestClockScope();
+        using var ripple = new RippleAnimation(new Point(7.25, 11.5), new Size(97, 53), clock.Scope, true, null, 4);
+        ripple.InitializeDrawGeometry(new Size(97, 53));
+        clock.Track(ripple.AnimateAsync()); clock.SendFrame(clock.Now);
+        clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+        Assert.Equal(0.2133333384990692, ripple.Value);
+        Assert.Equal(65.26753234863281, ripple.TargetRadius);
+        Assert.Equal(29.542261123657227, ripple.Radius);
+        Assert.Equal(new Point(10.183333396911621, 12.566666603088379), ripple.Center);
+    }
+
+    [AvaloniaFact]
     public void AQuickTap_CompletesTheWholeFadeInBeforeFadingOut()
     {
         using var clock = new MotionTestClockScope();
@@ -218,11 +235,11 @@ public class RippleAnimationTests
         var drawing = new DrawingGroup();
         using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(28, 28));
         Assert.Equal(0, ripple.Value);
-        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal((double)(28f * .3f), ripple.Radius);
         Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
         Assert.Equal(20, ripple.TargetRadius);
         using (var context = drawing.Open()) ripple.Draw(context, Brushes.Black, 0.1, new Size(24, 24));
-        Assert.Equal(8.4, ripple.Radius, 6);
+        Assert.Equal((double)(28f * .3f), ripple.Radius);
         Assert.Equal(bounded ? new Point(2, 3) : new Point(14, 14), ripple.Center);
     }
 

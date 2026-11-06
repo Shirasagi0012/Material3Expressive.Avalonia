@@ -63,7 +63,7 @@ public abstract class Chip : Button
     private ChipIconSlot? _leading;
     private ChipIconSlot? _trailing;
     private AnimationChildScope? _attachScope;
-    private Animatable<double>? _elevation;
+    private Animatable<float>? _elevation;
     private AnimatedCornerRadius? _shape;
     private (CornerRadius Shape, CornerRadius Selected, CornerRadius Pressed)? _shapeConfiguration;
     private InteractionState _lastElevationInteraction;
@@ -73,7 +73,7 @@ public abstract class Chip : Button
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
     private IDisposable? _elevationBinding;
-    private CancellationTokenSource? _elevationCommit;
+    private IDisposable? _compositionCommit;
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionSource? _source;
     private readonly List<MaterialInteractionEvent> _elevationInteractions = [];
@@ -130,8 +130,8 @@ public abstract class Chip : Button
     private void InitializeMotion()
     {
         if (_surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
-        _elevation = new Animatable<double>(new DoubleConverter(), ElevationTarget(), VisibilityThresholds.Double);
-        _elevationBinding = motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        _elevation = new Animatable<float>(new FloatConverter(), ElevationTarget(), VisibilityThresholds.Float);
+        _elevationBinding = motion.BindFrameCommittedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation, static value => (double)value);
         var surface = _surface;
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
         {
@@ -151,7 +151,7 @@ public abstract class Chip : Button
         _shapeEffect?.Cancel(); _shapeEffect = null; _shapeTask = null;
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
         _elevationBinding?.Dispose(); _elevationBinding = null;
-        _elevationCommit?.Cancel(); _elevationCommit = null;
+        _compositionCommit?.Dispose(); _compositionCommit = null;
         _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
         _surface?.SetAnimatedCorners(null);
         _elevation = null; _pending = false;
@@ -248,26 +248,24 @@ public abstract class Chip : Button
         QueueTargets();
     }
 
-    private double ElevationTarget()
+    private float ElevationTarget()
     {
         var values = Elevation;
-        return !IsEffectivelyEnabled ? values.Disabled : ElevationInteraction switch
+        return (float)(!IsEffectivelyEnabled ? values.Disabled : ElevationInteraction switch
         {
             InteractionState.Pressed => values.Pressed, InteractionState.Hovered => values.Hovered,
             InteractionState.Focused => values.Focused, InteractionState.Dragged => values.Dragged, _ => values.Default
-        };
+        });
     }
 
     private void QueueTargets()
     {
         if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested || _pending) return;
         _pending = true;
-        _ = motion.Launch(async ct =>
+        _compositionCommit = motion.ScheduleFrameCommit(() =>
         {
-            await motion.NextFrameAsync(ct);
-            // Commit replacement effects after the old animations have sampled this frame.
-            await Task.Yield();
-            ct.ThrowIfCancellationRequested();
+            // The shared commit queue captures Surface's displayed value before this effect.
+            _compositionCommit = null;
             _pending = false;
             var target = ElevationTarget();
             if (_elevation is { } elevation && elevation.TargetValue != target)
@@ -286,32 +284,10 @@ public abstract class Chip : Button
                     {
                         if (!enabled || (interaction == InteractionState.None && from == InteractionState.None))
                         {
-                            // Surface's composition has already read the current State before
-                            // this LaunchedEffect snap; publish the new value next composition.
-                            var surface = _surface!;
-                            var composedElevation = surface.ShadowElevation;
-                            _elevationBinding?.Dispose(); _elevationBinding = null;
-                            surface.ShadowElevation = composedElevation;
                             await elevation.SnapToAsync(target, effect.Token);
-                            _elevationCommit?.Cancel();
-                            _ = motion.Launch(async commitToken =>
-                            {
-                                using var commit = CancellationTokenSource.CreateLinkedTokenSource(commitToken);
-                                _elevationCommit = commit;
-                                try
-                                {
-                                    await motion.NextFrameAsync(commit.Token);
-                                    if (ReferenceEquals(_surface, surface) && ReferenceEquals(_elevation, elevation))
-                                    {
-                                        _elevationBinding?.Dispose();
-                                        _elevationBinding = motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, elevation);
-                                    }
-                                }
-                                finally { if (ReferenceEquals(_elevationCommit, commit)) _elevationCommit = null; }
-                            }, "Chip elevation composition");
                         }
                         else
-                            await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                            await elevation.AnimateToAsync(motion, target, new TweenSpec<float>(TimeSpan.FromMilliseconds(
                                 interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                                 easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(0.4, 0, 0.6, 1)),
                                 cancellationToken: effect.Token);
@@ -322,7 +298,7 @@ public abstract class Chip : Button
                 }, "Chip elevation");
             }
             RefreshShape(initial: false);
-        }, "Chip composition");
+        });
     }
 
     private void RefreshShape(bool initial)

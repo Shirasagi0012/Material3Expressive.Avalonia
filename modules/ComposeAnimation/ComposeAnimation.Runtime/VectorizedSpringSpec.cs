@@ -17,6 +17,12 @@ public sealed class VectorizedSpringSpec : IVectorizedFiniteAnimationSpec
         double stiffness,
         ReadOnlySpan<double> visibilityThreshold,
         int dimension)
+        : this(dampingRatio, stiffness, visibilityThreshold, dimension, singlePrecision: false)
+    {
+    }
+
+    internal VectorizedSpringSpec(double dampingRatio, double stiffness, ReadOnlySpan<double> visibilityThreshold,
+        int dimension, bool singlePrecision)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(dampingRatio);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(stiffness);
@@ -33,7 +39,7 @@ public sealed class VectorizedSpringSpec : IVectorizedFiniteAnimationSpec
             var threshold = visibilityThreshold.IsEmpty
                 ? Spring.DefaultDisplacementThreshold
                 : visibilityThreshold[i];
-            _animations[i] = new FloatSpringSpec(dampingRatio, stiffness, threshold);
+            _animations[i] = new FloatSpringSpec(dampingRatio, stiffness, threshold, singlePrecision);
         }
     }
 

@@ -39,11 +39,11 @@ public class Card : Button
     private MaterialSurface? _surface;
     private MaterialInteractionController? _interaction;
     private AnimationChildScope? _attachScope;
-    private Animatable<double>? _elevation;
+    private Animatable<float>? _elevation;
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationTask;
     private IDisposable? _elevationBinding;
-    private CancellationTokenSource? _elevationCommit;
+    private IDisposable? _compositionCommit;
     private double? _passiveElevation;
     private bool _pending;
     private readonly MaterialInteractionSource _localSource = new();
@@ -174,31 +174,28 @@ public class Card : Button
     private void InitializeMotion()
     {
         if (!IsClickable || _surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is not null) return;
-        _elevation = new Animatable<double>(new DoubleConverter(), Target(Elevation, ElevationInteraction, IsEffectivelyEnabled), VisibilityThresholds.Double);
-        _elevationBinding = motion.BindAnimatedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation);
+        _elevation = new Animatable<float>(new FloatConverter(), (float)Target(Elevation, ElevationInteraction, IsEffectivelyEnabled), VisibilityThresholds.Float);
+        _elevationBinding = motion.BindFrameCommittedValue(_surface, MaterialSurface.ShadowElevationProperty, _elevation, static value => (double)value);
     }
 
     private void QueueElevation()
     {
         if (!IsClickable || !this.IsAttachedToVisualTree() || _attachScope is not { } motion || _elevation is null || _pending) return;
         _pending = true;
-        _ = motion.Launch(async ct =>
+        _compositionCommit = motion.ScheduleFrameCommit(() =>
         {
-            await motion.NextFrameAsync(ct);
-            // A recomposition commits effects after existing animation waiters sample this
-            // frame. In particular, replacing CardElevation must retain that sampled value.
-            await Task.Yield();
-            ct.ThrowIfCancellationRequested();
+            // Surface's displayed State is captured before replacement effects run.
+            _compositionCommit = null;
             _pending = false;
             var values = Elevation;
             var interaction = ElevationInteraction;
-            var target = Target(values, interaction, IsEffectivelyEnabled);
+            var target = (float)Target(values, interaction, IsEffectivelyEnabled);
             if (_elevation is not { } elevation || elevation.TargetValue == target) return;
             // CardElevation infers the outgoing interaction from target height, in this exact order.
-            var from = elevation.TargetValue == values.Pressed ? InteractionState.Pressed
-                : elevation.TargetValue == values.Hovered ? InteractionState.Hovered
-                : elevation.TargetValue == values.Focused ? InteractionState.Focused
-                : elevation.TargetValue == values.Dragged ? InteractionState.Dragged : InteractionState.None;
+            var from = elevation.TargetValue == (float)values.Pressed ? InteractionState.Pressed
+                : elevation.TargetValue == (float)values.Hovered ? InteractionState.Hovered
+                : elevation.TargetValue == (float)values.Focused ? InteractionState.Focused
+                : elevation.TargetValue == (float)values.Dragged ? InteractionState.Dragged : InteractionState.None;
             // LaunchedEffect(target) cancels its previous coroutine before the replacement
             // calls animateTo. An Animatable interruption alone would retain its old frame
             // time, incorrectly advancing the replacement on its first frame.
@@ -214,46 +211,24 @@ public class Card : Button
                 {
                     if (!enabled || (from == InteractionState.None && interaction == InteractionState.None))
                     {
-                        // Surface reads this State during composition, before LaunchedEffect
-                        // snaps it. Preserve that composed value until the next composition frame.
-                        var surface = _surface!;
-                        var composedElevation = surface.ShadowElevation;
-                        _elevationBinding?.Dispose(); _elevationBinding = null;
-                        surface.ShadowElevation = composedElevation;
                         await elevation.SnapToAsync(target, effect.Token);
-                        _elevationCommit?.Cancel();
-                        _ = motion.Launch(async commitToken =>
-                        {
-                            using var commit = CancellationTokenSource.CreateLinkedTokenSource(commitToken);
-                            _elevationCommit = commit;
-                            try
-                            {
-                                await motion.NextFrameAsync(commit.Token);
-                                if (ReferenceEquals(_surface, surface) && ReferenceEquals(_elevation, elevation))
-                                {
-                                    _elevationBinding?.Dispose();
-                                    _elevationBinding = motion.BindAnimatedValue(surface, MaterialSurface.ShadowElevationProperty, elevation);
-                                }
-                            }
-                            finally { if (ReferenceEquals(_elevationCommit, commit)) _elevationCommit = null; }
-                        }, "Card elevation composition");
                     }
                     else
-                        await elevation.AnimateToAsync(motion, target, new TweenSpec<double>(TimeSpan.FromMilliseconds(
+                        await elevation.AnimateToAsync(motion, target, new TweenSpec<float>(TimeSpan.FromMilliseconds(
                             interaction != InteractionState.None || from == InteractionState.Hovered ? 120 : 150),
                             easing: interaction != InteractionState.None ? ComposeEasings.FastOutSlowIn : new CubicBezierEasing(.4, 0, .6, 1)),
                             cancellationToken: effect.Token);
                 }
                 finally { if (ReferenceEquals(_elevationEffect, effect)) _elevationEffect = null; }
             }, "Card elevation");
-        }, "Card composition");
+        });
     }
 
     private void DisposeMotion()
     {
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
         _elevationBinding?.Dispose(); _elevationBinding = null;
-        _elevationCommit?.Cancel(); _elevationCommit = null;
+        _compositionCommit?.Dispose(); _compositionCommit = null;
         _elevation = null; _pending = false;
     }
 

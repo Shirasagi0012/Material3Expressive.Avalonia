@@ -528,7 +528,7 @@ public sealed class ButtonCases
 
     // Normal Button content: a fixed-size rectangle or an asymmetric vector in a 20x20 viewport.
     // Consume the actual inherited foreground, including subsequent theme/state updates.
-    sealed class ButtonMarker : Control
+    internal sealed class ButtonMarker : Control
     {
         // Match Compose Canvas/non-AutoMirrored vector content: RTL changes slot order and
         // alignment, but does not reverse the marker's local drawing coordinate system.

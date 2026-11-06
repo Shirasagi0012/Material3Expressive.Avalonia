@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        x:Class="Material3Expressive.Catalog.DragHandleDemo" Width="760" Height="480" Title="Vertical drag handle">
+        x:Class="Material3Expressive.Catalog.DragHandleDemo" Width="760" Height="560" Title="Vertical drag handle">
   <StackPanel Margin="32" Spacing="20">
     <TextBlock Text="VerticalDragHandle" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <TextBlock Text="Drag horizontally to resize the panels. The host shares drag interactions with the handle, first card and chip. Dragging raises their elevation without changing selection." TextWrapping="Wrap" />
@@ -24,5 +24,10 @@
       <TextBlock Text="Default / custom" VerticalAlignment="Center" />
       <m3:InputChip x:Name="LinkedChip" Content="Shared drag" />
     </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="16">
+      <CheckBox x:Name="FeedbackEnabled" Content="Enable card and chip" IsChecked="True" />
+      <Button Content="Change elevations" Click="OnChangeElevations" />
+    </StackPanel>
+    <TextBlock Text="Disable while dragging to snap to the disabled elevation; enable again to restore the active interaction. Changing the configuration keeps the current transition continuous." TextWrapping="Wrap" />
   </StackPanel>
 </Window>

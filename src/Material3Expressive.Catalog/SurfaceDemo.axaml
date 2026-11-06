@@ -19,6 +19,12 @@
         </StackPanel>
       </m3:ClickableSurface>
       <TextBlock x:Name="Status" Text="No action yet" />
+      <TextBlock Text="Ripple origin and quick taps" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <TextBlock Text="Press near an edge, release quickly, or tap again while the previous wave is fading. Each wave finishes its expansion before fading out." TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="24">
+        <m3:ClickableSurface Width="97" Height="53" Background="White" Foreground="Black" Click="OnOpen" />
+        <m3:ClickableSurface Width="213" Height="49" Background="White" Foreground="Black" Click="OnOpen" />
+      </StackPanel>
       <TextBlock Text="Choose a view" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <StackPanel x:Name="Views" Orientation="Horizontal" Spacing="16">
         <m3:SelectableSurface IsSelected="True" CornerRadius="16" Padding="24" BorderThickness="1" Click="OnSelect" Content="List" />
