@@ -98,7 +98,7 @@ public class SnackbarHost : TemplatedControl
         // State changes immediately; presentation/effects commit at the next frame boundary.
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _updatePending = false;
             foreach (var item in _items) item.Presenter.ContentTemplate = SnackbarTemplate;
             UpdateCurrent();
@@ -122,7 +122,7 @@ public class SnackbarHost : TemplatedControl
                 _ => throw new ArgumentOutOfRangeException(nameof(current.Visuals.Duration))
             };
             var timeout = _timeout = scope.CreateChild("Snackbar timeout");
-            _ = timeout.Launch(async ct => { await timeout.DelayAsync(duration, ct); current.Dismiss(); }, "Display duration");
+            _ = timeout.Launch(async ct => { if (!await timeout.DelayAsync(duration, ct)) return; current.Dismiss(); }, "Display duration");
             if (!_items.Any(item => ReferenceEquals(item.Data, current)))
             {
                 var itemScope = scope.CreateChild("Snackbar item");

@@ -221,6 +221,8 @@ internal static class AppBarSettle
             }, cancellationToken: cancellationToken);
         }
 
+        if (cancellationToken.IsCancellationRequested || scope.Lifetime.IsCancellationRequested)
+            return new Vector(0, remainingVelocity);
         if (snap is { } && state.HeightOffset < 0 && state.HeightOffset > state.HeightOffsetLimit)
         {
             var animation = new AnimationState<float>(new FloatConverter(), state.HeightOffset);

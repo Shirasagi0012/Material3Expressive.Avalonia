@@ -27,10 +27,47 @@ public abstract class FrameScope : IFrameWaitProvider
     public ValueTask<TimeSpan> NextFrameAsync(CancellationToken cancellationToken = default)
         => WaitFrameAsync(cancellationToken, null);
 
+    /// <summary>
+    /// Defers a commit to the next sampling batch. Returns false on caller/scope stop;
+    /// genuine failures propagate. Await once; continuation runs inline on the frame's UI thread.
+    /// </summary>
+    public ValueTask<bool> WaitForNextFrameAsync(CancellationToken cancellationToken = default)
+    {
+        VerifyAccess();
+        var wait = new FrameCommitWait();
+        Track(() =>
+        {
+            var run = new ClockAnimation(this, cancellationToken, () => AnimationEndReason.Canceled,
+                (_, active) => active.Finish(), _ => { }, wait.Complete);
+            run.Start();
+            return run.Completion;
+        });
+        return wait.Task;
+    }
+
+    /// <summary>
+    /// Registers a clock-driven operation. Return false after its final sample. The result
+    /// reports completion or stop after cleanup; callback failures remain task failures.
+    /// </summary>
+    public Task<AnimationEndReason> RunFramesAsync(Func<TimeSpan, bool> onFrame, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(onFrame);
+        VerifyAccess();
+        return Track(() =>
+        {
+            var run = new ClockAnimation(this, cancellationToken, () => AnimationEndReason.Canceled,
+                (frame, active) => { if (onFrame(frame)) active.RequestFrame(); else active.Finish(); }, _ => { });
+            run.Start();
+            return run.Completion;
+        });
+    }
+
     // ---- What runs need; internal so FrameScope stays minimal (stage 3, Q-A) ----
 
     /// <summary>The frame wait itself (no async layer). <paramref name="onFault"/> sees failures innermost first.</summary>
     internal abstract ValueTask<TimeSpan> WaitFrameAsync(CancellationToken cancellationToken, Action<Exception>? onFault);
+
+    internal abstract FrameClock.Registration RegisterFrames(Action<TimeSpan> frame, Action<Exception> failure);
 
     /// <summary>The scale runs apply: the chain value times the host's attached value.</summary>
     internal abstract double EffectiveDurationScale { get; }

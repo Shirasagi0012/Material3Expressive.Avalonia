@@ -56,7 +56,7 @@ internal sealed class PullToRefreshArrow : Control
                     {
                         // animateFloatAsState commits its latest target in SideEffect,
                         // after recomposition and the old animation's frame sample.
-                        await scope.WaitForFrameEndAsync(ct);
+                        if (!await scope.WaitForFrameEndAsync(ct)) return;
                         _alphaUpdatePending = false;
                         var latest = DistanceFraction >= 1 ? 1f : .3f;
                         if (alpha.TargetValue != latest && EffectsAnimation is { Stiffness: > 0 } latestSpec)

@@ -91,6 +91,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 - **释放保证**：控件从视觉树断开或模板重建时，必须释放关联的子作用域，避免后台时钟泄漏。
 - **帧末目标提交**：`AnimationScope.WaitForFrameEndAsync(ct)` 在帧内调用时等待当前采样批次结束，帧间调用时等待下一批次结束；不额外推进动画帧，随作用域及调用方取消。它不等待布局或渲染，也不提供 Compose 重组运行时。下拉刷新箭头用它合并最新透明度目标，仍由调用方管理目标与中断策略。
 - **保留状态的提交模式**：`AnimatedState.Create(owner, value, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)` 对应固定上游 animateAsState 的帧末提交及先取消后重启。默认重载保留帧前提交与速度接续。导航选择轨迹和搜索顶栏颜色显式采用新模式；不是统一延迟所有动画，具体边界见 ComposeAnimation 的 animated-state 使用说明。
+- **动画推进与停止**：每窗口共享 FrameClock 通过可复用注册直接采样，Task 仅表示运行结果。替换、调用方取消、Scope 结束分别返回 `Interrupted`、`Canceled`、`ScopeEnded`，真实错误继续报告。顺序流程先检查结果再启动下一步；一次性提交用 `WaitForNextFrameAsync`/`WaitForFrameEndAsync` 的 bool，长时间信号等待用 `WaitForSignalAsync`。帧批次、速度接续和清理先于接管的顺序不变，见决定 32。
 
 ---
 

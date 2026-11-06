@@ -374,7 +374,7 @@ public class TransitionTest
         // A second run takes over and cancels the first; a child never runs on its own.
         using var cts = new CancellationTokenSource();
         var task = transition.RunAsync(window.AnimationRoot, cts.Token);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         await Assert.ThrowsAsync<InvalidOperationException>(() => child.RunAsync(window.AnimationRoot));
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(1, clock.PendingFrameCount);
@@ -383,7 +383,7 @@ public class TransitionTest
         Assert.Equal(50, value.Value, 8);
         Assert.True(transition.IsRunning);
         cts.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         Assert.False(transition.IsRunning);
         Assert.False(child.IsRunning);
         Assert.False(state.IsIdle);
@@ -411,7 +411,7 @@ public class TransitionTest
         Assert.False(task.IsCompleted);
         Assert.Equal(0, clock.PendingFrameCount);
         transition.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 

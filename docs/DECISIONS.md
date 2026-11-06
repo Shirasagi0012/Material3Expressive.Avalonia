@@ -382,3 +382,11 @@
 - **依据与授权**：2026-11-06 本轮授权必要共享修复。新 ScrollField 反向动画的真实双端采样暴露一帧延迟；两个独立 FrameClock 回归证明，最后一个 waiter 取消后、旧 dispatcher continuation 执行前注册的新 waiter 没有向 source 请求下一帧。取消 continuation 内注册新 waiter 还会被旧 wasLast 标志误取消。
 - **决定**：仅当旧 source task 已完成取消时同步启动新 pump；generation 防止旧 continuation 清除新 pump 的状态。source 尚在等待时不并发请求；原 D4 单次 dispatcher hop、批处理次序与闲置零请求理由保持不变。取消 waiter 后重新检查队列，保留 inline continuation 注册的新 waiter。
 - **影响与验证**：没有公开 API 或采样补偿；ScrollField 反向轨迹恢复精确相等。FrameClock 21 项及 ComposeAnimation 全模块 974 项测试通过。旧决定不是改成即时派发，修订仅解决完成取消与新注册之间的空窗。
+
+## 32. 共享时钟直接推进与显式停止结果
+
+- **依据与授权**：2026-11-07 维护者明确要求共享时钟推进动画、Task 只等待结果，正常中断和卸载通过状态返回。Debug 构建附加 Visual Studio 时，时间选择器普通切换会产生密集取消异常，显著增加等待；关闭异常断点并不能消除 first-chance 处理。
+- **决定**：Animatable、SuspendAnimation、Transition 和 InfiniteTransition 以可复用回调注册进入已有 FrameClock 批次。保留单源请求、单次 dispatcher hop、注册顺序、帧前/帧末提交与闲置零请求；不以每帧 Task/WhenAny 或固定 16ms Delay 驱动动画。一次性帧提交返回可内联恢复的 ValueTask<bool>；普通计时和信号等待返回 bool，竞争只发生在等待开始时。
+- **结果与异常**：动画结果增加 Interrupted（替换/Stop/拒绝）、Canceled（调用方）、ScopeEnded。Snap 和 seek 返回 bool。真实采样、转换、帧源、用户回调和清理错误保留；无关 OCE 仍是故障，采样和清理同时失败时保留两个错误。兼容入口 NextFrameAsync 及未提供 interruptedResult 的通用 MutatorMutex 业务调用仍保留原取消契约，不在内部动画热路径使用。
+- **顺序与上游边界**：停止先撤销后续采样，当前回调退出后清理，再释放互斥区、允许替换运行采样。保持起始时间、速度快照、播放倍率、弹簧/衰减算法、边界钳制和时钟批次；保留 TimePicker 的 100ms 选择等待。组件后续步骤显式检查停止，避免已卸载或被替换的旧操作继续切换、吸附或发布完成。这是 C# 异步控制流适配，不修改固定 Compose 动画参数或视觉目标。
+- **迁移**：`var result = await value.AnimateToAsync(scope, target, cancellationToken: ct); if (result.EndReason != AnimationEndReason.Finished) return;`。按场景单独处理 BoundReached。不能再用 Task.IsCanceled 判断动画替换；ScrollField 的公开滚动入口返回 bool，Tooltip 的 ShowAsync 停止返回 false。新增结果签名需要调用方重新编译。

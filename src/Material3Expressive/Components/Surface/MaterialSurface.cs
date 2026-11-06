@@ -608,7 +608,7 @@ public sealed class MaterialSurface : Control
         var generation = _shapeGeneration;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             if (generation != _shapeGeneration)
                 return;
             _shapeCommitPending = false;
@@ -642,7 +642,7 @@ public sealed class MaterialSurface : Control
                 try { await previous; }
                 catch (OperationCanceledException) when (previous.IsCanceled) { }
             }
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested) return;
             if (generation != _shapeGeneration)
                 return;
             // Button/IconButton key(shapes), and AnimatedShape remembers by animationSpec.

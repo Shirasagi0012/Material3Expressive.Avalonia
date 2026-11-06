@@ -164,7 +164,7 @@ public class DropdownMenuPopup : ItemsControl
         _recomposePending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             _recomposePending = false;
             UpdatePresentation();
         }, "Dropdown composition");

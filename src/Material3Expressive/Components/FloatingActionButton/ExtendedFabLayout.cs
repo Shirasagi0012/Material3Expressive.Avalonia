@@ -105,7 +105,7 @@ internal sealed class ExtendedFabLayout : Panel
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (_width is null || _alpha is null) return;
             var expanded = _owner!.Expanded;

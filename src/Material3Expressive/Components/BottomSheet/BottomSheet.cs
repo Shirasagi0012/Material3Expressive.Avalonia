@@ -111,7 +111,7 @@ public class BottomSheet : ContentControl
         if (change.Property == DragHandleProperty || change.Property == DragHandleTemplateProperty) UpdateHandle();
         if (change.Property == StateProperty) { CancelPointer(); AttachState(); }
         if (change.Property == GesturesEnabledProperty && _pointer is { } pointer && _effects is { } scope)
-            _ = scope.Launch(async ct => { await scope.NextFrameAsync(ct); if (_pointer == pointer && !GesturesEnabled) CancelPointer(); }, "Sheet gesture configuration");
+            _ = scope.Launch(async ct => { if (!await scope.WaitForNextFrameAsync(ct)) return; if (_pointer == pointer && !GesturesEnabled) CancelPointer(); }, "Sheet gesture configuration");
         if (change.Property == IsEffectivelyEnabledProperty) CancelPointer();
         if (change.Property == SheetMaxWidthProperty || change.Property == WindowInsetsProperty || change.Property == FlowDirectionProperty || change.Property == StandardPeekHeightProperty
             || change.Property == Foundation.Rendering.MaterialWindowInsets.ConsumedPaddingProperty) _layout?.InvalidateMeasure();

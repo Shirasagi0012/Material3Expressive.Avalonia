@@ -135,10 +135,10 @@ internal sealed class SegmentedButtonIconSlot : Decorator
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, cancellation.Token);
             if (previous is not null)
                 try { await previous; } catch (OperationCanceledException) { }
-            old?.Dispose(); linked.Token.ThrowIfCancellationRequested();
+            old?.Dispose(); if (linked.Token.IsCancellationRequested) return;
             // Compose commits updateTransition in recomposition. Realize the icon now,
             // then start sampling after that commit frame, on the same shared clock.
-            if (defer) await motion.NextFrameAsync(linked.Token);
+            if (defer && !await motion.WaitForNextFrameAsync(linked.Token)) return;
             await transition.RunAsync(motion, linked.Token);
         }, "Segmented icon transition");
     }

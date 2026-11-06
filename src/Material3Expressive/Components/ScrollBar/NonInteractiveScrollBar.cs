@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
  * Fixed AndroidX / Core baseline: docs/upstream-baseline.json.
  */
-using System.Threading.Channels;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -51,7 +50,7 @@ public sealed class NonInteractiveScrollBar : Control
     protected override bool BypassFlowDirectionPolicies => true;
     private AnimationChildScope? _scope;
     private Animatable<float>? _alpha;
-    private Channel<bool>? _scrollEvents;
+    private TaskCompletionSource _scrollChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private CancellationTokenSource? _fadeCancellation;
     private Task? _fadeJob;
     private int _lastOffset;
@@ -94,7 +93,7 @@ public sealed class NonInteractiveScrollBar : Control
     {
         _fadeCancellation?.Cancel(); _fadeCancellation?.Dispose(); _fadeCancellation = null;
         _scope?.Dispose(); _scope = null;
-        _scrollEvents?.Writer.TryComplete(); _scrollEvents = null;
+        _scrollChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
         _fadeJob = null;
     }
 
@@ -115,8 +114,7 @@ public sealed class NonInteractiveScrollBar : Control
     {
         if (!IsFadeEnabled || offset == _lastOffset || _scope is not { } scope || _alpha is not { } alpha) return;
         _lastOffset = offset;
-        var events = _scrollEvents ??= Channel.CreateBounded<bool>(1);
-        events.Writer.TryWrite(true);
+        _scrollChanged.TrySetResult();
         if (alpha.TargetValue != 0 && _fadeJob is { IsCompleted: false }) return;
         _fadeCancellation?.Cancel(); _fadeCancellation?.Dispose();
         var cancellation = _fadeCancellation = CancellationTokenSource.CreateLinkedTokenSource(scope.Lifetime);
@@ -125,19 +123,19 @@ public sealed class NonInteractiveScrollBar : Control
         _fadeJob = scope.Launch(async _ =>
         {
             var ct = cancellation.Token;
-            await alpha.SnapToAsync(1);
+            if (!await alpha.SnapToAsync(1, ct)) return;
             while (true)
             {
-                events.Reader.TryRead(out var ignored);
+                _scrollChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 if (delay <= TimeSpan.Zero) break;
                 using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var timeout = scope.DelayAsync(delay, wait.Token);
-                var next = events.Reader.ReadAsync(wait.Token).AsTask();
+                var next = scope.WaitForSignalAsync(_scrollChanged.Task, wait.Token);
                 var completed = await Task.WhenAny(timeout, next);
                 wait.Cancel();
-                ct.ThrowIfCancellationRequested();
+                if (ct.IsCancellationRequested) return;
                 if (completed == timeout) break;
-                await next;
+                if (!await next) return;
             }
             await alpha.AnimateToAsync(scope, 0, new TweenSpec<float>(duration), cancellationToken: ct);
         }, "Scrollbar idle and fade");

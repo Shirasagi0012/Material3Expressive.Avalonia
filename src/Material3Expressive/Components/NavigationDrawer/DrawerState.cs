@@ -164,6 +164,8 @@ public sealed class DrawerState : AvaloniaObject
                             IAnimationSpec<float> spec = settle ? new TweenSpec<float>(TimeSpan.FromMilliseconds(256)) : Spring(latest);
                             await SuspendAnimation.AnimateToAsync(scope, animation, target, spec, block: frame => { DragTo(frame.Value, frame.Velocity); Refresh(); }, cancellationToken: restart.Token);
                         }
+                        if (mutation.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) return;
+                        if (restart.IsCancellationRequested) { velocity = _velocity; continue; }
                         if (Confirm(value)) { DragTo(Position(value), _velocity); SetSettled(value); }
                         break;
                     }

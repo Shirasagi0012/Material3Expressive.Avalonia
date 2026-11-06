@@ -88,7 +88,7 @@ public class WideNavigationRailTests
             Assert.Equal(WideNavigationRailValue.Collapsed, rail.State.CurrentValue);
             var collapsing = rail.State.CollapseAsync();
             for (var i = 0; i < 60; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
-            Assert.True(expanding.IsCanceled);
+            Assert.True(expanding.IsCompletedSuccessfully);
             Assert.True(collapsing.IsCompletedSuccessfully);
             Assert.Equal(WideNavigationRailValue.Collapsed, rail.State.CurrentValue);
             Assert.False(rail.State.IsAnimating);
@@ -108,7 +108,7 @@ public class WideNavigationRailTests
             var expanding = rail.State.ExpandAsync(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
             var parent = (Grid)window.Content!; parent.Children.Remove(rail);
             Dispatcher.UIThread.RunJobs();
-            Assert.True(expanding.IsCanceled);
+            Assert.True(expanding.IsCompletedSuccessfully);
             Assert.Equal(WideNavigationRailValue.Expanded, rail.State.TargetValue);
             parent.Children.Add(rail); window.UpdateLayout();
             Assert.Equal(WideNavigationRailValue.Expanded, rail.State.CurrentValue);
@@ -256,7 +256,7 @@ public class WideNavigationRailTests
             Assert.Equal(WideNavigationRailValue.Expanded, state.CurrentValue);
             var collapsing = state.CollapseAsync(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
             panel.Children.Remove(second); Dispatcher.UIThread.RunJobs();
-            Assert.True(collapsing.IsCanceled);
+            Assert.True(collapsing.IsCompletedSuccessfully);
             Assert.False(state.IsAnimating);
         }
         finally { window.Close(); }

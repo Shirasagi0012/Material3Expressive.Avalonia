@@ -35,7 +35,7 @@ public sealed class TooltipState : ObservableObject, IDisposable
     public bool IsVisible => Transition.CurrentState || Transition.TargetState;
     public bool IsPersistent { get; }
 
-    public Task ShowAsync(MutatePriority priority = MutatePriority.Default, CancellationToken cancellationToken = default) =>
+    public Task<bool> ShowAsync(MutatePriority priority = MutatePriority.Default, CancellationToken cancellationToken = default) =>
         _mutatorMutex.MutateAsync(async ct =>
         {
             using var job = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -45,12 +45,19 @@ public sealed class TooltipState : ObservableObject, IDisposable
             try
             {
                 Transition.TargetState = true;
-                if (DelayScope is { } scope) await scope.DelayAsync(duration, job.Token);
-                else await Task.Delay(duration, job.Token);
-                // withTimeout cancels the show operation; it is not a successful return.
-                job.Cancel();
-                job.Token.ThrowIfCancellationRequested();
-                return true;
+                if (DelayScope is { } scope)
+                    await scope.DelayAsync(duration, job.Token);
+                else
+                {
+                    // Unmounted states use the same nonthrowing stop contract, without a frame clock.
+                    var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    using var timer = TimeProvider.System.CreateTimer(_ => done.TrySetResult(), null,
+                        duration, Timeout.InfiniteTimeSpan);
+                    using var registration = job.Token.Register(() => done.TrySetResult());
+                    await done.Task;
+                }
+                // Upstream timeout is a stop, with the same dismissal in finally.
+                return false;
             }
             finally
             {
@@ -58,7 +65,7 @@ public sealed class TooltipState : ObservableObject, IDisposable
                 // Preserve the fixed baseline: focus/long-press control their own dismissal.
                 if (priority != MutatePriority.PreventUserInput) Dismiss();
             }
-        }, priority, cancellationToken);
+        }, priority, cancellationToken, interruptedResult: () => false);
 
     public void Dismiss()
     {

@@ -90,7 +90,7 @@ public abstract class NavigationDrawer : ContentControl
             {
                 // AnchoredDraggable.update resets pointer input when its committed enabled or
                 // reverseDirection changes. Preserve the old animation's composition-frame sample.
-                await scope.NextFrameAsync(ct);
+                if (!await scope.WaitForNextFrameAsync(ct)) return;
                 if (generation == _gestureGeneration && _pointer == pointer
                     && (!Gestures || FlowDirection != _gestureDirection)) CancelPointer();
             }, "Drawer gesture configuration");
@@ -126,7 +126,7 @@ public abstract class NavigationDrawer : ContentControl
         _ = scope.Launch(async ct =>
         {
             // LaunchedEffect(isOpen) runs after the next composition frame, including snapTo.
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             if (generation == _focusGeneration && AnimatedState?.IsOpen == true && _sheet is not null)
                 _sheet.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c.Focusable && c.IsEffectivelyVisible && c.IsEffectivelyEnabled)?.Focus();
         }, "Drawer focus after composition");

@@ -411,7 +411,7 @@ public sealed class FrameClockTest
 
         var second = animatable.AnimateToAsync(window.AnimationRoot, 0, tween);
         Dispatcher.UIThread.RunJobs();
-        Assert.True(first.IsCanceled);
+        Assert.True(first.IsCompletedSuccessfully);
 
         Advance(source);
         Assert.True(animatable.Value <= mid + 0.5, $"Continued toward 100: {mid} -> {animatable.Value}");

@@ -199,7 +199,7 @@ internal sealed class CheckBoxIndicator : Control
         // Apply targets at the corresponding recomposition frame, before the first animation frame.
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (_checkColor is null || _boxColor is null || _borderColor is null) return;
             var targetChanged = ShapeAnimation is not null && _transition is not null && _transition.TargetState != IsChecked;
@@ -228,7 +228,7 @@ internal sealed class CheckBoxIndicator : Control
                 _ = motion.Launch(async token =>
                 {
                     await track.StopAsync();
-                    token.ThrowIfCancellationRequested();
+                    if (token.IsCancellationRequested) return;
                     if (animate) await track.AnimateToAsync(motion, target, colorSpec, cancellationToken: token);
                     else await track.SnapToAsync(target);
                 }, "CheckBox color");

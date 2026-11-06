@@ -66,7 +66,8 @@ public class PullToRefreshScrollTests
         behavior.OnPostScroll(200); Flush(window);
         var release = behavior.OnPreFlingAsync(300);
         Frames(clock, window, 16, 1008);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => release);
+        await release;
+        Assert.True(release.IsCompletedSuccessfully);
         Assert.Equal(1, indicator.State!.DistanceFraction);
         Assert.Equal(80, behavior.DistancePulled); // upstream finally uses threshold, not twice threshold.
         Assert.Equal(0, behavior.OnPreScroll(-40));
@@ -91,7 +92,8 @@ public class PullToRefreshScrollTests
         var release = behavior.OnPreFlingAsync(300);
         Frames(clock, window, 16, 48);
         indicator.ScrollBehavior = new(); Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => release);
+        await release;
+        Assert.True(release.IsCompletedSuccessfully);
         Assert.Throws<InvalidOperationException>(() => behavior.OnPostScroll(10));
         Assert.Null(window.MotionRoot.Diagnostics.LastError);
         Assert.Equal(0, indicator.State!.DistanceFraction);

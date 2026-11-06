@@ -96,7 +96,7 @@ internal sealed class SegmentedButtonContentLayout : Panel
                 // Commit on the shared frame before Animatable requests its first sample.
                 _ = motion.Launch(async ct =>
                 {
-                    if (defer) await motion.NextFrameAsync(ct);
+                    if (defer && !await motion.WaitForNextFrameAsync(ct)) return;
                     _commitPending = false;
                     if (OffsetAnimation is not { } spring) return;
                     await anim.AnimateToAsync(motion, _targetOffset,

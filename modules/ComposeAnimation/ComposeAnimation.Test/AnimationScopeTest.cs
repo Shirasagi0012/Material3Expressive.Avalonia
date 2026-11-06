@@ -56,7 +56,7 @@ public class AnimationScopeTest
         _ = transition.AnimateDouble(_ => 0);
         child.Update(_ => 2);
         infinite.DurationScale = 2;
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
+        await AnimationStopAssert.StoppedAsync(playing);
         await scope.Diagnostics.EndAsync();
         Assert.Equal(final, value.Value);
         value.UpdateBounds(default);
@@ -92,7 +92,7 @@ public class AnimationScopeTest
             if (e.PropertyName == nameof(value.IsRunning) && !value.IsRunning) scope.Dispose();
         };
         var snap = value.SnapToAsync(2);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
+        await AnimationStopAssert.StoppedAsync(playing);
         // The snap is scope-less (D19): ending the run's scope does not cancel it.
         await snap;
         await scope.Diagnostics.EndAsync();
@@ -327,7 +327,7 @@ public class AnimationScopeTest
         Send(clock, 0); Send(clock, 25);
         panel.Children.Remove(a);
         await first.Diagnostics.Ended; // Detach marks stale; the drain ends it.
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstTask);
+        await AnimationStopAssert.StoppedAsync(firstTask);
         Assert.Equal(1, clock.PendingFrameCount);
         Send(clock, 75);
         await secondTask;
@@ -475,7 +475,7 @@ public class AnimationScopeTest
         Send(clock, 0); Send(clock, 25);
         Assert.Equal(.25, repeat.Value, 7);
         await root.Diagnostics.EndAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => loop);
+        await AnimationStopAssert.StoppedAsync(loop);
         window.Close();
     });
 
@@ -554,8 +554,8 @@ public class AnimationScopeTest
         Assert.Equal(50, progress.Value, 7); Assert.Equal(.5, checkbox.Opacity, 7);
         Assert.Equal(180, rotation.Angle, 7);
         await scope.Diagnostics.EndAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => looping);
+        await AnimationStopAssert.StoppedAsync(running);
+        await AnimationStopAssert.StoppedAsync(looping);
         Assert.Equal(10, progress.Value); Assert.Equal(.3, checkbox.Opacity); Assert.Equal(15, rotation.Angle);
         Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
@@ -587,8 +587,8 @@ public class AnimationScopeTest
         Assert.Equal(1, clock.PendingFrameCount);
         inner.IsOpen = false; outer.IsOpen = false; Dispatcher.UIThread.RunJobs();
         await first.Diagnostics.Ended; await nested.Diagnostics.Ended;
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => a);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => b);
+        await AnimationStopAssert.StoppedAsync(a);
+        await AnimationStopAssert.StoppedAsync(b);
         outer.IsOpen = true; Dispatcher.UIThread.RunJobs();
         var reopened = AnimationScope.Get(outerContent);
         Assert.NotSame(first, reopened);

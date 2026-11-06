@@ -872,8 +872,8 @@ public class FloatingActionButtonTokenConfigurationTests
             var oldAlphaTask = Assert.IsAssignableFrom<Task>(ClassicField(layout, "_classicAlphaTask"));
             host.Children.Remove(fab);
             Frames(clock, window, 2);
-            Assert.True(oldWidthTask.IsCanceled);
-            Assert.True(oldAlphaTask.IsCanceled);
+            Assert.True(oldWidthTask.IsCompletedSuccessfully);
+            Assert.True(oldAlphaTask.IsCompletedSuccessfully);
             AssertClassicSettled(layout);
             Assert.Null(ClassicField(layout, "_attachScope"));
             Assert.Equal(0, clock.PendingFrameCount);

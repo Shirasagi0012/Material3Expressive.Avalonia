@@ -272,6 +272,10 @@ public class ModalWideNavigationRailTests
         try
         {
             Advance(clock, window, 2);
+            // Raw pointer hit testing consumes the compositor scene, not just layout. Commit
+            // the overlay before injecting input; do not depend on the wall-clock render timer.
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
             var device = (IMouseDevice)window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(window.PlatformImpl)!;
             var input = (Action<RawInputEventArgs>)window.PlatformImpl.GetType().GetProperty("Input")!.GetValue(window.PlatformImpl)!;
             var origin = new Point(rtl ? 410 : 110, 220); var sign = rtl ? -1 : 1;
@@ -302,6 +306,10 @@ public class ModalWideNavigationRailTests
         try
         {
             Advance(clock, window, 2);
+            // Raw pointer hit testing consumes the compositor scene, not just layout. Commit
+            // the overlay before injecting input; do not depend on the wall-clock render timer.
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
             var device = (IMouseDevice)window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(window.PlatformImpl)!;
             var input = (Action<RawInputEventArgs>)window.PlatformImpl.GetType().GetProperty("Input")!.GetValue(window.PlatformImpl)!;
             var root = window.PlatformImpl.GetType().GetProperty("InputRoot")!.GetValue(window.PlatformImpl);

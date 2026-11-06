@@ -385,7 +385,8 @@ public class AnimatedContentSizeBehaviorTest
             TimeSpan.FromMilliseconds(100), easing: new NonFiniteEasing()));
         f.Leaf.Height = 140; f.Layout(); f.Step(16); f.Step(50);
         Assert.Equal(140, f.Host.Bounds.Height);
-        Assert.IsType<InvalidOperationException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
+        var error = Assert.IsType<AggregateException>(((AnimationTestWindow)TopLevel.GetTopLevel(f.Host)!).AnimationRoot.Diagnostics.LastError);
+        Assert.All(error.Flatten().InnerExceptions, failure => Assert.IsType<InvalidOperationException>(failure));
         Assert.Empty(f.Completions);
         Assert.Equal(0, f.Frames.PendingFrameCount);
     });

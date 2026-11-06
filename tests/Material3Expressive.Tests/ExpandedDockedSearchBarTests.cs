@@ -87,12 +87,12 @@ public class ExpandedDockedSearchBarTests
         var collapse = state.AnimateToCollapsedAsync(); clock.Track(collapse);
         Assert.Equal(before, state.Progress);
         Frames(clock, window, 112, 960);
-        Assert.True(expand.IsCanceled); Assert.True(collapse.IsCompletedSuccessfully);
+        Assert.True(expand.IsCompletedSuccessfully); Assert.True(collapse.IsCompletedSuccessfully);
         Assert.Equal(0, state.Progress); Assert.False(popup.IsPresented);
         var next = state.AnimateToExpandedAsync(); clock.Track(next);
         Frames(clock, window, 976, 1040);
         root.Children.Clear(); Flush(window);
-        Assert.True(next.IsCanceled); Assert.False(popup.IsPresented);
+        Assert.True(next.IsCompletedSuccessfully); Assert.False(popup.IsPresented);
         Assert.Equal(0, clock.PendingFrameCount);
         root.Children.Add(bar); root.Children.Add(popup); Flush(window);
         clock.Track(state.AnimateToExpandedAsync()); Frames(clock, window, 1056, 2208);
@@ -276,7 +276,7 @@ public class ExpandedDockedSearchBarTests
         _ = state.SnapToAsync(.5f); Flush(window);
         Assert.Equal(content, state.ContentProgress); // Snap changes only the main animatable.
         cancellation.Cancel(); Flush(window);
-        Assert.True(expand.IsCanceled); Assert.Equal(0, clock.PendingFrameCount);
+        Assert.True(expand.IsCompletedSuccessfully); Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
     }
 

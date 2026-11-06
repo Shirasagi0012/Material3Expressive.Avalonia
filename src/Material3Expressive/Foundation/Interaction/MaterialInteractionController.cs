@@ -495,7 +495,7 @@ internal sealed partial class MaterialInteractionController
             if (deferStateLayer && Motion is { } sourceMotion && !sourceMotion.Lifetime.IsCancellationRequested)
                 _ = sourceMotion.Launch(async ct =>
                 {
-                    await sourceMotion.NextFrameAsync(ct);
+                    if (!await sourceMotion.WaitForNextFrameAsync(ct)) return;
                     UpdateStateLayer();
                 }, "Disabled source state layer exit");
             return;
@@ -513,7 +513,7 @@ internal sealed partial class MaterialInteractionController
         if (deferStateLayer && Motion is { } indicationMotion && !indicationMotion.Lifetime.IsCancellationRequested)
             _ = indicationMotion.Launch(async ct =>
             {
-                await indicationMotion.NextFrameAsync(ct);
+                if (!await indicationMotion.WaitForNextFrameAsync(ct)) return;
                 if (indicationGeneration == _indicationGeneration)
                     foreach (var ending in endingIndications) PublishIndication(ending);
             }, "Disabled focus indication exit");
@@ -535,7 +535,7 @@ internal sealed partial class MaterialInteractionController
             if (deferStateLayer && Motion is { } motion && !motion.Lifetime.IsCancellationRequested)
                 _ = motion.Launch(async ct =>
                 {
-                    await motion.NextFrameAsync(ct);
+                    if (!await motion.WaitForNextFrameAsync(ct)) return;
                     UpdateStateLayer();
                 }, "Disabled state layer exit");
             else UpdateStateLayer();
@@ -559,7 +559,7 @@ internal sealed partial class MaterialInteractionController
             _presenter?.DeferShapeInteraction();
             _ = motion.Launch(async ct =>
             {
-                await motion.NextFrameAsync(ct);
+                if (!await motion.WaitForNextFrameAsync(ct)) return;
                 // Drain this frame's existing animation callbacks before registering the
                 // invalidated composition, as Core's frame recomposer does after sendFrame.
                 Dispatcher.UIThread.Post(() =>

@@ -294,7 +294,7 @@ public class NavigationDrawerTests
             var opening = drawer.State.OpenAsync(); Advance(clock, window, 5);
             Assert.True(drawer.State.IsClosed); Assert.Equal(DrawerValue.Open, drawer.State.TargetValue); Assert.True(drawer.State.IsAnimationRunning);
             var closing = drawer.State.CloseAsync(); Advance(clock, window, 70);
-            Assert.True(opening.IsCanceled); Assert.True(closing.IsCompletedSuccessfully);
+            Assert.True(opening.IsCompletedSuccessfully); Assert.True(closing.IsCompletedSuccessfully);
             Assert.True(drawer.State.IsClosed); Assert.Equal(-360, drawer.State.CurrentOffset); Assert.False(drawer.State.IsAnimationRunning);
             Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
@@ -320,7 +320,7 @@ public class NavigationDrawerTests
         var drawer = (DismissibleNavigationDrawer)Create("modal", false); var window = Show(drawer);
         var opening = drawer.State.OpenAsync(); Advance(clock, window, 4);
         window.Content = null; Dispatcher.UIThread.RunJobs();
-        Assert.True(opening.IsCanceled); Assert.False(drawer.State.IsAnimationRunning);
+        Assert.True(opening.IsCompletedSuccessfully); Assert.False(drawer.State.IsAnimationRunning);
         Assert.Throws<InvalidOperationException>(() => { _ = drawer.State.OpenAsync(); });
         window.Content = drawer; window.UpdateLayout(); var closing = drawer.State.CloseAsync(); Advance(clock, window, 70);
         Assert.True(closing.IsCompletedSuccessfully); Assert.Equal(-360, drawer.State.CurrentOffset); window.Close();

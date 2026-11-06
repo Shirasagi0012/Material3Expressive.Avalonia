@@ -161,7 +161,7 @@ internal sealed partial class MaterialInteractionController
             if (_deferSourceStateLayer && Motion is { } motion)
                 _ = motion.Launch(async ct =>
                 {
-                    await motion.NextFrameAsync(ct);
+                    if (!await motion.WaitForNextFrameAsync(ct)) return;
                     if (indicationGeneration == _indicationGeneration) PublishIndication(interaction);
                 }, "Disabled source focus indication exit");
             else PublishIndication(interaction);

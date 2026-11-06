@@ -83,6 +83,7 @@ public sealed class FloatingToolbarScrollBehavior
                     if (Math.Abs(delta - consumed) * density > .5f) animation.CancelAnimation();
                 }, cancellationToken: settling.Token);
             }
+            if (settling.IsCancellationRequested) return remainingVelocity;
             if (State.Offset < 0 && State.Offset > State.OffsetLimit)
             {
                 var units = SnapAnimationSpec is null ? density : 1;

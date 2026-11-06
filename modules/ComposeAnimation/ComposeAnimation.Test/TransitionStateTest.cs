@@ -249,7 +249,7 @@ public class TransitionStateTest
 
         if (cancel) cancellation.Cancel();
         else await state.SeekToAsync(0.4);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playback);
+        Assert.False(await playback);
         Assert.False(transition.IsRunning);
         Assert.False(child.IsRunning);
         Assert.True(transition.IsSeeking);
@@ -293,7 +293,7 @@ public class TransitionStateTest
         clock.Pump(Ms(50));
         clock.Pump(Ms(150));
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        Assert.False(await first);
         await second;
         Assert.Equal(0, value.Value, 8);
         Assert.False(transition.IsSeeking);

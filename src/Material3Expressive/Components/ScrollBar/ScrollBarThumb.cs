@@ -82,7 +82,7 @@ internal sealed class ScrollBarThumb : Border
         // Like animateColorAsState, coalesce property changes before retargeting the animation.
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (_owner is null || _color is not { } color || color.TargetValue == ColorTarget) return;
             var target = ColorTarget;
@@ -90,7 +90,7 @@ internal sealed class ScrollBarThumb : Border
             _ = motion.Launch(async token =>
             {
                 await color.StopAsync();
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return;
                 await color.AnimateToAsync(motion, target, spec, cancellationToken: token);
             }, "ScrollBar color");
         }, "ScrollBar target");

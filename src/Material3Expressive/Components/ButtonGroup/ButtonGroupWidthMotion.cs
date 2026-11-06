@@ -50,9 +50,9 @@ internal sealed class ButtonGroupWidthMotion : IDisposable
         {
             try
             {
-                await _scope.NextFrameAsync(commit.Token);
+                if (!await _scope.WaitForNextFrameAsync(commit.Token)) return;
                 await Task.Yield();
-                commit.Token.ThrowIfCancellationRequested();
+                if (commit.Token.IsCancellationRequested) return;
                 ApplySource(control, source);
             }
             finally
@@ -162,7 +162,7 @@ internal sealed class ButtonGroupWidthMotion : IDisposable
                     catch (OperationCanceledException) when (previousRelease.IsCanceled) { }
                 }
 
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return;
                 if (generation == _collectionGeneration && _pressed)
                     await AnimateTo(1, token);
             }, "Expand");
@@ -179,15 +179,14 @@ internal sealed class ButtonGroupWidthMotion : IDisposable
     {
         // A release does not cancel the expansion. Upstream always awaits an initial frame,
         // then waits for progress > .75 or strictly more than 1,000 ms of frame time.
-        var start = await _scope.NextFrameAsync(token);
-        var startMilliseconds = start.Ticks / TimeSpan.TicksPerMillisecond;
-        while (_progress.Value <= 0.75f)
+        long? startMilliseconds = null;
+        var result = await _scope.RunFramesAsync(now =>
         {
-            var now = await _scope.NextFrameAsync(token);
-            if (now.Ticks / TimeSpan.TicksPerMillisecond - startMilliseconds > 1000)
-                break;
-        }
-
+            var milliseconds = now.Ticks / TimeSpan.TicksPerMillisecond;
+            startMilliseconds ??= milliseconds;
+            return _progress.Value <= .75f && milliseconds - startMilliseconds <= 1000;
+        }, token);
+        if (result != AnimationEndReason.Finished || token.IsCancellationRequested) return;
         await AnimateTo(0, token);
     }
 

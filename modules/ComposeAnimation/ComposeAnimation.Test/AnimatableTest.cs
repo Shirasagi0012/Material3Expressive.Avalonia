@@ -94,7 +94,7 @@ public class AnimatableTest
         Assert.Equal(1, frames);
         Assert.Equal(valueAtInterruption, animatable.Value);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
 
         var result = await DriveToEnd(clock, second);
         Assert.Equal(AnimationEndReason.Finished, result.EndReason);
@@ -114,7 +114,7 @@ public class AnimatableTest
             priority: MutatePriority.PreventUserInput);
         var rejected = animatable.AnimateToAsync(scope, 200, Tween(TimeSpan.FromMilliseconds(100)));
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rejected);
+        await AnimationStopAssert.StoppedAsync(rejected);
         Assert.Equal(100, animatable.TargetValue);
 
         var result = await DriveToEnd(clock, running);
@@ -203,7 +203,7 @@ public class AnimatableTest
 
         await animatable.SnapToAsync(30);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         Assert.Equal(30, animatable.Value);
         Assert.Equal(30, animatable.TargetValue);
         Assert.False(animatable.IsRunning);
@@ -239,7 +239,7 @@ public class AnimatableTest
 
         animatable.Stop();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         Assert.False(animatable.IsRunning);
         Assert.True(animatable.Value is > 0 and < 100); // stopped in its tracks
         window.Close();
@@ -258,7 +258,7 @@ public class AnimatableTest
 
         await animatable.StopAsync();
 
-        Assert.True(task.IsCanceled);
+        Assert.True(task.IsCompletedSuccessfully);
         Assert.False(animatable.IsRunning);
         window.Close();
     });
@@ -326,7 +326,7 @@ public class AnimatableTest
         Assert.Equal(2, valueNotifications);
 
         await animatable.StopAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 
@@ -353,7 +353,7 @@ public class AnimatableTest
         Assert.Equal(2, velocityNotifications);
 
         await animatable.StopAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 }

@@ -61,7 +61,7 @@ internal sealed class FloatingToolbarVisibility : AnimatedVisibility
         if (_pending || !this.IsAttachedToVisualTree()) return;
         var scope = AnimationScope.Get(this);
         _pending = true;
-        _ = scope.Launch(async ct => { await scope.NextFrameAsync(ct); if (_owner is null) return; _pending = false;
+        _ = scope.Launch(async ct => { if (!await scope.WaitForNextFrameAsync(ct)) return; if (_owner is null) return; _pending = false;
             if (ConfigureTransitions()) Visible = _owner!.EffectiveExpanded; }, "Floating toolbar visibility target");
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)

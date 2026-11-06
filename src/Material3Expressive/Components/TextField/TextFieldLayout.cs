@@ -294,7 +294,7 @@ internal sealed partial class TextFieldLayout : Panel
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct); _pending = false;
+            if (!await motion.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_owner is null) return;
             if (SpatialAnimation is not { } spatial || FastEffectsAnimation is not { } fast || SlowEffectsAnimation is not { } slow) return;
             // Node parameters arrive during recomposition; interaction collection below is
@@ -322,7 +322,7 @@ internal sealed partial class TextFieldLayout : Panel
                 {
                     // updateTransition preserves velocity; thickness uses animateAsState.
                     if (ReferenceEquals(value, _thickness)) await value.StopAsync();
-                    token.ThrowIfCancellationRequested();
+                    if (token.IsCancellationRequested) return;
                     if (snap) await value.SnapToAsync(target);
                     else await value.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: token);
                 }, "TextField scalar");
@@ -335,8 +335,8 @@ internal sealed partial class TextFieldLayout : Panel
                     if (!ReferenceEquals(value, _labelColor)) await value.StopAsync();
                     // An idle Transition starts its new child color on the next transition frame;
                     // animateColorAsState (container/indicator) has its own earlier registration.
-                    else if (idleColorChange) await motion.NextFrameAsync(token);
-                    token.ThrowIfCancellationRequested();
+                    else if (idleColorChange && !await motion.WaitForNextFrameAsync(token)) return;
+                    if (token.IsCancellationRequested) return;
                     if (snap) await value.SnapToAsync(target);
                     else await value.AnimateToAsync(motion, target, new SpringSpec<Color>(fast.DampingRatio, fast.Stiffness), cancellationToken: token);
                 }, "TextField color");

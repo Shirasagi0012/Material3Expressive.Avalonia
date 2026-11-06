@@ -14,7 +14,7 @@ public class FrameScopeTest
             .GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
             .Where(m => m is not MethodInfo { IsSpecialName: true })
             .Select(m => m.Name).Order().ToArray();
-        Assert.Equal(["DurationScale", "Lifetime", "NextFrameAsync"], members);
+        Assert.Equal(["DurationScale", "Lifetime", "NextFrameAsync", "RunFramesAsync", "WaitForNextFrameAsync"], members);
         Assert.All(typeof(FrameScope).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance),
             c => Assert.True(c.IsAssembly));
         Assert.True(typeof(FrameScope).IsAssignableFrom(typeof(AnimationScope)));

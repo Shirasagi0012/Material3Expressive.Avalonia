@@ -383,7 +383,7 @@ public class ListItem : Button
             try
             {
                 // Fixed Core Desktop ViewConfiguration uses 500 ms; ordinary delay, not animation time.
-                await scope.DelayAsync(TimeSpan.FromMilliseconds(500), effect.Token);
+                if (!await scope.DelayAsync(TimeSpan.FromMilliseconds(500), effect.Token)) return;
                 if (!RowEnabled || !Interactive) return;
                 if (gesture is not null) gesture.Triggered = true;
                 else _longTriggered = true;

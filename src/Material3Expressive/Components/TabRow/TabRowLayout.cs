@@ -284,7 +284,7 @@ internal sealed class TabRowContent : Panel
         {
             // Apply the measure-triggered coroutine after the corresponding composition
             // frame. Its first animation frame is the next one, as in the Desktop node.
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             // Both row variants publish TabPositions before measuring the offset node.
             // Intrinsic remeasurement does not add another animation-frame boundary.
             if (_requested[track] != target) return;
@@ -368,7 +368,7 @@ internal sealed class TabRowContent : Panel
                 // The mount's onLaidOut coroutine is already scheduled before the first
                 // frame. Later selection changes run after their composition frame; let
                 // the outgoing animation consume that frame before MutatorMutex cancellation.
-                if (!firstLayout) await motion.NextFrameAsync(ct);
+                if (!firstLayout && !await motion.WaitForNextFrameAsync(ct)) return;
                 if (generation != _scrollGeneration) return;
                 _resetScroll = true;
                 try
@@ -380,7 +380,7 @@ internal sealed class TabRowContent : Panel
                 finally { _resetScroll = false; }
                 if (_scroll is null) return;
                 _scrollPrevious = 0;
-                ct.ThrowIfCancellationRequested();
+                if (ct.IsCancellationRequested) return;
                 _scrollRun?.Dispose(); _scrollRun = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 await _scroll.AnimateToAsync(motion, target - MathUtils.DipToPx(scroller.Offset.X, scale),
                     new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.01f), cancellationToken: _scrollRun.Token);

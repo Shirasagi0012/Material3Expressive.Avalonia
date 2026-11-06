@@ -362,7 +362,7 @@ public class TooltipBox : ContentControl
         _ = scope.Launch(async ct =>
         {
             using var delay = CancellationTokenSource.CreateLinkedTokenSource(ct, press.Token);
-            await scope.DelayAsync(LongPressDuration, delay.Token);
+            if (!await scope.DelayAsync(LongPressDuration, delay.Token)) return;
             _longPressed = true;
             try { await state.ShowAsync(MutatePriority.PreventUserInput, ct); }
             finally
@@ -371,9 +371,8 @@ public class TooltipBox : ContentControl
                 {
                     // A removed pointerInput cancels its flow collector. PreventUserInput's
                     // state cleanup does not dismiss; keep that distinction from an ordinary up.
-                    ct.ThrowIfCancellationRequested();
-                    await release.Task.WaitAsync(ct);
-                    state.Dismiss();
+                    if (!ct.IsCancellationRequested && await scope.WaitForSignalAsync(release.Task, ct))
+                        state.Dismiss();
                 }
             }
         }, "Tooltip long press");

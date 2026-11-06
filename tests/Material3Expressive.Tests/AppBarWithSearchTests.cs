@@ -230,7 +230,7 @@ public class AppBarWithSearchTests
         Frames(clock, window, 16, 48);
         bar.Template = new FuncControlTemplate<AppBarWithSearch>((_, _) => new Border());
         Flush(window);
-        Assert.True(settling.IsCanceled);
+        Assert.True(settling.IsCompletedSuccessfully);
         Assert.Null(state.CollapsedBar);
         Assert.Equal(originalStyles, action.Styles.Count);
         bar.Template = template;
@@ -256,7 +256,7 @@ public class AppBarWithSearchTests
         Frames(clock, window, 16, 48);
         Assert.InRange(behavior.State.ScrollOffset, -64, -40);
         var next = new SearchBarScrollBehavior(); bar.ScrollBehavior = next; Flush(window);
-        Assert.True(settling.IsCanceled);
+        Assert.True(settling.IsCompletedSuccessfully);
         next.OnPreScroll(-20); clock.Track(next.OnPostFlingAsync(0)); Frames(clock, window, 64, 96);
         root.Children.Clear(); Flush(window); Assert.Equal(0, clock.PendingFrameCount);
         root.Children.Add(bar); Flush(window); Assert.Equal(-64, next.State.ScrollOffsetLimit);

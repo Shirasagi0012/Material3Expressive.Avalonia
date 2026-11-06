@@ -175,7 +175,7 @@ public class ModalBottomSheetTests
             Assert.False(previous.IsAnimationRunning); Assert.Equal(SheetValue.Expanded, sheet.State.CurrentValue);
             var hide = sheet.State.HideAsync(); Advance(clock, window, 2);
             root.Children.Remove(sheet); Dispatcher.UIThread.RunJobs();
-            Assert.True(hide.IsCanceled); Assert.False(sheet.IsPresented); Assert.Same(before, window.FocusManager.GetFocusedElement());
+            Assert.True(hide.IsCompletedSuccessfully); Assert.False(sheet.IsPresented); Assert.Same(before, window.FocusManager.GetFocusedElement());
             Advance(clock, window); Assert.Equal(0, clock.PendingFrameCount); Assert.Null(window.MotionRoot.Diagnostics.LastError);
             root.Children.Add(sheet); window.UpdateLayout(); Advance(clock, window);
             Assert.True(sheet.IsPresented);

@@ -29,7 +29,7 @@ internal sealed class AnimatedButtonBorder : IDisposable
         _pending = true;
         _ = _motion.Launch(async ct =>
         {
-            await _motion.NextFrameAsync(ct);
+            if (!await _motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (ButtonSurfaceState.GetBorderWidthAnimation(_surface) is not { } widthSpec
                 || ButtonSurfaceState.GetBorderColorAnimation(_surface) is not { } colorSpec

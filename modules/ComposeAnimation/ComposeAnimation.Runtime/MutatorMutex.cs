@@ -58,15 +58,18 @@ public sealed class MutatorMutex
     /// </param>
     /// <param name="priority">Priority relative to the current mutation.</param>
     /// <param name="cancellationToken">Token used to cancel the requested mutation.</param>
+    /// <param name="interruptedResult">Optional result for priority rejection or cancellation before
+    /// entering the body. The body must also return its stop status. Without this factory, generic
+    /// coroutine callers retain task cancellation semantics. Faults are never converted to a result.</param>
     /// <returns>
-    /// The operation's result. A rejected or cancelled mutation completes with cancellation;
-    /// other exceptions from the operation propagate to the caller.
+    /// The operation's result, or the interrupted result when supplied; real faults propagate.
     /// </returns>
     /// <typeparam name="TResult">The result returned by the mutation.</typeparam>
     public Task<TResult> MutateAsync<TResult>(
         Func<CancellationToken, Task<TResult>> mutation,
         MutatePriority priority = MutatePriority.Default,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<TResult>? interruptedResult = null)
     {
         ArgumentNullException.ThrowIfNull(mutation);
         Current current;
@@ -75,7 +78,7 @@ public sealed class MutatorMutex
             if (_current is { } old)
             {
                 if (priority < old.Priority)
-                    return Task.FromCanceled<TResult>(new CancellationToken(true));
+                    return interruptedResult is null ? Task.FromCanceled<TResult>(new CancellationToken(true)) : Task.FromResult(interruptedResult());
                 old.Cancellation.Cancel();
             }
 
@@ -83,46 +86,66 @@ public sealed class MutatorMutex
             _current = current;
         }
 
-        var task = ExecuteAsync(current, mutation);
+        var task = ExecuteAsync(current, mutation, interruptedResult);
         current.Task = task;
         return task;
     }
 
-    private async Task<TResult> ExecuteAsync<TResult>(
-        Current current,
-        Func<CancellationToken, Task<TResult>> mutation)
+    private Task<TResult> ExecuteAsync<TResult>(Current current,
+        Func<CancellationToken, Task<TResult>> mutation, Func<TResult>? interruptedResult)
     {
-        try
+        var completion = new TaskCompletionSource<TResult>();
+        _ = Execute();
+        return completion.Task;
+
+        async Task Execute()
         {
-            // Wait until the interrupted mutation has fully unwound before entering the critical
-            // section; the counterpart of mutex.withLock in InternalMutatorMutex. Waiters are
-            // resumed inline so a follow-up animateTo from the same frame can request the next
-            // clock frame before that Step returns.
-            await WaitSectionAsync(current.Cancellation.Token).ConfigureAwait(true);
+            Task<TResult>? operation = null;
+            Exception? failure = null;
+            var entered = false;
             try
             {
-                return await mutation(current.Cancellation.Token).ConfigureAwait(true);
+                entered = await WaitSectionAsync(current.Cancellation.Token).ConfigureAwait(true);
+                if (entered)
+                {
+                    operation = mutation(current.Cancellation.Token);
+                    // Inspect status without rethrowing through management layers. In particular,
+                    // a faulted OperationCanceledException remains a failure, not a stop result.
+                    await ((Task)operation).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
+                }
             }
+            catch (Exception error) { failure = error; }
             finally
             {
-                ReleaseSection();
+                try { if (entered) ReleaseSection(); }
+                catch (Exception error) { failure = failure is null ? error : new AggregateException(failure, error); }
+                lock (_gate) { if (ReferenceEquals(_current, current)) _current = null; }
             }
-        }
-        finally
-        {
-            lock (_gate)
-            {
-                if (ReferenceEquals(_current, current))
-                    _current = null;
-            }
+            var token = current.Cancellation.Token;
             current.Cancellation.Dispose();
+            if (failure is not null) completion.TrySetException(failure);
+            else if (operation?.IsFaulted == true) completion.TrySetException(operation.Exception!.InnerExceptions);
+            else if (operation?.IsCompletedSuccessfully == true) completion.TrySetResult(operation.Result);
+            else if (operation?.IsCanceled == true && interruptedResult is not null)
+            {
+                // An async body turns even an unrelated OCE into a canceled Task. Bodies using
+                // the explicit-state contract return their stop result; never hide their throws.
+                try { operation.GetAwaiter().GetResult(); }
+                catch (Exception error) { completion.TrySetException(error); }
+            }
+            else if (interruptedResult is not null)
+            {
+                try { completion.TrySetResult(interruptedResult()); }
+                catch (Exception error) { completion.TrySetException(error); }
+            }
+            else completion.TrySetCanceled(token.IsCancellationRequested ? token : new CancellationToken(true));
         }
     }
 
-    private Task WaitSectionAsync(CancellationToken token)
+    private Task<bool> WaitSectionAsync(CancellationToken token)
     {
         if (token.IsCancellationRequested)
-            return Task.FromCanceled(token);
+            return Task.FromResult(false);
 
         SectionWaiter waiter;
         lock (_sectionGate)
@@ -130,13 +153,13 @@ public sealed class MutatorMutex
             if (!_sectionHeld)
             {
                 _sectionHeld = true;
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             waiter = new SectionWaiter();
             _sectionWaiters.Enqueue(waiter);
             if (token.CanBeCanceled)
-                waiter.Registration = token.Register(() => waiter.Completion.TrySetCanceled(token));
+                waiter.Registration = token.Register(() => waiter.Completion.TrySetResult(false));
         }
 
         return waiter.Completion.Task;
@@ -161,12 +184,12 @@ public sealed class MutatorMutex
                 _sectionHeld = false;
         }
 
-        next?.Completion.TrySetResult();
+        next?.Completion.TrySetResult(true);
     }
 
     private sealed class SectionWaiter
     {
-        public readonly TaskCompletionSource Completion = new();
+        public readonly TaskCompletionSource<bool> Completion = new();
         public CancellationTokenRegistration Registration;
     }
 }

@@ -105,7 +105,7 @@ public sealed class SwipeToDismissBoxState : AvaloniaObject
         {
             // Compose applies size/configuration changes after animation writes in the next
             // recomposition frame; snapshotFlow then restarts from that frame's latest offset.
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             if (_pendingAnchors is not { } next) return;
             _pendingAnchors = null;
             ApplyAnchors(next.Width, next.Density, next.Start, next.End);
@@ -241,6 +241,8 @@ public sealed class SwipeToDismissBoxState : AvaloniaObject
                                     Refresh();
                                 }, cancellationToken: restart.Token);
                         }
+                        if (mutation.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) return;
+                        if (restart.IsCancellationRequested) { if (!fling) velocity = _velocity; continue; }
                         if (fling) CompleteAtClosest();
                         else
                         {

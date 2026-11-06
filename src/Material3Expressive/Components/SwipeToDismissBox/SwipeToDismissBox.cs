@@ -99,7 +99,7 @@ public class SwipeToDismissBox : ContentControl
             _ = scope.Launch(async ct =>
             {
                 // The modifier update cancels input in the next composition frame.
-                await scope.NextFrameAsync(ct);
+                if (!await scope.WaitForNextFrameAsync(ct)) return;
                 if (_pointer == pointer && !GesturesEnabled) CancelPointer();
             }, "Swipe gesture configuration");
         }
@@ -149,7 +149,7 @@ public class SwipeToDismissBox : ContentControl
         _ = scope.Launch(async ct =>
         {
             // LaunchedEffect(settledValue) observes the committed state on recomposition.
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             Notify();
         }, "Swipe dismissal callback");
     }

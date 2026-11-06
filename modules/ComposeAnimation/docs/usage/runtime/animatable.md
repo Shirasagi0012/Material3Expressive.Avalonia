@@ -4,7 +4,7 @@
 
 `Animatable<T>` 继承 CommunityToolkit.Mvvm 的 `ObservableObject`，`Value`、`Velocity`、`IsRunning` 等属性均实现 `INotifyPropertyChanged`，可直接被 Avalonia 绑定消费。
 
-> 前置概念——帧时钟（`IFrameSource`）、时钟线程模型、Task 异步与 `OperationCanceledException` 中断、`MotionDurationScale`——在 [运行时概览](./overview.md) 有完整说明，本篇不再展开。
+> 前置概念——帧时钟（`IFrameSource`）、时钟线程模型、Task 结果与停止状态、`MotionDurationScale`——在 [运行时概览](./overview.md) 有完整说明，本篇不再展开。
 
 ## 快速开始
 
@@ -26,7 +26,7 @@ if (result.EndReason == AnimationEndReason.Finished)
 }
 ```
 
-例子取自 `ComposeAnimation.Test/AnimatableTest.cs` 的 `AnimateTo_CompletesWithFinishedAndReachesTarget`（测试中改用 `ManualFrameSource` 逐帧步进；应用里时钟由 UI 帧自动驱动，无需手动步进）。生产环境的完整用法——创建、接续动画、捕获取消、监听 `PropertyChanged`——见控件层 `ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs`。
+例子取自 `ComposeAnimation.Test/AnimatableTest.cs` 的 `AnimateTo_CompletesWithFinishedAndReachesTarget`（测试中改用 `ManualFrameSource` 逐帧步进；应用里时钟由 UI 帧自动驱动，无需手动步进）。生产环境的完整用法——创建、接续动画、检查停止状态、监听 `PropertyChanged`——见控件层 `ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs`。
 
 ## API 要点
 
@@ -52,14 +52,14 @@ if (result.EndReason == AnimationEndReason.Finished)
 
 ### 方法
 
-全部为异步、可互相打断：被打断一方的任务以 `OperationCanceledException` 完成（调用方传入的 `CancellationToken` 触发取消时亦然）。
+动画可互相打断。旧任务正常完成并返回 `Interrupted`；作用域结束为 `ScopeEnded`，调用方令牌取消为 `Canceled`。只有真正的错误使任务失败。
 
 | 成员 | 签名 | 说明 |
 |---|---|---|
 | `AnimateToAsync` | `Task<AnimationResult<T>> AnimateToAsync(T targetValue, IAnimationSpec<T>? animationSpec = null, Action<Animatable<T>>? block = null, MutatePriority priority = MutatePriority.Default, CancellationToken cancellationToken = default)` | 从当前值动画到目标值；`animationSpec` 缺省为弹簧。`block` 每帧回调，参数即 `Animatable<T>` 本身，可读 `Value`/`Velocity` |
 | `AnimateToAsync`（带初速） | `Task<AnimationResult<T>> AnimateToAsync(T targetValue, IAnimationSpec<T>? animationSpec, T initialVelocity, Action<Animatable<T>>? block = null, MutatePriority priority = MutatePriority.Default, CancellationToken cancellationToken = default)` | 显式指定初始速度的重载（此重载中 `animationSpec` 不可省略） |
 | `AnimateDecayAsync` | `Task<AnimationResult<T>> AnimateDecayAsync(T initialVelocity, IDecayAnimationSpec<T> animationSpec, Action<Animatable<T>>? block = null, MutatePriority priority = MutatePriority.Default, CancellationToken cancellationToken = default)` | 从初速度开始衰减直至静止，常用于 fling 手势之后；规格见 [动画规格](./animation-specs.md) |
-| `SnapToAsync` | `Task SnapToAsync(T targetValue, CancellationToken cancellationToken = default)` | 取消在途动画并立即设值；设了边界时先夹取 |
+| `SnapToAsync` | `Task<bool> SnapToAsync(T targetValue, CancellationToken cancellationToken = default)` | 取消在途动画并立即设值；设了边界时先夹取 |
 | `Stop` | `void Stop()` | 原地取消在途动画（不跳到目标），立即返回；是取消信号而非变更，**可以在帧回调中调用** |
 | `StopAsync` | `Task StopAsync()` | 取消并等待动画完全回卷；**不要在帧回调里调用**（会等待自身） |
 | `UpdateBounds` | `void UpdateBounds(AnimatableBounds<T> bounds)` | 更新下/上界。在途动画从下一帧生效，触界时以 `BoundReached` 结束并夹取；空闲时立即夹取当前值。任一维度下界大于上界抛 `ArgumentException` |
@@ -70,37 +70,24 @@ if (result.EndReason == AnimationEndReason.Finished)
 |---|---|---|
 | `AnimationResult<T>` | `readonly record struct (AnimationState<T> EndState, AnimationEndReason EndReason)` | 动画正常结束时的结果；`EndState` 捕获末帧的值、速度与帧时间 |
 | `AnimationEndReason` | `enum { BoundReached, Finished }` | `BoundReached`：被边界夹停；`Finished`：自然播完 |
-| `MutatePriority` | `enum { Default, UserInput, PreventUserInput }` | 变更优先级：同级或更高优先级打断在途动画；更低优先级被直接拒绝（任务以取消完成） |
+| `MutatePriority` | `enum { Default, UserInput, PreventUserInput }` | 变更优先级：同级或更高优先级打断在途动画；更低优先级被直接拒绝（返回 Interrupted） |
 | `Animatable<T>.AnimatableBounds<T>` | `readonly record struct (Bound<T> Lower, Bound<T> Upper)` | 边界。静态 `Unbounded`；实例方法 `WithLower(T)` / `WithUpper(T)` / `WithoutLower()` / `WithoutUpper()` |
 | `Animatable<T>.AnimatableBounds<T>.Bound<T>` | `readonly record struct (T Value)` | 单侧边界；`HasValue`、`Unbounded`；存在从 `T` 的隐式转换，可直接赋裸值 |
 
 ## 常见模式/进阶用法
 
-### 打断与 OperationCanceledException
-
-新动画启动即打断旧动画；旧任务抛 `OperationCanceledException`，**必须捕获**，否则会在 `await` 处冒出未处理异常：
+### 打断与结束状态
 
 ```csharp
-var tween = new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(100));
 var first = animatable.AnimateToAsync(motion, 100, tween);
-
-// ……若干帧之后，值已走到 0~100 之间，此时下达新目标
+// 若干帧后更新目标。
 var second = animatable.AnimateToAsync(motion, 200, tween);
-
-try
-{
-    await first;
-}
-catch (OperationCanceledException)
-{
-    // first 被取消；second 从当前值、当前速度接续，且第一帧在旧动画的
-    // 时间基上同步处理，不打断运动的连续性
-}
-
-var result = await second; // EndReason == Finished，Value == 200
+var stopped = await first; // Interrupted；快照仍含停止时的值和速度。
+var result = await second;
+if (result.EndReason != AnimationEndReason.Finished) return;
 ```
 
-（取自 `AnimatableTest.cs` 的 `AnimateTo_Interrupted_RestartsFromCurrentValueOnOldTimebase`。）
+新运行保留当前值、速度和旧时间基；旧运行先完成清理，再允许新运行采样。`BoundReached` 表示触碰边界；调用方应根据用途决定它是否允许后续动作。
 
 ### 用 PropertyChanged 观察值
 
@@ -134,27 +121,21 @@ var result = await animatable.AnimateToAsync(motion,
 ### SnapToAsync / Stop / StopAsync
 
 ```csharp
-animatable.Stop();          // 原地冻结：Value 停在当前位置，在途任务以取消完成
+animatable.Stop();          // 原地冻结：Value 停在当前位置，在途返回 Interrupted
 await animatable.StopAsync(); // 同上，但等动画完全回卷后再返回
 await animatable.SnapToAsync(30); // 取消在途动画并立即跳到 30（越界则夹取）
 ```
 
-三者的共同点：被它们取消的动画任务都抛 `OperationCanceledException`。
+三者都会让被停止的动画返回 `Interrupted`；`SnapToAsync` 自身返回是否完成赋值，`StopAsync` 等待旧运行清理。
 
 ### 变更优先级 MutatePriority
 
 ```csharp
 var running = animatable.AnimateToAsync(motion, 100, tween, priority: MutatePriority.PreventUserInput);
 
-// 优先级低于在途动画的变更会被直接拒绝，任务立即以取消完成
-try
-{
-    await animatable.AnimateToAsync(motion, 200, tween);
-}
-catch (OperationCanceledException)
-{
-    // 被拒绝：running 不受影响，animatable.TargetValue 仍是 100
-}
+// 低优先级请求被拒绝，running 不受影响。
+var rejected = await animatable.AnimateToAsync(motion, 200, tween);
+// rejected.EndReason == AnimationEndReason.Interrupted
 ```
 
 同级或更高优先级则打断在途动画。典型用法：用户拖拽用 `UserInput` 启动动画，程序化动画保持 `Default`，拖拽期间程序化变更自然被拒绝。（取自 `AnimatableTest.cs` 的 `AnimateTo_WithLowerPriority_IsRejected`。）
@@ -199,7 +180,7 @@ await SuspendAnimation.AnimateToAsync(motion, state, 200, spec, sequentialAnimat
 ## 注意事项
 
 - **线程**：`Animatable<T>` 的所有公共成员必须在帧时钟所属线程调用（实现内部 `VerifyAccess`），详见 [运行时概览](./overview.md)。`PropertyChanged` 也在该线程触发，可直接喂给 Avalonia 绑定。
-- **OCE 不是错误**：打断是常态语义，所有 `await` 动画任务的地方都要准备好捕获取消；`catch (OperationCanceledException)` 后不要吞掉新动画的任务。
+- **停止是状态**：后续步骤依赖动画完成时，先检查 `EndReason`。不要捕获所有异常并转成停止；用户回调中的真实错误（包括无关的 OCE）仍须报告。
 - **`visibilityThreshold` 构造参数**只进入缺省弹簧 spec：弹簧在「各分量离目标的距离与速度都低于阈值」时判定结束。位移类值（如 `Point`）建议传 `VisibilityThresholds.Point` 之类的类型化阈值，否则会用到非常紧的 0.01 默认值、动画尾巴拖长，见 [类型转换器与缓动](./converters-and-easing.md)。
 - **`block` 每帧触发**，拿到 `Animatable<T>` 本身；在其中读取 `Value`/`Velocity` 是安全的。在 `block` 里想提前结束可用 `Stop()`（不要 `await StopAsync()`，会等自身）。
 - **等值不抑制通知**：延迟、整数取整、颜色舍入期间 `Value` 可能逐帧相等，但底层速度向量仍在变化，`PropertyChanged` 依旧每帧触发——不要假设「通知即值变」。

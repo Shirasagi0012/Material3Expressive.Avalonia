@@ -310,56 +310,70 @@ public class AnimationScope : FrameScope
     /// Suspends ordinary coroutine work without requesting animation frames or applying DurationScale.
     /// Cancellation follows both this scope and the caller. Completion resumes on the caller's context.
     /// </summary>
-    public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken = default)
+    public Task<bool> DelayAsync(TimeSpan delay, CancellationToken cancellationToken = default)
     {
-        // Argument errors throw synchronously, like Task.Delay, instead of faulting the scope.
         if (delay != Timeout.InfiniteTimeSpan) ArgumentOutOfRangeException.ThrowIfLessThan(delay, TimeSpan.Zero);
-        return Launch(async lifetime =>
+        VerifyActive();
+        return Track(Run);
+        async Task<bool> Run()
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(Lifetime, cancellationToken);
             var token = linked.Token;
-            token.ThrowIfCancellationRequested();
+            if (token.IsCancellationRequested) return false;
             if (delay > TimeSpan.Zero || delay == Timeout.InfiniteTimeSpan)
             {
-                // The timer may fire on any thread: completion is posted to the UI thread, so the
-                // continuation never runs off-thread, and a cancellation that lands while that post
-                // is queued wins (cancellable suspension), whatever context the caller awaited from.
-                // Asynchronous continuations: TrySetResult never runs the awaiting coroutine inline
-                // inside the posted callback. The trailing token check keeps cancellation winning.
-                var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 using var timer = TimeProvider.CreateTimer(
-                    static state => Dispatcher.UIThread.Post(CompleteDelay, state, FrameClock.ResumePriority),
+                    static state => Dispatcher.UIThread.Post(() => ((TaskCompletionSource<bool>)state!).TrySetResult(true), FrameClock.ResumePriority),
                     done, delay, Timeout.InfiniteTimeSpan);
-                using var registration = token.Register(static state =>
+                using var registration = token.Register(() =>
                 {
-                    var (source, ct) = ((TaskCompletionSource, CancellationToken))state!;
-                    if (Dispatcher.UIThread.CheckAccess()) source.TrySetCanceled(ct);
-                    else Dispatcher.UIThread.Post(() => source.TrySetCanceled(ct), FrameClock.ResumePriority);
-                }, (done, token));
-                await done.Task;
+                    if (Dispatcher.UIThread.CheckAccess()) done.TrySetResult(false);
+                    else Dispatcher.UIThread.Post(() => done.TrySetResult(false), FrameClock.ResumePriority);
+                });
+                if (!await done.Task) return false;
             }
-            token.ThrowIfCancellationRequested();
-        }, "Coroutine delay");
+            return !token.IsCancellationRequested;
+        }
     }
 
-    private static void CompleteDelay(object? state) => ((TaskCompletionSource)state!).TrySetResult();
-
-    /// <summary>
-    /// Waits until the current frame batch has finished sampling, or the next batch if called
-    /// between frames. Resumes through the UI dispatcher without requesting an additional frame.
-    /// This is a target-commit boundary, not a layout/render completion barrier. Cancellation
-    /// follows this scope and the caller; duration scale does not change the boundary.
-    /// </summary>
-    public Task WaitForFrameEndAsync(CancellationToken cancellationToken = default)
-        => Launch(async lifetime =>
+    /// <summary>Waits for a signal, returning false on scope/caller stop. Signal failures propagate.</summary>
+    public Task<bool> WaitForSignalAsync(Task signal, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(signal);
+        VerifyActive();
+        return Track(Run);
+        async Task<bool> Run()
         {
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancellationToken);
-            var token = linked.Token;
-            token.ThrowIfCancellationRequested();
-            if (!_frameClock.IsDispatchingFrame) await NextFrameAsync(token);
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(Lifetime, cancellationToken);
+            if (linked.IsCancellationRequested) return false;
+            var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = linked.Token.Register(() => stopped.TrySetResult());
+            if (await Task.WhenAny(signal, stopped.Task) != signal || linked.IsCancellationRequested) return false;
+            await signal;
+            return !linked.IsCancellationRequested;
+        }
+    }
+
+    /// <summary>Waits for the sampling batch to finish. Returns false if stopped before the commit.</summary>
+    public Task<bool> WaitForFrameEndAsync(CancellationToken cancellationToken = default)
+    {
+        VerifyActive();
+        return Track(Run);
+        async Task<bool> Run()
+        {
+            if (Lifetime.IsCancellationRequested || cancellationToken.IsCancellationRequested) return false;
+            if (!_frameClock.IsDispatchingFrame)
+            {
+                var frame = new ClockAnimation(this, cancellationToken, () => AnimationEndReason.Canceled,
+                    (_, run) => run.Finish(), _ => { });
+                frame.Start();
+                if (await frame.Completion != AnimationEndReason.Finished) return false;
+            }
             await Dispatcher.Yield(FrameClock.ResumePriority);
-            token.ThrowIfCancellationRequested();
-        }, "Frame-end commit");
+            return !Lifetime.IsCancellationRequested && !cancellationToken.IsCancellationRequested;
+        }
+    }
 
     // ---- Internal surface -----------------------------------------------------------------------
 
@@ -389,6 +403,8 @@ public class AnimationScope : FrameScope
     internal override double EffectiveDurationScale => DurationScale * Host.GetValue(DurationScaleProperty);
     internal override void VerifyAccess() => VerifyActive();
     internal override Task<T> Track<T>(Func<Task<T>> run) => _lifecycle.Track(run);
+    internal override FrameClock.Registration RegisterFrames(Action<TimeSpan> frame, Action<Exception> failure)
+        => _frameClock.CreateRegistration(frame, failure);
     internal override Task Track(Func<Task> run) => _lifecycle.Track(run);
     internal override void ReportRunFailure(Exception error) => ReportFailure(error);
     internal override IDisposable RegisterPlaybackChanged<T>(T owner, Action<T> changed)

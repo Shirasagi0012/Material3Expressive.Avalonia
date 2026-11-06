@@ -95,7 +95,7 @@ public class TooltipBoxTests
         Assert.True(box.IsPresented);
         window.Content = null; Flush(window);
         Assert.False(box.IsPresented); Assert.Equal(0, clock.PendingFrameCount);
-        Assert.True(show.IsCanceled);
+        Assert.True(show.IsCompletedSuccessfully);
         Assert.Null(window.MotionRoot.Diagnostics.LastError);
     }
 
@@ -137,7 +137,8 @@ public class TooltipBoxTests
             if (application is not null)
             {
                 Assert.False(application.IsCompleted);
-                state.OnDispose(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => application);
+                state.OnDispose(); await application;
+        Assert.True(application.IsCompletedSuccessfully);
             }
             box.EnableUserInput = true;
             window.MouseMove(new Point(500, 280)); window.MouseMove(center); Flush(window);
@@ -191,7 +192,7 @@ public class TooltipBoxTests
         var root = new Grid { Children = { box } }; var window = DialogTests.Show(root);
         var show = old.ShowAsync(); Flush(window);
         box.State = new(initialIsVisible: true, mutatorMutex: new()); Flush(window);
-        Assert.True(show.IsCanceled); Assert.False(old.Transition.TargetState);
+        Assert.True(show.IsCompletedSuccessfully); Assert.False(old.Transition.TargetState);
         var oldTooltip = (PlainTooltip)box.Tooltip!;
         var next = new PlainTooltip { Content = "new" }; box.Tooltip = next; Flush(window);
         Assert.Null(oldTooltip.Parent); Assert.Same(box, next.Parent);
@@ -356,15 +357,17 @@ public class TooltipBoxTests
             var timed = !persistent && priority != MutatePriority.UserInput;
             if (timed)
             {
-                Assert.True(show.IsCanceled);
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => show);
+                Assert.True(show.IsCompletedSuccessfully);
+                await show;
+        Assert.True(show.IsCompletedSuccessfully);
                 Assert.Equal(priority == MutatePriority.PreventUserInput, state.Transition.TargetState);
             }
             else
             {
                 Assert.False(show.IsCompleted);
                 window.Content = null; Flush(window);
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => show);
+                await show;
+        Assert.True(show.IsCompletedSuccessfully);
             }
             Assert.Equal(0, time.ActiveTimerCount);
             if (timed)
@@ -373,7 +376,8 @@ public class TooltipBoxTests
                 var next = state.ShowAsync(MutatePriority.Default, TestContext.Current.CancellationToken);
                 time.AdvanceBy(TimeSpan.FromMilliseconds(500)); Flush(window);
                 box.State = new(isPersistent: true, mutatorMutex: new()); Flush(window);
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => next);
+                await next;
+        Assert.True(next.IsCompletedSuccessfully);
                 Assert.Equal(0, time.ActiveTimerCount);
             }
         }
@@ -446,7 +450,8 @@ public class TooltipBoxTests
             Assert.Equal(0, time.ActiveTimerCount);
             var application = state.ShowAsync(MutatePriority.Default); Flush(window);
             Assert.False(application.IsCompleted); // Old PreventUserInput must no longer reject it.
-            state.OnDispose(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => application);
+            state.OnDispose(); await application;
+        Assert.True(application.IsCompletedSuccessfully);
             Assert.False(state.Transition.TargetState);
         }
         finally { window.Close(); Dispatcher.UIThread.RunJobs(); }

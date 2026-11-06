@@ -38,7 +38,7 @@ public sealed class RippleAnimation : IDisposable
     private readonly Animatable<float> _alpha;
     private readonly Animatable<float> _radiusFraction;
     private readonly Animatable<float> _centerFraction;
-    private readonly TaskCompletionSource _finishSignal = new();
+    private readonly TaskCompletionSource<bool> _finishSignal = new();
     private readonly AnimationChildScope _motion;
     internal AnimationChildScope Motion => _motion;
     private Action? _onFrame;
@@ -120,7 +120,7 @@ public sealed class RippleAnimation : IDisposable
             return;
 
         _finishRequested = true;
-        _finishSignal.TrySetResult();
+        _finishSignal.TrySetResult(true);
         _onFrame?.Invoke();
     }
 
@@ -136,7 +136,7 @@ public sealed class RippleAnimation : IDisposable
         var token = lifetime.Token;
         try
         {
-            await Task.WhenAll(
+            var entry = await Task.WhenAll(
                 _alpha.AnimateToAsync(_motion, 1, new TweenSpec<float>(FadeIn, easing: ComposeEasings.Linear),
                     cancellationToken: token),
                 _radiusFraction.AnimateToAsync(_motion, 1, new TweenSpec<float>(RadiusGrowth, easing: ComposeEasings.FastOutSlowIn),
@@ -145,11 +145,14 @@ public sealed class RippleAnimation : IDisposable
                     cancellationToken: token));
 
             // All three curves must finish, including the 225ms expansion on a quick tap.
+            if (_disposed || token.IsCancellationRequested || entry.Any(result => result.EndReason != AnimationEndReason.Finished)) return;
             _finishedFadingIn = true;
-            await _finishSignal.Task.WaitAsync(token);
-            await _alpha.AnimateToAsync(_motion, 0, new TweenSpec<float>(FadeOut, easing: ComposeEasings.Linear),
+            using var stop = token.Register(() => _finishSignal.TrySetResult(false));
+            if (!await _finishSignal.Task) return;
+            if (_disposed || token.IsCancellationRequested) return;
+            var exit = await _alpha.AnimateToAsync(_motion, 0, new TweenSpec<float>(FadeOut, easing: ComposeEasings.Linear),
                 cancellationToken: token);
-            IsComplete = true;
+            if (exit.EndReason == AnimationEndReason.Finished) IsComplete = true;
         }
         finally
         {

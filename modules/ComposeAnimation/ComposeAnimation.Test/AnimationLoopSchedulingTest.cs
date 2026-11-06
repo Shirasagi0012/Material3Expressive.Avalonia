@@ -84,7 +84,7 @@ public class AnimationLoopSchedulingTest
                 transition.Dispose();
                 Dispatcher.UIThread.RunJobs();
             }
-            Assert.True(loop.IsCanceled);
+            Assert.True(loop.IsCompletedSuccessfully);
             window.Close();
         }, CancellationToken.None);
 

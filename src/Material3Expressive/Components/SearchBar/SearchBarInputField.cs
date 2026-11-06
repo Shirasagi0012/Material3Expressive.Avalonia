@@ -270,7 +270,7 @@ public class SearchBarInputField : TextBox
             _ = scope.Launch(async _ => {
                 try
                 {
-                    await scope.DelayAsync(ClearFocusDelay, cancellation.Token);
+                    if (!await scope.DelayAsync(ClearFocusDelay, cancellation.Token)) return;
                     if (!Expanded && this.IsAttachedToVisualTree()) TopLevel.GetTopLevel(this)?.FocusManager?.Focus(null);
                 }
                 catch (OperationCanceledException) when (cancellation.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) { }

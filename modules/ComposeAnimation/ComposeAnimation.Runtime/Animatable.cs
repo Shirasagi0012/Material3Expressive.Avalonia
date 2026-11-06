@@ -124,7 +124,8 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// <paramref name="animationSpec"/> is specified, a spring is used.
     ///
     /// If the animation gets interrupted (by another animation, <see cref="Stop"/>, or
-    /// <see cref="SnapToAsync"/>), the returned task completes as canceled. Once the animation
+    /// <see cref="SnapToAsync"/>), the returned result reports Interrupted. Scope ending reports
+    /// ScopeEnded and caller cancellation reports Canceled. Real failures remain task faults. Once the animation
     /// ends, its velocity is reset to 0; the state at the point of interruption is captured in
     /// the returned <see cref="AnimationResult{T}"/>.
     /// </summary>
@@ -194,7 +195,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     }
 
     // All the different types of animation code paths eventually converge to this method.
-    private async Task<AnimationResult<T>> RunAnimationAsync(
+    private Task<AnimationResult<T>> RunAnimationAsync(
         FrameScope scope,
         Animation<T> animation,
         AnimationVector initialVelocity,
@@ -206,13 +207,15 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         // Capture the start time before the mutex is entered: when this animation interrupts
         // another one, it re-anchors onto the interrupted animation's last frame time.
         var startTime = _internalState.LastFrameTime;
-        return await _mutatorMutex.MutateAsync(
+        return _mutatorMutex.MutateAsync(
             mutationToken => RunAnimationCoreAsync(scope, animation, initialVelocity, block, startTime, cancellationToken, mutationToken),
             priority,
-            cancellationToken);
+            cancellationToken, () => new AnimationResult<T>(_internalState.Copy(),
+                scope.IsEnding ? AnimationEndReason.ScopeEnded : cancellationToken.IsCancellationRequested
+                    ? AnimationEndReason.Canceled : AnimationEndReason.Interrupted));
     }
 
-    private async Task<AnimationResult<T>> RunAnimationCoreAsync(
+    private Task<AnimationResult<T>> RunAnimationCoreAsync(
         FrameScope scope,
         Animation<T> animation,
         AnimationVector initialVelocity,
@@ -222,16 +225,19 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         CancellationToken mutexToken
     )
     {
+        AnimationResult<T> Stopped(AnimationState<T>? state = null) => new(state ?? _internalState.Copy(),
+            scope.IsEnding ? AnimationEndReason.ScopeEnded : cancellationToken.IsCancellationRequested
+                ? AnimationEndReason.Canceled : AnimationEndReason.Interrupted);
         // The run's one token: caller, scope lifetime and mutex (a newer run in any scope).
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
+        var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
         var mutationToken = linked.Token;
+        var completion = new TaskCompletionSource<AnimationResult<T>>();
         try
         {
-            mutationToken.ThrowIfCancellationRequested();
-            if (scope.IsEnding) throw new OperationCanceledException(mutationToken);
+            if (mutationToken.IsCancellationRequested || scope.IsEnding) { Complete(Stopped(), null); return completion.Task; }
             initialVelocity.AsReadOnlySpan().CopyTo(_internalState.MutableVelocityVector);
             TargetValue = animation.TargetValue;
-            mutationToken.ThrowIfCancellationRequested();
+            if (mutationToken.IsCancellationRequested || scope.IsEnding) { Complete(Stopped(), null); return completion.Task; }
             _internalState.IsRunning = true;
             OnPropertyChanged(AnimatableArgs.IsRunning);
 
@@ -239,11 +245,10 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
             endState.FinishedTime = AnimationConstants.UnspecifiedTime;
             var clampingNeeded = false;
 
-            await endState.AnimateAsync(animation, scope, startTime,
+            var sampling = endState.AnimateAsync(animation, scope, startTime,
                 run =>
                 {
-                    mutationToken.ThrowIfCancellationRequested();
-                    if (scope.IsEnding) throw new OperationCanceledException(mutationToken);
+                    if (mutationToken.IsCancellationRequested || scope.IsEnding) { run.CancelAnimation(); return; }
                     _internalState.UpdateFrom(run);
                     var value = run.Value;
                     var clamped = ClampToBounds(value);
@@ -252,7 +257,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
                         _internalState.Value = clamped;
                         endState.Value = clamped;
                         OnFrameChanged();
-                        mutationToken.ThrowIfCancellationRequested();
+                        if (mutationToken.IsCancellationRequested || scope.IsEnding) { run.CancelAnimation(); return; }
                         block?.Invoke(this);
                         run.CancelAnimation();
                         clampingNeeded = true;
@@ -260,18 +265,35 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
                     else
                     {
                         OnFrameChanged();
-                        mutationToken.ThrowIfCancellationRequested();
+                        if (mutationToken.IsCancellationRequested || scope.IsEnding) { run.CancelAnimation(); return; }
                         block?.Invoke(this);
                     }
                 },
-                mutationToken).ConfigureAwait(true);
+                mutationToken);
 
-            return new AnimationResult<T>(endState,
-                clampingNeeded ? AnimationEndReason.BoundReached : AnimationEndReason.Finished);
+            _ = Observe();
+            async Task Observe()
+            {
+                await ((Task)sampling).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
+                if (sampling.IsFaulted)
+                {
+                    var errors = sampling.Exception!.InnerExceptions;
+                    Complete(default, errors.Count == 1 ? errors[0] : sampling.Exception);
+                }
+                else Complete(mutationToken.IsCancellationRequested || scope.IsEnding ? Stopped(endState)
+                    : new AnimationResult<T>(endState, clampingNeeded ? AnimationEndReason.BoundReached : sampling.Result), null);
+            }
         }
-        finally
+        catch (Exception error) { Complete(default, error); }
+        return completion.Task;
+
+        void Complete(AnimationResult<T> result, Exception? failure)
         {
-            EndAnimation();
+            try { EndAnimation(); }
+            catch (Exception error) { failure = failure is null ? error : new AggregateException(failure, error); }
+            finally { linked.Dispose(); }
+            if (failure is null) completion.TrySetResult(result);
+            else completion.TrySetException(failure);
         }
     }
 
@@ -279,26 +301,26 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
     /// Sets the current value to <paramref name="targetValue"/> immediately, canceling any
     /// on-going animation. If bounds are set, the value is clamped to them.
     /// </summary>
-    public Task SnapToAsync(T targetValue, CancellationToken cancellationToken = default)
+    public Task<bool> SnapToAsync(T targetValue, CancellationToken cancellationToken = default)
     {
         VerifyAccess();
         return SnapCoreAsync(targetValue, cancellationToken);
     }
 
-    private async Task SnapCoreAsync(T targetValue, CancellationToken cancellationToken)
+    private Task<bool> SnapCoreAsync(T targetValue, CancellationToken cancellationToken)
     {
-        await _mutatorMutex.MutateAsync(
+        return _mutatorMutex.MutateAsync(
             mutationToken =>
             {
-                mutationToken.ThrowIfCancellationRequested();
+                if (mutationToken.IsCancellationRequested) return Task.FromResult(false);
                 EndAnimation();
-                mutationToken.ThrowIfCancellationRequested();
+                if (mutationToken.IsCancellationRequested) return Task.FromResult(false);
                 var clampedValue = ClampToBounds(targetValue);
                 _internalState.Value = clampedValue;
                 TargetValue = clampedValue;
                 OnPropertyChanged(AnimatableArgs.Value);
                 return Task.FromResult(true);
-            }, MutatePriority.Default, cancellationToken);
+            }, MutatePriority.Default, cancellationToken, () => false);
     }
 
     private void VerifyRun(FrameScope scope)
@@ -368,13 +390,7 @@ public sealed class Animatable<T> : ObservableObject, IAnimationValue<T>
         _mutatorMutex.CancelCurrent();
         if (task is not null)
         {
-            try
-            {
-                await task;
-            }
-            catch (OperationCanceledException)
-            {
-            }
+            await task;
         }
     }
 

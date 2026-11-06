@@ -36,10 +36,12 @@ internal static class SnapFling
             var result = await AnimateTarget(remaining, State(0, velocity));
             state = result.State;
         }
+        if (cancellationToken.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) return state.Velocity;
         remaining = snapOffset(state.Velocity);
         var finalState = new AnimationState<float>(new FloatConverter(), 0,
             AnimationVector.From([state.Velocity]), state.LastFrameTime, state.FinishedTime);
         var finalResult = await AnimateTarget(remaining, finalState);
+        if (cancellationToken.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) return finalResult.State.Velocity;
         remainingChanged?.Invoke(0);
         return finalResult.Remaining == 0 ? 0 : finalResult.State.Velocity;
 

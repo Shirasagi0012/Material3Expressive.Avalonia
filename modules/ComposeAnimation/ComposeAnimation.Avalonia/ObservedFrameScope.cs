@@ -40,6 +40,8 @@ internal sealed class ObservedFrameScope(FrameScope inner, Action<Exception, Can
         });
 
     internal override double EffectiveDurationScale => inner.EffectiveDurationScale;
+    internal override FrameClock.Registration RegisterFrames(Action<TimeSpan> frame, Action<Exception> failure)
+        => inner.RegisterFrames(frame, error => { observe(error, default); failure(error); });
     internal override void VerifyAccess() => inner.VerifyAccess();
     internal override bool IsEnding => inner.IsEnding;
     internal override Task<T> Track<T>(Func<Task<T>> run) => inner.Track(run);

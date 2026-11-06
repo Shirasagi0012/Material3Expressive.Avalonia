@@ -69,7 +69,7 @@ public class SuspendAnimationTest
 
         cts.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 

@@ -123,7 +123,7 @@ internal sealed class RadioButtonIndicator : Control
         // animate*AsState retargets after recomposition. Coalesce property/token changes in that frame.
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (_dotRadius is not { } dot || _color is not { } color) return;
             var radiusTarget = RadiusTarget;
@@ -133,7 +133,7 @@ internal sealed class RadioButtonIndicator : Control
                 {
                     // Fixed AnimateAsState.restartAnimation cancels its previous job before animateTo.
                     await dot.StopAsync();
-                    token.ThrowIfCancellationRequested();
+                    if (token.IsCancellationRequested) return;
                     // The supplied motion-scheme spring has no Dp threshold: vectorization uses 0.01,
                     // rather than animateDpAsState's unused default dpDefaultSpring (0.1 DIP).
                     await dot.AnimateToAsync(motion, radiusTarget, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: token);
@@ -149,7 +149,7 @@ internal sealed class RadioButtonIndicator : Control
             _ = motion.Launch(async token =>
             {
                 await color.StopAsync();
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return;
                 if (animate) await color.AnimateToAsync(motion, colorTarget, new SpringSpec<Color>(effects!.Value.DampingRatio, effects.Value.Stiffness), cancellationToken: token);
                 else await color.SnapToAsync(colorTarget);
             }, "RadioButton color");

@@ -181,7 +181,7 @@ public class TransitionPreparationTest
         Assert.False(root.IsRunning);
         Assert.Equal(0, clock.PendingFrameCount);
         cancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => loop);
+        await AnimationStopAssert.StoppedAsync(loop);
 
         // A loop cancellation is not disposal of the presentation. Its owner must release
         // outstanding preparation (usually via using/finally), or dispose the transition.
@@ -189,7 +189,7 @@ public class TransitionPreparationTest
         using var secondCancellation = new CancellationTokenSource();
         var secondLoop = root.RunAsync(window.AnimationRoot, secondCancellation.Token);
         secondCancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => secondLoop);
+        await AnimationStopAssert.StoppedAsync(secondLoop);
         Assert.True(pending.IsActive);
         Assert.True(root.IsPreparing);
         Assert.True(root.IsRunning);

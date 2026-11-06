@@ -24,13 +24,13 @@ Amount.State = new ScrollFieldState(itemCount: 60, index: 12);
 
 ```csharp
 Amount.State.SelectedOption = 20;
-await Amount.State.AnimateScrollToOptionAsync(45, cancellationToken);
+if (!await Amount.State.AnimateScrollToOptionAsync(45, cancellationToken)) return;
 await Amount.State.ScrollToOptionAsync(0);
 ```
 
 索引限制在 `0..ItemCount-1`，项目数构造后不变。选项定位在当前循环内，不自动选择跨循环的最短路径。
-新的同优先级操作、用户拖动、状态替换或卸载会取消原动画；调用者应处理 `OperationCanceledException`。
-拖动和滚轮输入的优先级高于两个异步导航方法，此时异步导航返回取消；`SelectedOption` 赋值可取消当前滚动并定位。
+新的同优先级操作、用户拖动、状态替换或卸载会取消原动画；两个异步入口返回 `Task<bool>`，完成返回 true，中断或卸载返回 false。
+拖动和滚轮输入的优先级高于两个异步导航方法，此时异步导航返回 false；`SelectedOption` 赋值可取消当前滚动并定位。
 赋值不会松开仍按住的手指，后续触摸位移仍可继续拖动。
 
 ## 内容槽与定制

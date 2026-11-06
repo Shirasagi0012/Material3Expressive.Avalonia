@@ -187,7 +187,7 @@ internal sealed class DropdownMenuLeadingIcon : Decorator
                 // animation first receives a frame in the following broadcast batch.
                 _ = active.Launch(async ct =>
                 {
-                    await active.NextFrameAsync(ct);
+                    if (!await active.WaitForNextFrameAsync(ct)) return;
                     _updatePending = false;
                     // A Get scope ends at the drain, not at detach: Stop may already have run.
                     if (_transition is not { } transition) return;

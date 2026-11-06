@@ -30,7 +30,7 @@ public static class SuspendAnimation
     /// Invoked on every frame with the <see cref="AnimationRun{T}"/>; call
     /// <see cref="AnimationRun{T}.CancelAnimation"/> from it to end the animation early.
     /// </param>
-    public static Task AnimateToAsync<T>(
+    public static Task<AnimationEndReason> AnimateToAsync<T>(
         FrameScope scope,
         AnimationState<T> state,
         T targetValue,
@@ -75,7 +75,7 @@ public static class SuspendAnimation
     /// Invoked on every frame with the <see cref="AnimationRun{T}"/>; call
     /// <see cref="AnimationRun{T}.CancelAnimation"/> from it to end the animation early.
     /// </param>
-    public static Task AnimateDecayAsync<T>(
+    public static Task<AnimationEndReason> AnimateDecayAsync<T>(
         FrameScope scope,
         AnimationState<T> state,
         IDecayAnimationSpec<T> animationSpec,
@@ -115,7 +115,7 @@ public static class SuspendAnimation
     /// <param name="initialVelocity">The initial velocity; 0 by default.</param>
     /// <param name="animationSpec">The spec that defines the animation curve. A spring by default.</param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
-    public static Task AnimateAsync<T>(
+    public static Task<AnimationEndReason> AnimateAsync<T>(
         FrameScope scope,
         ITwoWayConverter<T> typeConverter,
         T initialValue,
@@ -156,7 +156,7 @@ public static class SuspendAnimation
     /// <param name="initialVelocity">The initial velocity; 0 by default.</param>
     /// <param name="animationSpec">The spec that defines the animation curve. A spring by default.</param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
-    public static Task AnimateAsync(
+    public static Task<AnimationEndReason> AnimateAsync(
         FrameScope scope,
         double initialValue,
         double targetValue,
@@ -179,7 +179,7 @@ public static class SuspendAnimation
     /// Defines the decay animation, such as <see cref="DecayAnimationSpec.ExponentialDecay{T}"/>.
     /// </param>
     /// <param name="block">Invoked on every frame with the current value and velocity.</param>
-    public static Task AnimateDecayAsync(
+    public static Task<AnimationEndReason> AnimateDecayAsync(
         FrameScope scope,
         double initialValue,
         double initialVelocity,
@@ -202,74 +202,36 @@ public static class SuspendAnimation
             cancellationToken);
     }
 
-    /// <summary>
-    /// Runs the given <paramref name="animation"/> against <paramref name="state"/> from start to
-    /// finish by awaiting one frame at a time from <paramref name="scope"/>, so cancellation
-    /// unwinds the loop via <see cref="OperationCanceledException"/> thrown at the frame await.
-    /// Mirrors the internal animate function upstream. Play time accumulates each frame delta
-    /// divided by the scope's effective duration scale read at that frame, so a scale change
-    /// applies from the next frame without a jump. Frames are awaited on the scope's own wait (no
-    /// async layer), so the loop resumes inline inside the frame batch.
-    /// </summary>
-    internal static async Task AnimateAsync<T>(
-        this AnimationState<T> state,
-        Animation<T> animation,
-        FrameScope scope,
-        TimeSpan startTime,
-        Action<AnimationRun<T>>? onFrame,
-        CancellationToken cancellationToken)
+    /// <summary>Samples on the shared clock; the task completes only after the run stops.</summary>
+    internal static Task<AnimationEndReason> AnimateAsync<T>(
+        this AnimationState<T> state, Animation<T> animation, FrameScope scope,
+        TimeSpan startTime, Action<AnimationRun<T>>? onFrame, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(animation);
         ArgumentNullException.ThrowIfNull(scope);
         scope.VerifyAccess();
-
         AnimationRun<T>? run = null;
         var clock = new PlayTimeAccumulator();
-        void Sample(TimeSpan frame)
-        {
-            var durationScale = scope.EffectiveDurationScale;
-            var accumulated = clock.Advance(frame, durationScale);
-            var playTime = durationScale == 0 ? (animation.IsInfinite ? TimeSpan.Zero : animation.Duration) : accumulated;
-            DoAnimationFrame(state, animation, run!, frame, playTime, onFrame);
-        }
-        try
-        {
-            if (!AnimationConstants.IsUnspecified(startTime))
+        var driver = new ClockAnimation(scope, cancellationToken, () => AnimationEndReason.Canceled,
+            (frame, active) =>
             {
-                // A start time is supplied when this animation continues an interrupted one:
-                // process the first frame immediately on the previous animation's timebase.
-                run = CreateRun(state, animation, startTime);
-                Sample(startTime);
-            }
-            else
+                run ??= CreateRun(state, animation, frame);
+                var durationScale = scope.EffectiveDurationScale;
+                var accumulated = clock.Advance(frame, durationScale);
+                var playTime = durationScale == 0 ? (animation.IsInfinite ? TimeSpan.Zero : animation.Duration) : accumulated;
+                DoAnimationFrame(state, animation, run, frame, playTime, onFrame);
+                if (!run.IsRunning) active.Finish();
+                else active.RequestFrame();
+            },
+            reason =>
             {
-                var firstFrame = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
-                cancellationToken.ThrowIfCancellationRequested();
-                run = CreateRun(state, animation, firstFrame);
-                Sample(firstFrame);
-            }
-
-            while (run.IsRunning)
-            {
-                var frameTime = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
-                cancellationToken.ThrowIfCancellationRequested();
-                Sample(frameTime);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            if (run is not null)
-            {
+                if (run is null || reason == AnimationEndReason.Finished) return;
                 run.IsRunning = false;
-                if (run.LastFrameTime == state.LastFrameTime)
-                {
-                    // There hasn't been another animation.
-                    state.IsRunning = false;
-                }
-            }
-            throw;
-        }
+                if (run.LastFrameTime == state.LastFrameTime) state.IsRunning = false;
+            });
+        driver.Start(initialFrame: AnimationConstants.IsUnspecified(startTime) ? null : startTime);
+        return driver.Completion;
     }
 
     private static AnimationRun<T> CreateRun<T>(

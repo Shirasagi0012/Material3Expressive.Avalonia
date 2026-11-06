@@ -40,14 +40,7 @@ public abstract class Transition : ObservableObject, IDisposable
     // The root's frame loop and the seekable state's seek run share this mutex. Lock order: a
     // caller that takes both takes its state mutex BEFORE this run mutex (never the reverse).
     private readonly MutatorMutex _runMutex = new();
-    // Deliberately NOT RunContinuationsAsynchronously: completing this wakes the idle LoopAsync
-    // inline, so it registers for the next frame batch before the owning mutation returns.
-    // Asynchronous continuations would add a one-frame start delay (the loop would only register
-    // after a later dispatcher pump); AnimationLoopSchedulingTest.
-    // IdleTransition_RegistersNextFrameBeforeOwningMutationReturns pins this. The loop therefore
-    // re-enters during a mutation; that is expected (mutations are confined to the owning thread
-    // and the loop only registers a frame wait before yielding).
-    private TaskCompletionSource _changed = new();
+    private ClockAnimation? _activeLoop;
     private bool _processing;
     private bool _disposed;
     private bool _running;
@@ -103,15 +96,16 @@ public abstract class Transition : ObservableObject, IDisposable
     /// (state before run) every two-mutex caller must use; enforcing it here rules out the reverse.
     /// </summary>
     internal Task<TResult> MutateWithRunMutexAsync<TResult>(MutatorMutex stateMutex,
-        Func<CancellationToken, CancellationToken, Task<TResult>> mutation, CancellationToken cancellationToken)
+        Func<CancellationToken, CancellationToken, Task<TResult>> mutation, CancellationToken cancellationToken,
+        Func<TResult>? interruptedResult = null)
     {
         ArgumentNullException.ThrowIfNull(stateMutex);
         ArgumentNullException.ThrowIfNull(mutation);
         var runMutex = RunMutex;
         return stateMutex.MutateAsync(
-            stateToken => runMutex.MutateAsync(runToken => mutation(stateToken, runToken), MutatePriority.Default, stateToken),
+            stateToken => runMutex.MutateAsync(runToken => mutation(stateToken, runToken), MutatePriority.Default, stateToken, interruptedResult),
             MutatePriority.Default,
-            cancellationToken);
+            cancellationToken, interruptedResult);
     }
     internal bool IsDisposed => _disposed;
     internal Action? SynchronizeWithParent { get; set; }
@@ -201,58 +195,40 @@ public abstract class Transition : ObservableObject, IDisposable
     /// end, <see cref="Dispose"/>, or a newer run). A newer run cancels this one; its loop starts
     /// only after this loop's cleanup has run. A child transition uses its parent's loop and throws.
     /// </summary>
-    public Task RunAsync(FrameScope scope, CancellationToken cancellationToken = default)
+    public Task<AnimationEndReason> RunAsync(FrameScope scope, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(scope);
         VerifyAccess();
         scope.VerifyAccess();
-        return scope.Track(() => RunCoreAsync(scope, cancellationToken));
-    }
-
-    private async Task RunCoreAsync(FrameScope scope, CancellationToken cancellationToken)
-    {
-        VerifyAccess();
         if (ParentTransition is not null) throw new InvalidOperationException("A child uses its parent's frame loop.");
-        await _runMutex.MutateAsync(mutexToken => LoopAsync(scope, cancellationToken, mutexToken),
-            MutatePriority.Default, cancellationToken).ConfigureAwait(true);
+        return scope.Track(() => _runMutex.MutateAsync(token => StartRun(scope, cancellationToken, token),
+            MutatePriority.Default, cancellationToken, () => scope.IsEnding ? AnimationEndReason.ScopeEnded
+                : cancellationToken.IsCancellationRequested ? AnimationEndReason.Canceled : AnimationEndReason.Interrupted));
     }
 
-    private async Task<bool> LoopAsync(FrameScope scope, CancellationToken cancellationToken, CancellationToken mutexToken)
+    private Task<AnimationEndReason> StartRun(FrameScope scope, CancellationToken caller, CancellationToken token)
     {
-        // The run's one token: caller, scope lifetime and mutex (Dispose or a newer run).
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime, mutexToken);
-        var token = linked.Token;
-        try
-        {
-            // No PlayTimeAccumulator here: upstream parity. A change of the own or the scope scale
-            // recalculates play time from the start (_startTime anchor), which per-delta math would
-            // not (TransitionBoundaryTest.ScaleChange_RecalculatesPlayTimeFromStartAsUpstreamDoes,
-            // ScopeScaleChange_RecalculatesPlayTimeFromStart).
-            // One token check per frame: here once, then after each frame wait. The change waits
-            // observe the token themselves.
-            token.ThrowIfCancellationRequested();
-            while (true)
+        ClockAnimation? driver = null;
+        driver = new ClockAnimation(scope, token,
+            () => caller.IsCancellationRequested ? AnimationEndReason.Canceled : AnimationEndReason.Interrupted,
+            (frame, active) =>
             {
-                if (_disposed) throw new OperationCanceledException(token);
-                if (!HasWork)
-                {
-                    await _changed.Task.WaitAsync(token).ConfigureAwait(true);
-                    _changed = new TaskCompletionSource();
-                    continue;
-                }
-                // The scope's own wait (no async layer): resumes inline in the frame batch.
-                var frame = await scope.WaitFrameAsync(token, null).ConfigureAwait(true);
-                token.ThrowIfCancellationRequested();
                 if (!IsSeeking && !_disposed) OnFrame(frame, scope.EffectiveDurationScale);
-            }
-        }
-        finally
-        {
-            // Play time is kept: the next run resumes from it (D17).
-            _lastFrameTime = AnimationConstants.UnspecifiedTime;
-            _startTime = AnimationConstants.UnspecifiedTime;
-            Execute(() => SetRunningRecursively(false));
-        }
+                if (HasWork) active.RequestFrame();
+            },
+            _ =>
+            {
+                if (ReferenceEquals(_activeLoop, driver)) _activeLoop = null;
+                Execute(() =>
+                {
+                    _lastFrameTime = AnimationConstants.UnspecifiedTime;
+                    _startTime = AnimationConstants.UnspecifiedTime;
+                    SetRunningRecursively(false);
+                });
+            });
+        _activeLoop = driver;
+        driver.Start(requestFrame: HasWork);
+        return driver.Completion;
     }
 
     /// <summary>
@@ -442,7 +418,7 @@ public abstract class Transition : ObservableObject, IDisposable
         _updateChildrenNeeded |= requireFrame;
         Notify(nameof(TotalDuration));
         ParentTransition?.AnimationChanged(requireFrame);
-        if (requireFrame) Root._changed.TrySetResult();
+        if (requireFrame) Root._activeLoop?.RequestFrame();
     }
 
     private protected void ReconfigureAnimations(bool reset, bool preserveCurrentValue = false)

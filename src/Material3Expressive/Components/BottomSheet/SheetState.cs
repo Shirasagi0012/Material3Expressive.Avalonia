@@ -106,7 +106,7 @@ public sealed class SheetState : AvaloniaObject
         if (alreadyPending) return;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             if (_pendingAnchors is not { } pending) return;
             _pendingAnchors = null; ApplyAnchors(pending.Full, pending.Sheet, pending.Density, pending.Peek);
         }, "Bottom sheet anchor update");
@@ -258,6 +258,8 @@ public sealed class SheetState : AvaloniaObject
                                 }, cancellationToken: restart.Token);
                                 if (fling && Math.Abs(target - _offset) < .5f) remaining = 0;
                             }
+                            if (mutation.IsCancellationRequested || scope.Lifetime.IsCancellationRequested) return;
+                            if (restart.IsCancellationRequested) { if (!fling) velocity = _velocity; continue; }
                             if (fling) CompleteAtClosest();
                             else if (Confirm(value)) { DragTo(Position(value), _velocity); SetSettled(value); }
                             break;

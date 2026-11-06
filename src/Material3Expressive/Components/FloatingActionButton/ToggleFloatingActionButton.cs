@@ -128,7 +128,7 @@ public class ToggleFloatingActionButton : Button
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct); _pending = false;
+            if (!await scope.WaitForNextFrameAsync(ct)) return; _pending = false;
             // A Get scope ends at the drain, not at detach: EndMotion may already have run.
             if (_progress is null || !FabMotion.TrySpring(CheckedMotion, out var spec)) return;
             _needsTransition = false;

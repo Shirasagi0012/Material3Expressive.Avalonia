@@ -80,13 +80,12 @@ internal sealed partial class ClockFace
             var offset = value + (float)QuarterCircle;
             if (offset < 0) offset += MathF.Tau;
             if (animate && snap)
-                await track.SnapToAsync(EndValueForAnimation(offset), cancellationToken: token);
+                return await track.SnapToAsync(EndValueForAnimation(offset), cancellationToken: token);
             else if (animate)
-                await track.AnimateToAsync(scope, EndValueForAnimation(offset),
-                    new SpringSpec<float>(motion.DampingRatio, motion.Stiffness, (float)motion.VisibilityThreshold), cancellationToken: token);
-            else await track.SnapToAsync(offset, cancellationToken: token);
-            return true;
-        }, MutatePriority.UserInput, ct);
+                return (await track.AnimateToAsync(scope, EndValueForAnimation(offset),
+                    new SpringSpec<float>(motion.DampingRatio, motion.Stiffness, (float)motion.VisibilityThreshold), cancellationToken: token)).EndReason == AnimationEndReason.Finished;
+            else return await track.SnapToAsync(offset, cancellationToken: token);
+        }, MutatePriority.UserInput, ct, () => false);
     }
 
     private void Pressed(object? sender, PointerPressedEventArgs e)
@@ -132,7 +131,7 @@ internal sealed partial class ClockFace
             var center = Center;
             _ = scope.Launch(async ct =>
             {
-                await RotateToAsync(scope, DialAngle(offsetY - center.Y, offsetX - center.X), false, ct);
+                if (!await RotateToAsync(scope, DialAngle(offsetY - center.Y, offsetX - center.X), false, ct)) return;
                 MoveSelector(offsetX, offsetY);
             }, "Clock drag");
         }
@@ -171,9 +170,9 @@ internal sealed partial class ClockFace
             ? MathF.Round(angle / RadiansPerMinute / 5) * 5 * RadiansPerMinute
             : MathF.Round(angle / RadiansPerHour) * RadiansPerHour;
         MoveSelector(x, y);
-        await RotateToAsync(scope, angle, true, ct, snap);
+        if (!await RotateToAsync(scope, angle, true, ct, snap) || ct.IsCancellationRequested) return;
         if (_controller.Selection == TimeSelection.Hour && autoSwitch)
-            await scope.DelayAsync(TimeSpan.FromMilliseconds(100), ct);
+            if (!await scope.DelayAsync(TimeSpan.FromMilliseconds(100), ct)) return;
         if (autoSwitch) _controller.Select(TimeSelection.Minute);
     }
 

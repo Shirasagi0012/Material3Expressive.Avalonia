@@ -72,6 +72,51 @@ internal sealed class FrameClock : IDisposable
 
     public void VerifyAccess() => _source.VerifyAccess();
 
+    // Callback registrations share the awaiters' ordered frame batch. A registration is
+    // reused by a run; requesting another frame creates no Task or continuation.
+    internal Registration CreateRegistration(Action<TimeSpan> frame, Action<Exception> failure)
+        => new(this, frame, failure);
+
+    internal sealed class Registration : IDisposable
+    {
+        private readonly FrameClock _clock;
+        private readonly Waiter _waiter;
+        private readonly Action<Exception> _failure;
+        private bool _disposed;
+
+        internal Registration(FrameClock clock, Action<TimeSpan> frame, Action<Exception> failure)
+        {
+            _clock = clock;
+            _failure = failure;
+            _waiter = new Waiter(clock, failure) { FrameCallback = frame };
+            _waiter.Deactivate();
+        }
+
+        internal void Request()
+        {
+            _clock.VerifyAccess();
+            if (_disposed || !_waiter.IsCompleted) return;
+            _waiter.Prepare(_failure);
+            if (_clock._disposed) { _waiter.Complete(default, new ObjectDisposedException(nameof(FrameClock))); return; }
+            if (_clock._failure is { } error) { _waiter.Complete(default, error); return; }
+            _clock._waiters.Add(_waiter);
+            if (!_clock._pumping || _clock._sourceWait is { IsCancellationRequested: true } && _clock._sourceTask is { IsCanceled: true })
+            {
+                _clock._pumping = true;
+                _ = _clock.PumpAsync(++_clock._pumpGeneration);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            _waiter.Deactivate();
+            if (_clock._waiters.Remove(_waiter) && _clock._waiters.Count == 0)
+                _clock._sourceWait?.Cancel();
+        }
+    }
+
     internal bool IsUnavailable => _disposed || _failure is not null;
     internal bool IsDispatchingFrame { get; private set; }
 
@@ -342,6 +387,8 @@ internal sealed class FrameClock : IDisposable
 
         public short Version => _core.Version;
         public bool IsCompleted { get; private set; }
+        internal Action<TimeSpan>? FrameCallback { get; init; }
+        internal void Deactivate() => IsCompleted = true;
 
         public void Register(CancellationToken first, CancellationToken second)
         {
@@ -385,6 +432,12 @@ internal sealed class FrameClock : IDisposable
             IsCompleted = true;
             _first.Dispose();
             _second.Dispose();
+            if (FrameCallback is { } callback)
+            {
+                if (error is null) callback(timestamp);
+                else _onFault?.Invoke(error);
+                return;
+            }
             if (error is null)
             {
                 _core.SetResult(timestamp);

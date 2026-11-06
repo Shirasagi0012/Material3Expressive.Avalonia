@@ -75,7 +75,7 @@ public class BottomSheetTests
             Assert.Equal(SheetValue.Hidden, sheet.State.CurrentValue);
             var hide = sheet.State.HideAsync(); Assert.Equal(offset, sheet.State.CurrentOffset);
             Advance(clock, window, 100);
-            Assert.True(show.IsCanceled); Assert.True(hide.IsCompletedSuccessfully);
+            Assert.True(show.IsCompletedSuccessfully); Assert.True(hide.IsCompletedSuccessfully);
             Assert.Equal(600, sheet.State.CurrentOffset); Assert.False(sheet.State.IsVisible);
             Assert.False(sheet.State.IsAnimationRunning); Assert.Null(window.MotionRoot.Diagnostics.LastError);
         }
@@ -123,7 +123,7 @@ public class BottomSheetTests
         try
         {
             var task = sheet.State.ExpandAsync(); Advance(clock, window, 3);
-            window.Content = null; Dispatcher.UIThread.RunJobs(); Assert.True(task.IsCanceled);
+            window.Content = null; Dispatcher.UIThread.RunJobs(); Assert.True(task.IsCompletedSuccessfully);
             Assert.Equal(0, clock.PendingFrameCount);
             window.Content = sheet; window.UpdateLayout();
             var next = sheet.State.ShowAsync(); Advance(clock, window, 100);
@@ -197,7 +197,7 @@ public class BottomSheetTests
         {
             var task = sheet.State.ExpandAsync(cancellation.Token); Advance(clock, window, 4);
             var offset = sheet.State.CurrentOffset; cancellation.Cancel(); Dispatcher.UIThread.RunJobs();
-            Assert.True(task.IsCanceled); Assert.Equal(offset, sheet.State.CurrentOffset); Assert.False(sheet.State.IsAnimationRunning);
+            Assert.True(task.IsCompletedSuccessfully); Assert.Equal(offset, sheet.State.CurrentOffset); Assert.False(sheet.State.IsAnimationRunning);
             Advance(clock, window, 4); Assert.Equal(offset, sheet.State.CurrentOffset);
         }
         finally { window.Close(); }

@@ -85,7 +85,7 @@ public class ColorConverterTest
         Assert.False(animation.IsRunning);
         var next = animation.AnimateToAsync(scope, Colors.Red);
         await animation.SnapToAsync(target);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => next);
+        await AnimationStopAssert.StoppedAsync(next);
         Assert.Equal(target, animation.Value);
         Assert.Equal(target, animation.TargetValue);
         window.Close();
@@ -254,7 +254,7 @@ public class ColorConverterTest
         var initialVelocity = AnimationVector.From(animatable.State.VelocityVector);
 
         var second = animatable.AnimateToAsync(scope, Colors.Lime, new SpringSpec<Color>());
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         AssertVectorsEqual(initialVelocity.AsReadOnlySpan(), animatable.State.VelocityVector);
         var expected = new TargetBasedAnimation<Color>(
             new SpringSpec<Color>(), converter, initialValue, Colors.Lime,
@@ -266,7 +266,7 @@ public class ColorConverterTest
 
         AssertVectorsEqual(expectedVelocity, animatable.State.VelocityVector);
         animatable.Stop();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+        await AnimationStopAssert.StoppedAsync(second);
         window.Close();
     });
 

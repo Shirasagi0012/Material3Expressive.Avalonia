@@ -117,7 +117,7 @@ public class DropdownMenuGroup : ItemsControl
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct); _pending = false;
+            if (!await motion.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_shape is null) return;
             // Like the composable, remember hover only when a composition observes it.
             _hasBeenHovered |= _hovered;

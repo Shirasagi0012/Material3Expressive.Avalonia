@@ -212,7 +212,7 @@ internal sealed class SwitchThumbLayout : Panel
         // from the first measurement; native drag release instead hands off the current pose.
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _updatePending = false;
             _checked = Checked;
             if (!float.IsNaN(_initialSize) && _sizeAnim is null)

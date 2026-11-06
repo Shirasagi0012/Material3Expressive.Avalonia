@@ -163,8 +163,8 @@ internal sealed partial class ClockFace : Control
                     _selectionCommitPending = true;
                     _ = scope.Launch(async ct =>
                     {
-                        await scope.NextFrameAsync(ct);
-                        await Task.Yield(); ct.ThrowIfCancellationRequested();
+                        if (!await scope.WaitForNextFrameAsync(ct)) return;
+                        await Task.Yield(); if (ct.IsCancellationRequested) return;
                         _selectionCommitPending = false;
                         if (_committedSelection == _controller.Selection) return;
                         _committedSelection = _controller.Selection;

@@ -457,6 +457,10 @@ public sealed class AnimatedState<T> : IAnimationValue<T>, IDisposable, IAnimate
             var result = await task;
             if (!IsCurrent()) return;
             SetRunning(false);
+            if (result.EndReason is AnimationEndReason.Interrupted or AnimationEndReason.ScopeEnded or AnimationEndReason.Canceled)
+            {
+                _failed = true; _failedSpec = requestedSpec; return;
+            }
             if (IsCurrent() && result.EndReason == AnimationEndReason.Finished && Equal(_target, runTarget))
             {
                 // Finished is user code, but its failure cannot turn a successful motion into

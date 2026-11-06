@@ -71,10 +71,10 @@ internal sealed partial class ClockFace
         {
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, cancellation.Token);
             if (previous is not null) try { await previous; } catch (OperationCanceledException) { }
-            old?.Dispose(); linked.Token.ThrowIfCancellationRequested();
+            old?.Dispose(); if (linked.IsCancellationRequested) return;
             // updateTransition's new segment is committed in recomposition, after the
             // preceding segment's frame. Reuse the library's transition and Crossfade.
-            if (defer) await scope.NextFrameAsync(linked.Token);
+            if (defer && !await scope.WaitForNextFrameAsync(linked.Token)) return;
             await transition.RunAsync(scope, linked.Token);
         }, "Clock labels crossfade");
     }

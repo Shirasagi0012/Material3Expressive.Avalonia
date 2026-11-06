@@ -118,7 +118,7 @@ public class FloatingActionButtonMenuItem : Button
             {
                 // Placement initializes the value after measurement upstream. Apply it
                 // to the following layout frame, preserving the first zero-width pass.
-                _ = motion.Launch(async ct => { await motion.NextFrameAsync(ct); InvalidateReveal(); }, "FAB menu initial placement");
+                _ = motion.Launch(async ct => { if (!await motion.WaitForNextFrameAsync(ct)) return; InvalidateReveal(); }, "FAB menu initial placement");
             }
         }
         if (_visible == visible)
@@ -250,7 +250,7 @@ internal sealed class FabMenuLayout : Panel
             _pending = true;
             _ = active.Launch(async ct =>
             {
-                await active.NextFrameAsync(ct); _pending = false;
+                if (!await active.WaitForNextFrameAsync(ct)) return; _pending = false;
                 if (_stagger is null) return;
                 if (!FabMotion.TrySpring(StaggerMotion, out var spec, 1)) return;
                 await _stagger.AnimateToAsync(active, _owner?.Expanded == true ? Items.Length : 0,

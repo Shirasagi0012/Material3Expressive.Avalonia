@@ -136,7 +136,7 @@ internal sealed class FloatingToolbarLayout : Panel
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct); _pending = false;
+            if (!await scope.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_transition is null || _progress is null || _elevation is null) return;
             if (_owner?.AnimationSpec is not { } animationSpec || ElevationAnimation.Stiffness <= 0) return;
             var elevation = ElevationAnimation;
@@ -386,7 +386,7 @@ internal sealed class FloatingToolbarBalancedPadding : Decorator
         if (_pending || !this.IsAttachedToVisualTree() || _attachScope is not { } scope
             || scope.Lifetime.IsCancellationRequested) return;
         _pending = true;
-        _ = scope.Launch(async ct => { await scope.NextFrameAsync(ct); _pending = false;
+        _ = scope.Launch(async ct => { if (!await scope.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_padding is null || _owner is null) return;
             var animation = PaddingAnimation;
             if (animation.Stiffness <= 0) return;

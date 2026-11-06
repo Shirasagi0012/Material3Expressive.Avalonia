@@ -144,7 +144,7 @@ internal sealed class MenuItemChrome : Decorator
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (TargetBrush is not ISolidColorBrush { Opacity: 1 } target)
             {
@@ -165,7 +165,7 @@ internal sealed class MenuItemChrome : Decorator
                 // starting animateTo. Join that cancellation in the local runtime so
                 // the old mutation cannot unwind after the replacement starts.
                 await color.StopAsync();
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return;
                 await color.AnimateToAsync(motion, targetColor, new SpringSpec<Color>(spec.DampingRatio, spec.Stiffness), cancellationToken: token);
             }, "Menu container color");
         }, "Menu color target");

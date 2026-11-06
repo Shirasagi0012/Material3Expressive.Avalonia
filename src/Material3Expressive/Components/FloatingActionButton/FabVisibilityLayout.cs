@@ -58,7 +58,7 @@ internal sealed class FabVisibilityLayout : Decorator
         _pending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct); _pending = false;
+            if (!await scope.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_scale is null || _alpha is null) return;
             // A binding can become unavailable between the request and this frame.
             // Keep the request pending; never pass null to Animatable's default spring.

@@ -53,14 +53,14 @@ public sealed class ScrollFieldState : AvaloniaObject
     }
     public int TargetOption => _target;
     public bool IsScrollInProgress => _scrolling;
-    public Task ScrollToOptionAsync(int option, CancellationToken cancellationToken = default)
+    public Task<bool> ScrollToOptionAsync(int option, CancellationToken cancellationToken = default)
     {
-        VerifyAccess(); cancellationToken.ThrowIfCancellationRequested();
-        if (_userScrolling) return Task.FromCanceled(new CancellationToken(true));
+        VerifyAccess();
+        if (cancellationToken.IsCancellationRequested || _userScrolling) return Task.FromResult(false);
         SnapToPage(CalculateTargetPage(option));
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
-    public Task AnimateScrollToOptionAsync(int option, CancellationToken cancellationToken = default)
+    public Task<bool> AnimateScrollToOptionAsync(int option, CancellationToken cancellationToken = default)
         => AnimateToPageAsync(CalculateTargetPage(option), cancellationToken);
     private int CalculateTargetPage(int option) => CurrentPage + Math.Clamp(option, 0, ItemCount - 1) - CurrentPage % ItemCount;
 
@@ -126,12 +126,13 @@ public sealed class ScrollFieldState : AvaloniaObject
         Publish();
     }
 
-    internal Task AnimateToPageAsync(int page, CancellationToken cancellationToken = default)
+    internal Task<bool> AnimateToPageAsync(int page, CancellationToken cancellationToken = default)
     {
-        VerifyAccess(); cancellationToken.ThrowIfCancellationRequested();
+        VerifyAccess();
+        if (cancellationToken.IsCancellationRequested) return Task.FromResult(false);
         page = Math.Clamp(page, 0, PageCount - 1);
-        if (page == CurrentPage && OffsetFraction == 0) return Task.CompletedTask;
-        if (_userScrolling) return Task.FromCanceled(new CancellationToken(true));
+        if (page == CurrentPage && OffsetFraction == 0) return Task.FromResult(true);
+        if (_userScrolling) return Task.FromResult(false);
         var owner = RequireOwner();
         owner.CancelPointer(); CancelScroll();
         var first = FirstVisiblePage; var last = LastVisiblePage;
@@ -200,15 +201,15 @@ public sealed class ScrollFieldState : AvaloniaObject
     }
     private ScrollField RequireOwner() => _owner is { } owner && PageSize > 0 ? owner
         : throw new InvalidOperationException("Mount and lay out the ScrollField before starting a scroll animation.");
-    private Task RunScroll(Func<AnimationChildScope, CancellationToken, Task> action, CancellationToken cancellationToken)
+    private Task<bool> RunScroll(Func<AnimationChildScope, CancellationToken, Task> action, CancellationToken cancellationToken)
     {
         var scope = _scope = AnimationScope.Get(RequireOwner()).CreateChild("Scroll field movement");
         var cancellation = _cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, scope.Lifetime);
         SetAndRaise(IsScrollInProgressProperty, ref _scrolling, true); Publish();
         return Run();
-        async Task Run()
+        async Task<bool> Run()
         {
-            try { await action(scope, cancellation.Token); }
+            try { await action(scope, cancellation.Token); return !cancellation.IsCancellationRequested; }
             finally
             {
                 if (ReferenceEquals(_cancellation, cancellation))

@@ -2,21 +2,16 @@
 
 按问题组织：症状 → 原因 → 解决。涉及 Lookahead 家族与 SharedTransition 家族的条目均为**实验性**功能。
 
-## `await` 动画抛出 `OperationCanceledException`
+## 动画停止与异常诊断
 
-**症状**：调用日志或调试器里出现未处理的 `OperationCanceledException`，调用栈指向 `AnimateToAsync` 等动画方法。
-
-**原因**：动画被打断是常态而非错误。当动画被更新的动画、`Stop()`、`StopAsync()` 或 `SnapToAsync` 打断时，旧动画的 `Task` 以 `OperationCanceledException` 结束。另外，`MutatePriority` 较低的动画在互斥竞争中会被直接拒绝，其 `Task` 同样以取消结束。
-
-**解决**：凡是 `await` 动画 Task 的地方都捕获它。库内部也是这么做的（`ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs`）：
+动画替换、Stop、优先级拒绝和作用域卸载通过 `AnimationEndReason` 返回，调用方取消返回 `Canceled`。顺序操作检查结果后再执行下一步，无需捕获取消异常。
 
 ```csharp
-// 取自 ComposeAnimation.Avalonia/Lookahead/LookaheadPosition.cs
-try { await position.AnimateToAsync(target, AnimationSpec); }
-catch (OperationCanceledException) { }
+var result = await position.AnimateToAsync(scope, target, AnimationSpec);
+if (result.EndReason != AnimationEndReason.Finished) return;
 ```
 
-如果"被谁打断"本身重要，可以在 `catch` 块里读取 `Animatable<T>.TargetValue`/`Value` 判断当前状态。
+如果调试器仍显示 OCE，检查调用链是否还在使用兼容入口 `NextFrameAsync`、通用业务 `Task.Delay(..., token)` / `WaitAsync(token)`，或用户回调主动抛出异常。一次性帧提交改用 `WaitForNextFrameAsync` 并检查 bool；连续采样使用 `RunFramesAsync`。不要全局吞掉 OCE：无关的用户回调或帧源错误仍须报告。
 
 ## 在非 UI 线程调用动画 API 报错
 

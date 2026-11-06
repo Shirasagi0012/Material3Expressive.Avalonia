@@ -37,7 +37,7 @@ public class SearchBarGapTests
         Assert.Equal(progress, state.Progress);
         Assert.Equal(content, state.ContentProgress);
         Frames(clock, window, 112, 1008);
-        Assert.True(opening.IsCanceled);
+        Assert.True(opening.IsCompletedSuccessfully);
         Assert.True(closing.IsCompletedSuccessfully);
         Assert.Equal(0, state.Progress);
         Assert.Equal(0, state.ContentProgress);
@@ -239,13 +239,13 @@ public class SearchBarGapTests
         clock.Track(state.AnimateToCollapsedAsync()); Assert.Equal(before, state.Progress);
         Frames(clock, window, 176, 224);
         clock.Track(state.AnimateToExpandedAsync()); Frames(clock, window, 240, 1200);
-        Assert.True(first.IsCanceled); Assert.Equal(1, state.Progress);
+        Assert.True(first.IsCompletedSuccessfully); Assert.Equal(1, state.Progress);
         var replacement = new SearchBarState(SearchBarValue.Expanded);
         bar.State = replacement; popup.State = replacement; Flush(window);
         Assert.True(popup.IsPresented); Assert.Equal(2, builds);
         var collapse = replacement.AnimateToCollapsedAsync(); clock.Track(collapse); Frames(clock, window, 1216, 1248);
         root.Children.Clear(); Flush(window);
-        Assert.True(collapse.IsCanceled); Assert.False(popup.IsPresented);
+        Assert.True(collapse.IsCompletedSuccessfully); Assert.False(popup.IsPresented);
         Assert.Equal(0, clock.PendingFrameCount);
         window.Close();
     }

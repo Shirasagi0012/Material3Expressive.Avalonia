@@ -133,7 +133,7 @@ public sealed class ScopeRebuildResumeTest
         stage.Step(16);
         stage.Step(16);
         Assert.Equal(3, runs.Count);
-        Assert.All(runs.Take(2), r => Assert.True(r.IsCanceled));
+        Assert.All(runs.Take(2), r => Assert.True(r.IsCompletedSuccessfully));
         Assert.False(runs[2].IsCompleted);
         Assert.True(value.IsRunning);
         // value continued from where it stopped (no jump back to 0)

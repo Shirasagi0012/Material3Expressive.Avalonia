@@ -397,10 +397,6 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
         {
             await connection.Transition.RunAsync(scope, cancellationToken);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
         catch (Exception)
         {
             if (ReferenceEquals(_visibilityConnection, connection))

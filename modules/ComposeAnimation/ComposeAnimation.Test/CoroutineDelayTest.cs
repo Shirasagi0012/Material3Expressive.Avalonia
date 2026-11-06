@@ -53,15 +53,15 @@ public sealed class CoroutineDelayTest
         var a = child.DelayAsync(TimeSpan.FromSeconds(1), cancel.Token);
         var b = child.DelayAsync(Timeout.InfiniteTimeSpan);
         cancel.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => a);
+        Assert.False(await a);
         child.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => b);
+        Assert.False(await b);
         await child.Diagnostics.EndAsync();
         Assert.Equal(0, time.ActiveTimerCount); Assert.Equal(0, child.Diagnostics.ActiveTaskCount);
         Assert.Throws<ObjectDisposedException>(() => { _ = child.DelayAsync(TimeSpan.Zero); });
         var rootWait = window.AnimationRoot.DelayAsync(TimeSpan.FromSeconds(1));
         window.Close();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rootWait);
+        Assert.False(await rootWait);
         await window.AnimationRoot.Diagnostics.EndAsync(); Assert.Null(window.AnimationRoot.Diagnostics.LastError);
     });
 
@@ -75,7 +75,7 @@ public sealed class CoroutineDelayTest
         var waiting = child.DelayAsync(TimeSpan.FromSeconds(1));
         var sibling = window.AnimationRoot.DelayAsync(TimeSpan.FromSeconds(1));
         content.Children.Remove(owner);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+        Assert.False(await waiting);
         await child.Diagnostics.EndAsync(); Assert.False(sibling.IsCompleted);
         time.AdvanceBy(TimeSpan.FromSeconds(1)); Dispatcher.UIThread.RunJobs(); await sibling;
         window.Close(); Assert.Equal(0, time.ActiveTimerCount);
@@ -91,7 +91,7 @@ public sealed class CoroutineDelayTest
         // Complete the timer off-thread without pumping the captured UI continuation.
         Task.Run(() => time.AdvanceBy(TimeSpan.FromMilliseconds(650))).GetAwaiter().GetResult();
         cancel.Cancel(); Dispatcher.UIThread.RunJobs();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+        Assert.False(await waiting);
         window.Close(); Assert.Null(window.AnimationRoot.Diagnostics.LastError);
     });
 
@@ -111,7 +111,7 @@ public sealed class CoroutineDelayTest
         var scope = AnimationScope.Get(content); Assert.Same(time, scope.TimeProvider);
         var waiting = scope.DelayAsync(TimeSpan.FromSeconds(1));
         popup.IsOpen = false; Dispatcher.UIThread.RunJobs();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+        Assert.False(await waiting);
         await scope.Diagnostics.EndAsync(); Assert.Equal(0, time.ActiveTimerCount);
         window.Close(); Assert.Null(window.AnimationRoot.Diagnostics.LastError);
     });

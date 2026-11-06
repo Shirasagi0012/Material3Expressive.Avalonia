@@ -32,9 +32,11 @@ public class PullToRefreshTests
         var hide = state.AnimateToHiddenAsync();
         Assert.Equal(beforeReverse, state.DistanceFraction);
         Frames(clock, window, 160, 192);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => expand);
+        await expand;
+        Assert.True(expand.IsCompletedSuccessfully);
         await state.SnapToAsync(1.5f); Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hide);
+        await hide;
+        Assert.True(hide.IsCompletedSuccessfully);
         Assert.Equal(1.5f, state.DistanceFraction);
         Assert.False(state.IsAnimating);
         Assert.Equal(80, Layout(indicator).TranslationY);
@@ -42,7 +44,8 @@ public class PullToRefreshTests
         var pending = state.AnimateToHiddenAsync(cancellation.Token);
         Frames(clock, window, 208, 240);
         cancellation.Cancel(); Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        await pending;
+        Assert.True(pending.IsCompletedSuccessfully);
         var retained = state.DistanceFraction;
         Frames(clock, window, 256, 640);
         Assert.Equal(retained, state.DistanceFraction);
@@ -65,7 +68,8 @@ public class PullToRefreshTests
         Assert.True(state.IsAnimating);
         Frames(clock, window, 64, 80);
         panel.Children.Remove(second); Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        await pending;
+        Assert.True(pending.IsCompletedSuccessfully);
         Assert.False(state.IsAnimating);
         Assert.Equal(0, clock.PendingFrameCount);
         var retained = state.DistanceFraction;
@@ -133,7 +137,7 @@ public class PullToRefreshTests
         Assert.False(state.IsAnimating);
         await Assert.ThrowsAsync<InvalidOperationException>(() => state.AnimateToThresholdAsync());
         using var canceled = new CancellationTokenSource(); canceled.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => state.SnapToAsync(.5f, canceled.Token));
+        await state.SnapToAsync(.5f, canceled.Token);
         Assert.Equal(2.25f, state.DistanceFraction);
     }
 
@@ -175,9 +179,11 @@ public class PullToRefreshTests
         var hide = state.AnimateToHiddenAsync();
         Assert.Equal(partial, state.DistanceFraction);
         Frames(clock, window, 96, 128);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => expand);
+        await expand;
+        Assert.True(expand.IsCompletedSuccessfully);
         window.Content = null; Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hide);
+        await hide;
+        Assert.True(hide.IsCompletedSuccessfully);
         var retained = state.DistanceFraction;
         Assert.False(state.IsAnimating);
         Assert.Equal(0, clock.PendingFrameCount);
@@ -204,7 +210,8 @@ public class PullToRefreshTests
         Assert.Equal(120, Layout(first).TranslationY);
         Assert.True(state.IsAnimating);
         panel.Children.Remove(second); Flush(window);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        await pending;
+        Assert.True(pending.IsCompletedSuccessfully);
         Assert.False(state.IsAnimating);
         await state.SnapToAsync(0); Flush(window);
         Assert.Equal(120, Layout(first).TranslationY);

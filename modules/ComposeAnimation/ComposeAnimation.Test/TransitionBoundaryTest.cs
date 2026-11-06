@@ -144,7 +144,7 @@ public class TransitionBoundaryTest
         // 31 frames since the start / 2 = 258 ms of play time: about 77, not the accumulated 150.
         Assert.InRange(value.Value, 76, 79);
         cts.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        await AnimationStopAssert.StoppedAsync(run);
         window.Close();
     });
 
@@ -161,7 +161,7 @@ public class TransitionBoundaryTest
         clock.Pump(Ms(0));
         clock.Pump(Ms(50));
         firstCancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         clock.PumpTo(Ms(1000));
 
         using var secondCancellation = new CancellationTokenSource();
@@ -171,7 +171,7 @@ public class TransitionBoundaryTest
         clock.Pump(Ms(25));
         Assert.Equal(75, value.Value, 8);
         secondCancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+        await AnimationStopAssert.StoppedAsync(second);
         window.Close();
     });
 

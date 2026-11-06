@@ -117,16 +117,15 @@ public sealed class AnimatedCornerRadius : IDisposable
 
         // Snapping resets the progress coordinate system, not the visible shape. Publish only
         // after both endpoints and progress agree; a Value subscription would expose half an update.
-        await _progress.SnapToAsync(initialProgress, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
+        if (!await _progress.SnapToAsync(initialProgress, cancellationToken)) return;
         if (_disposed || generation != _generation)
-            throw new OperationCanceledException(new CancellationToken(true));
+            return;
 
         _start = start;
         _target = corners;
         _onFrame?.Invoke();
         if (_disposed || generation != _generation)
-            throw new OperationCanceledException(new CancellationToken(true));
+            return;
         await _progress.AnimateToAsync(_motion, 1f,
             new ComposeAnimation.Runtime.SpringSpec<float>(_spec.DampingRatio, _spec.Stiffness, (float)_spec.VisibilityThreshold), initialVelocity,
             block: _ => _onFrame?.Invoke(), cancellationToken: cancellationToken);

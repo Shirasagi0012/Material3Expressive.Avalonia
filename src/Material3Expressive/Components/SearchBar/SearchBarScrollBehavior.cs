@@ -85,7 +85,7 @@ public sealed class SearchBarScrollBehavior : AvaloniaObject
     }
     internal async Task<float> SettleAsync(float velocity, CancellationToken cancellationToken = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        if (cancellationToken.IsCancellationRequested) return velocity;
         var fraction = State.ScrollOffsetLimit != 0 ? State.ScrollOffset / State.ScrollOffsetLimit : 0;
         if (fraction < .01f || fraction == 1) return 0;
         var owner = _owner ?? throw new InvalidOperationException("Mount an AppBarWithSearch before settling its scroll behavior.");
@@ -112,6 +112,7 @@ public sealed class SearchBarScrollBehavior : AvaloniaObject
                     if (Math.Abs(delta - consumed) * density > .5f) frame.CancelAnimation();
                 }, cancellationToken: settling.Token);
             }
+            if (settling.IsCancellationRequested) return remainingVelocity;
             if (State.ScrollOffsetLimit < State.ScrollOffset && State.ScrollOffset < 0)
             {
                 var units = SnapAnimationSpec is null ? density : 1;

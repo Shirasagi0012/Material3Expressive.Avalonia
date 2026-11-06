@@ -29,14 +29,14 @@
 
 TooltipBox 未指定 State 时使用独立非持续状态，直接 `new TooltipState()` 则默认持续显示。每个 Box 使用独立实例。
 在所属视图中，`await box.State.ShowAsync()` 等待整次显示操作结束，`box.State.Dismiss()` 请求隐藏。
-同一互斥组内，相同或更高优先级的请求会打断旧请求，调用方应处理取消。自定义组可传入 TooltipState 构造器的 mutatorMutex 参数。
+同一互斥组内，相同或更高优先级的请求会打断旧请求，`ShowAsync` 返回 false 表示显示等待因停止结束，真正错误仍传播。自定义组可传入 TooltipState 构造器的 mutatorMutex 参数。
 
 鼠标进入、焦点和长按可显示提示，鼠标离开关闭非持续提示。Escape 关闭，`EnableUserInput="False"` 可仅保留程序控制。
 关闭 EnableUserInput 会取消当前悬停显示并释放其互斥请求；不会取消应用随后接管的 ShowAsync。重新启用后可再次通过鼠标进入显示。
 若长按已经触发，关闭输入会释放长按的优先级请求，但按固定 Core 规则保留当前可见状态；需要隐藏时显式调用 State.Dismiss()。
 外部按下默认隐藏，订阅 DismissRequested 后由应用调用 Dismiss 决定关闭。IsVisible 包含退出阶段，提示在动画结束后移除。
 非持续 Default / PreventUserInput 请求默认 1500ms 超时，非持续 UserInput 请求隐藏后仍可等待取消、抢占或卸载。
-超时以取消结束 ShowAsync；挂载后的显示等待与长按等待均不随动画速度缩放，卸载或更换 State 会取消旧请求。
+超时通过 false 结束 ShowAsync；挂载后的显示等待与长按等待均不随动画速度缩放，卸载或更换 State 会取消旧请求。
 
 ## 内容槽与定制
 

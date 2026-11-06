@@ -177,7 +177,7 @@ internal sealed class ChipIconSlot : Decorator
             {
                 if (!_transitionPresent || _transition is { IsRunning: true })
                 {
-                    await motion.NextFrameAsync(ct);
+                    if (!await motion.WaitForNextFrameAsync(ct)) return;
                     if (!MotionConfigurationReady) { _pending = false; return; }
                     if (!_transitionPresent) CreateTransition(EnterExitState.PreEnter);
                 }

@@ -57,14 +57,14 @@ AnimationScope.AddScopeChangedHandler(button, (_, e) =>
 当一个动画的采样结果驱动另一个动画目标时，可在拥有的 `AnimationScope` 上使用：
 
 ```csharp
-await scope.WaitForFrameEndAsync(cancellationToken);
+if (!await scope.WaitForFrameEndAsync(cancellationToken)) return;
 // 这里读取最新目标；同一批次内的多个变化由调用方合并。
 await alpha.AnimateToAsync(scope, latestTarget, spec, cancellationToken: cancellationToken);
 ```
 
 帧内调用等当前批次全部采样完成；帧间调用等下一批次完成。它不补发一帧，不受 DurationScale 影响，
 取消连接调用方和作用域。此入口用于目标提交，不保证布局/渲染已完成，也不是通用 Compose 重组实现。
-Material3Expressive 的 PullToRefreshArrow 是实际调用方；普通每帧循环继续使用 NextFrameAsync。
+Material3Expressive 的 PullToRefreshArrow 是实际调用方；自定义逐帧采样使用 `RunFramesAsync(frame => continueRunning, ct)`；一次性帧边界使用 `WaitForNextFrameAsync(ct)` 并检查 bool。
 
 ### 分开采样值与提交后的 effect
 
@@ -189,7 +189,9 @@ stateDiagram-v2
 
 新任务不会预先停止已有动画。Animatable 自身的互斥、中断、当前值与速度接续规则不变。一个任务失败不会取消兄弟任务。顺序流程应等待子任务并传递取消令牌；用户在流程内部自行创建并丢弃的任意业务任务不会自动被接管。
 
-`scope.NextFrameAsync(ct)` 等待窗口的下一帧，并在该帧批次中内联恢复；取消跟随令牌与 Scope 生命周期。
+`scope.WaitForNextFrameAsync(ct)` 返回一次消费的 ValueTask<bool>，在帧批次中内联恢复，停止返回 false；`WaitForFrameEndAsync` 则保留帧末提交边界。旧 `NextFrameAsync` 为兼容保留取消异常契约，动画实现不再用它驱动循环。
+
+`DelayAsync` 和 `WaitForSignalAsync` 返回 bool，正常停止返回 false。信号等待每次只做一次信号/停止竞争，不在每帧使用 `WhenAny`；底层信号的真实错误继续传播。
 
 根 `AnimationFailed` 提供 `FailureId`、`SourceScope`、实际 `Host`、可选 `OperationLabel` 和原始异常；`LastError`、`LastDiagnosticError` 等诊断成员不再公开，统一从这里取失败。取消任务不报告；以 Faulted 状态完成的任务即使携带 OperationCanceledException 也报告。聚合异常逐项处理，未保留来源的新异常是新失败。受管操作链、保留的 await/EDI 异常传播轨迹用于去重，不按消息文本去重；弱异常记录不持有永久任务或 Scope 历史。
 

@@ -293,7 +293,7 @@ internal sealed class AppBarTopChrome : Panel
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             var target = ContainerTarget;
             if (_container is null || _container.TargetValue == target)

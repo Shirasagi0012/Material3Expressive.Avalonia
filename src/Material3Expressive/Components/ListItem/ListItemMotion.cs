@@ -78,7 +78,7 @@ internal sealed class ListItemMotion : IDisposable
         _pending = true;
         _ = _scope.Launch(async ct =>
         {
-            await _scope.NextFrameAsync(ct);
+            if (!await _scope.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             // animateDpAsState receives the collected drag state during composition.
             UpdateElevation();
@@ -87,7 +87,7 @@ internal sealed class ListItemMotion : IDisposable
                 _deferShape = false;
                 // enabled changes dispose combinedClickable's input in composition. Its
                 // interaction collector invalidates the following composition's shape.
-                _ = _scope.Launch(async token => { await _scope.NextFrameAsync(token); UpdateShape(); }, "List disabled shape");
+                _ = _scope.Launch(async token => { if (!await _scope.WaitForNextFrameAsync(token)) return; UpdateShape(); }, "List disabled shape");
             }
             else UpdateShape();
             var state = State;
@@ -100,7 +100,7 @@ internal sealed class ListItemMotion : IDisposable
             _transition.UpdateTarget(state);
             if (_colors.Any(c => !c.IsFinished) && (_colorRun is null || _colorRun.IsCompleted))
             {
-                if (!changedState) await _scope.NextFrameAsync(ct);
+                if (!changedState && !await _scope.WaitForNextFrameAsync(ct)) return;
                 if (_colorRun is null || _colorRun.IsCompleted)
                 {
                     _colorEffect?.Dispose();

@@ -252,7 +252,7 @@ public class SwipeToDismissBoxTests
             Assert.InRange(box.State.CurrentOffset, 1, 239);
             var reverse = box.State.DismissAsync(SwipeToDismissBoxValue.EndToStart);
             Advance(clock, window, 25);
-            Assert.True(first.IsCanceled); Assert.True(reverse.IsCompletedSuccessfully);
+            Assert.True(first.IsCompletedSuccessfully); Assert.True(reverse.IsCompletedSuccessfully);
             Assert.Equal(-240, box.State.CurrentOffset);
             Assert.Equal([SwipeToDismissBoxValue.EndToStart], directions);
             var reset = box.State.ResetAsync(); Advance(clock, window, 25);
@@ -327,13 +327,13 @@ public class SwipeToDismissBoxTests
             var old = box.State;
             var first = old.DismissAsync(SwipeToDismissBoxValue.StartToEnd); Advance(clock, window, 3);
             box.State = new(); window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
-            Assert.True(first.IsCanceled); Assert.Equal(0, box.State.CurrentOffset);
+            Assert.True(first.IsCompletedSuccessfully); Assert.Equal(0, box.State.CurrentOffset);
             using var cancellation = new CancellationTokenSource();
             var second = box.State.DismissAsync(SwipeToDismissBoxValue.EndToStart, cancellation.Token);
             Advance(clock, window, 3); cancellation.Cancel(); Dispatcher.UIThread.RunJobs();
-            Assert.True(second.IsCanceled);
+            Assert.True(second.IsCompletedSuccessfully);
             var third = box.State.ResetAsync(); Advance(clock, window, 2);
-            window.Content = null; Dispatcher.UIThread.RunJobs(); Assert.True(third.IsCanceled);
+            window.Content = null; Dispatcher.UIThread.RunJobs(); Assert.True(third.IsCompletedSuccessfully);
             window.Content = box; window.UpdateLayout();
             var reset = box.State.ResetAsync(); Advance(clock, window, 25);
             Assert.True(reset.IsCompletedSuccessfully); Assert.Equal(0, box.State.CurrentOffset);

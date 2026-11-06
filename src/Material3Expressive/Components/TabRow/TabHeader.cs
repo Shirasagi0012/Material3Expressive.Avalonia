@@ -170,7 +170,7 @@ internal sealed class TabHeader : Panel
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct);
+            if (!await motion.WaitForNextFrameAsync(ct)) return;
             _pending = false;
             if (_transition is null || _color is null || SelectedContentAnimation.Stiffness <= 0 || UnselectedContentAnimation.Stiffness <= 0) return;
             var selected = SelectedContentAnimation;
@@ -184,7 +184,7 @@ internal sealed class TabHeader : Panel
             if ((!_color.IsFinished || _transition.CurrentState != _transition.TargetState) && (_runTask is null || _runTask.IsCompleted))
             {
                 // Mapping-only changes launch on the following composition frame.
-                if (!changedState) await motion.NextFrameAsync(ct);
+                if (!changedState && !await motion.WaitForNextFrameAsync(ct)) return;
                 if (_transition is null) return;
                 if (_runTask is { IsCompleted: false }) return;
                 _run?.Dispose(); _run = CancellationTokenSource.CreateLinkedTokenSource(ct);

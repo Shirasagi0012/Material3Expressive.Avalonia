@@ -79,7 +79,7 @@ public class RuntimeScopeBindingTest
         clock.Pump(Ms(20));
         Assert.Equal(100, value.Value, 8);
         cts.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        await AnimationStopAssert.StoppedAsync(run);
         scope.Dispose();
         window.Close();
     });
@@ -119,7 +119,7 @@ public class RuntimeScopeBindingTest
         var run = transition.RunAsync(scope);
         Dispatcher.UIThread.RunJobs();
         var seek = state.AnimateToAsync(scope, true);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        await AnimationStopAssert.StoppedAsync(run);
         // A new run takes the run mutex from the seek while a second seek queues on the state
         // mutex. With the opposite order these three would wait on each other forever.
         var run2 = transition.RunAsync(scope);
@@ -154,12 +154,12 @@ public class RuntimeScopeBindingTest
         var second = value.AnimateToAsync(scope, 0, Linear<double>(100), block: _ => events.Add("second sample"));
         Dispatcher.UIThread.RunJobs();
         clock.Pump(Ms(16));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         await observedFirst;
         Assert.Equal("first ended", events[0]);
         Assert.Contains("second sample", events);
         value.Stop();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+        await AnimationStopAssert.StoppedAsync(second);
         window.Close();
     });
 
@@ -179,13 +179,13 @@ public class RuntimeScopeBindingTest
         clock.Pump(Ms(250));
         Assert.Equal(25, value.Value, 8);
         var second = transition.RunAsync(b);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         Dispatcher.UIThread.RunJobs();
         clock.Pump(Ms(16)); // resumes: the takeover frame does not count inactive time
         clock.Pump(Ms(100));
         Assert.Equal(35, value.Value, 8);
         transition.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+        await AnimationStopAssert.StoppedAsync(second);
         a.Dispose(); b.Dispose();
         window.Close();
     });

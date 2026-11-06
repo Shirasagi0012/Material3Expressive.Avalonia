@@ -48,7 +48,8 @@ public class AnimationLifetimeTests
         Assert.Equal(0, clock.PendingFrameCount);
 
         ripple.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => playing);
+        await playing;
+        Assert.True(playing.IsCompletedSuccessfully);
         Assert.False(parent.Diagnostics.IsEnding);
         Assert.Equal(0, parent.Diagnostics.ActiveChildCount);
         Assert.Null(parent.Diagnostics.LastError);

@@ -10,7 +10,7 @@
 - 永不停止的循环效果 → `InfiniteTransition`
 - 只动画单个值、不需要状态机 → 参见 [Animatable](./animatable.md)
 
-帧时钟、线程模型、`Task` 异步与 `OperationCanceledException` 中断、`MotionDurationScale` 等前置概念见 [引擎总览](./overview.md)，本文不再重复。
+帧时钟、线程模型、`Task` 结果与停止状态、`MotionDurationScale` 等前置概念见 [引擎总览](./overview.md)，本文不再重复。
 
 ## 快速开始
 
@@ -56,7 +56,7 @@ alpha.PropertyChanged += (_, e) =>
 销毁时 `Dispose` 过渡，帧循环随之取消：
 
 ```csharp
-transition.Dispose();   // RunAsync 返回的任务以 OperationCanceledException 结束
+transition.Dispose();   // RunAsync 返回 Interrupted
 ```
 
 也可以在创建时直接传初始状态，由过渡内部创建状态对象：
@@ -120,7 +120,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 
 - `RunAsync(FrameScope scope, CancellationToken)` 是根过渡的帧循环，在 `scope` 中运行（帧、生命周期与时长倍率来自 Scope）：只能在**根**上调用（子过渡调用抛 `InvalidOperationException`）；再次调用会接管：旧循环被取消并完成清理后新循环才采样。
 - 循环空闲时不请求帧；目标变更、注册动画等变化会自动唤醒它。
-- 取消令牌或 `Dispose()` 都会结束循环，任务以 `OperationCanceledException` 完成；取消只是停止推进，不会把状态/值吸附到终点。
+- 取消令牌或 `Dispose()` 都会结束循环，任务正常完成并返回停止原因；取消只是停止推进，不会把状态/值吸附到终点。
 - 所有公共成员都必须在时钟所属线程调用（UI Scope 即 UI 线程），详见 [引擎总览](./overview.md)。
 
 ## API 要点
@@ -142,7 +142,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `TotalDuration` | `TimeSpan` | 全树最长动画时长（含子过渡） |
 | `DurationScale` | `double`，可读写 | 树范围时长倍率（读写都作用于根）；必须有限且 ≥ 0，否则抛 `ArgumentOutOfRangeException`；`0` 表示子动画下一帧直达终值 |
 | `BeginPreparation()` | `TransitionPreparationLease` | 获取准备租约，阻止过渡完成；seeking 中调用抛 `InvalidOperationException` |
-| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task` | 根帧循环；子过渡调用抛 `InvalidOperationException`；重复调用接管旧循环 |
+| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task<AnimationEndReason>` | 根帧循环；子过渡调用抛 `InvalidOperationException`；重复调用接管旧循环 |
 | `RefreshAnimations()` | `void` | 重新求值全树的目标值/规格闭包 |
 | `Dispose()` | `void` | 幂等；取消帧循环、撤销租约、分离子动画与子过渡；之后访问成员抛 `ObjectDisposedException` |
 
@@ -226,7 +226,7 @@ transition.RefreshAnimations();    // 重新求值，动画重定向到 200
 | `Animations` | `IReadOnlyList<IInfiniteTransitionAnimation>` | 已注册动画；接口暴露 `Label`/`IsFinished`（无限动画没有 `Duration`） |
 | `DurationScale` | `double`，可读写 | 必须有限且 ≥ 0。**改动会重启所有子动画**（与 `Transition` 不同）；`0` = 全部吸附到目标值并挂起帧循环，恢复正值后从头重启 |
 | `AnimateValue<TValue>(TValue initialValue, TValue targetValue, ITwoWayConverter<TValue> typeConverter, InfiniteRepeatableSpec<TValue> animationSpec, string label = "ValueAnimation")` | `TransitionAnimationState<TValue>` | 注册无限动画 |
-| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task` | 帧循环；重复调用接管旧循环，播放时间连续（调用方取消或 Dispose 时清零） |
+| `RunAsync(FrameScope scope, CancellationToken cancellationToken = default)` | `Task<AnimationEndReason>` | 帧循环；重复调用接管旧循环，播放时间连续（调用方取消或 Dispose 时清零） |
 | `Dispose()` | `void` | 幂等；取消循环、分离子动画；值不吸附 |
 
 其子动画 `InfiniteTransition.TransitionAnimationState<TValue>`（`ObservableObject, IDisposable`）暴露 `Value`/`InitialValue`/`TargetValue`/`AnimationSpec`/`Animation`/`IsFinished`/`Label`/`TypeConverter`，并提供运行时重定向方法：
@@ -310,7 +310,7 @@ await state.AnimateToAsync(motion, true);      // 按时钟把进度动画到 10
 await state.SnapToAsync(false);        // 立即跳到指定状态并退出手动模式
 ```
 
-注意：seek 与动画操作经内部互斥锁串行化——新操作会取消正在等待帧的旧操作（旧任务收到 `OperationCanceledException`）；`AnimateToAsync(scope, target, animationSpec)` 可传入 `IFiniteAnimationSpec<double>` 控制进度本身的节奏（缺省时沿过渡时间线线性推进）；一个 `SeekableTransitionState<T>` 实例只能配置给一个 `Transition`，否则抛 `InvalidOperationException`；seekable 过渡自己驱动帧，不要再对它调用 `RunAsync`；`AnimateToAsync(scope, …)` 先取状态互斥锁、再取过渡的运行互斥锁（全库统一这一顺序），因此会取消正在运行的 `RunAsync`。
+注意：seek 与动画操作经内部互斥锁串行化——新操作会取消正在等待帧的旧操作（旧任务返回 false）；`AnimateToAsync(scope, target, animationSpec)` 可传入 `IFiniteAnimationSpec<double>` 控制进度本身的节奏（缺省时沿过渡时间线线性推进）；一个 `SeekableTransitionState<T>` 实例只能配置给一个 `Transition`，否则抛 `InvalidOperationException`；seekable 过渡自己驱动帧，不要再对它调用 `RunAsync`；`AnimateToAsync(scope, …)` 先取状态互斥锁、再取过渡的运行互斥锁（全库统一这一顺序），因此会取消正在运行的 `RunAsync`。
 
 ### 延迟注册动画：`CreateDeferredAnimation`
 
@@ -395,7 +395,7 @@ transition.SetPlaytimeAfterInitialAndTargetStateEstablished(false, true, TimeSpa
 ## 注意事项
 
 - **线程**：所有公共成员都必须在时钟所属线程调用（UI Scope 即 UI 线程），否则 `VerifyAccess` 抛异常；详见 [引擎总览](./overview.md)。
-- **`RunAsync` 的使用纪律**：只在根调用、同时只能有一个循环；取消或 `Dispose` 使任务以 `OperationCanceledException` 结束，且取消不会吸附状态/值到终点（"取消不等于完成"）。
+- **`RunAsync` 的使用纪律**：只在根调用、同时只能有一个循环；取消或 `Dispose` 使任务返回停止原因，且取消不会吸附状态/值到终点（"取消不等于完成"）。
 - **观察者异常**：`PropertyChanged` 处理器抛出的异常会使帧循环出错（从 `RunAsync` 重新抛出）并清除运行标记；通知统一在当前变更批次之后派发，处理器里可以安全地再次改目标或 `Dispose` 动画。
 - **`Dispose` 语义**：幂等；撤销租约、分离全部子动画与子过渡；之后的成员访问抛 `ObjectDisposedException`；当前值保持不动（不吸附）。
 - **闭包不求值快照**：外部数据变化后需要 `RefreshAnimations()` 或动画的 `Update(...)`；`Transition` 与 `InfiniteTransition` 的 `Update` 在"同值同规格"时是 no-op。
@@ -412,3 +412,5 @@ transition.SetPlaytimeAfterInitialAndTargetStateEstablished(false, true, TimeSpa
 - [AnimatedVisibility 控件](../components/animated-visibility.md)
 - [SharedTransition 共享元素过渡](../components/shared-transition.md)
 - [返回文档入口](../README.md)
+
+停止原因区分 `Canceled`（调用方）、`ScopeEnded`（作用域结束）和 `Interrupted`（替换/Dispose）；停止不吸附到目标。Seekable 的 Snap/Seek/Animate 返回 `bool`，中断或拒绝时为 false。空闲 Transition 保留状态和停止注册，不请求帧，也不创建逐帧 Task。

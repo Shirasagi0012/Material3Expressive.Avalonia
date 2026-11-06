@@ -150,20 +150,20 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
     }
 
     /// <summary>Immediately places the whole transition at <paramref name="targetState"/>.</summary>
-    public Task SnapToAsync(T targetState, CancellationToken cancellationToken = default)
+    public Task<bool> SnapToAsync(T targetState, CancellationToken cancellationToken = default)
     {
         var transition = _transition;
-        if (transition is null) return Task.CompletedTask;
+        if (transition is null) return Task.FromResult(true);
         transition.VerifyAccess();
 
         if (EqualityComparer<T>.Default.Equals(CurrentState, targetState) &&
             EqualityComparer<T>.Default.Equals(TargetState, targetState) && !transition.IsPreparing)
-            return Task.CompletedTask;
+            return Task.FromResult(true);
 
         return _mutatorMutex.MutateAsync(
             token =>
             {
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return Task.FromResult(false);
                 transition.SetSeekableState(targetState, targetState, TimeSpan.Zero,
                     preserveCurrentValues: false);
                 Fraction = 0;
@@ -171,10 +171,10 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
                 return Task.FromResult(true);
             },
             MutatePriority.Default,
-            cancellationToken);
+            cancellationToken, () => false);
     }
 
-    public Task SeekToAsync(double fraction, CancellationToken cancellationToken = default)
+    public Task<bool> SeekToAsync(double fraction, CancellationToken cancellationToken = default)
         => SeekToAsync(TargetState, fraction, cancellationToken);
 
     /// <summary>
@@ -182,18 +182,18 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
     /// this leaves the transition in seeking mode so that subsequent calls can move freely in both
     /// directions without starting a normal frame loop.
     /// </summary>
-    public Task SeekToAsync(T targetState, double fraction,
+    public Task<bool> SeekToAsync(T targetState, double fraction,
         CancellationToken cancellationToken = default)
     {
         ValidateFraction(fraction);
         var transition = _transition;
-        if (transition is null) return Task.CompletedTask;
+        if (transition is null) return Task.FromResult(true);
         transition.VerifyAccess();
 
         return _mutatorMutex.MutateAsync(
             token =>
             {
-                token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested) return Task.FromResult(false);
                 var oldTarget = TargetState;
                 if (!EqualityComparer<T>.Default.Equals(targetState, oldTarget))
                 {
@@ -215,10 +215,10 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
                 return Task.FromResult(true);
             },
             MutatePriority.Default,
-            cancellationToken);
+            cancellationToken, () => false);
     }
 
-    public Task AnimateToAsync(FrameScope scope, IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task<bool> AnimateToAsync(FrameScope scope, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
         => AnimateToAsync(scope, TargetState, animationSpec, cancellationToken);
 
@@ -229,18 +229,18 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
     /// transition, the seek run takes the transition's run mutex, so it cancels a running
     /// <see cref="Transition.RunAsync"/> (and vice versa) instead of racing it.
     /// </summary>
-    public Task AnimateToAsync(FrameScope scope, T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
+    public Task<bool> AnimateToAsync(FrameScope scope, T targetState, IFiniteAnimationSpec<double>? animationSpec = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(scope);
         var transition = _transition;
-        if (transition is null) return Task.CompletedTask;
+        if (transition is null) return Task.FromResult(true);
         transition.VerifyAccess();
         scope.VerifyAccess();
 
         return scope.Track(() => transition.MutateWithRunMutexAsync(_mutatorMutex,
             (stateToken, runToken) => AnimateCoreAsync(scope, transition, targetState, animationSpec, stateToken, runToken),
-            cancellationToken));
+            cancellationToken, () => false));
     }
 
     private async Task<bool> AnimateCoreAsync(FrameScope scope, Transition<T> transition, T targetState,
@@ -249,7 +249,7 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         // The run's one token: state mutex (caller token included), run mutex and scope lifetime.
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(stateToken, runToken, scope.Lifetime);
         var cancellationToken = linked.Token;
-        cancellationToken.ThrowIfCancellationRequested();
+        if (cancellationToken.IsCancellationRequested) return false;
 
         var oldTarget = TargetState;
         if (!EqualityComparer<T>.Default.Equals(targetState, oldTarget))
@@ -289,12 +289,10 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
         try
         {
             var clock = new PlayTimeAccumulator();
-            clock.Advance(await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true), 1);
-            while (true)
+            var initialized = false;
+            var reason = await scope.RunFramesAsync(frame =>
             {
-                // The wait observes the run token; one check per frame after it resumes.
-                var frame = await scope.WaitFrameAsync(cancellationToken, null).ConfigureAwait(true);
-                cancellationToken.ThrowIfCancellationRequested();
+                if (!initialized) { initialized = true; clock.Advance(frame, 1); return true; }
                 if (clock.IsBeforeLast(frame))
                     throw new ArgumentOutOfRangeException(nameof(frame),
                         "Animation frame time moved backwards.");
@@ -319,8 +317,12 @@ public sealed class SeekableTransitionState<T>(T initialState) : TransitionState
                     transition.SetRunningMode(true);
                     running = true;
                 }
-                if (animation?.IsFinished(playTime) ?? progress >= 1) 
-                    break;
+                return !(animation?.IsFinished(playTime) ?? progress >= 1);
+            }, cancellationToken);
+            if (reason != AnimationEndReason.Finished)
+            {
+                if (running && !transition.IsDisposed) transition.SetRunningMode(false);
+                return false;
             }
         }
         catch

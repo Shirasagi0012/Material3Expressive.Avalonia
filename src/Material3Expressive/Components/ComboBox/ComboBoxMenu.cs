@@ -142,7 +142,7 @@ internal sealed class ComboBoxSelectionIcon : Decorator
         _updatePending = true;
         _ = scope.Launch(async ct =>
         {
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             _updatePending = false;
             // A Get scope ends at the drain, not at detach: Stop may already have run.
             if (_transition is not { } transition) return;

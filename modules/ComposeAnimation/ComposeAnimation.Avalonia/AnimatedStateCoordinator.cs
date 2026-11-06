@@ -25,7 +25,8 @@ internal sealed class AnimatedStateCoordinator
     private readonly FrameClock _clock;
     private readonly AnimationCommitPhase _phase;
     private readonly HashSet<IAnimatedStateCommit> _pending = [];
-    private CancellationTokenSource? _wake;
+    private FrameClock.Registration? _wake;
+    private int _generation;
     private bool _committing;
     private bool _failed;
 
@@ -44,14 +45,16 @@ internal sealed class AnimatedStateCoordinator
         if (_failed) return;
         _pending.Add(state);
         if (_wake is not null) return;
-        var wake = _wake = new CancellationTokenSource();
-        _ = WakeAsync(wake);
+        Arm();
     }
 
     public void Remove(IAnimatedStateCommit state)
     {
         _pending.Remove(state);
-        if (_pending.Count == 0 && !_committing) _wake?.Cancel();
+        if (_pending.Count == 0 && !_committing)
+        {
+            _generation++; _wake?.Dispose(); _wake = null;
+        }
     }
 
     private void Commit()
@@ -64,46 +67,35 @@ internal sealed class AnimatedStateCoordinator
         finally { _committing = false; }
     }
 
-    private async Task WakeAsync(CancellationTokenSource wake)
+    private void Arm()
     {
-        try
+        var generation = ++_generation;
+        _wake = _clock.CreateRegistration(_ => Arrived(), Fail);
+        if (_phase == AnimationCommitPhase.AfterFrame && _clock.IsDispatchingFrame) Arrived();
+        else _wake.Request();
+
+        void Arrived()
         {
-            do
-            {
-                if (_phase == AnimationCommitPhase.BeforeFrame || !_clock.IsDispatchingFrame)
-                    await _clock.WaitAsync(wake.Token);
-                if (_phase == AnimationCommitPhase.AfterFrame)
-                {
-                    // Same boundary as AnimationScope.WaitForFrameEndAsync: an in-frame
-                    // target joins this frame's commit; an external target waits for a frame.
-                    // The old run samples first. Interruption policy belongs to the state.
-                    await Dispatcher.Yield(FrameClock.ResumePriority);
-                    wake.Token.ThrowIfCancellationRequested();
-                    Commit();
-                }
-            }
-            while (_pending.Count != 0);
+            if (_phase == AnimationCommitPhase.AfterFrame) Dispatcher.UIThread.Post(Complete, FrameClock.ResumePriority);
+            else Complete();
         }
-        catch (OperationCanceledException) when (wake.IsCancellationRequested) { }
-        catch (Exception error)
+        void Complete()
         {
-            // Source failure is already reported and permanently disables this clock.
-            // A foreign before-frame hook may fail only this batch; it must not disable
-            // future commits after that hook is removed.
+            if (generation != _generation) return;
+            try { if (_phase == AnimationCommitPhase.AfterFrame) Commit(); }
+            catch (Exception error) { Fail(error); return; }
+            _wake?.Dispose(); _wake = null;
+            if (!_failed && _pending.Count != 0) Arm();
+        }
+        void Fail(Exception error)
+        {
+            if (generation != _generation) return;
             _failed = _clock.IsUnavailable;
+            _wake?.Dispose(); _wake = null;
             var pending = _pending.ToArray();
             _pending.Clear();
             foreach (var state in pending) state.RejectCommitFrame(error, report: !_failed);
-        }
-        finally
-        {
-            if (ReferenceEquals(_wake, wake)) _wake = null;
-            wake.Dispose();
-            if (!_failed && _pending.Count != 0 && _wake is null)
-            {
-                var next = _wake = new CancellationTokenSource();
-                _ = WakeAsync(next);
-            }
+            if (!_failed && _pending.Count != 0 && _wake is null) Arm();
         }
     }
 }

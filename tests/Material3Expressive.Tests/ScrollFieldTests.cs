@@ -78,7 +78,7 @@ public class ScrollFieldTests
         Assert.Equal(21, state.TargetOption); Assert.True(state.IsScrollInProgress);
         Advance(clock, window, 0, 64);
         var second = state.AnimateScrollToOptionAsync(19);
-        Assert.True(first.IsCanceled);
+        Assert.True(first.IsCompletedSuccessfully);
         Advance(clock, window, 64, 864);
         Assert.True(second.IsCompletedSuccessfully); Assert.Equal(19, state.SelectedOption);
         window.Close();
@@ -95,7 +95,7 @@ public class ScrollFieldTests
         Assert.InRange(state.SelectedOption, 895, 899);
         Assert.InRange(field.GetVisualDescendants().OfType<ScrollFieldNumber>().Count(), 3, 4);
         Advance(clock, window, 0, 64); cancel.Cancel(); Dispatcher.UIThread.RunJobs();
-        Assert.True(task.IsCanceled); Assert.False(state.IsScrollInProgress);
+        Assert.True(task.IsCompletedSuccessfully); Assert.False(state.IsScrollInProgress);
         var option = state.SelectedOption;
         Advance(clock, window, 64, 864); Assert.Equal(option, state.SelectedOption);
         window.Close();
@@ -161,10 +161,10 @@ public class ScrollFieldTests
         var window = Show(field); clock.SendFrame(TimeSpan.Zero);
         var task = old.AnimateScrollToOptionAsync(25); Advance(clock, window, 0, 48);
         field.State = new(5, 2); Flush(window);
-        Assert.True(task.IsCanceled); Assert.Equal(2, field.State.SelectedOption);
+        Assert.True(task.IsCompletedSuccessfully); Assert.Equal(2, field.State.SelectedOption);
         var next = field.State.AnimateScrollToOptionAsync(3); Advance(clock, window, 48, 96);
         window.Content = null; Flush(window);
-        Assert.True(next.IsCanceled); Assert.False(field.State.IsScrollInProgress);
+        Assert.True(next.IsCompletedSuccessfully); Assert.False(field.State.IsScrollInProgress);
         window.Content = field; Flush(window); field.State.SelectedOption = 4; Flush(window);
         Assert.Equal(4, field.State.SelectedOption);
         window.Close();
@@ -195,8 +195,8 @@ public class ScrollFieldTests
         Send(RawPointerEventType.TouchUpdate, 1032, 60);
         Assert.True(state.IsScrollInProgress);
         Assert.Equal(22f / state.PageSize, state.OffsetFraction);
-        Assert.True(state.AnimateScrollToOptionAsync(5).IsCanceled);
-        Assert.True(state.ScrollToOptionAsync(5).IsCanceled);
+        Assert.False(state.AnimateScrollToOptionAsync(5).GetAwaiter().GetResult());
+        Assert.False(state.ScrollToOptionAsync(5).GetAwaiter().GetResult());
         Assert.True(state.IsScrollInProgress); // Default mutations cannot cancel UserInput.
         state.SelectedOption = 0;
         Send(RawPointerEventType.TouchUpdate, 1040, 50);
@@ -236,7 +236,7 @@ public class ScrollFieldTests
         frames.SendFrame(TimeSpan.Zero); Flush(window);
         window.MouseWheel(new Point(60, 100), new Vector(0, -12), RawInputModifiers.None);
         Assert.True(field.State.IsScrollInProgress);
-        Assert.True(field.State.AnimateScrollToOptionAsync(20).IsCanceled);
+        Assert.False(field.State.AnimateScrollToOptionAsync(20).GetAwaiter().GetResult());
         Assert.InRange(field.State.OffsetFraction * field.State.PageSize, 5.9f, 6.1f);
         AdvanceWheel(100);
         Assert.False(field.State.IsScrollInProgress); Assert.Equal(0, field.State.OffsetFraction);

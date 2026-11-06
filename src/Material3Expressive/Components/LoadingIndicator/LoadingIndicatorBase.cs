@@ -135,7 +135,7 @@ public abstract class LoadingIndicatorBase : Control
                         try
                         {
                             var result = await progress.AnimateToAsync(scope, 1, spring, cancellationToken: token);
-                            token.ThrowIfCancellationRequested();
+                            if (token.IsCancellationRequested) return;
                             if (result.EndReason == AnimationEndReason.Finished)
                             {
                                 MorphIndex = (MorphIndex + 1) % count;
@@ -147,7 +147,7 @@ public abstract class LoadingIndicatorBase : Control
                         catch { scope.Dispose(); throw; }
                     }, "Loading indicator morph");
                     // kotlinx.coroutines.delay is separate from animation frames and scaling.
-                    await scope.DelayAsync(TimeSpan.FromMilliseconds(650), ct);
+                    if (!await scope.DelayAsync(TimeSpan.FromMilliseconds(650), ct)) return;
                     await morph;
                 }
             }
@@ -176,7 +176,7 @@ public abstract class LoadingIndicatorBase : Control
             // FrameRecomposer first samples the old Animatables, then applies the new
             // remember keys and LaunchedEffect. Retain that final old-frame sample before
             // canceling the effect; restarting inline would retain the previous frame.
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             polygonUpdate = null;
             activePolygons = EffectivePolygons;
             shapes = null;

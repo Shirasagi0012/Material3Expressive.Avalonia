@@ -138,7 +138,7 @@ public class Dialog : ContentControl
             {
                 // Install the layer effect on the presentation's first composition
                 // frame. AnimateProgress establishes its timestamp on the next frame.
-                await entrance.NextFrameAsync(ct);
+                if (!await entrance.WaitForNextFrameAsync(ct)) return;
                 await AnimateProgress(entrance, 200, UpdateAppearance, ct);
             }, "Dialog appearance");
         }
@@ -154,7 +154,7 @@ public class Dialog : ContentControl
             {
                 // Core disposes the entering composition after its animation has
                 // consumed this frame. Freeze that last progress for a partial exit.
-                await exit.Scope.NextFrameAsync(ct);
+                if (!await exit.Scope.WaitForNextFrameAsync(ct)) return;
                 var initialProgress = exit.InitialProgress;
                 if (ReferenceEquals(_entrance, entrance))
                 {

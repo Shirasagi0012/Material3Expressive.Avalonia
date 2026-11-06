@@ -39,23 +39,15 @@ Float 参数、位移差、速度与输出边界，并把采样时间截到整�
 不能把整个引擎强制缩窄为 Float。公共签名不变；依赖旧 float 精确数值或亚毫秒样本的应用需重新核对快照。
 双端 `animation-spring` 覆盖三种阻尼、反向初速度、大位移和静止，Material3 的实际形状消费者另行验证。
 
-所有动画方法返回 `Task`（方法名带 `Async` 后缀），例如 `Animatable<T>.AnimateToAsync` 返回 `Task<AnimationResult<T>>`，正常完成时 `AnimationResult<T>` 携带结束状态快照（`EndState`）与结束原因（`EndReason`：`Finished` 或 `BoundReached`）。
-
-**打断是常态，不是异常。**当动画被更新的动画、`Stop()` 或 `SnapToAsync` 打断时，旧 Task 以 `OperationCanceledException` 结束——`await` 动画必须捕获它：
+动画由每窗口共享时钟的回调直接采样；每次运行的 Task 只等待最终结果，不参与逐帧推进。`Animatable<T>.AnimateToAsync` 返回 `Task<AnimationResult<T>>`，包含结束快照和原因：`Finished`、`BoundReached`、`Interrupted`（替换、Stop、优先级拒绝）、`ScopeEnded` 或 `Canceled`（调用方令牌）。正常停止不会构造并抛出取消异常；真正的采样、转换、回调、帧源和清理错误仍传播为失败任务。
 
 ```csharp
-// 运行时动画示例
-try
-{
-    await forward;
-}
-catch (OperationCanceledException)
-{
-    // 被新的动画打断了
-}
+var result = await alpha.AnimateToAsync(motion, 1, cancellationToken: ct);
+if (result.EndReason != AnimationEndReason.Finished) return;
+// 只有确实到达目标后才开始下一步。
 ```
 
-`Animatable<T>` 通过内部互斥锁保证同一时刻只有一个动画在写值；`MutatePriority` 控制互斥优先级：`Default` < `UserInput` < `PreventUserInput`。同级或更高优先级的动画会打断当前动画；**更低优先级的动画会被直接拒绝**（其 Task 同样以取消结束），见 `ComposeAnimation.Test/AnimatableTest.cs` 的 `AnimateTo_WithLowerPriority_IsRejected`。
+`Animatable<T>` 的互斥与速度接续保持不变。新运行等待旧采样回调返回及清理完成后再写入；优先级仍为 `Default` < `UserInput` < `PreventUserInput`。`SnapToAsync` 返回 `bool`，表示是否实际提交；`SuspendAnimation`、`Transition.RunAsync` 和 `InfiniteTransition.RunAsync` 返回 `AnimationEndReason`。
 
 注意 `AnimationState<T>` + `SuspendAnimation` 扩展方法是**没有互斥保护**的底层入口，同一状态并发播放会交错写值；需要打断安全时请用 `Animatable<T>`。
 
@@ -74,9 +66,9 @@ var operation = mutex.MutateAsync(async ct =>
 await operation;
 ```
 
-`MutateAsync<TResult>` 遵循同级或更高优先级抢占、更低优先级拒绝的规则；新操作会等待旧操作及其 `finally` 清理完成。操作必须响应传入的取消令牌，否则抢占只能发出取消请求，新操作仍需等待旧操作退出。操作抛出的其他异常直接传给调用方。
+`MutateAsync<TResult>` 遵循同级或更高优先级抢占、更低优先级拒绝的规则；新操作会等待旧操作及其 `finally` 清理完成。操作必须响应传入的取消令牌，否则抢占只能发出取消请求，新操作仍需等待旧操作退出。动画调用提供 `interruptedResult` 工厂，将进入临界区前的停止或优先级拒绝映射成状态；委托本身也应通过结果退出。未提供工厂的通用业务调用保留 Task 取消契约。真正的异常直接传给调用方。
 
-`CancelCurrent()` 请求取消但不等待清理；需要等待时，先保存 `CurrentCompletion`，再取消并等待保存的 Task，按需处理正常取消。`CurrentCompletion` 在没有当前操作时为 null。这套抢占规则适合交互状态协调；需要按顺序等待的消息队列应使用公平排队的机制。
+`CancelCurrent()` 请求取消但不等待清理；需要等待时，先保存 `CurrentCompletion`，再取消并等待保存的 Task，按操作的状态契约处理停止。`CurrentCompletion` 在没有当前操作时为 null。这套抢占规则适合交互状态协调；需要按顺序等待的消息队列应使用公平排队的机制。
 
 ## 可绑定性
 
@@ -136,14 +128,10 @@ var animatable = Animatable.Create(0d);
 var task = animatable.AnimateToAsync(motion, 100,
     new TweenSpec<double>(duration: TimeSpan.FromMilliseconds(100), easing: new LinearEasing()));
 
-try
+var result = await task;
+if (result.EndReason == AnimationEndReason.Finished)
 {
-    var result = await task;
-    // result.EndReason == AnimationEndReason.Finished，animatable.Value == 100
-}
-catch (OperationCanceledException)
-{
-    // 被更新的动画 / Stop / SnapToAsync 打断
+    // animatable.Value == 100；中断则按结果决定是否继续。
 }
 ```
 

@@ -1,5 +1,4 @@
 // Fixed Core MouseWheelScrollingLogic.kt / DesktopScrollable.desktop.kt, Apache-2.0.
-using System.Threading.Channels;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.VisualTree;
@@ -12,7 +11,8 @@ namespace Material3Expressive.Components;
 
 internal sealed class ScrollFieldWheel(ScrollField owner)
 {
-    private readonly Channel<(float Delta, ulong Time)> _events = Channel.CreateUnbounded<(float, ulong)>();
+    private readonly Queue<(float Delta, ulong Time)> _events = new();
+    private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DifferentialVelocityTracker _velocity = new();
     internal bool IsReceiving { get; private set; }
 
@@ -32,7 +32,8 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
         if (MathF.Abs(y) < MathF.Abs(x) || y == 0) return IsReceiving;
         if (y < 0 && state.CurrentPage == 0 && state.OffsetFraction <= 0 ||
             y > 0 && state.CurrentPage == ScrollFieldState.PageCount - 1 && state.OffsetFraction >= 0) return IsReceiving;
-        _events.Writer.TryWrite((y, e.Timestamp));
+        _events.Enqueue((y, e.Timestamp));
+        _changed.TrySetResult();
         if (!IsReceiving)
         {
             IsReceiving = true;
@@ -40,14 +41,16 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
             {
                 try
                 {
-                    while (_events.Reader.TryPeek(out _) && owner.IsAttachedToVisualTree() && owner.State is { } current)
+                    while (_events.TryPeek(out _) && owner.IsAttachedToVisualTree() && owner.State is { } current)
                     {
                         try
                         {
                             var velocity = 0f;
-                            await current.WheelScrollAsync(async (scope, token) => velocity = await Scroll(scope, current, token), lifetime);
+                            var completed = false;
+                            await current.WheelScrollAsync(async (scope, token) =>
+                            { velocity = await Scroll(scope, current, token); completed = !token.IsCancellationRequested; }, lifetime);
                             // The callback launches its fling; a queued event may interrupt it.
-                            owner.SettleWheel(velocity);
+                            if (completed && !lifetime.IsCancellationRequested) owner.SettleWheel(velocity);
                         }
                         // Core's receiver survives cancellation of the userScroll child. Events
                         // accepted immediately after a state request must not be discarded.
@@ -55,7 +58,7 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
                     }
                 }
                 catch (OperationCanceledException) { }
-                finally { IsReceiving = false; while (_events.Reader.TryRead(out _)) { } }
+                finally { IsReceiving = false; while (_events.TryDequeue(out _)) { } }
             }, "Scroll field wheel");
         }
         return true;
@@ -63,7 +66,7 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
 
     private async Task<float> Scroll(AnimationChildScope scope, ScrollFieldState state, CancellationToken token)
     {
-        var first = await _events.Reader.ReadAsync(token);
+        if (token.IsCancellationRequested || !_events.TryDequeue(out var first)) return 0;
         _velocity.Add(first.Time, first.Delta);
         var target = first.Delta;
         if (Sum() is { } pending) { target += pending.Delta; _velocity.Add(pending.Time, pending.Delta); }
@@ -72,7 +75,7 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
         var threshold = 6 * state.Density;
         var speed = state.Density;
         var required = true;
-        while (required)
+        while (required && !token.IsCancellationRequested)
         {
             required = false;
             var leftover = target - animation.Value;
@@ -106,6 +109,7 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
                         required = MathF.Abs(target - previous) >= .5f;
                         frame.CancelAnimation();
                     }, cancellationToken: token);
+                if (token.IsCancellationRequested) return 0;
                 if (!required) required = await WaitNext(50 - duration);
             }
         }
@@ -114,21 +118,24 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
 
         (float Delta, ulong Time)? Sum()
         {
-            if (!_events.Reader.TryRead(out var sum)) return null;
-            while (_events.Reader.TryRead(out var next)) sum = (sum.Delta + next.Delta, Math.Max(sum.Time, next.Time));
+            _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_events.TryDequeue(out var sum)) return null;
+            while (_events.TryDequeue(out var next)) sum = (sum.Delta + next.Delta, Math.Max(sum.Time, next.Time));
             return sum;
         }
         async Task<bool> WaitNext(int milliseconds)
         {
             if (milliseconds <= 0) return false;
             using var wait = CancellationTokenSource.CreateLinkedTokenSource(token);
-            var read = _events.Reader.ReadAsync(wait.Token).AsTask();
+            if (token.IsCancellationRequested) return false;
+            var read = scope.WaitForSignalAsync(_changed.Task, wait.Token);
             var timeout = scope.DelayAsync(TimeSpan.FromMilliseconds(milliseconds), wait.Token);
-            var frames = BusyFrames(wait.Token);
+            var frames = scope.RunFramesAsync(_ => true, wait.Token);
             try
             {
                 if (await Task.WhenAny(read, timeout) != read) { await timeout; return false; }
-                var next = await read;
+                if (!await read || token.IsCancellationRequested || !_events.TryDequeue(out var next)) return false;
+                _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 target = next.Delta; animation = new(new FloatConverter(), 0);
                 _velocity.Add(next.Time, next.Delta);
                 return MathF.Abs(target) >= .5f;
@@ -136,12 +143,8 @@ internal sealed class ScrollFieldWheel(ScrollField owner)
             finally
             {
                 wait.Cancel();
-                try { await frames; } catch (OperationCanceledException) { }
+                await frames;
             }
-        }
-        async Task BusyFrames(CancellationToken cancellationToken)
-        {
-            while (true) await scope.NextFrameAsync(cancellationToken);
         }
     }
 }

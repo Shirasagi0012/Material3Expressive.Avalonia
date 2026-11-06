@@ -175,7 +175,7 @@ public class ModalBottomSheet : ContentControl
                 _ = scope.Launch(async ct =>
                 {
                     // hasExpandedState is read by composition after the anchor layout writes it.
-                    await scope.NextFrameAsync(ct);
+                    if (!await scope.WaitForNextFrameAsync(ct)) return;
                     if (state.HasExpandedState && state.TargetValue == SheetValue.Hidden) await state.ShowAsync(ct);
                 }, "Modal bottom sheet initial show");
         });
@@ -189,14 +189,14 @@ public class ModalBottomSheet : ContentControl
             // derivedStateOf(targetValue) is consumed at recomposition, after sampling the
             // previous animation. The fixed AnimateAsState.kt cancels its job BEFORE animateTo:
             // cancellation clears velocity and LastFrameTime, unlike Animatable interruption.
-            await scope.NextFrameAsync(ct);
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
             _scrimUpdatePending = false;
             if (_alpha is { } alpha && _observedState is { } state && ScrimAnimation is { Stiffness: > 0 } motion)
             {
                 var target = state.TargetValue == SheetValue.Hidden ? 0f : 1f;
                 if (target == alpha.TargetValue) return;
                 await alpha.StopAsync();
-                ct.ThrowIfCancellationRequested();
+                if (ct.IsCancellationRequested) return;
                 await alpha.AnimateToAsync(scope, target,
                     new ComposeAnimation.Runtime.SpringSpec<float>(motion.DampingRatio, motion.Stiffness, 0.01f));
             }

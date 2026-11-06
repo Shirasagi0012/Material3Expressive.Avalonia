@@ -207,7 +207,7 @@ public class ShortNavigationBarItem : Button
         _pending = true;
         _ = motion.Launch(async ct =>
         {
-            await motion.NextFrameAsync(ct); _pending = false;
+            if (!await motion.WaitForNextFrameAsync(ct)) return; _pending = false;
             if (_selection is not { } selection) return;
             var target = IsSelected ? 1f : 0f;
             if (selection.TargetValue == target) return;
@@ -215,7 +215,7 @@ public class ShortNavigationBarItem : Button
             if (spatial.Stiffness <= 0) return;
             _ = motion.Launch(async lifetime =>
             {
-                await selection.StopAsync(); lifetime.ThrowIfCancellationRequested();
+                await selection.StopAsync(); if (lifetime.IsCancellationRequested) return;
                 await selection.AnimateToAsync(motion, target, new SpringSpec<float>(spatial.DampingRatio, spatial.Stiffness, 0.01f), cancellationToken: lifetime);
             }, "Short navigation item indicator");
         }, "Short navigation item target");

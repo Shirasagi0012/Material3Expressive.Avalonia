@@ -32,7 +32,7 @@ public sealed class PullToRefreshScrollBehavior
         {
             // The modifier's coroutine starts after its content has composed. In
             // particular, the arrow remembers the incoming state's initial alpha.
-            await Task.Yield(); ct.ThrowIfCancellationRequested();
+            await Task.Yield(); if (ct.IsCancellationRequested) return;
             await owner.EffectiveState.SnapToAsync(owner.IsRefreshing ? 1 : 0, ct);
         }, "Initial pull position");
         _verticalOffset = owner.IsRefreshing ? ThresholdPx : 0;
@@ -52,8 +52,8 @@ public sealed class PullToRefreshScrollBehavior
         {
             // Modifier.update is a composition commit, after the current input callback
             // and the old frame sample. Coalesce multiple changes before that commit.
-            await scope.NextFrameAsync(ct);
-            await Task.Yield(); ct.ThrowIfCancellationRequested();
+            if (!await scope.WaitForNextFrameAsync(ct)) return;
+            await Task.Yield(); if (ct.IsCancellationRequested) return;
             _updatePending = false;
             await AnimateAsync(Owner.IsRefreshing, ct);
         }, "Pull refreshing composition");

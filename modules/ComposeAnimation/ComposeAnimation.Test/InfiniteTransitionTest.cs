@@ -253,7 +253,7 @@ public class InfiniteTransitionTest
         Assert.Equal(10, value.Value, 8);
 
         transition.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 
@@ -313,7 +313,7 @@ public class InfiniteTransitionTest
         Assert.Equal(28.2, again.Value, 8);
 
         transition.Dispose();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         window.Close();
     });
 
@@ -329,7 +329,7 @@ public class InfiniteTransitionTest
         // A second run takes over: the first is cancelled before the second samples.
         using var cts = new CancellationTokenSource();
         var task = transition.RunAsync(window.AnimationRoot, cts.Token);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         Dispatcher.UIThread.RunJobs();
         clock.Pump(Ms(0));
         clock.Pump(Ms(250));
@@ -337,7 +337,7 @@ public class InfiniteTransitionTest
         Assert.True(transition.IsRunning);
 
         cts.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+        await AnimationStopAssert.StoppedAsync(task);
         Assert.False(transition.IsRunning);
         Assert.Equal(25, value.Value, 8);
         Assert.Equal(TimeSpan.Zero, transition.PlayTime);
@@ -357,7 +357,7 @@ public class InfiniteTransitionTest
         clock.Pump(Ms(0));
         clock.Pump(Ms(250));
         firstCancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        await AnimationStopAssert.StoppedAsync(first);
         clock.PumpTo(Ms(1000));
 
         using var secondCancellation = new CancellationTokenSource();
@@ -368,7 +368,7 @@ public class InfiniteTransitionTest
         clock.Pump(Ms(100));
         Assert.Equal(10, value.Value, 8);
         secondCancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+        await AnimationStopAssert.StoppedAsync(second);
         window.Close();
     });
 

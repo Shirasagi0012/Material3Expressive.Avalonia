@@ -156,9 +156,9 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
         if (animatable is null || scope is null) return;
         try
         {
-            await animatable.AnimateToAsync(scope, target, _declaration.ResolveSpec(), block: OnFrame)
+            var result = await animatable.AnimateToAsync(scope, target, _declaration.ResolveSpec(), block: OnFrame)
                 .ConfigureAwait(true);
-            if (gen != _driveGen || _disposed || !_enabled) return;
+            if (gen != _driveGen || _disposed || !_enabled || result.EndReason != AnimationEndReason.Finished) return;
             if (!EqualityComparer<T>.Default.Equals(ReadBase(), animatable.Value))
             {
                 ReconcileTarget();
@@ -167,11 +167,6 @@ internal sealed class AnimatedPropertySession<T> : IPropertySession
 
             StopOverlay();
             _displayed = _host.GetValue(_property);
-        }
-        catch (OperationCanceledException)
-        {
-            // Keep the returned task canceled so sequential managed flows cannot continue.
-            throw;
         }
         catch (Exception)
         {

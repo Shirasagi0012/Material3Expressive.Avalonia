@@ -197,7 +197,7 @@ public class CarouselTests
             var back = carousel.FlingAsync(-200, cancellation.Token);
             Advance(3); Assert.True(carousel.IsScrollInProgress); var progressed = carousel.ScrollOffset;
             cancellation.Cancel(); Flush(window);
-            Assert.True(back.IsCanceled); Assert.False(carousel.IsScrollInProgress);
+            Assert.True(back.IsCompletedSuccessfully); Assert.False(carousel.IsScrollInProgress);
             Assert.Equal(progressed, carousel.ScrollOffset);
         }
         finally { window.Close(); }
@@ -291,12 +291,12 @@ public class CarouselTests
             var task = carousel.AnimateScrollToItemAsync(1, new TweenSpec<float>(TimeSpan.FromMilliseconds(160)));
             Advance(5); Assert.True(carousel.IsScrollInProgress); Assert.True(carousel.ScrollOffset > 0);
             carousel.ScrollToItem(3); Flush(window);
-            Assert.True(task.IsCanceled); Assert.False(carousel.IsScrollInProgress); Assert.Equal(3, carousel.CurrentItem);
+            Assert.True(task.IsCompletedSuccessfully); Assert.False(carousel.IsScrollInProgress); Assert.Equal(3, carousel.CurrentItem);
             var next = carousel.AnimateScrollToItemAsync(4); Advance(90);
             Assert.True(next.IsCompletedSuccessfully); Assert.Equal(4, carousel.CurrentItem);
             var detached = carousel.AnimateScrollToItemAsync(2); Advance(3);
             window.Content = null; Flush(window);
-            Assert.True(detached.IsCanceled); Assert.False(carousel.IsScrollInProgress);
+            Assert.True(detached.IsCompletedSuccessfully); Assert.False(carousel.IsScrollInProgress);
             window.Content = carousel; Flush(window); carousel.ScrollToItem(0); Flush(window);
             Assert.Equal(0, carousel.CurrentItem);
         }

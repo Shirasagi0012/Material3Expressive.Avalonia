@@ -52,7 +52,7 @@ public class FrameEndCommitTest
         var pending = scope.Launch(async ct =>
         {
             await scope.NextFrameAsync(ct);
-            await scope.WaitForFrameEndAsync(cancellation.Token);
+            if (!await scope.WaitForFrameEndAsync(cancellation.Token)) return;
             committed = true;
         });
         var cancel = window.AnimationRoot.Launch(async ct =>
@@ -63,7 +63,7 @@ public class FrameEndCommitTest
         source.SendFrame(TimeSpan.FromMilliseconds(16));
         Dispatcher.UIThread.RunJobs();
         await cancel;
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        await pending;
         Assert.False(committed);
         Assert.Equal(0, source.PendingFrameCount);
         scope.Dispose(); window.Close();
