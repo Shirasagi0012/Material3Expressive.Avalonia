@@ -253,6 +253,26 @@
         </Setter.Value>
       </Setter>
     </ControlTheme>
+    <!-- ExposedDropdownMenuDefaults colors share TextField defaults except these slots.
+         Filled disabledLabelColor intentionally has no alpha in the fixed source. -->
+    <ControlTheme x:Key="MaterialFilledExposedDropdownTextFieldTheme" TargetType="TextBox" BasedOn="{StaticResource MaterialFilledTextFieldTheme}">
+      <Style Selector="^:disabled /template/ m3|TextFieldLayout"><Setter Property="LabelBrush" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" /></Style>
+      <Style Selector="^:disabled /template/ ContentPresenter#Prefix, ^:disabled /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledTextField.DisabledSupportingColor}}" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="MaterialOutlinedExposedDropdownTextFieldTheme" TargetType="TextBox" BasedOn="{StaticResource MaterialOutlinedTextFieldTheme}">
+      <Style Selector="^:disabled /template/ ContentPresenter#Prefix, ^:disabled /template/ ContentPresenter#Suffix"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+OutlinedTextField.DisabledSupportingColor}}" /></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:ExposedDropdownMenuBox}" TargetType="m3:ExposedDropdownMenuBox">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="Template"><ControlTemplate>
+        <Grid>
+          <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+          <ContentPresenter x:Name="PART_MenuPresenter" Content="{TemplateBinding Menu}" />
+        </Grid>
+      </ControlTemplate></Setter>
+    </ControlTheme>
   </Styles.Resources>
   <Style Selector=":is(m3|DropdownMenuPopup) Separator">
     <Setter Property="HorizontalAlignment" Value="Stretch" />

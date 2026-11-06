@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 data class TextFieldConfig(val outlined:Boolean=false, val position:String="Inside", val minimized:Boolean=false,
     val label:Boolean=true, val slots:Boolean=false, val enabled:Boolean=true, val error:Boolean=false, val dark:Boolean=false,
     val rtl:Boolean=false, val alignment:String="Start", val width:Double?=null, val height:Double?=null,
-    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none")
+    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none",val exposed:Boolean=false)
 
 @ParitySuite("text-field")
 class TextFieldCases {
@@ -117,16 +117,19 @@ class TextFieldCases {
                         val placeholder:(@Composable ()->Unit)?=if(config.slots) ({ Slot("placeholder",48.0,16.0) }) else null
                         val state=rememberTextFieldState()
                         val legacyLabel:(@Composable ()->Unit)?=if(config.label) ({ Slot("label",config.labelWidth,config.labelHeight) })else null
-                        if(legacy && config.outlined) OutlinedTextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,
+                        val colors=if(config.exposed) {
+                            if(config.outlined) ExposedDropdownMenuDefaults.outlinedTextFieldColors() else ExposedDropdownMenuDefaults.textFieldColors()
+                        } else if(config.outlined) OutlinedTextFieldDefaults.colors() else TextFieldDefaults.colors()
+                        if(legacy && config.outlined) OutlinedTextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
-                        else if(legacy) TextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,
+                        else if(legacy) TextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
-                        else if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,
+                        else if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
-                        else TextField(state=state,modifier=modifier,enabled=enabled,isError=error,
+                        else TextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
                     }

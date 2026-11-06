@@ -345,3 +345,16 @@
   公开 double 配置不变，显示在帧批之间与固定重组顺序一致，无外部源码迁移。
   九个真实组件双端配置/禁用/合并场景高度精确一致，实际底层绑定、模板和卸载回归验证所有权；
   Button 的独立墨色图像差异及原生 enabled 非帧即时读数继续报告，不由此扩大通过范围。
+
+## 27. Tooltip 并集轮廓与路径阴影入口
+
+- **决定**：本轮依据用户扩大授权，MaterialSurface 增加内部 `SetContainerGeometry`，供 Tooltip 同时提供 Avalonia 几何与阴影路径快照；不增加公开 Shape 系统。Tooltip 的默认三角形与圆角容器做真实 Union，背景、内容裁剪及阴影使用相同外形。
+- **原限制与新依据**：原先只有圆角路径，Tooltip 因而暂缺 caret。阴影 tessellator 已具备直线、二次曲线、conic 与凹多边形能力，缺少的只是输入契约。`ComposeShadowShape.FromPath(SKPath)` 在调用点复制托管命令及 conic 权重，绘制时生成物理像素路径，调用者可立即释放原 SKPath。
+- **边界**：保留一个轮廓的原生 tessellation 分支；固定 Skia `1f14f1166a847cb0e148f981600bf1e3e6ca6e46` 的 SkShadowTessellator 在第二个 Move 返回失败，因此多轮廓整体走现有 blur fallback。不能分开画各轮廓阴影。三次曲线、透视等原有限制继续显式拒绝；不将默认三角形支持概括为完整任意 Shape。
+- **影响**：现有圆角调用不变，无迁移。Surface 内部入口只用于无独立描边、波纹或焦点环的 Tooltip；公开任意形状仍须补齐这些职责。Tooltip 挂载生命周期和固定定位器语义见其 INTERNALS。
+
+## 28. ExposedDropdownMenu 的字段焦点与同窗口弹层
+
+- **依据与授权**：2026-11-06 本轮明确授权新增独立 ExposedDropdownMenuBox / Menu。固定 Core 的 Popup 有独立 focus owner，菜单导航期间父场景 TextField 仍保持原 FocusInteraction；本地同窗口 overlay 共享一个 FocusManager。真实只读空字段双端用例确认，直接沿用 native LostFocus 会令标签回落和指示线失焦。
+- **决定**：容器在可聚焦菜单存活期间，通过内部 TextFieldThemeDefaults.RetainPopupFocus 保留字段已有的 native FocusInteraction。它不合成新的 Focus，也不阻止实际键盘焦点转入菜单。模式切换先保留交互再移动焦点；关闭后等原生焦点恢复完成再释放保留标记，避免无意义的 Unfocus/Focus 对。
+- **范围与清理**：仅 ExposedDropdownMenuBox 内标记为 primary 的 TextBox；禁用、换源、模板卸载仍按 TextField 原有配对清理，容器卸载/移除锚点清除标记。外部 source 不被替换，普通 TextBox、原生 ComboBox 和其他 Popup 不自动采用此策略。没有公共焦点协议或破坏性 API 迁移。

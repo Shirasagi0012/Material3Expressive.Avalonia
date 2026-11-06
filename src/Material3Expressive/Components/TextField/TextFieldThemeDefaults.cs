@@ -10,6 +10,11 @@ namespace Material3Expressive.Components;
 // through ordinary theme bindings, so application styles and local values win.
 internal static class TextFieldThemeDefaults
 {
+    // Core popup scenes preserve the parent's focused editor while their own focus owner
+    // navigates the menu. The Avalonia overlay shares one focus manager instead.
+    internal static readonly AttachedProperty<bool> RetainPopupFocusProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, bool>("RetainPopupFocus", typeof(TextFieldThemeDefaults));
+
     public static readonly AttachedProperty<bool> IsFocusedProperty =
         AvaloniaProperty.RegisterAttached<TextBox, bool>("IsFocused", typeof(TextFieldThemeDefaults));
     public static bool GetIsFocused(TextBox owner) => owner.GetValue(IsFocusedProperty);

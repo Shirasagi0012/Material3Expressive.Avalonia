@@ -72,5 +72,51 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch" BasedOn="{StaticResource MaterialToggleSwitchTheme}" />
+    <ControlTheme x:Key="{x:Type m3:SwitchDisplay}" TargetType="m3:SwitchDisplay">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:SwitchDisplayLayout>
+            <m3:SwitchTrack IsChecked="{TemplateBinding IsChecked}" Colors="{TemplateBinding Colors}"
+                  CheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedThumbColor}}"
+                  CheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedTrackColor}}"
+                  CheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedBorderColor}}"
+                  CheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.CheckedIconColor}}"
+                  UncheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedThumbColor}}"
+                  UncheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedTrackColor}}"
+                  UncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedBorderColor}}"
+                  UncheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.UncheckedIconColor}}"
+                  DisabledCheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedThumbColor}}"
+                  DisabledCheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedTrackColor}}"
+                  DisabledCheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedBorderColor}}"
+                  DisabledCheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledCheckedIconColor}}"
+                  DisabledUncheckedThumbColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedThumbColor}}"
+                  DisabledUncheckedTrackColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedTrackColor}}"
+                  DisabledUncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedBorderColor}}"
+                  DisabledUncheckedIconColor="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.DisabledUncheckedIconColor}}"
+                  SurfaceColor="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Surface}}">
+              <m3:SwitchThumbLayout x:Name="PART_SwitchKnob"
+                  ThumbAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.ThumbAnimation}}">
+                <Panel x:Name="PART_MovingKnobs" Background="Transparent">
+                  <Ellipse x:Name="PART_ThumbBackground" IsHitTestVisible="False" />
+                  <ContentPresenter x:Name="PART_ThumbContentPresenter"
+                        Content="{TemplateBinding ThumbIcon}"
+                        ContentTemplate="{TemplateBinding ThumbIconTemplate}"
+                        m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Switch.IconSize}}"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                  <m3:MaterialSurface x:Name="PART_ThumbSurface" Background="Transparent" CornerRadius="0" PresentsFocusRing="False"
+                                      StateLayerBrush="{TemplateBinding Foreground}" />
+                </Panel>
+              </m3:SwitchThumbLayout>
+            </m3:SwitchTrack>
+          </m3:SwitchDisplayLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
   </Styles.Resources>
 </Styles>

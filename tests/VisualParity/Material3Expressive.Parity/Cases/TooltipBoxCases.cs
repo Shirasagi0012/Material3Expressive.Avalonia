@@ -21,7 +21,8 @@ namespace Material3Expressive.Parity;
 public sealed record TooltipBoxConfig(string Position = "Above", int X = 112, int Y = 80, bool Rtl = false,
     bool Dark = false, double Spacing = 4, double ContentWidth = 64, double ContentHeight = 8,
     string Action = "none", bool Persistent = false, bool Enabled = true, bool HasAction = false, double Elevation = 0,
-    double AnchorScale = 1, bool Rich = false, string PointerKind = "Touch", int LongPressMilliseconds = 500);
+    double AnchorScale = 1, bool Rich = false, string PointerKind = "Touch", int LongPressMilliseconds = 500,
+    bool Caret = false, double CaretWidth = 16, double CaretHeight = 8);
 
 [ParitySuite("tooltip-box")]
 public sealed class TooltipBoxCases
@@ -76,7 +77,7 @@ public sealed class TooltipBoxCases
     [ParityScenario("dynamic", Data = nameof(DynamicConfigurations))]
     public Task Dynamic(CaptureWriter writer) => Capture(writer, true);
 
-    static async Task Capture(CaptureWriter writer, bool dynamic)
+    internal static async Task Capture(CaptureWriter writer, bool dynamic)
     {
         var config = writer.Metadata.ReadConfig<TooltipBoxConfig>();
         await using var host = new AvaloniaHost(writer, 256, 192, new ManualTimeProvider(Dispatcher.UIThread.VerifyAccess));
@@ -103,6 +104,11 @@ public sealed class TooltipBoxCases
             ? new RichTooltip { Content = content, ShadowElevation = config.Elevation,
                 Title = new Marker { PreferredWidth = 32, PreferredHeight = 10 }, Action = new Marker { PreferredWidth = 24, PreferredHeight = 12 } }
             : new PlainTooltip { Content = content, ShadowElevation = config.Elevation };
+        if (config.Caret)
+        {
+            if (tooltip is PlainTooltip plain) plain.CaretSize = new(config.CaretWidth, config.CaretHeight);
+            else ((RichTooltip)tooltip).CaretSize = new(config.CaretWidth, config.CaretHeight);
+        }
         var box = new TooltipBox { Content = anchor, Tooltip = tooltip, State = state,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
             AnchorPosition = Enum.Parse<TooltipAnchorPosition>(config.Position), Spacing = config.Spacing,

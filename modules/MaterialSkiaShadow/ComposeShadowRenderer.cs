@@ -131,12 +131,15 @@ public static class ComposeShadowRenderer
                     ambientColor, spotColor))
                 return;
 
-            var ambient = ConvexShadowTessellator.MakeAmbient(
+            // SkShadowTessellator rejects a second Move verb and DrawShadow uses its
+            // existing blur fallback for the whole path, not one shadow per contour.
+            var multipleContours = _shape.PathData?.Count(segment => segment.Verb == SKPathVerb.Move) > 1;
+            var ambient = multipleContours ? null : ConvexShadowTessellator.MakeAmbient(
                 path,
                 localToDevice,
                 resolved.ElevationPx,
                 resolved.TransparentOccluder);
-            var spot = ConvexShadowTessellator.MakeSpot(
+            var spot = multipleContours ? null : ConvexShadowTessellator.MakeSpot(
                 path,
                 localToDevice,
                 resolved.ElevationPx,
@@ -272,6 +275,24 @@ public static class ComposeShadowRenderer
 
         private static SKPath CreatePath(ComposeShadowShape shape, float density)
         {
+            if (shape.PathData is { } data)
+            {
+                using var path = new SKPathBuilder { FillType = shape.PathFillType };
+                foreach (var segment in data)
+                {
+                    var first = new SKPoint(segment.First.X * density, segment.First.Y * density);
+                    var second = new SKPoint(segment.Second.X * density, segment.Second.Y * density);
+                    switch (segment.Verb)
+                    {
+                        case SKPathVerb.Move: path.MoveTo(first); break;
+                        case SKPathVerb.Line: path.LineTo(first); break;
+                        case SKPathVerb.Quad: path.QuadTo(first, second); break;
+                        case SKPathVerb.Conic: path.ConicTo(first, second, segment.Weight); break;
+                        case SKPathVerb.Close: path.Close(); break;
+                    }
+                }
+                return path.Detach();
+            }
             var bounds = shape.Bounds;
             var rect = new SKRect(
                 (float)bounds.Left * density,

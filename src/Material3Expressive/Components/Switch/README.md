@@ -40,6 +40,19 @@ Enter 按下激活，`Space` 默认松开激活。
 `IsChecked=null` 按未选中绘制，原生 `IsThreeState` 和三态自动化仍存在，但没有 Material 第三种外观。
 `IsEnabled="False"` 禁止输入并显示禁用状态。
 
+### 父级管理选择
+
+`SwitchDisplay` 只显示开关状态：尺寸为 52×32，不占最小交互槽，不处理输入、不获取焦点，
+也不提供 Toggle 自动化操作。由父级行管理选择并绑定 `IsChecked`。
+
+```xml
+<m3:SwitchDisplay IsChecked="{Binding EnabledOption}" />
+```
+
+`Colors`、`ThumbIcon`、`ThumbIconTemplate` 和 `InteractionSource` 直接设在控件上。
+与 CheckBoxDisplay / RadioButtonDisplay 不同，SwitchDisplay 仍显示外部交互反馈；
+共享源的按压、悬停和焦点事件驱动拇指与反馈，事件不会改变 IsChecked。
+
 ## 标签与拇指内容
 
 `Content` / `ContentTemplate` 是轨道外的标签，默认 BodyLarge；

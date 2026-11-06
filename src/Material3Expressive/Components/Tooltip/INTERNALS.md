@@ -106,7 +106,14 @@ Label 调用 BasicTooltipBox 而非 TooltipBox 动画包装，所以显隐立即
 - 同日接受 Tooltip 的动画目标提交时序差异：ComposeAnimation Transition 立即跟随 TargetState，Core 在采样旧动画后的重组帧末提交；保留现有共享 API，不加手动同步开关。仅覆盖该目标时序，不接受其他定位或布局偏离
 - 本次剩余移植的非破坏性组件 API 授权包含 `TooltipBox.LongPressDuration`；此入口仅配置该组件的长按等待，不改原生 ToolTip 服务或 TooltipState 的显示时长。
 
-尚未实现 caret 的形状及背景、裁剪、阴影路径并集。BadgedBox 已通过共享读取器仅透传锚点基线，
+本轮依据用户扩大授权替代上述「仅无 caret」阶段限制：原理由是 Surface 与阴影入口只接受圆角，不能保证路径并集。
+现由 `CaretSize` 提供默认三角形及尺寸变体，`TooltipCaret` 对照 `layoutCaret` / `caretX` 计算六方向、RTL 和窗口边界；
+Surface 内部几何入口将同一并集用于背景和内容裁剪，阴影模块快照保留直线、二次曲线和 conic。
+固定 AndroidX/Core 的 Tooltip.kt 相同。`remember { TooltipScopeImpl(..., positionProvider) }` 无 key，故本地也在挂载时记住
+箭头定位器类型；后续定位器更新只移动弹层。自定义 provider 沿默认上/下规则。RTL 的物理箭头坐标抵消内容树的镜像。
+模板、位置上下文、尺寸和圆角变化会刷新轮廓，清除 CaretSize 恢复圆角路径。没有新增公开任意 Surface Shape API。
+尚未实现任意自定义 CaretShape；三角形尺寸、背景、裁剪和阴影路径并集已实现。
+BadgedBox 已通过共享读取器仅透传锚点基线，
 并由真实 RichTooltip 组合的双端用例验证；任意自定义容器的自动基线透传仍未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
 
@@ -115,6 +122,7 @@ RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分�
 
 ## 4. 验证入口
 
+- `TooltipCaretTests` 覆盖路径/内容 clip、动态尺寸与移除、边缘翻转、Label 重新挂载。`tooltip-caret` 的 84 个双端 self-test 全部重复及额外截图稳定、零错误：80 个静态/布局变化用例 equal 或 withinTolerance，4 个 show/interrupt 用例保留既有目标提交时序差异；结构化事实全等。结果为 `artifacts/visual-parity/runs/tooltip-caret-second`，包含六方向 × Plain/Rich × LTR/RTL × 中央/边缘及暗色、高度、尺寸。
 - `NativeToolTipTests` 检查原生服务和静态主题。
 - `PlainTooltipTests`、`RichTooltipTests` 检查尺寸、槽位、文字角色、基线及 Token 覆盖。RichTooltip 的 density 回归覆盖动态资源、RTL、动作最小高度及槽位切换。
 - 2026-11-05 `shared-baseline-tooltip-final` 完整 rich-tooltip self-test：41 例，1 equal、40 withinTolerance，零执行错误，全部重复/额外截图稳定。新增显式 0/7/32 DIP 及 LTR/RTL 下同根基线 7→3→32→清除的结构化读数均相等；检查了清除后的实际图像。`TextBaselineIntegrationTests` 另验证原生入口优先级、清除恢复、嵌套 presenter Margin/Padding 与尺寸不变时失效。

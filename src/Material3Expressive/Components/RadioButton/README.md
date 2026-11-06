@@ -57,6 +57,18 @@ XAML 可写 `m3:RadioButtonAppearance.InteractionSource="{Binding SelectionSourc
 
 ## 内容槽与定制
 
+父级负责整行选择和互斥关系时，可以只显示状态：
+
+```xml
+<m3:RadioButtonDisplay IsChecked="{Binding ExpressSelected}" />
+```
+
+`RadioButtonDisplay` 默认 24×24 DIP，保留圆点/颜色动画和 `IsEnabled` 状态色；不会自行选择、抢焦点、
+参与 GroupName 互斥或提供选择自动化，父级负责操作和语义。它没有额外的最小交互留白。
+通过普通 `Colors` 属性设置 `RadioButtonColors`，或复用 RadioButton 的尺寸、颜色、运动 Token。
+Catalog 的 “Selection owned by the row” 演示由父级表面驱动状态。
+
+
 `Content` / `ContentTemplate` 支持文本和任意内容，默认 BodyLarge，保留内容对齐、access key 和 RTL。
 标签位于 48 DIP 指示器槽旁，默认间距为 `Padding="8,0,0,0"`；无 `Content` 时忽略这层 `Padding`。
 有内容时整行含间隙和 `Padding` 参与命中；无内容时默认鼠标命中为 24×24 DIP。

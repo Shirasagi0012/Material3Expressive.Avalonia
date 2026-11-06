@@ -68,15 +68,24 @@ null 使用该模板实例的内部源；替换源重建 indication，清除旧 
 默认 Miter 不受影响；仅适用于 CheckBox 自定义描边，不构成修复所有上游 bug 的通用授权。
 
 同日维护者选择“本次保留原生范围，记录 null 回调模式未实现（推荐）”。原生控件没有移除
-ToggleProvider 的开关，因此本阶段不增加独立只显示指示器，也不伪装完全等价的 null 回调模式。
+ToggleProvider 的开关，因此当时未增加独立只显示指示器。
+本轮依据用户扩大授权修订该阶段限制：新增 `CheckBoxDisplay`，继承 TemplatedControl 而非原生 ToggleButton，
+复用 CheckBoxIndicator 的全部绘制/动画，主题只保留 padding、requiredSize 与居中。
+对应固定 `CheckboxImpl` 的 `onClick=null` 分支，不创建输入、indication 或 ToggleProvider，也不读取交互最小尺寸。
+`SelectionDisplayLayout` 与 RadioButtonDisplay 共用 requiredSize 的受限居中溢出；不是新的交互层。
+原生 CheckBox 的已接受状态/键盘行为继续有效，无破坏性迁移。
 
 共享反馈与桌面焦点由[键盘职责](../../../../docs/DECISIONS.md)及
 [Core Desktop 焦点](../../../../docs/DECISIONS.md)维护。
 
-尚未实现任意 PathEffect 映射和完全等价的 null 回调模式。默认焦点轮廓是 24 DIP 反馈区域的 25% 圆角。
+尚未实现任意 PathEffect 映射。默认交互控件的焦点轮廓是 24 DIP 反馈区域的 25% 圆角。
 文字栅格、真实辅助技术、完整桌面输入和非 Windows 平台未经双端验收。selection-source 部分 Core 重复捕获出现最大单通道 1 的变化，稳定性门禁保留原始失败。
 
 ## 4. 验证入口
+
+`selection-display-initial` 双端自检 68 例：65 equal，3 different，零错误，全部重复/额外截图稳定。3 个 Radio 动画用例仅在已确认的负半径幻影点分支有 raster 差异，结构化状态和几何均相等；保留失败与真实图片。
+
+- `SelectionDisplayTests` 检查 null-callback 展示尺寸、自动化操作缺席、父级输入所有权、绑定与动态 Token；双端 `selection-display` 覆盖三态、禁用、主题、RTL、紧约束及反向动画。
 
 - `CheckBoxTests` 和 `SelectionControlHitTests` 检查原生输入、状态/命令顺序、内容命中、主题及生命周期。
 - `SelectionDensityTokenTests` 检查尺寸与留白的动态资源覆盖。

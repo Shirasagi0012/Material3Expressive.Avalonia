@@ -26,7 +26,8 @@ internal sealed class SwitchThumbLayout : Panel
     public Foundation.Motion.SpringSpec? ThumbAnimation { get => GetValue(ThumbAnimationProperty); set => SetValue(ThumbAnimationProperty, value); }
 
 
-    private ToggleSwitch? _owner;
+    private Control? _owner;
+    private bool Checked => _owner is ToggleSwitch toggle ? toggle.IsChecked == true : (_owner as SwitchDisplay)?.IsChecked == true;
     private MaterialInteractionController? _interaction;
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionSource? _thumbSource;
@@ -50,17 +51,23 @@ internal sealed class SwitchThumbLayout : Panel
         // A reparent rebuilds the owned scope on the next frame and ends this child.
         // The replacement scope arrives through ScopeChanged while the thumb stays attached.
         AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
-        _owner = (ToggleSwitch)TemplatedParent!;
-        _checked = _owner.IsChecked == true;
+        _owner = (Control)TemplatedParent!;
+        _checked = Checked;
         _interaction = MaterialInteraction.GetOrCreate(_owner);
         _interaction.IsRippleBounded = false;
         _interaction.RippleRadius = 20;
         _interaction.RippleFollowsPresenterCenter = true;
-        _thumbSource = SwitchAppearance.GetInteractionSource(_owner) ?? _localSource;
+        _thumbSource = _owner.GetValue(SwitchAppearance.InteractionSourceProperty) ?? _localSource;
         _thumbSource.Interaction += ReceiveThumbInteraction;
         _interaction.ConnectSource(_thumbSource);
         // Observe the existing controller after its tunnel handlers, without another input
         // state machine or an activation path.
+        _owner.PropertyChanged += OwnerChanged;
+        if (_owner is SwitchDisplay)
+        {
+            this.GetVisualDescendants().OfType<MaterialSurface>().Single().ConnectInteraction(_owner);
+            return;
+        }
         _owner.AddHandler(InputElement.PointerPressedEvent, InputChanged, RoutingStrategies.Tunnel, true);
         _owner.AddHandler(InputElement.PointerReleasedEvent, InputChanged, RoutingStrategies.Tunnel, true);
         _owner.AddHandler(InputElement.PointerMovedEvent, InputChanged, RoutingStrategies.Tunnel, true);
@@ -68,7 +75,6 @@ internal sealed class SwitchThumbLayout : Panel
         _owner.AddHandler(InputElement.KeyUpEvent, InputChanged, RoutingStrategies.Tunnel, true);
         _owner.PointerCaptureLost += CaptureLost;
         _owner.LostFocus += InputChanged;
-        _owner.PropertyChanged += OwnerChanged;
         _owner.Classes.CollectionChanged += ClassesChanged;
         if (Children.FirstOrDefault() is { } moving) moving.PropertyChanged += MovingChanged;
     }
@@ -168,7 +174,7 @@ internal sealed class SwitchThumbLayout : Panel
         {
             // Fixed ThumbNode collects only in onAttach: changing its source field does not
             // restart that collector. The indication node does move to the replacement source.
-            _interaction!.ConnectSource(SwitchAppearance.GetInteractionSource(owner) ?? _localSource);
+            _interaction!.ConnectSource(owner.GetValue(SwitchAppearance.InteractionSourceProperty) ?? _localSource);
             _interaction.ResetSourceIndication();
             // ThumbElement.update also calls ThumbNode.update even when checked is unchanged;
             // it initializes the lazy size/offset Animatables from their first measurement.
@@ -181,7 +187,7 @@ internal sealed class SwitchThumbLayout : Panel
         }
         if (e.Property == SwitchAppearance.ThumbIconProperty || e.Property == SwitchAppearance.ThumbIconTemplateProperty)
             InvalidateMeasure();
-        if (e.Property != Avalonia.Controls.Primitives.ToggleButton.IsCheckedProperty) return;
+        if (e.Property != Avalonia.Controls.Primitives.ToggleButton.IsCheckedProperty && e.Property != SwitchDisplay.IsCheckedProperty) return;
         ScheduleThumbUpdate();
     }
     private void ReceiveThumbInteraction(MaterialInteractionEvent interaction)
@@ -208,7 +214,7 @@ internal sealed class SwitchThumbLayout : Panel
         {
             await motion.NextFrameAsync(ct);
             _updatePending = false;
-            _checked = _owner?.IsChecked == true;
+            _checked = Checked;
             if (!float.IsNaN(_initialSize) && _sizeAnim is null)
             {
                 _sizeAnim = new Animatable<float>(new FloatConverter(), _dragHandoff ? _dragSizePx : _initialSize, VisibilityThresholds.Float);
@@ -222,7 +228,7 @@ internal sealed class SwitchThumbLayout : Panel
                 // Resume both tracks together from the displayed pose after native writeback.
                 await Task.WhenAll(size.SnapToAsync(_dragSizePx, ct), offset.SnapToAsync(_dragOffsetPx, ct));
                 _dragHandoff = false;
-                if (!_dragging && _owner is { } owner)
+                if (!_dragging && _owner is ToggleSwitch owner)
                     Canvas.SetLeft(Children[0], owner.IsChecked == true ? 20 : 0);
             }
             InvalidateMeasure();

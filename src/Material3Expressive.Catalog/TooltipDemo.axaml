@@ -20,15 +20,15 @@
     <TextBlock Text="Hover or focus an anchor. Escape dismisses its tooltip." TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Spacing="32">
       <m3:TooltipBox AnchorPosition="Above">
-        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Add to your collection" /></m3:TooltipBox.Tooltip>
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip CaretSize="16,8" Content="Add to your collection" /></m3:TooltipBox.Tooltip>
         <m3:IconButton Symbol="Add" />
       </m3:TooltipBox>
       <m3:TooltipBox AnchorPosition="Below">
-        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Save changes" /></m3:TooltipBox.Tooltip>
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip CaretSize="24,12" Content="Save changes" /></m3:TooltipBox.Tooltip>
         <Button Content="Save" />
       </m3:TooltipBox>
       <m3:TooltipBox AnchorPosition="End">
-        <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="Settings" /></m3:TooltipBox.Tooltip>
+        <m3:TooltipBox.Tooltip><m3:PlainTooltip CaretSize="16,8" Content="Settings" /></m3:TooltipBox.Tooltip>
         <m3:IconButton Symbol="Settings" />
       </m3:TooltipBox>
     </StackPanel>
@@ -46,7 +46,7 @@
     <TextBlock Text="RichTooltip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <m3:TooltipBox x:Name="RichHelp" AnchorPosition="Above" HasAction="True" EnableUserInput="False">
       <m3:TooltipBox.Tooltip>
-        <m3:RichTooltip Title="Collections" Content="Save related items together so you can find them again.">
+        <m3:RichTooltip CaretSize="16,8" Title="Collections" Content="Save related items together so you can find them again.">
           <m3:RichTooltip.Action>
             <Button Content="Got it" Theme="{StaticResource MaterialTextButtonTheme}" Click="OnDismissRich" />
           </m3:RichTooltip.Action>
@@ -59,14 +59,14 @@
     <m3:RangeSlider x:Name="LabelRange" Width="320" HorizontalAlignment="Left" RangeStart="0.25" RangeEnd="0.75" Margin="0,32,0,0">
       <m3:RangeSlider.StartThumb>
         <m3:TooltipLabel x:Name="RangeStartLabel">
-          <m3:TooltipLabel.Label><m3:PlainTooltip Content="{Binding RangeStart, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
+          <m3:TooltipLabel.Label><m3:PlainTooltip CaretSize="16,8" Content="{Binding RangeStart, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
           <m3:SliderThumb x:Name="LabelRangeStartThumb" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
                           Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
         </m3:TooltipLabel>
       </m3:RangeSlider.StartThumb>
       <m3:RangeSlider.EndThumb>
         <m3:TooltipLabel x:Name="RangeEndLabel">
-          <m3:TooltipLabel.Label><m3:PlainTooltip Content="{Binding RangeEnd, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
+          <m3:TooltipLabel.Label><m3:PlainTooltip CaretSize="16,8" Content="{Binding RangeEnd, ElementName=LabelRange, StringFormat={}{0:P0}}" /></m3:TooltipLabel.Label>
           <m3:SliderThumb x:Name="LabelRangeEndThumb" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
                           Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}" />
         </m3:TooltipLabel>
@@ -114,7 +114,7 @@
     </StackPanel>
     <StackPanel Orientation="Horizontal" Spacing="32" Margin="0,24,0,0">
       <m3:TooltipLabel x:Name="ButtonLabel">
-        <m3:TooltipLabel.Label><m3:PlainTooltip Content="Save changes" /></m3:TooltipLabel.Label>
+        <m3:TooltipLabel.Label><m3:PlainTooltip CaretSize="24,12" Content="Save changes" /></m3:TooltipLabel.Label>
         <Button x:Name="LabelButton" Content="Save" m3:MaterialButton.PressedCornerRadius="8" />
       </m3:TooltipLabel>
       <m3:TooltipLabel x:Name="ToggleLabel">

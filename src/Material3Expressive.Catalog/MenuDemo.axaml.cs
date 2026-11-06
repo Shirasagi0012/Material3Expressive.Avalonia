@@ -27,6 +27,11 @@ public partial class MenuDemo : Window
         ReadOnlyItem.Shapes = NameItem.Shapes = MenuDefaults.ItemShape(0, 2);
         DetailsItem.Shapes = DateItem.Shapes = MenuDefaults.ItemShape(1, 2);
     }
+    private void OnExpandedOptions(object? sender, ExpandedChangeRequestedEventArgs e) => ((ExposedDropdownMenuBox)sender!).IsExpanded = e.Expanded;
+    private void OnChooseOption(object? sender, RoutedEventArgs e)
+    { EditableOptionText.Text = ((DropdownMenuItem)sender!).Content?.ToString(); EditableOptions.IsExpanded = false; }
+    private void OnChooseSize(object? sender, RoutedEventArgs e)
+    { ReadOnlyOptionText.Text = ((DropdownMenuItem)sender!).Content?.ToString(); ReadOnlyOptions.IsExpanded = false; }
     private void OnDropdown(object? sender, RoutedEventArgs e) => Dropdown.IsOpen = true;
     private void OnGrouped(object? sender, RoutedEventArgs e) => Grouped.IsOpen = true;
     private void OnDropdownDismiss(object? sender, DismissRequestedEventArgs e) => ((DropdownMenuPopup)sender!).IsOpen = false;

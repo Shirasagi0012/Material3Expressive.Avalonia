@@ -225,3 +225,6 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 旧 README 中测试数量与本机临时报告路径不作为当前验证结果。历史结果可查 Git 历史，复核应以
 上述已跟踪测试和新生成报告为准。`run` 成功只说明执行完成，`self-test` 稳定不等于两端一致；
 报告应分别记录执行错误、比较差异、稳定性和未覆盖项。
+
+ExposedDropdownMenuBox 在其可聚焦弹层存活期间保留 primary 字段的既有 FocusInteraction，
+以对应 Core 独立 popup focus owner。普通文本框不启用该标记；范围和清理见 [DECISIONS §28](../../../../docs/DECISIONS.md#28-exposeddropdownmenu-的字段焦点与同窗口弹层)。

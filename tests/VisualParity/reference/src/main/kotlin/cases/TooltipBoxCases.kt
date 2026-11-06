@@ -26,12 +26,12 @@ import kotlinx.serialization.Serializable
 @Serializable data class TooltipBoxConfig(val position:String="Above",val x:Int=112,val y:Int=80,val rtl:Boolean=false,
     val dark:Boolean=false,val spacing:Double=4.0,val contentWidth:Double=64.0,val contentHeight:Double=8.0,
     val action:String="none",val persistent:Boolean=false,val enabled:Boolean=true,val hasAction:Boolean=false,val elevation:Double=0.0,
-    val anchorScale:Double=1.0,val rich:Boolean=false,val pointerKind:String="Touch",val longPressMilliseconds:Int=500)
+    val anchorScale:Double=1.0,val rich:Boolean=false,val pointerKind:String="Touch",val longPressMilliseconds:Int=500,val caret:Boolean=false,val caretWidth:Double=16.0,val caretHeight:Double=8.0)
 @ParitySuite("tooltip-box") class TooltipBoxCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
     @ParityScenario("long-press") suspend fun longPress(writer:CaptureWriter)=capture(writer,true)
-    private suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
+    internal suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
         val config=writer.readConfig<TooltipBoxConfig>()
         ComposeHost(writer,256,192).use {host ->
             val scene=Scene(config,dynamic)
@@ -136,10 +136,11 @@ import kotlinx.serialization.Serializable
                                     val color=LocalContentColor.current
                                     Canvas(content.modifier().size(contentWidth.toFloat().dp,config.contentHeight.toFloat().dp)){painted=color;drawRect(color)}
                                 }
-                                if(config.rich) RichTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp,
+                                val caretShape=if(config.caret)TooltipDefaults.caretShape(DpSize(config.caretWidth.toFloat().dp,config.caretHeight.toFloat().dp))else null
+                                if(config.rich) RichTooltip(modifier=tooltip.modifier(),caretShape=caretShape,shadowElevation=config.elevation.toFloat().dp,
                                     title={val color=LocalContentColor.current;Canvas(Modifier.size(32.dp,10.dp)){drawRect(color)}},
                                     action={val color=LocalContentColor.current;Canvas(Modifier.size(24.dp,12.dp)){drawRect(color)}},text=body)
-                                else PlainTooltip(modifier=tooltip.modifier(),shadowElevation=config.elevation.toFloat().dp,content=body)
+                                else PlainTooltip(modifier=tooltip.modifier(),caretShape=caretShape,shadowElevation=config.elevation.toFloat().dp,content=body)
                             }) {Canvas(anchor.modifier().size(anchorWidth.dp,24.dp).focusRequester(focus).focusable(enabled=config.action !in setOf("long-press","short-press","long-press-disable"))){drawRect(Color.Blue)}}
                         }
                         Box(Modifier.absoluteOffset(16.dp,72.dp)) {

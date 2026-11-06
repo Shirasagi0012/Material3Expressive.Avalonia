@@ -7,6 +7,39 @@
     </Window.Resources>
     <ScrollViewer>
     <StackPanel Margin="24" Spacing="20">
+        <TextBlock Text="Exposed dropdown fields" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock Text="Editable text, selection and menu expansion are independent. Use Up/Down to enter the menu." TextWrapping="Wrap" />
+        <m3:ExposedDropdownMenuBox x:Name="EditableOptions" Width="280" HorizontalAlignment="Left" ExpandedChangeRequested="OnExpandedOptions">
+            <m3:ExposedDropdownMenuBox.Menu>
+                <m3:ExposedDropdownMenu>
+                    <m3:DropdownMenuItem Content="Coffee" Click="OnChooseOption" />
+                    <m3:DropdownMenuItem Content="Tea" Click="OnChooseOption" />
+                    <m3:DropdownMenuItem Content="Water" Click="OnChooseOption" />
+                </m3:ExposedDropdownMenu>
+            </m3:ExposedDropdownMenuBox.Menu>
+            <TextBox Theme="{StaticResource MaterialFilledExposedDropdownTextFieldTheme}" x:Name="EditableOptionText" Text="Coffee" m3:MaterialTextField.Label="Drink"
+                     m3:ExposedDropdownMenuBox.AnchorType="PrimaryEditable">
+                <TextBox.InnerRightContent>
+                    <m3:ExposedDropdownMenuTrailingIcon IsExpanded="{Binding IsExpanded, ElementName=EditableOptions}"
+                        m3:ExposedDropdownMenuBox.AnchorType="SecondaryEditable" />
+                </TextBox.InnerRightContent>
+            </TextBox>
+        </m3:ExposedDropdownMenuBox>
+        <m3:ExposedDropdownMenuBox x:Name="ReadOnlyOptions" Width="280" HorizontalAlignment="Left" ExpandedChangeRequested="OnExpandedOptions">
+            <m3:ExposedDropdownMenuBox.Menu>
+                <m3:ExposedDropdownMenu>
+                    <m3:DropdownMenuItem Content="Small" Click="OnChooseSize" />
+                    <m3:DropdownMenuItem Content="Medium" Click="OnChooseSize" />
+                    <m3:DropdownMenuItem Content="Large" Click="OnChooseSize" />
+                </m3:ExposedDropdownMenu>
+            </m3:ExposedDropdownMenuBox.Menu>
+            <TextBox Theme="{StaticResource MaterialOutlinedExposedDropdownTextFieldTheme}" x:Name="ReadOnlyOptionText" Text="Medium" IsReadOnly="True" m3:MaterialTextField.Label="Size"
+                     m3:ExposedDropdownMenuBox.AnchorType="PrimaryNotEditable">
+                <TextBox.InnerRightContent>
+                    <m3:ExposedDropdownMenuTrailingIcon IsExpanded="{Binding IsExpanded, ElementName=ReadOnlyOptions}" />
+                </TextBox.InnerRightContent>
+            </TextBox>
+        </m3:ExposedDropdownMenuBox>
         <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="16">

@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record TextFieldConfig(bool Outlined = false, string Position = "Inside", bool Minimized = false,
     bool Label = true, bool Slots = false, bool Enabled = true, bool Error = false, bool Dark = false,
     bool Rtl = false, string Alignment = "Start", double? Width = null, double? Height = null,
-    double LabelWidth = 40, double LabelHeight = 12, string Action = "none");
+    double LabelWidth = 40, double LabelHeight = 12, string Action = "none", bool Exposed = false);
 
 [ParitySuite("text-field")]
 public sealed class TextFieldCases
@@ -136,7 +136,7 @@ public sealed class TextFieldCases
             // decoration use the product's explicit Material theme throughout.
             host.Window.Styles.Insert(0, new FluentTheme());
             Theme(config.Dark);
-            Box.Theme = (ControlTheme)host.Window.FindResource(config.Outlined ? "MaterialOutlinedTextFieldTheme" : "MaterialFilledTextFieldTheme")!;
+            Box.Theme = (ControlTheme)host.Window.FindResource(config.Exposed ? config.Outlined ? "MaterialOutlinedExposedDropdownTextFieldTheme" : "MaterialFilledExposedDropdownTextFieldTheme" : config.Outlined ? "MaterialOutlinedTextFieldTheme" : "MaterialFilledTextFieldTheme")!;
             Box.AcceptsReturn = false;
             Box.IsEnabled = config.Enabled;
             if (config.Width is { } w) Box.Width = w;

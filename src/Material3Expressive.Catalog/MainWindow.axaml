@@ -272,6 +272,29 @@
                                  m3:RadioButtonAppearance.InteractionSource="{StaticResource SelectionPreviewSource}" />
                     <Button Content="Toggle hover preview" Click="OnSelectionHoverPreview" />
                 </StackPanel>
+                <TextBlock Text="Selection owned by the row" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <m3:ToggleableSurface x:Name="DisplaySelectionRow" CheckedChangeRequested="OnDisplaySelectionChanged" Padding="16" CornerRadius="12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <m3:CheckBoxDisplay IsChecked="{Binding IsChecked, ElementName=DisplaySelectionRow}" />
+                            <TextBlock Text="Select this row" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </m3:ToggleableSurface>
+                    <m3:ToggleableSurface x:Name="DisplayRadioRow" CheckedChangeRequested="OnDisplaySelectionChanged" Padding="16" CornerRadius="12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <m3:RadioButtonDisplay IsChecked="{Binding IsChecked, ElementName=DisplayRadioRow}" />
+                            <TextBlock Text="Application selection" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </m3:ToggleableSurface>
+                    <m3:ToggleableSurface x:Name="DisplaySwitchRow" CheckedChangeRequested="OnDisplaySelectionChanged" Padding="16" CornerRadius="12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <m3:SwitchDisplay IsChecked="{Binding IsChecked, ElementName=DisplaySwitchRow}" />
+                            <TextBlock Text="Enable this option" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </m3:ToggleableSurface>
+                    <m3:CheckBoxDisplay IsChecked="{x:Null}" />
+                    <m3:CheckBoxDisplay IsChecked="True" IsEnabled="False" />
+                </StackPanel>
                 <TextBlock Text="Scaffold" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <Button Content="Start" Tag="Start" Click="OnScaffoldPositionClick" />

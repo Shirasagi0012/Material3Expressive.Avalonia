@@ -58,6 +58,19 @@ XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"
 
 ## 内容槽与定制
 
+由整个列表行处理选择时，行内使用只展示状态的 `CheckBoxDisplay`：
+
+```xml
+<m3:CheckBoxDisplay IsChecked="{Binding GroupState}" />
+<m3:CheckBoxDisplay IsChecked="{x:Null}" />
+```
+
+它支持 false / true / null、`IsEnabled` 状态色和正常切换动画，默认尺寸 24×24 DIP；
+不自动切换、不占 48 DIP 交互留白，不接收焦点或提供切换自动化。父级须提供操作、名称和选择语义。
+`Colors`、`CheckmarkStroke`、`OutlineStroke` 为普通属性，类型与原生 CheckBox 的 Appearance 配置相同；
+尺寸、颜色和运动沿用组件 Token。无需替换现有可交互 CheckBox。
+
+
 `Content` / `ContentTemplate` 支持字符串、控件与数据模板，默认 BodyLarge 排版，保留 access key 和 RTL。
 标签位于 48 DIP 指示器槽旁，默认间距来自 `Padding="8,0,0,0"`；无 `Content` 时不使用这层 `Padding`。
 有内容时整行（含间隙和 `Padding`）参与命中；无内容时默认鼠标命中区域为 24×24 DIP 指示器区域。

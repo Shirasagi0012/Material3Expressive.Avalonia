@@ -363,7 +363,7 @@ public class DropdownMenuPopup : ItemsControl
             mirrored ^= visual.HasMirrorTransform;
         return new(anchor.TranslatePoint(mirrored ? new Point(anchor.Bounds.Width, 0) : default, _topLevel!)!.Value, anchor.Bounds.Size);
     }
-    private void UpdatePosition(bool force = false)
+    internal void UpdatePosition(bool force = false)
     {
         if (!IsPresented || _topLevel is null) return;
         if (_popup.PlacementTarget?.IsAttachedToVisualTree() != true) { ClosePresentation(true); return; }
@@ -375,15 +375,18 @@ public class DropdownMenuPopup : ItemsControl
         var platformWidth = shortest >= 600 ? 580 : shortest >= 480 ? 440 : 320;
         _popup.MaxWidth = UsePlatformDefaultWidth ? Math.Min(_topLevel.ClientSize.Width, platformWidth) : _topLevel.ClientSize.Width;
         _popup.MaxHeight = _topLevel.ClientSize.Height;
+        ConfigurePopupConstraints(_popup, bounds, _topLevel.ClientSize, _topLevel.RenderScaling);
         _popup.PlacementRect = null; _popup.PlacementRect = bounds;
     }
+    internal virtual void ConfigurePopupConstraints(Popup popup, Rect anchor, Size window, double density) { }
+    internal virtual IDropdownMenuPositionProvider CreatePositionProvider(double density) =>
+        new DropdownMenuPositionProvider(AnchorPosition, Offset, density, horizontalMargin: this is DropdownMenu ? 0 : 8);
     private void PlacePopup(CustomPopupPlacement placement)
     {
         var density = _topLevel!.RenderScaling;
         int Pixel(double dip) => MathUtils.DipToPx((float)dip, (float)density);
         var bounds = AnchorBounds();
-        var provider = PositionProvider ?? new DropdownMenuPositionProvider(AnchorPosition, Offset, density,
-            horizontalMargin: this is DropdownMenu ? 0 : 8);
+        var provider = PositionProvider ?? CreatePositionProvider(density);
         var rtl = FlowDirection == FlowDirection.RightToLeft;
         var point = provider.CalculatePosition(new(Pixel(bounds.X), Pixel(bounds.Y), Pixel(bounds.Width), Pixel(bounds.Height)),
             new(Pixel(_topLevel.ClientSize.Width), Pixel(_topLevel.ClientSize.Height)), rtl,

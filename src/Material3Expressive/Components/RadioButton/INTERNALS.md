@@ -57,6 +57,11 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 使用原生主题复用输入与自动化，不额外建立相似子类；接受范围不包含其他视觉差异。
 同时明确该阶段不实现完全等价的 `onClick=null` 模式，原生选择自动化不能靠禁用普通输入移除。
 
+本轮依据用户扩大授权修订该阶段限制：新增 `RadioButtonDisplay : TemplatedControl`，复用现有 Indicator，
+仅保留 requiredSize、padding 和居中，不创建 selectable、焦点、输入或 SelectionItemProvider。
+`SelectionDisplayLayout` 与 CheckBoxDisplay 共用受限尺寸的居中溢出；两类 Display 的实际状态由父级提供，
+不新增组互斥或回调协议。原生 RadioButton 的输入和组语义维持原决定，无迁移。
+
 另一个已确认视觉适配是消除负半径闪点。固定 Skiko `0.152.0-alpha02` 的 drawCircle 转到 drawOval，
 负半径仍可通过排序后椭圆绘出中心点，使取消选择的尾段圆点消失后又闪现。
 维护者选择“修正绘制，消除闪点（推荐）”：仅在最终物理绘制半径
@@ -67,10 +72,14 @@ Enter 按下激活和四槽颜色 API；状态/组处理先于 Click/Command，�
 共享职责见[交互反馈与键盘激活](../../../../docs/DECISIONS.md)和
 [Core Desktop 焦点](../../../../docs/DECISIONS.md)。
 
-尚未实现完全等价的 null 回调模式。默认焦点轮廓是 24 DIP 反馈区域的圆形。
+null 回调分支使用 RadioButtonDisplay；默认交互控件的焦点轮廓是 24 DIP 反馈区域的圆形。
 文字栅格、真实辅助技术、完整桌面输入和非 Windows 平台未经双端验收。selection-source 部分 Core 重复捕获出现最大单通道 1 的变化，稳定性门禁保留原始失败。
 
 ## 4. 验证入口
+
+`selection-display-initial` 双端自检 68 例：65 equal，3 different，零错误，全部重复/额外截图稳定。3 个 Radio 动画用例仅在已确认的负半径幻影点分支有 raster 差异，结构化状态和几何均相等；保留失败与真实图片。
+
+- `SelectionDisplayTests` 验证展示尺寸、输入/自动化所有权与动态 Token；双端 `selection-display` 覆盖状态、禁用、主题、RTL、紧约束与反向动画。固定基线的负半径闪点继续按上述已接受差异保留为失败证据。
 
 - `RadioButtonTests` 和 `SelectionControlHitTests` 检查原生输入、状态/命令顺序、内容命中、主题及生命周期。
 - `SelectionDensityTokenTests` 检查尺寸与留白的动态资源覆盖。

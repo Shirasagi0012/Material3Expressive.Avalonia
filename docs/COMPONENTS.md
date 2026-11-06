@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 53 个组件的全局索引全景图。
+本文为系统全部 54 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：53 个
+- **已纳管组件总数**：54 个
 
 ---
 
@@ -36,10 +36,11 @@
 | `SearchBar` | 搜索顶栏、收起表面、停靠/带间隙弹层、普通/contained 全屏搜索、原位容器与输入 | [README](../src/Material3Expressive/Components/SearchBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/SearchBar/INTERNALS.md) | 含 gap 默认状态工厂与顶栏显式滚动策略；输入仍为布尔重载；自动 ScrollViewer 接入未实现 |
 | `SecureTextField` | 密码输入限制、显示切换与安全边界防护 | [README](../src/Material3Expressive/Components/SecureTextField/README.md) | [INTERNALS](../src/Material3Expressive/Components/SecureTextField/INTERNALS.md) | |
 | `NumericUpDown` | 数字增减微调框与内置步进按钮 | [README](../src/Material3Expressive/Components/NumericUpDown/README.md) | - | |
+| `ExposedDropdownMenu` | 独立字段下拉菜单，支持编辑、只读、锚点约束与开闭动画 | [README](../src/Material3Expressive/Components/ExposedDropdownMenu/README.md) | [INTERNALS](../src/Material3Expressive/Components/ExposedDropdownMenu/INTERNALS.md) | |
 | `ComboBox` | 原生下拉单选框字段装饰与单组下拉菜单 | [README](../src/Material3Expressive/Components/ComboBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/ComboBox/INTERNALS.md) | |
-| `CheckBox` | 原生复选框的两态与三态 Material 主题 | [README](../src/Material3Expressive/Components/CheckBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/CheckBox/INTERNALS.md) | |
-| `RadioButton` | 原生单选按钮与组互斥交互 | [README](../src/Material3Expressive/Components/RadioButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/RadioButton/INTERNALS.md) | |
-| `Switch` | 原生滑动开关与滑块图标动画 | [README](../src/Material3Expressive/Components/Switch/README.md) | [INTERNALS](../src/Material3Expressive/Components/Switch/INTERNALS.md) | |
+| `CheckBox` | 原生复选框主题与非交互两态/三态展示 | [README](../src/Material3Expressive/Components/CheckBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/CheckBox/INTERNALS.md) | |
+| `RadioButton` | 原生单选按钮、组互斥与非交互状态展示 | [README](../src/Material3Expressive/Components/RadioButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/RadioButton/INTERNALS.md) | |
+| `Switch` | 原生滑动开关、非交互展示与滑块图标动画 | [README](../src/Material3Expressive/Components/Switch/README.md) | [INTERNALS](../src/Material3Expressive/Components/Switch/INTERNALS.md) | |
 | `Slider` | 原生滑块与连续数值选择 | [README](../src/Material3Expressive/Components/Slider/README.md) | [INTERNALS](../src/Material3Expressive/Components/Slider/INTERNALS.md) | |
 | `DatePicker` | 月历选择、日期文本输入与日期范围选择 | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | |
 | `TimePicker` | 钟面指针交互、时间文本输入与滚动时间选择 | [README](../src/Material3Expressive/Components/TimePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePicker/INTERNALS.md) | |
@@ -87,7 +88,7 @@
 | `Scrim` | 可点击或装饰性遮罩 | [README](../src/Material3Expressive/Components/Scrim/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scrim/INTERNALS.md) | |
 | `DatePickerDialog` | 日期选择器专用对话框容器 | [README](../src/Material3Expressive/Components/DatePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePickerDialog/INTERNALS.md) | |
 | `TimePickerDialog` | 普通与 Vibrant 时间选择器对话框容器 | [README](../src/Material3Expressive/Components/TimePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePickerDialog/INTERNALS.md) | |
-| `Tooltip` | 简单与富内容提示、悬浮提示框与交互标签 TooltipLabel | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
+| `Tooltip` | 带可选箭头的简单/富内容提示、提示框与交互标签 | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
 | `Snackbar` | 底部短消息与全局消息队列宿主 | [README](../src/Material3Expressive/Components/Snackbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/Snackbar/INTERNALS.md) | |
 | `Badge` | 数字与圆点徽标，配合徽标容器定位 | [README](../src/Material3Expressive/Components/Badge/README.md) | [INTERNALS](../src/Material3Expressive/Components/Badge/INTERNALS.md) | |
 | `ProgressIndicator` | 线性与圆形进度条，支持直线与表现型波浪动画 | [README](../src/Material3Expressive/Components/ProgressIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/ProgressIndicator/INTERNALS.md) | |

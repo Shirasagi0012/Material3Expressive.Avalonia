@@ -82,3 +82,5 @@
 Catalog 另有独立项预览按钮，可在不关闭弹层的情况下观察快速反选效果。
 
 Catalog 入口是主窗口的 ComboBox demo，也可以用 `dotnet run --project src/Material3Expressive.Catalog -- --combo-box` 直接打开。
+
+需要输入与选择解耦、锚点可用空间约束和完整退出动画时，可使用独立的 [ExposedDropdownMenuBox](../ExposedDropdownMenu/README.md)。

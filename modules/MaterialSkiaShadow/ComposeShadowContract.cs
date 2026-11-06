@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using SkiaSharp;
 
 namespace MaterialSkiaShadow;
 
@@ -47,9 +48,44 @@ public readonly record struct ComposeShadowLighting(
     }
 }
 
-/// <summary>A flat convex occluder supported by the first-stage renderer.</summary>
+/// <summary>A flat occluder represented by a rounded rectangle or a supported path snapshot.</summary>
 public readonly record struct ComposeShadowShape(Rect Bounds, CornerRadius Corners)
 {
+    // Managed snapshot preserves conics and contour direction without sharing native lifetimes
+    // with a retained draw operation. Coordinates remain local DIP.
+    internal PathSegment[]? PathData { get; private init; }
+    internal SKPathFillType PathFillType { get; private init; }
+    internal readonly record struct PathSegment(SKPathVerb Verb, SKPoint First, SKPoint Second, float Weight);
+
+    /// <summary>Snapshots closed contours of lines, quadratics and conics in local DIP coordinates.</summary>
+    public static ComposeShadowShape FromPath(SKPath path)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        var bounds = path.Bounds;
+        var data = new List<PathSegment>();
+        using var iterator = path.CreateRawIterator();
+        Span<SKPoint> points = stackalloc SKPoint[4];
+        SKPathVerb verb;
+        while ((verb = iterator.Next(points)) != SKPathVerb.Done)
+        {
+            if (verb == SKPathVerb.Move && data.Count > 0 && data[^1].Verb != SKPathVerb.Close)
+                throw new ArgumentException("Every shadow contour must be closed.", nameof(path));
+            data.Add(verb switch
+            {
+                SKPathVerb.Move => new(verb, points[0], default, 0),
+                SKPathVerb.Line => new(verb, points[1], default, 0),
+                SKPathVerb.Quad => new(verb, points[1], points[2], 0),
+                SKPathVerb.Conic => new(verb, points[1], points[2], iterator.ConicWeight()),
+                SKPathVerb.Close => new(verb, default, default, 0),
+                _ => throw new NotSupportedException("MaterialSkiaShadow supports lines, quadratics and conics only.")
+            });
+        }
+        if (data.Count == 0 || data[^1].Verb != SKPathVerb.Close)
+            throw new ArgumentException("A shadow contour must be closed.", nameof(path));
+        return new(new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height), default)
+        { PathData = data.ToArray(), PathFillType = path.FillType };
+    }
+
     public static ComposeShadowShape Rectangle(Rect bounds) => new(bounds, default);
 
     public static ComposeShadowShape RoundedRectangle(Rect bounds, CornerRadius corners) =>

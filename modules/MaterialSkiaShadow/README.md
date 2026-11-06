@@ -2,7 +2,7 @@
 
 `MaterialSkiaShadow` draws Compose Multiplatform's point-light elevation shadows through
 Avalonia's Skia backend, without modifying SkiaSharp or adding a native library. The existing
-public API supports rectangles, rounded rectangles with individual corner radii, and circles.
+public API supports rectangles, rounded rectangles with individual corner radii, circles, and closed paths of lines, quadratics and conics through `ComposeShadowShape.FromPath(SKPath)`. This snapshots managed commands, preserving conic weights and releasing callers from native path lifetime requirements.
 
 On a Ganesh GPU canvas, rectangles, circles and nearly simple rounded rectangles with circular
 corners use the managed port of `SurfaceDrawContext::drawFastShadow`. As in Skia, this branch
@@ -26,8 +26,7 @@ The general contour follows the locked Skiko artifact's non-Ganesh `handleQuad` 
 This is an artifact-specific source branch, not a choice to approximate curves or a claim that
 every raster backend lacks Ganesh. The analytic GPU branch above is separate.
 
-The public API is unchanged. Cubics, perspective, tilted Z planes, directional lights and
-non-Skia backends remain outside the supported contract. A general-path API is not provided.
+Multiple contours use the existing whole-path blur fallback: the pinned native tessellator rejects a second Move verb. Cubics, perspective, tilted Z planes, directional lights and non-Skia backends remain outside the supported contract. Path inputs are local DIP, just like rounded rectangles.
 
 ## Source and framework adaptation
 

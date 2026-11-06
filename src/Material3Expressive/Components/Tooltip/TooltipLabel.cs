@@ -197,6 +197,10 @@ public class TooltipLabel : ContentControl
             new PixelSize(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)),
             FlowDirection == FlowDirection.RightToLeft,
             new PixelSize(Pixel(placement.PopupSize.Width), Pixel(placement.PopupSize.Height)));
+        _presenter.SetValue(TooltipCaret.PlacementProperty, new TooltipCaretPlacement(
+            new(Pixel(bounds.Left), Pixel(bounds.Top), Pixel(bounds.Width), Pixel(bounds.Height)),
+            new(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)), point,
+            TooltipAnchorPosition.Above, FlowDirection == FlowDirection.RightToLeft, density));
         var rtl = FlowDirection == FlowDirection.RightToLeft;
         placement.AnchorRectangle = new Rect(point.X / density, point.Y / density, 0, 0);
         placement.Anchor = rtl ? PopupAnchor.TopRight : PopupAnchor.TopLeft;

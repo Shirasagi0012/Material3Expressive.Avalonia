@@ -18,12 +18,14 @@ public static class TooltipDefaults
     // Fixed Core PlatformContext.DefaultViewConfiguration.longPressTimeoutMillis.
     public static readonly TimeSpan LongPressDuration = TimeSpan.FromMilliseconds(500);
     public const double Spacing = 4;
+    public static Size CaretSize => new(16, 8);
 
     public static ITooltipPositionProvider CreatePositionProvider(TooltipAnchorPosition position = TooltipAnchorPosition.Above,
         double spacing = Spacing, double renderScaling = 1) => new PositionProvider(position, spacing, renderScaling);
 
-    private sealed class PositionProvider(TooltipAnchorPosition position, double spacing, double scaling) : ITooltipPositionProvider
+    internal sealed class PositionProvider(TooltipAnchorPosition position, double spacing, double scaling) : ITooltipPositionProvider
     {
+        internal TooltipAnchorPosition Position => position;
         public PixelPoint CalculatePosition(PixelRect anchorBounds, PixelSize windowSize, bool rightToLeft, PixelSize tooltipSize) =>
             TooltipPosition.Calculate(anchorBounds, windowSize, tooltipSize, (TooltipSide)position,
                 (int)MathF.Floor((float)(spacing * scaling) + .5f), rightToLeft);

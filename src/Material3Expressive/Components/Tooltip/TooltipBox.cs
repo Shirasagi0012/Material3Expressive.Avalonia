@@ -81,6 +81,7 @@ public class TooltipBox : ContentControl
     private bool _longPressed;
     private Size _lastWindowSize;
     private readonly TooltipAnchor _anchor;
+    private TooltipAnchorPosition? _caretPosition;
 
     internal bool IsPresented => _popup.IsOpen;
     internal Control Presentation => _layer;
@@ -127,6 +128,9 @@ public class TooltipBox : ContentControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        // TooltipScopeImpl is remembered without a positionProvider key in the pinned source.
+        _caretPosition = PositionProvider is null ? AnchorPosition
+            : (PositionProvider as TooltipDefaults.PositionProvider)?.Position;
         _topLevel = TopLevel.GetTopLevel(this);
         _anchor.Attach();
         _topLevel?.AddHandler(PointerPressedEvent, OnOutsidePressed, RoutingStrategies.Tunnel, true);
@@ -281,6 +285,9 @@ public class TooltipBox : ContentControl
         var provider = PositionProvider ?? TooltipDefaults.CreatePositionProvider(AnchorPosition, Spacing, density);
         var point = provider.CalculatePosition(anchor, new(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)),
             FlowDirection == FlowDirection.RightToLeft, new(Pixel(placement.PopupSize.Width), Pixel(placement.PopupSize.Height)));
+        _presenter.SetValue(TooltipCaret.PlacementProperty, new TooltipCaretPlacement(anchor,
+            new(Pixel(topLevel.ClientSize.Width), Pixel(topLevel.ClientSize.Height)), point,
+            _caretPosition, FlowDirection == FlowDirection.RightToLeft, density));
         // Avalonia mirrors anchor/gravity after the callback. Undo only that positioning mirror;
         // tooltip content still inherits the requested layout direction.
         var rtl = FlowDirection == FlowDirection.RightToLeft;

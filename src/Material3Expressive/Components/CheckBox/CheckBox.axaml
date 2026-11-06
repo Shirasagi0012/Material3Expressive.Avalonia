@@ -56,5 +56,40 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox" BasedOn="{StaticResource MaterialCheckBoxTheme}" />
+    <ControlTheme x:Key="{x:Type m3:CheckBoxDisplay}" TargetType="m3:CheckBoxDisplay">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:SelectionDisplayLayout IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorSize}}"
+                                     Padding="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorPadding}}">
+              <m3:CheckBoxIndicator IndicatorSize="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.IndicatorSize}}"
+                  ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ShapeAnimation}}"
+                  ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.ColorAnimation}}"
+                  UncheckColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckColorAnimation}}"
+                  x:Name="PART_Indicator" IsChecked="{TemplateBinding IsChecked}"
+                  Colors="{TemplateBinding Colors}"
+                  CheckmarkStroke="{TemplateBinding CheckmarkStroke}"
+                  OutlineStroke="{TemplateBinding OutlineStroke}"
+                  CheckedCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedCheckmarkColor}}"
+                  UncheckedCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedCheckmarkColor}}"
+                  CheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedBoxColor}}"
+                  UncheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedBoxColor}}"
+                  DisabledCheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledCheckedBoxColor}}"
+                  DisabledUncheckedBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledUncheckedBoxColor}}"
+                  DisabledIndeterminateBoxColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledIndeterminateBoxColor}}"
+                  CheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.CheckedBorderColor}}"
+                  UncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.UncheckedBorderColor}}"
+                  DisabledBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledBorderColor}}"
+                  DisabledUncheckedBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledUncheckedBorderColor}}"
+                  DisabledIndeterminateBorderColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledIndeterminateBorderColor}}"
+                  DisabledCheckmarkColor="{m3:Token {x:Static m3:MaterialTokens+Comp+CheckBox.DisabledCheckmarkColor}}" />
+          </m3:SelectionDisplayLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
   </Styles.Resources>
 </Styles>

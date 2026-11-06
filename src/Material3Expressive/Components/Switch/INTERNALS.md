@@ -75,7 +75,7 @@ nullable IsChecked / IsThreeState 和原生 Toggle 自动化身份保留，null 
 可选 `Focus.InsetRing` 由 SwitchTrack 的独立视觉部件承载，位于轨道普通 outline 之下；
 thumb Surface 的 PresentsFocusRing=False，仍承担原有 ripple/hover。两者订阅同一个 owner，
 焦点环不替换 thumb 的 Surface attachment；默认 Opacity 行为保留。
-尚未实现完全等价的 `onCheckedChange=null`。
+`onCheckedChange=null` 现由下述独立 SwitchDisplay 提供。
 真实 OS 无障碍客户端、手工桌面输入和文字视觉未经双端验收。
 
 双端场景读实际 ThumbNode 布局，不复制拇指算法生成期望值；覆盖图标/空内容、preferred/required
@@ -130,3 +130,24 @@ Switch 已确认的 ripple 中心跟随决定仍适用，不能为通过双端�
 原有 `switch` 75 例（`20261103-113429-f44f0bfd`）39 equal、11 withinTolerance、25 different，
 双端重复稳定、零捕获错误。原生输入、拖动、属性当帧与中心跟随等差异仍须按对应边界阅读，
 不将执行完成称为全匹配。相关行为测试 96 项通过；Catalog 实际检查了共享源标签和原生鼠标切换。
+
+## 空回调展示变体
+
+2026-11-06 本轮剩余移植的明确授权修订“暂不新增只显示控件”的阶段范围。原理由仍成立：
+原生 ToggleSwitch 无法同时去掉输入、交互槽和 ToggleProvider。因此新增独立的 SwitchDisplay，
+不改动原生入口；无破坏性迁移。SwitchDisplayLayout 保留 requiredSize(52,32) 和居中溢出，
+SwitchTrack 与 SwitchThumbLayout 复用实际绘制、FastSpatial、按压 Snap 及有符号 pressCount。
+
+固定 AndroidX/Core 的 SwitchImpl 在 onCheckedChange=null 时仍订阅 interactionSource，
+包括 thumb ripple 与可选轨道焦点环。本地仅通过内部 MaterialSurface.ConnectInteraction
+显式连接反馈；MaterialInteraction.IsInteractive 保持 false，因此外部源可反馈、原生输入不发布事件。
+该入口只管理同一模板宿主的 attachment，卸载沿用 Surface 原有清理；不是第二套交互状态机。
+换源时 indication 移动而 thumb collector 保留旧源的固定上游行为同样适用。
+
+SwitchDisplayTests 验证父级点击、无交互最小槽/ToggleProvider、紧约束、内容尺寸、共享源、换源、
+禁用、重挂及卸载。双端 selection-display 补充静态、图标、RTL、约束、切换/反向、无输入与共享按压。
+
+本轮 selection-display-aligned 共 102 例：92 equal、3 withinTolerance、7 different，零捕获错误，
+重复和额外被动截图均稳定。其中 Switch 34 例的 4 个共享源按压仍有已记录的涟漪中心跟随差异；
+其余 30 例通过现有门禁。另 3 个 different 属于 RadioButton 已接受的负半径圆点边界。
+实际查看了共享源差异图；未改容差或参考图。Switch 与 Surface 相关行为测试 130 项通过。

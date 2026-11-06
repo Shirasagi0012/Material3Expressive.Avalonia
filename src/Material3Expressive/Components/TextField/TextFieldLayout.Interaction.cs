@@ -27,6 +27,7 @@ internal sealed partial class TextFieldLayout
         ReplaceInteractionSource();
         _owner!.GotFocus += NativeGotFocus;
         _owner.LostFocus += NativeLostFocus;
+        _owner.PropertyChanged += PopupFocusChanged;
         _owner.AddHandler(InputElement.PointerPressedEvent, NativePointerPressed, RoutingStrategies.Bubble, true);
         _owner.AddHandler(InputElement.PointerReleasedEvent, NativePointerReleased, RoutingStrategies.Tunnel, true);
         _owner.AddHandler(InputElement.PointerMovedEvent, NativePointerMoved, RoutingStrategies.Bubble, true);
@@ -39,6 +40,7 @@ internal sealed partial class TextFieldLayout
         if (_owner is not { } owner) return;
         owner.GotFocus -= NativeGotFocus;
         owner.LostFocus -= NativeLostFocus;
+        owner.PropertyChanged -= PopupFocusChanged;
         owner.RemoveHandler(InputElement.PointerPressedEvent, NativePointerPressed);
         owner.RemoveHandler(InputElement.PointerReleasedEvent, NativePointerReleased);
         owner.RemoveHandler(InputElement.PointerMovedEvent, NativePointerMoved);
@@ -111,7 +113,13 @@ internal sealed partial class TextFieldLayout
 
     private void NativeLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (ReferenceEquals(e.Source, _owner)) EndNativeFocus();
+        if (ReferenceEquals(e.Source, _owner) && _owner?.GetValue(TextFieldThemeDefaults.RetainPopupFocusProperty) != true) EndNativeFocus();
+    }
+
+    private void PopupFocusChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TextFieldThemeDefaults.RetainPopupFocusProperty && e.NewValue is false && _owner?.IsFocused != true)
+            EndNativeFocus();
     }
 
     private void StartNativeFocus()

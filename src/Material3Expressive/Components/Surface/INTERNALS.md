@@ -86,6 +86,9 @@ Chip/Menu 的外部形状动画通过 SetAnimatedCorners 提供已解析的 DIP 
 
 共享的轮廓求值、背景裁剪、描边、交互激活和阴影坐标选择见 [DECISIONS.md](../../../../docs/DECISIONS.md)，适用范围随各条决定维护。
 
+Tooltip 的内部 `SetContainerGeometry` 接入背景、内容 clip 与阴影的路径并集，不参与测量；清空后恢复既有圆角路径。
+它仅供无独立描边/交互的 Tooltip 模板使用，不代表任意形状的边框、波纹或焦点环已经完成；授权和范围见共享决定 §27。
+
 - 剩余移植任务授权范围内新增三个非破坏性组件入口，不改变静态 MaterialSurface。
   点击/选择/切换各自保留语义：普通 Click/Command、IsSelected + Click、IsChecked + CheckedChangeRequested。
   不建立共享交互控件基类；ClickableSurface 的两个派生类仅表达 Surface 自身重载。

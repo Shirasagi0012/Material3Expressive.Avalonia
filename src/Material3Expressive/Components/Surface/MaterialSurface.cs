@@ -136,6 +136,21 @@ public sealed class MaterialSurface : Control
     private Size _shapeSize;
     private CornerRadius? _animatedCorners;
     private IBrush? _effectiveBackground;
+    private Geometry? _containerGeometry;
+    private ComposeShadowShape? _containerShadowShape;
+
+    // Tooltip's union outline: background, child clip and shadow share the same shape.
+    // Internal until arbitrary-shape borders and interaction outlines have a complete contract.
+    internal void SetContainerGeometry(Geometry? geometry, ComposeShadowShape? shadowShape)
+    {
+        _containerGeometry = geometry;
+        _containerShadowShape = shadowShape;
+        _chrome.ClipToBounds = geometry is null;
+        _chrome.Clip = geometry;
+        InvalidateVisual();
+    }
+
+    internal Geometry? ContainerGeometry => _containerGeometry;
 
     public MaterialSurface()
     {
@@ -285,7 +300,8 @@ public sealed class MaterialSurface : Control
     public override void Render(DrawingContext context)
     {
         DrawShadow(context);
-        context.DrawRectangle(EffectiveBackground, null, new RoundedRect(new Rect(Bounds.Size), EffectiveCornerRadius));
+        if (_containerGeometry is { } geometry) context.DrawGeometry(EffectiveBackground, null, geometry);
+        else context.DrawRectangle(EffectiveBackground, null, new RoundedRect(new Rect(Bounds.Size), EffectiveCornerRadius));
         base.Render(context);
     }
 
@@ -298,7 +314,7 @@ public sealed class MaterialSurface : Control
         ComposeShadowRenderer.Draw(
             context,
             this,
-            ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
+            _containerShadowShape ?? ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
             ComposeShadowParameters.Material(ShadowElevation, ResolveShadowColor()));
     }
 
@@ -389,12 +405,18 @@ public sealed class MaterialSurface : Control
 
         if (TemplatedParent is Control host && MaterialInteraction.GetIsInteractive(host)
             && !IsInTemplatePopup(host))
-        {
-            _interactionController = MaterialInteraction.GetOrCreate(host);
-            host.PropertyChanged += FocusConfigurationChanged;
-            UpdateFocusRing(host);
-            _interactionAttachment = _interactionController.Attach(this);
-        }
+            ConnectInteraction(host);
+    }
+
+    // Explicit attachment for a component with indication but no native input modifier
+    // (Switch onCheckedChange=null). Input eligibility stays on the owning controller.
+    internal void ConnectInteraction(Control host)
+    {
+        if (_interactionAttachment is not null) return;
+        _interactionController = MaterialInteraction.GetOrCreate(host);
+        host.PropertyChanged += FocusConfigurationChanged;
+        UpdateFocusRing(host);
+        _interactionAttachment = _interactionController.Attach(this);
     }
 
     // A surface inside a popup of its templated parent (a MenuItem's submenu container) is not that
