@@ -34,11 +34,12 @@
 </Window.Resources>
 <Grid>
   <m3:SearchBar State="{StaticResource SearchState}">
-    <Button Content="搜索组件" Width="360" Height="56" Click="OpenSearchPopup" />
+    <m3:SearchBarInputField State="{StaticResource SearchState}"
+                           Text="{Binding Query, Mode=TwoWay}" PlaceholderText="搜索组件" />
   </m3:SearchBar>
   <m3:ExpandedDockedSearchBar State="{StaticResource SearchState}">
     <m3:ExpandedDockedSearchBar.InputField>
-      <m3:SearchBarInputField Text="{Binding Query, Mode=TwoWay}" IsExpanded="True"
+      <m3:SearchBarInputField Text="{Binding Query, Mode=TwoWay}" State="{StaticResource SearchState}"
                              PlaceholderText="搜索" SearchRequested="SubmitSearch" />
     </m3:ExpandedDockedSearchBar.InputField>
     <ScrollViewer><ItemsControl ItemsSource="{Binding Results}" /></ScrollViewer>
@@ -46,7 +47,7 @@
 </Grid>
 ```
 
-`OpenSearchPopup` 调用 `await state.AnimateToExpandedAsync()`，选中结果后调用 `await state.AnimateToCollapsedAsync()`。Escape 和弹层外按下自动收起；结束后恢复之前的焦点。弹层声明本身不占布局空间。Catalog 的 **Search popup** 展示过滤、选中、主题及 RTL 切换，可用 `--search-popup` 单独启动。
+输入字段自动展开共享状态，也可调用 `await state.AnimateToExpandedAsync()`；选中结果后调用 `await state.AnimateToCollapsedAsync()`。Escape 和弹层外按下自动收起；结束后恢复之前的焦点。弹层声明本身不占布局空间。Catalog 的 **Search popup** 展示过滤、选中、主题及 RTL 切换，可用 `--search-popup` 单独启动。
 
 带间隙弹层使用 `SearchBarState.CreateWithGap()` 创建共享状态，再将上例的 `ExpandedDockedSearchBar` 替换为 `ExpandedDockedSearchBarWithGap`，两个插槽的写法相同：
 
@@ -55,7 +56,7 @@
                                   DropdownGapSize="2" DropdownCornerRadius="12"
                                   DropdownScrimColor="#52000000">
   <m3:ExpandedDockedSearchBarWithGap.InputField>
-    <m3:SearchBarInputField IsExpanded="True" PlaceholderText="搜索"
+    <m3:SearchBarInputField State="{StaticResource SearchState}" PlaceholderText="搜索"
                            Text="{Binding Query, Mode=TwoWay}" />
   </m3:ExpandedDockedSearchBarWithGap.InputField>
   <ScrollViewer><ItemsControl ItemsSource="{Binding Results}" /></ScrollViewer>
@@ -67,7 +68,7 @@
 ```xml
 <m3:ExpandedFullScreenContainedSearchBar x:Name="FullScreenSearch" WindowInsets="0">
   <m3:ExpandedFullScreenContainedSearchBar.InputField>
-    <m3:SearchBarInputField IsExpanded="True" PlaceholderText="搜索"
+    <m3:SearchBarInputField State="{StaticResource SearchState}" PlaceholderText="搜索"
                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                            Background="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainerColor}}"
                            Text="{Binding Query, Mode=TwoWay}" />
@@ -102,6 +103,12 @@ FullScreenSearch.State = state;
 `NavigationIcon` 是起始插槽，直接子项是末尾操作。Catalog 的 **Search app bar** 展示搜索过滤、主题/RTL、直接拖动和显式滚动策略，使用 `--search-app-bar` 启动。
 
 ## 变体与属性
+
+`MaterialInteraction.FocusFeedback="InsetRing"` 为新版输入启用键盘内缩焦点环；可继承容器配置，圆角跟随输入的 `CornerRadius`，描边颜色和尺寸沿用共享焦点环配置。Catalog 搜索弹层示例可切换焦点反馈。
+
+新版输入通过 `State` 配合独立弹层：Tab 聚焦保留收起状态，文本长度增加或按 ↓ 展开；已展开时 ↓ 将焦点移到下方建议。点击释放也会展开已聚焦输入，指针聚焦则立即展开。键盘模式收起保留焦点，指针模式收起后等待 100ms 清焦；重新展开会取消清焦。`IsReadOnly` 保留展开与导航，`IsEnabled=false` 阻止原生输入。`SearchRequested` 仍由应用处理，不自动收起。
+
+收起和展开输入各用一个控件实例，并把 `Text` 双向绑定到同一查询。首次挂载或更换 `State` 时若已经展开，该输入不会启动“文本增长时展开”的观察；这通常对应弹层内输入。外部 `InteractionSource` 的 Release 也会请求展开，Cancel 不会。更换源后，新版输入的点击观察在下一个动画帧末切换；setter 返回时不要假定新源已有订阅。
 
 - `IsExpanded` 控制结果显隐；中途反向保留当前动画值。
 - 输入字段获得焦点时发出 `ExpansionRequested`，Enter 发出 `SearchRequested`；两者不代写查询或展开状态。将两个控件的 `IsExpanded` 绑定到同一状态。
@@ -162,10 +169,12 @@ interactions.Interaction += interaction => Debug.WriteLine(interaction.GetType()
 
 ## 使用限制与注意事项
 
-`SearchBarInputField` 仍使用布尔展开状态，不接受 `SearchBarState`。上例以按钮打开弹层，展开输入只负责查询。输入字段用于无标签、无错误状态的单行搜索。`AppBarWithSearch` 尚未自动连接普通 `ScrollViewer` / SmoothScroll；上述显式回调需要宿主按真实嵌套滚动顺序调用。
+`SearchBarInputField.State` 非空时直接控制共享状态；`IsExpanded` 和 `ExpansionRequested` 仅在 `State=null` 时生效。输入字段用于无标签、无错误状态的单行搜索。`AppBarWithSearch` 尚未自动连接普通 `ScrollViewer` / SmoothScroll；上述显式回调需要宿主按真实嵌套滚动顺序调用。
 
 独立弹层采用可聚焦的窗口内桌面弹层，形状通过 `CornerRadius` 配置；目前不提供移动端软键盘抑制、自动键盘避让和预测返回手势。一个状态应配对同一窗口内一个收起表面和一个展开弹层。仅移动已存在的收起表面不会立即重定位静止弹层；重新打开或进度/窗口尺寸更新时读取最新位置。结果模板在弹层移除时释放，业务状态应保存在视图模型中。
 
 同一窗口存在多个展开的布尔 `DockedSearchBar` 时，Escape 请求交给视觉树中最后一个可见的容器，其结果在退出动画完成后移出视觉树。独立弹层则由当前顶层弹层处理 Escape。
 
 内部移植差异和验证范围见 [INTERNALS.md](INTERNALS.md)。
+
+状态式输入合并同一次 UI 调用中的文字修改：先输入再撤销不会触发展开。更换 `State` 后，帧提交前的文字是新观察器的初始值；其后的长度增长才触发展开。

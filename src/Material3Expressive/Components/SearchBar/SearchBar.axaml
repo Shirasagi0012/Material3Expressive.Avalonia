@@ -286,6 +286,12 @@
       </ControlTemplate></Setter>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:SearchBarInputField}" TargetType="m3:SearchBarInputField" BasedOn="{StaticResource MaterialTextFieldBaseTheme}">
+      <Setter Property="ExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ExpandAnimation}}" />
+      <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />
+      <Setter Property="ContainedAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.ContainedAnimation}}" />
+      <Setter Property="GapExpandAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapExpandAnimation}}" />
+      <Setter Property="GapCollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.GapCollapseAnimation}}" />
+
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="PreferredMinimumWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DefaultWidth}}" />

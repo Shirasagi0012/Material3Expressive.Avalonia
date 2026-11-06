@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using ComposeAnimation;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Catalog;
 
@@ -31,13 +32,13 @@ public partial class ExpandedSearchBarDemo : Window
             if (presentation == SearchPresentation.Contained)
             {
                 Resources["SearchState"] = SearchBarState.CreateContained();
-                CollapsedSearch.State = State;
+                CollapsedSearch.State = SearchAnchor.State = Query.State = State;
                 Query.Classes.Add("contained");
             }
             if (presentation == SearchPresentation.Gap)
             {
                 Resources["SearchState"] = SearchBarState.CreateWithGap();
-                CollapsedSearch.State = State;
+                CollapsedSearch.State = SearchAnchor.State = Query.State = State;
             }
             Title = presentation == SearchPresentation.Gap ? "Search popup with gap" : $"{presentation} search";
             Heading.Text = $"SearchBar + {popup.GetType().Name}";
@@ -56,7 +57,6 @@ public partial class ExpandedSearchBarDemo : Window
         UpdateResults();
     }
     private void CloseSearch(object? sender, RoutedEventArgs e) => _ = State.AnimateToCollapsedAsync();
-    private void OpenSearch(object? sender, RoutedEventArgs e) => _ = State.AnimateToExpandedAsync();
     private void QueryChanged(object? sender, TextChangedEventArgs e) { if (Results is not null) UpdateResults(); }
     private void UpdateResults()
     {
@@ -70,9 +70,11 @@ public partial class ExpandedSearchBarDemo : Window
     }
     private void Select(string name)
     {
-        Status.Text = $"已选择：{name}"; SearchAnchor.Content = name; _ = State.AnimateToCollapsedAsync();
+        Status.Text = $"已选择：{name}"; Query.Text = name; _ = State.AnimateToCollapsedAsync();
     }
     private void SearchSubmitted(object? sender, RoutedEventArgs e) => Select(Query.Text ?? "");
+    private void ToggleFocusFeedback(object? sender, RoutedEventArgs e) => MaterialInteraction.SetFocusFeedback(Root,
+        MaterialInteraction.GetFocusFeedback(Root) == FocusFeedback.InsetRing ? FocusFeedback.Opacity : FocusFeedback.InsetRing);
     private void ToggleTheme(object? sender, RoutedEventArgs e) => RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     private void ToggleDirection(object? sender, RoutedEventArgs e) => FlowDirection = FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 }

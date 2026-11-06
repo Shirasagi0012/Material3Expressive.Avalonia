@@ -141,31 +141,4 @@
   <Style Selector="TextBlock.time-support"><Setter Property="m3:MaterialText.Style" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldSupportingTextFont}}" /></Style>
   <Style Selector="TextBlock.time-support"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TimeInput.TimeFieldSupportingTextColor}}" /></Style>
   <Style Selector="TextBlock.time-support.invalid"><Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Error}}" /></Style>
-  <Style Selector="m3|MaterialSurface.time-scroll-surface">
-    <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLowest}}" />
-    <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Shape.Large}}" />
-  </Style>
-  <Style Selector="DateTimePickerPanel.time-scroll">
-    <Setter Property="m3:TimeScrollPanel.UnselectedStyle" Value="{m3:Typography DisplayMedium}" />
-    <Setter Property="m3:TimeScrollPanel.SelectedStyle" Value="{m3:Typography DisplayLargeEmphasized}" />
-    <Setter Property="m3:TimeScrollPanel.UnselectedColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Outline}}" />
-    <Setter Property="m3:TimeScrollPanel.SelectedColor" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
-    <Setter Property="m3:TimeScrollPanel.SelectionAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}" />
-  </Style>
-  <Style Selector="DateTimePickerPanel.time-scroll > ListBoxItem">
-    <Setter Property="Theme">
-      <ControlTheme TargetType="ListBoxItem">
-        <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
-        <Setter Property="Template">
-          <ControlTemplate>
-            <m3:MaterialSurface Background="Transparent">
-              <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
-                                Foreground="{TemplateBinding Foreground}"
-                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-            </m3:MaterialSurface>
-          </ControlTemplate>
-        </Setter>
-      </ControlTheme>
-    </Setter>
-  </Style>
 </Styles>

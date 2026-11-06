@@ -360,6 +360,8 @@
 - **决定**：容器在可聚焦菜单存活期间，通过内部 TextFieldThemeDefaults.RetainPopupFocus 保留字段已有的 native FocusInteraction。它不合成新的 Focus，也不阻止实际键盘焦点转入菜单。模式切换先保留交互再移动焦点；关闭后等原生焦点恢复完成再释放保留标记，避免无意义的 Unfocus/Focus 对。
 - **范围与清理**：仅 ExposedDropdownMenuBox 内标记为 primary 的 TextBox；禁用、换源、模板卸载仍按 TextField 原有配对清理，容器卸载/移除锚点清除标记。外部 source 不被替换，普通 TextBox、原生 ComboBox 和其他 Popup 不自动采用此策略。没有公共焦点协议或破坏性 API 迁移。
 
+- **状态搜索输入接入（本轮授权）**：新增 `SearchBarInputField.State` 后，真实组合回归发现窗口内搜索弹层关闭恢复锚点 focus 会再次展开。沿用本节的原始理由和同一内部 RetainPopupFocus，只在展开时保存与弹层共享状态、当前真正聚焦的搜索输入；关闭恢复焦点后释放。输入识别被保留的 focus 恢复，不把它当新指针聚焦。原生键盘焦点仍进入弹层，父源保留原 FocusInteraction；指针收起的 100ms 清焦和键盘收起保留焦点均按 SearchBar.kt 执行。该适配扩展到停靠、gap 和全屏搜索，不扩展为任意 TextBox 或全局弹层焦点策略。
+
 ## 29. Carousel 路径描边
 
 - **依据与授权**：本轮剩余移植任务明确授权必要共享能力。固定 AndroidX/Core 的 MultiAspectCarousel.MaskShape 总是产生 Outline.Generic，即使输入是圆角形状。Border.kt 的该分支采用离屏双宽描边，再稍微放大反向路径并清除外侧笔画；现有 SurfaceOutline 的圆角直接描边不能替代此算法。

@@ -54,11 +54,11 @@ public sealed class TimeScrollCases
             if (attached)
             {
                 points.Add(new("layout", "time-scroll-layout", "picker", AvaloniaMeasurements.Geometry(picker, host.Window).ToArray()));
-                var panel = picker.GetVisualDescendants().OfType<TimeScrollPanel>().Single(p => p.Name == "PART_HourScroll");
-                foreach (var item in panel.Children.Cast<ListBoxItem>().Where(item => item.Tag is 8 or 9))
+                var panel = picker.GetVisualDescendants().OfType<ScrollField>().Single(p => p.Name == "PART_HourScroll");
+                foreach (var item in panel.GetVisualDescendants().OfType<ScrollFieldNumber>().Where(item => item.Index is 8 or 9))
                 {
                     var color = ((ISolidColorBrush)item.Foreground!).Color;
-                    points.Add(new($"hour-{item.Tag}", "scroll-item", "picker", [
+                    points.Add(new($"hour-{item.Index}", "scroll-item", "picker", [
                         Measurement.Numeric("fontSize", item.FontSize, "sp", category: "text", definition: "time-scroll.item.font-size"),
                         Measurement.Numeric("fontWeight", (int)item.FontWeight, "weight", category: "text", definition: "time-scroll.item.font-weight"),
                         Measurement.Vector("color", "color", [color.R, color.G, color.B, color.A], "rgba8", "none", "properties", definition: "time-scroll.item.color")

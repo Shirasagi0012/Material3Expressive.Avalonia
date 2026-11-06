@@ -118,7 +118,8 @@ BadgedBox 已通过共享读取器仅透传锚点基线，
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
 
 RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分别连接自定义 Thumb 内的 TooltipLabel。
-单值原生 Slider 尚无公共交互源接线；跨屏 DPI、字体栅格和真实触摸设备未经验收。
+单值原生 Slider 现可通过 `SliderAppearance.InteractionSource` 接线，见 Slider 的 README / INTERNALS；
+跨屏 DPI、字体栅格和真实触摸设备未经验收。
 
 ## 4. 验证入口
 

@@ -3,6 +3,8 @@
 
 using System.Globalization;
 using Avalonia.Data;
+using Avalonia.Controls.Templates;
+using ComposeAnimation;
 using Avalonia.Data.Converters;
 using Material3Expressive.Foundation.Tokens;
 using static Material3Expressive.Tokens.MaterialTokens;
@@ -35,6 +37,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
     private TopLevel? _window;
     private bool _horizontal, _portrait, _updating, _input, _watchingWindow;
     private TimeOnly? _lastValue;
+    private readonly IDisposable?[] _scrollToTime = new IDisposable?[2];
+    private readonly IDisposable?[] _timeToScroll = new IDisposable?[2];
     internal TimeOnly Value => owner.GetValue(TimePicker.SelectedTimeProperty);
     internal bool Is24Hour => owner.GetValue(TimePicker.Is24HourProperty);
     internal bool IsPm => Value.Hour >= 12;
@@ -54,8 +58,11 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         if (!_watchingWindow)
         {
             _watchingWindow = true;
-            owner.AttachedToVisualTree += (_, _) => WatchWindow();
-            owner.DetachedFromVisualTree += (_, _) => WatchWindow();
+            owner.AttachedToVisualTree += (_, _) => {
+                WatchWindow();
+                for (var i = 0; i < 2; i++) QueueTimeToScroll(i);
+            };
+            owner.DetachedFromVisualTree += (_, _) => { CancelScrollEffects(); WatchWindow(); };
         }
 
         WatchWindow();
@@ -131,6 +138,8 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         _updating = true;
         try
         {
+            CancelScrollEffects();
+            _lastValue = null;
             _body.Children.Clear();
             _clock = null;
             Array.Clear(_fields);
@@ -159,6 +168,9 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                 HorizontalAlignment = HorizontalAlignment.Center
             };
             var numbers = new StackPanel { Orientation = Orientation.Horizontal, FlowDirection = FlowDirection.LeftToRight };
+            // TimeScrollImpl's Row keeps the outer direction; its fields override only
+            // their contents to LTR. Do not force the row's child order to LTR as well.
+            if (kind == TimeEntryKind.Scroll) numbers[!Visual.FlowDirectionProperty] = owner[!Visual.FlowDirectionProperty];
             bool hasToggle = owner.GetValue(TimePicker.ToggleProperty) is { }
                 || owner.GetValue(TimePicker.ToggleTemplateProperty) is { };
             bool sideControls = hasToggle && Vibrant && kind != TimeEntryKind.Dial;
@@ -266,43 +278,51 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                     }
                     case TimeEntryKind.Scroll:
                     {
-                        var field = new TimeScrollPanel {
-                            Name = i == 0 ? "PART_HourScroll" : "PART_MinuteScroll", PanelType = DateTimePickerPanelType.Minute,
-                            MinimumValue = i == 0 && !Is24Hour ? 1 : 0, MaximumValue = i == 0 ? Is24Hour ? 23 : 12 : 59,
-                            ShouldLoop = true, ItemFormat = "mm"
+                        var clock24 = Is24Hour;
+                        var offset = i == 0 && !clock24 ? 1 : 0;
+                        var state = new ScrollFieldState(i == 0 ? clock24 ? 24 : 12 : 60,
+                            i == 0 ? HourForDisplay - offset : Value.Minute);
+                        var field = new ScrollField {
+                            Name = i == 0 ? "PART_HourScroll" : "PART_MinuteScroll",
+                            State = state, FlowDirection = FlowDirection.LeftToRight,
+                            OptionDescription = option => DateTimeStrings.Get(index == 0
+                                ? clock24 ? "TimePicker24HourSuffix" : "TimePickerHourSuffix"
+                                : "TimePickerMinuteSuffix", null, option + offset)
                         };
-                        BindDimension(field, DateTimePickerPanel.ItemHeightProperty, Comp.TimeScroll.ItemHeight);
+                        // Twelve-hour options are 0..11, while their visible labels are 1..12.
+                        if (offset != 0)
+                            field.ItemTemplate = new FuncDataTemplate<ScrollFieldItem>((item, _) => new ScrollFieldNumber {
+                                Index = item!.Index + offset,
+                                [!ScrollFieldNumber.IsSelectedProperty] = item[!ScrollFieldItem.IsSelectedProperty],
+                                [!ScrollFieldNumber.SelectedContentColorProperty] = field[!ScrollField.SelectedContentColorProperty],
+                                [!ScrollFieldNumber.UnselectedContentColorProperty] = field[!ScrollField.UnselectedContentColorProperty]
+                            });
+                        BindDimension(field, ScrollField.ItemHeightProperty, Comp.TimeScroll.ItemHeight);
+                        BindDimension(field, Control.WidthProperty, width);
+                        BindDimension(field, Control.HeightProperty, fieldHeight);
                         field.Classes.Add("time-scroll");
-                        field.SelectionChanged += (_, _) => {
-                            if (_updating) return;
-                            if (index == 0) SetHour(Is24Hour ? field.SelectedValue : field.SelectedValue % 12 + (IsPm ? 12 : 0));
-                            else SetMinute(field.SelectedValue);
-                        };
-                        // ScrollContentPresenter initializes ILogicalScrollable.Offset from its
-                        // owner's offset. Seed both sides before attachment, otherwise its initial
-                        // zero offset is interpreted as a user selection and overwrites the time.
-                        field.SelectedValue = i == 0 ? HourForDisplay : Value.Minute;
-                        var scroll = new ScrollViewer {
-                            Content = field,
-                            Offset = field.Offset,
-                            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden
-                        };
-                        field.PropertyChanged += (_, change) => {
-                            // ItemHeight can resolve only after attachment, or change with a
-                            // resource. The native panel recalculates its offset in the new
-                            // units; keep the presenter from writing back the old pixel offset.
-                            if (change.Property == DateTimePickerPanel.ItemHeightProperty)
-                                scroll.Offset = field.Offset;
-                        };
-                        BindDimension(scroll, Control.WidthProperty, width);
-                        BindDimension(scroll, Control.HeightProperty, fieldHeight);
-                        var surface = new MaterialSurface { Child = scroll };
-                        surface.Classes.Add("time-scroll-surface");
-                        _fields[i] = field;
-                        column.Children.Add(surface);
                         AutomationProperties.SetName(field,
                             DateTimeStrings.Get(i == 0 ? "TimePickerHourSelection" : "TimePickerMinuteSelection"));
+                        state.PropertyChanged += (_, change) => {
+                            if (change.Property != ScrollFieldState.SelectedOptionProperty
+                                || _fields[index] != field || !owner.IsAttachedToVisualTree()) return;
+                            var selected = index == 0 ? clock24 ? state.SelectedOption
+                                : (state.SelectedOption + 1) % 12 + (IsPm ? 12 : 0) : state.SelectedOption;
+                            // A programmatic scroll to the current time has no write to perform.
+                            // Do not retain an obsolete echo until the following frame.
+                            if (selected == (index == 0 ? Value.Hour : Value.Minute)) return;
+                            _scrollToTime[index]?.Dispose();
+                            // LaunchedEffect(selectedOption): publish at the composition boundary,
+                            // not while Pager is updating its page and offset together.
+                            _scrollToTime[index] = AnimationScope.Get(owner).ScheduleFrameCommit(() => {
+                                _scrollToTime[index] = null;
+                                if (index == 0) SetHour(clock24 ? state.SelectedOption
+                                    : (state.SelectedOption + 1) % 12 + (IsPm ? 12 : 0));
+                                else SetMinute(state.SelectedOption);
+                            });
+                        };
+                        _fields[i] = field;
+                        column.Children.Add(field);
                         break;
                     }
                     case TimeEntryKind.Dial:
@@ -560,7 +580,10 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
                         button.IsSelected = (int)Selection == i;
                         button.Classes.Set("selected", (int)Selection == i);
                         break;
-                    case DateTimePickerPanel panel: panel.SelectedValue = n; break;
+                    case ScrollField:
+                        if (_lastValue is not { } last || (i == 0 ? last.Hour != Value.Hour : last.Minute != Value.Minute))
+                            QueueTimeToScroll(i);
+                        break;
                 }
             }
 
@@ -580,6 +603,29 @@ internal sealed class TimeEntryController(TemplatedControl owner, TimeEntryKind 
         }
 
         SetValidity();
+    }
+
+    private void CancelScrollEffects()
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            _scrollToTime[i]?.Dispose(); _scrollToTime[i] = null;
+            _timeToScroll[i]?.Dispose(); _timeToScroll[i] = null;
+        }
+    }
+
+    private void QueueTimeToScroll(int index)
+    {
+        if (_fields[index] is not ScrollField { State: { } state } || !owner.IsAttachedToVisualTree()) return;
+        _timeToScroll[index]?.Dispose();
+        _timeToScroll[index] = AnimationScope.Get(owner).ScheduleFrameCommit(() => {
+            _timeToScroll[index] = null;
+            var option = index == 0 ? Is24Hour ? Value.Hour : HourForDisplay - 1 : Value.Minute;
+            // Keep TimeScrollImpl's asymmetry. Hour always requests a default-priority
+            // scroll (rejected during a user drag); minute explicitly excludes scrolling.
+            if (index == 0 || state.SelectedOption != option && !state.IsScrollInProgress)
+                _ = state.ScrollToOptionAsync(option);
+        });
     }
 
     private static bool TryParseInputNumber(string text, out int number)

@@ -54,6 +54,7 @@ public class ExpandedDockedSearchBar : ContentControl
     private MaterialSurface? _surface;
     private SearchBarState? _activeState;
     private TopLevel? _topLevel;
+    private SearchBarInputField? _retainedInput;
     internal Control? Presentation => _surface;
     internal Control? PresentationLayout => _layout;
 
@@ -171,6 +172,10 @@ public class ExpandedDockedSearchBar : ContentControl
     }
     private void OnClosed(object? sender, EventArgs e)
     {
+        // ModalPresenter has restored native focus before this callback. Core's parent
+        // scene never lost its FocusInteraction while the popup owned keyboard input.
+        _retainedInput?.ClearValue(TextFieldThemeDefaults.RetainPopupFocusProperty);
+        _retainedInput = null;
         var lifetime = _presentationLifetime; _presentationLifetime = null;
         IsPresented = false;
         _input?.UpdateChild(); _results?.UpdateChild();
@@ -187,6 +192,12 @@ public class ExpandedDockedSearchBar : ContentControl
         UpdateVariant(_presenter, _activeState);
         if (!_presenter.IsPresented)
         {
+            if (_topLevel.FocusManager?.GetFocusedElement() is SearchBarInputField focused
+                && ReferenceEquals(focused.State, _activeState))
+            {
+                _retainedInput = focused;
+                focused.SetValue(TextFieldThemeDefaults.RetainPopupFocusProperty, true);
+            }
             _presentationLifetime = new CancellationTokenSource();
             IsPresented = true;
             _presenter.IsVisible = true;

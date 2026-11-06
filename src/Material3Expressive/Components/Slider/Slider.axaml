@@ -38,7 +38,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <m3:SliderThumb Name="PART_ThumbVisual" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
+                    <m3:SliderThumb Name="PART_ThumbVisual" InteractionSource="{Binding (m3:SliderAppearance.InteractionSource), RelativeSource={RelativeSource AncestorType=Slider}}" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}"
                         Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleHeight}}"
                         Colors="{Binding (m3:SliderAppearance.Colors), RelativeSource={RelativeSource AncestorType=Slider}}" />
                 </ControlTemplate>

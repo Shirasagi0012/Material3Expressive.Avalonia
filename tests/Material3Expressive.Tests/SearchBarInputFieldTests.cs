@@ -6,6 +6,8 @@ using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
+using Avalonia.Headless;
+using ComposeAnimation.Runtime;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -196,6 +198,261 @@ public class SearchBarInputFieldTests
         Assert.Equal(Brushes.Red, host.Field.Foreground); Assert.Equal(Brushes.Blue, host.Field.Background);
     }
 
+    [AvaloniaFact]
+    public void StateKeyboardFocusIsIndependentAndDownKeyExpands()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        var requests = 0;
+        host.Field.ExpansionRequested += (_, _) => requests++;
+        host.Field.Focus(NavigationMethod.Tab); host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Down });
+        host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+        Assert.Equal(0, requests);
+        Assert.False(host.Field.IsExpanded); // Boolean API is not overwritten by State.
+        host.Frames(16, 1008);
+        Assert.Equal(1, state.Progress);
+        _ = state.AnimateToCollapsedAsync(); host.Frames(1024, 2016);
+        host.Advance(200);
+        Assert.True(host.Field.IsFocused); // Keyboard collapse keeps editing focus.
+    }
+
+    [AvaloniaFact]
+    public void StateTextGrowthTracksLengthAndSourceFocus()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        host.Field.Text = "aa"; host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.Focus(NavigationMethod.Tab);
+        host.Field.Text = "bb"; host.Draw(); // Equal-length replacement does not expand.
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.Text = "b"; host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.Text = "bc"; host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void InitiallyExpandedFieldDoesNotStartTextObserverOnCollapse()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState(SearchBarValue.Expanded); host.Frames(0, 0);
+        host.Field.Focus(NavigationMethod.Tab);
+        _ = state.SnapToAsync(0); host.Draw();
+        host.Field.Text = "typed"; host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.State = new SearchBarState(); host.Frames(16, 16); // The new effect key installs its collector at commit.
+        host.Field.Text = "typed more"; host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, host.Field.State.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void SharedSourceReleaseExpandsButCancelAndOldSourceDoNot()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        var source = host.Field.InteractionSource = new MaterialInteractionSource();
+        host.Frames(16, 16);
+        var press = new MaterialInteractionEvent.Press(new Point(4, 4));
+        source.Emit(press); source.Emit(new MaterialInteractionEvent.CancelPress(press)); host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        var next = host.Field.InteractionSource = new MaterialInteractionSource();
+        host.Frames(32, 32);
+        source.Emit(new MaterialInteractionEvent.Release(press)); host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        next.Emit(new MaterialInteractionEvent.Release(press)); host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void PrivateSourceClickExpandsAnAlreadyKeyboardFocusedField()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        host.Field.Focus(NavigationMethod.Tab); host.Draw();
+        host.Window.MouseDown(new Point(30, 25), MouseButton.Left);
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Window.MouseUp(new Point(30, 25), MouseButton.Left); host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+        host.Frames(16, 1008);
+        _ = state.SnapToAsync(0); host.Draw();
+        host.Advance(99); Assert.True(host.Field.IsFocused);
+        host.Advance(1); Assert.False(host.Field.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void ExpandedArrowMovesFocusToSuggestionAndReadOnlyStillExpands()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState(SearchBarValue.Expanded); host.Frames(0, 0);
+        host.Field.IsReadOnly = true;
+        var suggestion = new Button { Content = "suggestion" };
+        host.Window.Content = null;
+        host.Window.Content = new StackPanel { Children = { host.Field, suggestion } }; host.Draw();
+        host.Field.Focus(NavigationMethod.Tab);
+        host.Field.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Down });
+        Assert.True(suggestion.IsFocused);
+        _ = state.SnapToAsync(0); host.Field.Focus(NavigationMethod.Tab);
+        host.Field.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyUpEvent, Key = Key.Down }); host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void StateSemanticsFollowProgressThresholdAndRespectExplicitStatus()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        var peer = ControlAutomationPeer.CreatePeerForElement(host.Field)!;
+        var notifications = 0;
+        peer.PropertyChanged += (_, e) => { if (e.Property == AutomationElementIdentifiers.ItemStatusProperty) notifications++; };
+        _ = state.SnapToAsync(.02f); Assert.Null(peer.GetItemStatus());
+        _ = state.SnapToAsync(.021f); Assert.NotNull(peer.GetItemStatus());
+        Assert.Equal(1, notifications);
+        AutomationProperties.SetItemStatus(host.Field, "custom");
+        _ = state.SnapToAsync(0); Assert.Equal("custom", peer.GetItemStatus());
+    }
+
+    [AvaloniaFact]
+    public void StateReplacementCancelsInputOperationAndDetachReleasesObserver()
+    {
+        using var host = new Host();
+        var old = host.Field.State = new SearchBarState(); host.Frames(0, 0);
+        host.Field.Focus(NavigationMethod.Tab);
+        host.Field.Text = "a"; host.Draw(); host.Frames(16, 80);
+        Assert.True(old.IsAnimating);
+        var next = host.Field.State = new SearchBarState(); host.Draw();
+        Assert.False(old.IsAnimating);
+        host.Window.Content = null; host.Draw();
+        var progress = next.Progress;
+        host.Field.Text = "ab"; host.Draw();
+        Assert.Equal(progress, next.Progress); Assert.False(next.IsAnimating);
+        Assert.Equal(0, host.Clock.PendingFrameCount);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SharedStateInputsOpenAndCloseARealPopupWithoutReopening(bool pointer)
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState();
+        var expanded = new SearchBarInputField { State = state };
+        var popup = new ExpandedDockedSearchBar { State = state, InputField = expanded, Content = new Button { Content = "result" } };
+        host.Window.Content = null;
+        host.Window.Height = 500;
+        host.Window.Content = new Grid { Children = { new SearchBar { State = state, Content = host.Field }, popup } };
+        host.Draw();
+        if (pointer)
+        {
+            host.Window.MouseDown(new Point(30, 25), MouseButton.Left);
+            host.Window.MouseUp(new Point(30, 25), MouseButton.Left);
+        }
+        else
+        {
+            host.Field.Focus(NavigationMethod.Tab);
+            host.Field.Text = "query";
+        }
+        host.Draw(); host.Frames(16, 1008);
+        Assert.True(popup.IsPresented); Assert.True(expanded.IsFocused);
+        _ = state.AnimateToCollapsedAsync(); host.Frames(1024, 2400); host.Advance(200);
+        Assert.False(popup.IsPresented); Assert.Equal(SearchBarValue.Collapsed, state.CurrentValue);
+        Assert.Equal(!pointer, host.Field.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void BatchedTextEditsObserveOnlyTheAppliedSnapshot()
+    {
+        using var host = new Host();
+        var state = host.Field.State = new SearchBarState(); host.Frames(0, 0);
+        host.Field.Focus(NavigationMethod.Tab); host.Draw();
+        host.Field.Text = "temporary"; host.Field.Text = ""; host.Draw();
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.Text = "a"; host.Field.Text = "ab"; host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void TextBeforeReplacementCollectorStartsBecomesItsInitialValue()
+    {
+        using var host = new Host();
+        host.Field.State = new SearchBarState(); host.Frames(0, 0);
+        host.Field.Focus(NavigationMethod.Tab); host.Draw();
+        var state = host.Field.State = new SearchBarState();
+        host.Field.Text = "seed"; host.Draw(); host.Frames(16, 16);
+        Assert.Equal(SearchBarValue.Collapsed, state.TargetValue);
+        host.Field.Text = "seeded"; host.Draw();
+        Assert.Equal(SearchBarValue.Expanded, state.TargetValue);
+    }
+
+    [AvaloniaFact]
+    public void StateInputRingUsesPrivateFocusAndPreservesLayout()
+    {
+        using var host = new Host();
+        host.Field.State = new();
+        MaterialInteraction.SetFocusFeedback(host.Field, FocusFeedback.InsetRing); host.Draw();
+        var size = host.Field.Bounds.Size;
+        var ring = Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        Assert.Equal(host.Field.Bounds.Size, ring.Bounds.Size);
+        host.Field.Focus(NavigationMethod.Tab); host.Frames(16, 160);
+        Assert.InRange(ring.Progress, 0.01f, 1.1f);
+        host.Window.FocusManager!.Focus(null); host.Frames(176, 1008);
+        Assert.Equal(0, ring.Progress); Assert.Equal(size, host.Field.Bounds.Size);
+        Assert.Equal(SearchBarValue.Collapsed, host.Field.State.CurrentValue);
+    }
+
+    [AvaloniaFact]
+    public void PointerModeRemovesRingAndKeyboardModeCreatesAFreshCollector()
+    {
+        using var host = new Host();
+        host.Field.State = new();
+        MaterialInteraction.SetFocusFeedback(host.Field, FocusFeedback.InsetRing); host.Draw();
+        host.Field.Focus(NavigationMethod.Tab); host.Frames(16, 400);
+        var ring = Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        Assert.InRange(ring.Progress, .99f, 1.01f);
+        host.Window.MouseDown(new Point(30, 25), MouseButton.Left); host.Frames(416, 416);
+        Assert.Empty(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        host.Window.MouseUp(new Point(30, 25), MouseButton.Left);
+        host.Window.FocusManager!.Focus(null);
+        host.Field.Focus(NavigationMethod.Tab); host.Frames(432, 432);
+        var fresh = Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        Assert.NotSame(ring, fresh); Assert.Equal(0, fresh.Progress);
+        // The collector was created after this focus event; upstream flows do not replay it.
+        host.Window.FocusManager.Focus(null); host.Field.Focus(NavigationMethod.Tab); host.Frames(448, 1008);
+        // Core InputModeFilterInteractionSource preserves signed counts: the unmatched
+        // old Unfocus leaves this new collector unable to pair the subsequent Focus.
+        Assert.Equal(0, fresh.Progress);
+    }
+
+    [AvaloniaFact]
+    public void StateInputRingUsesExternalSourceAndReleasesOnModeOrTemplateChange()
+    {
+        using var host = new Host();
+        host.Field.State = new();
+        MaterialInteraction.SetFocusFeedback(host.Field, FocusFeedback.InsetRing);
+        var source = host.Field.InteractionSource = new(); host.Frames(16, 16);
+        var focus = new MaterialInteractionEvent.Focus(); source.Emit(focus); host.Frames(32, 400);
+        var ring = Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        Assert.InRange(ring.Progress, .99f, 1.01f); Assert.False(host.Field.IsFocused);
+        host.Field.CornerRadius = new(8, 12, 16, 20); host.Draw();
+        Assert.Equal(host.Field.CornerRadius, ring.Corners);
+        MaterialInteraction.SetFocusFeedback(host.Field, FocusFeedback.Opacity); host.Draw();
+        Assert.Empty(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        MaterialInteraction.SetFocusFeedback(host.Field, FocusFeedback.InsetRing); host.Draw();
+        var fresh = Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        Assert.Equal(0, fresh.Progress);
+        var template = host.Field.Template;
+        host.Field.Template = null; host.Draw();
+        source.Emit(new MaterialInteractionEvent.Focus()); host.Frames(416, 432);
+        Assert.Equal(0, host.Clock.PendingFrameCount);
+        host.Field.Template = template; host.Draw();
+        Assert.Single(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+        host.Field.State = null; host.Draw();
+        Assert.Empty(host.Field.GetVisualDescendants().OfType<InsetFocusRingPresenter>());
+    }
+
     private sealed class Host : IDisposable
     {
         internal ManualFrameSource Clock { get; } = new(Dispatcher.UIThread.VerifyAccess);
@@ -210,6 +467,7 @@ public class SearchBarInputFieldTests
             Window.Content = Field; Window.Show(); Draw(); Clock.SendFrame(TimeSpan.Zero);
         }
         internal void Draw() { Dispatcher.UIThread.RunJobs(); Window.UpdateLayout(); }
+        internal void Frames(int start, int end) { for (var ms = start; ms <= end; ms += 16) { Clock.SendFrame(TimeSpan.FromMilliseconds(ms)); Draw(); } }
         internal void Advance(int ms) { Time.AdvanceBy(TimeSpan.FromMilliseconds(ms)); Draw(); }
         public void Dispose()
         {

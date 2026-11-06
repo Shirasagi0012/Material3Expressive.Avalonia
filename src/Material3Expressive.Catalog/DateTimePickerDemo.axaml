@@ -28,7 +28,7 @@
           </Border>
           <StackPanel Spacing="24">
             <m3:TimeInput Name="Input" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
-            <TextBlock Text="Scroll entry: select a neighbouring number, then reverse while its size and colour are changing. The selected number uses emphasized display typography." TextWrapping="Wrap" MaxWidth="340" />
+            <TextBlock Text="Scroll entry: drag and fling either column, use the mouse wheel, or focus it and press Up/Down. Click a neighbouring number to animate to it; reverse before settling to try interruption. Hours and minutes wrap independently." TextWrapping="Wrap" MaxWidth="340" />
             <m3:TimeScroll Name="Scroll" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}" />
             <TextBlock Text="{Binding #Dial.SelectedTime}" />
             <TextBlock Text="{Binding #Input.IsInputValid, StringFormat='Input valid: {0}'}" />

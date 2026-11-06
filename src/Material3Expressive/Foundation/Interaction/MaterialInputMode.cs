@@ -12,7 +12,18 @@ namespace Material3Expressive.Foundation.Interaction;
 internal sealed class MaterialInputMode
 {
     private static readonly ConditionalWeakTable<TopLevel, MaterialInputMode> Windows = new();
-    internal bool IsKeyboard { get; private set; } = true;
+    private bool _isKeyboard = true;
+    internal bool IsKeyboard
+    {
+        get => _isKeyboard;
+        private set
+        {
+            if (_isKeyboard == value) return;
+            _isKeyboard = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+    internal event EventHandler? Changed;
 
     private MaterialInputMode(TopLevel window) => Observe(window);
 

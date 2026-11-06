@@ -52,13 +52,14 @@ internal sealed partial class TextFieldLayout
         TextFieldThemeDefaults.SetIndicatorFocused(owner, false);
     }
 
-    private void DisconnectInteractions()
+    private void DisconnectInteractions(bool publish = true)
     {
         ++_interactionGeneration;
         var source = _interactionSource;
         var focus = _nativeFocus;
         var press = _nativePress;
         _interactionSource = null;
+        if (publish) _owner?.ClearValue(TextFieldThemeDefaults.EffectiveInteractionSourceProperty);
         _nativeFocus = null;
         _nativePress = null;
         _interactionPointer = null;
@@ -80,7 +81,7 @@ internal sealed partial class TextFieldLayout
         var source = MaterialTextField.GetInteractionSource(owner) ?? _privateSource;
         if (ReferenceEquals(source, _interactionSource)) return;
         var generation = _interactionGeneration + 1;
-        DisconnectInteractions();
+        DisconnectInteractions(publish: false);
         if (generation != _interactionGeneration || !ReferenceEquals(owner, _owner)) return;
         _interactionSource = source;
         _interactionObserver = interaction =>
@@ -104,6 +105,7 @@ internal sealed partial class TextFieldLayout
             Retarget();
         };
         source.Interaction += _interactionObserver;
+        owner.SetValue(TextFieldThemeDefaults.EffectiveInteractionSourceProperty, source);
     }
 
     private void NativeGotFocus(object? sender, RoutedEventArgs e)

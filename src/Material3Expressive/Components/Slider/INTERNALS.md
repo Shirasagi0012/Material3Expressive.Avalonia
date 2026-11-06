@@ -120,6 +120,28 @@ Range 的原生自动化和焦点目标仍是核心 presenter，未另增自动�
 
 ## 验证入口
 
+2026-11-07 本轮授权补齐单值 `SliderAppearance.InteractionSource`。原先将单值交互源保持为模板私有，
+是为了保留 2026-10-03 的原生输入 owner；但这阻止了现有 TooltipLabel 与原生 Slider 的组合。
+现在复用 `SliderThumbPresenter` 观察原生 Focus、`:pressed`、Thumb Drag 和 capture lost，并将配对事件发布到
+可选公共源，默认 Thumb 直接消费该源。自定义 Thumb 没有接入源时仍由 presenter 转发 hover，避免默认 Thumb 重复发布。
+这次 API 扩展不改变原生数值、捕获、键盘或完成回调决定，不替代外部调用者配对其自发事件。
+禁用、换源和卸载取消本适配器产生的 Press/Drag/Focus；换源不向新源重放原生焦点。
+外部 Focus 驱动上游 `collectIsFocusedAsState` 对应的轨道间距和环；Thumb 继续保留固定上游换源时已收集的活动列表。
+AndroidX 与 Core 固定 `Slider.kt` 的 ThumbContent、Focus collector 一致；原生事件开始时机仍受上述已接受输入边界约束。
+
+新增 `NativeSliderInteractionTests` 覆盖共享 Label、横纵反馈、不改值、不改原生焦点、源替换、禁用、卸载及事件配对。
+`NativeSliderSourceCases.cs/.kt` 的 12 个双端用例采集外部重叠事件、取消、焦点、换源、禁用及真实拖动的实际图像、值与 Label 呈现。
+`native-slider-source-final` 12 例重复及额外截图稳定、执行错误为零；4 例全等、4 例在既有容差内、4 例 different。
+首轮 `native-slider-source-verified` 保留了夹具纵向默认方向相反的证据；最终夹具显式 bottom-to-top，焦点颜色也显式与主题对应。
+最终 10 个外部源场景的 Slider 布局、值及 Label 显示读数相等；焦点的两例仍有图像差异：
+固定 48 DIP 横截面约束会使 Core padded Thumb 的核心被压缩，而当前 native Track 核心仍保持 44 DIP，
+其焦点环和轨道间距因而不同。已查看实际原图，并核对固定 SliderImpl 的 padding/onSizeChanged 路径；
+此前较宽松尺寸的环用例通过不代表该约束分支通过。该差异尚未接受。
+真实拖动两例还保留原生 double / Compose Float 值差异，以及 Label 同帧 hover→down 的显示差异：
+本地立即创建 popup，down 的外部点击处理会先关闭它；Core 在重组后才安装 popup，随后拖动仍显示 Label。
+这是上文共享 Label 提交边界的另一条实际证据，不属于已接受的原生 Slider 数值/输入适配。
+新增行为测试 11 项通过，覆盖轨道点击确实产生 Press/Drag，避免仅以空事件列表验证配对。
+
 2026-11-06 新增 InsetRing 的 30 个双端用例全部重复稳定、执行错误为零，所有图像通过既有门禁。
 报告集合为 `artifacts/visual-parity/runs/slider-focus-verified/summary.md`：4 例全等、6 例在容差内、
 12 例含不可比较字段、8 例有结构差异。后两类不能算作严格一致：原生单值回调字段沿用既有不可比较边界；

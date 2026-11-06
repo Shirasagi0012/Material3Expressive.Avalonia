@@ -10,6 +10,10 @@ namespace Material3Expressive.Components;
 // through ordinary theme bindings, so application styles and local values win.
 internal static class TextFieldThemeDefaults
 {
+    // Template-owned source, including the private fallback. Consumers observe the same
+    // stream as the decoration without installing a second native input controller.
+    internal static readonly AttachedProperty<Foundation.Interaction.MaterialInteractionSource?> EffectiveInteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, Foundation.Interaction.MaterialInteractionSource?>("EffectiveInteractionSource", typeof(TextFieldThemeDefaults));
     // Core popup scenes preserve the parent's focused editor while their own focus owner
     // navigates the menu. The Avalonia overlay shares one focus manager instead.
     internal static readonly AttachedProperty<bool> RetainPopupFocusProperty =

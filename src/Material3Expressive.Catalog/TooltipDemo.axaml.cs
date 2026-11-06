@@ -33,6 +33,7 @@ public partial class TooltipDemo : Window
         FabLabel.InteractionSource = LabelFab.InteractionSource = new();
         DrawerLabel.InteractionSource = LabelDrawerItem.InteractionSource = new();
         TabLabel.InteractionSource = LabelTab.InteractionSource = new();
+        SliderAppearance.SetInteractionSource(LabelSingleSlider, SingleSliderLabel.InteractionSource = new());
         RangeStartLabel.InteractionSource = LabelRangeStartThumb.InteractionSource = LabelRange.StartThumbInteractionSource = new();
         RangeEndLabel.InteractionSource = LabelRangeEndThumb.InteractionSource = LabelRange.EndThumbInteractionSource = new();
     }

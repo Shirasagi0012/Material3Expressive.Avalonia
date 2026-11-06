@@ -7,24 +7,25 @@
     </Style>
   </Window.Styles>
   <Window.Resources><m3:SearchBarState x:Key="SearchState" /></Window.Resources>
-  <Grid x:Name="Root">
+  <Grid x:Name="Root" m3:MaterialInteraction.FocusFeedback="InsetRing">
     <StackPanel Margin="24" Spacing="16">
       <TextBlock x:Name="Heading" Text="SearchBar + ExpandedDockedSearchBar" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" TextWrapping="Wrap" />
-      <TextBlock x:Name="Description" Text="搜索结果在独立弹层中展开，不推动下方内容。Escape 或点击外部收起；窗口缩小时结果高度随之限制。" TextWrapping="Wrap" />
+      <TextBlock x:Name="Description" Text="点击输入框，或 Tab 聚焦后输入 / 按 ↓ 展开。Escape 或点击外部收起；收起与展开输入共享查询。" TextWrapping="Wrap" />
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Button Content="明 / 暗" Click="ToggleTheme" />
         <Button Content="LTR / RTL" Click="ToggleDirection" />
+        <Button Content="焦点环 / 常规" Click="ToggleFocusFeedback" />
       </StackPanel>
       <m3:SearchBar x:Name="CollapsedSearch" State="{StaticResource SearchState}">
-        <Button x:Name="SearchAnchor" Content="搜索组件" Width="360" Height="56" Click="OpenSearch"
-                Theme="{StaticResource MaterialTextButtonTheme}" HorizontalContentAlignment="Left" />
+        <m3:SearchBarInputField x:Name="SearchAnchor" State="{StaticResource SearchState}" PlaceholderText="搜索组件"
+                                Text="{Binding Text, ElementName=Query, Mode=TwoWay}" SearchRequested="SearchSubmitted" />
       </m3:SearchBar>
       <TextBlock x:Name="Status" Text="尚未选择结果" />
       <Button Content="其他页面操作" HorizontalAlignment="Left" />
     </StackPanel>
     <m3:ExpandedDockedSearchBar x:Name="SearchPopup" State="{StaticResource SearchState}">
       <m3:ExpandedDockedSearchBar.InputField>
-        <m3:SearchBarInputField x:Name="Query" IsExpanded="True" PlaceholderText="搜索组件"
+        <m3:SearchBarInputField x:Name="Query" State="{StaticResource SearchState}" PlaceholderText="搜索组件"
                                TextChanged="QueryChanged" SearchRequested="SearchSubmitted" AutomationProperties.Name="搜索组件">
           <m3:MaterialTextField.LeadingIcon>
             <Button Content="←" Click="CloseSearch" Theme="{StaticResource MaterialTextButtonTheme}" Width="48" Height="48" AutomationProperties.Name="关闭搜索" />

@@ -1,11 +1,20 @@
 using Avalonia;
 using Avalonia.Controls;
+using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Material paint options for the native Avalonia Slider. Values and input remain native.</summary>
 public static class SliderAppearance
 {
+    /// <summary>Shared native press, drag, focus and thumb hover feedback. Null uses template-local interactions.</summary>
+    public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
+        AvaloniaProperty.RegisterAttached<Slider, MaterialInteractionSource?>("InteractionSource", typeof(SliderAppearance));
+    public static MaterialInteractionSource? GetInteractionSource(Slider owner) => owner.GetValue(InteractionSourceProperty);
+    public static void SetInteractionSource(Slider owner, MaterialInteractionSource? value) => owner.SetValue(InteractionSourceProperty, value);
+    internal static readonly AttachedProperty<bool> IsSourceFocusedProperty =
+        AvaloniaProperty.RegisterAttached<Slider, bool>("IsSourceFocused", typeof(SliderAppearance));
+
     public static readonly AttachedProperty<SliderColors?> ColorsProperty =
         AvaloniaProperty.RegisterAttached<Slider, SliderColors?>("Colors", typeof(SliderAppearance), null);
     public static SliderColors? GetColors(Slider owner) => owner.GetValue(ColorsProperty);

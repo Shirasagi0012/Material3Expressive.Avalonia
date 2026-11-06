@@ -98,9 +98,11 @@ Catalog 的时间页面提供该状态开关，并展示绑定到同一时间的
 默认逐次绘制的透明度不等价于整层合成，尤其影响手柄与文字的混合；非实色 selector 仍未支持。
 Catalog 的钟面透明度滑块使用上述父容器配置。双端透明像素和字体仍存在差异，详见维护说明。
 
-滚动列使用 Avalonia 的循环选择面板，不是 Compose `VerticalPager`。拖动和惯性不保证相同。
+滚动列使用共享 [ScrollField](../ScrollField/README.md)：支持触摸拖动、惯性、吸附、鼠标滚轮、点击相邻数字和聚焦后的 Up/Down。
+小时与分钟分别循环，不进行进位；12 小时模式跨越 12 点保留当前 AM/PM。
+外部 `SelectedTime` 按字段变化同步。用户拖动期间保留手势优先级；分钟惯性期间也不会被外部分钟更新打断，下一次选中变化继续写回时间。
 滚动数字在选中时从 DisplayMedium 过渡到 DisplayLargeEmphasized，颜色从 Outline 过渡到 OnSurface；切换途中可以反向。
 可覆盖对应的 Typography、颜色和 FastSpatial 动效 Token。滚动项默认高度为 `200 / 3` DIP，可通过 `Comp.TimeScroll.ItemHeight` 覆盖，改变高度不会改变所选时间。
-原生滚动选中提交与参考端的动画启动仍有时序差异。侧栏 48dp 是布局分配，现有输入层尚不把触摸命中扩展到 40dp 视觉外缘。
+分页器与时间的同步在帧提交阶段进行；双端中间帧和文本栅格仍需按维护记录判断。侧栏 48dp 是布局分配，现有输入层尚不把触摸命中扩展到 40dp 视觉外缘。
 视觉用例包含真实时间数字；失配需要单独看，不表示外观已经被接受。维护说明见 [INTERNALS.md](INTERNALS.md)。
 Catalog 的 “Date / time pickers” 页面同时放了这三种入口。确认对话框见 “Picker dialogs”。

@@ -12,8 +12,8 @@
 | --- | --- |
 | `TimePicker`、钟面、`AnalogTimePickerState` | [TimePicker.cs](TimePicker.cs)、[ClockFace.cs](ClockFace.cs) |
 | `TimeInput`、`timeInputOnChange`、小时/分钟合法性 | [TimeInput.cs](TimeInput.cs)、[TimeEntryController.cs](TimeEntryController.cs) |
-| `TimeScroll` | [TimeScroll.cs](TimeScroll.cs)，列用 Avalonia `DateTimePickerPanel` |
-| `ScrollField.kt` / `ScrollFieldDefaults.Item` | [TimeScrollPanel.cs](TimeScrollPanel.cs)，按页面身份保留的选中排版与颜色动画 |
+| `TimeScroll` | [TimeScroll.cs](TimeScroll.cs)、`TimeEntryController`，直接组合共享 `ScrollField` |
+| `ScrollField.kt` / `ScrollFieldDefaults.Item` | [ScrollField](../ScrollField/ScrollField.cs) / [ScrollFieldNumber](../ScrollField/ScrollFieldNumber.cs)，分页、输入和数字动画 |
 | `TimePickerTokens`、`TimeInputTokens` | [TimePickerTokenSource.cs](TimePickerTokenSource.cs)、[TimeInputTokenSource.cs](TimeInputTokenSource.cs) |
 | 布局、变体、当前字段 | [TimePickerOptions.cs](TimePickerOptions.cs) |
 | `SideControlColumn` / `SideControlItem` | [TimeSideControlLayout.cs](TimeSideControlLayout.cs)、`MaterialTimePeriodTheme.side-control` |
@@ -66,11 +66,22 @@ Vibrant 使用宿主竖向且 24 小时的 132dp 分支，否则 100dp；这是 
 
 `TimeScroll` 的小时列在 12 小时模式是 1 到 12 且循环，24 小时模式是 0 到 23。分钟列是 0 到 59。
 12 小时的 12 写回 0 或 12，取决于当前是 AM 还是 PM。
-初始化原生滚动承载前同时设置面板的 SelectedValue 和 ScrollViewer.Offset；否则 ScrollContentPresenter 的零偏移会覆盖初始有效时间。原生滚动适配的范围不变。
-ItemHeight 在附着或资源变化后重新解析时，同步面板重新计算的 Offset 到 ScrollViewer，避免旧像素偏移反写选中时间。
-内部 TimeScrollPanel 保留每个已实现页面的两条 AnimatedState：选中分数与颜色均使用 FastSpatial，分数钳制到 0–1 后对 DisplayMedium / DisplayLargeEmphasized 插值。
-字号、行高、字距及字重按上游插值，其余已支持排版字段按 0.5 切换；颜色独立保留弹簧和中断速度。
-原生容器改变 Tag 时转接页面状态的 Animation 优先级绑定；循环偏移重新归一化不更换页面身份，离开实现区或卸载时释放状态和绑定。
+2026-11-07 本轮依据维护者授权修订早期原生滚轮适配：原决定为了在缺少共享 Pager 时先提供可用时间入口，
+采用 `DateTimePickerPanel` 和 `ScrollViewer`，并另写每页字号/颜色动画。现在共享 ScrollField 已具备固定上游的
+循环虚拟页、触摸 slop、速度估算、fling/snap、键盘、滚轮和辅助技术范围接口，因此移除重复机制并直接组合。
+AndroidX 与固定 Core 的 TimeScrollImpl 四个 LaunchedEffect 顺序相同；本地时间绑定通过帧提交连接：
+选中页写回时间，小时变化无条件请求默认优先级定位，分钟变化只在值不同且未滚动时定位。
+拖动拒绝低优先级定位；小时程序定位会终止可中断的惯性，分钟惯性仍继续。程序定位到当前时间不安排冗余回写。
+12 小时字段选项 0..11 映射显示 1..12；写回时 `(option + 1) % 12` 再加当前时段。
+数字列始终 LTR，外层时段沿用容器方向。字段名称与目标页的本地化小时/分钟后缀通过既有自动化接口提供。
+卸载和重建取消待提交同步，重新挂载从当前时间同步；可见页面的两条 AfterFrame AnimatedState 由 ScrollFieldNumber 管理。
+
+迁移：公开 `SelectedTime`、`Is24Hour`、尺寸 Token 和具名 `PART_HourScroll` / `PART_MinuteScroll` 保留。
+内部模板的 `TimeScrollPanel`、`DateTimePickerPanel.time-scroll > ListBoxItem` 与 `.time-scroll-surface` 已移除；
+仓内测试和捕获器改读 `ScrollField.State`、`ScrollFieldNumber.Index` / `IsSelected`。
+自定义模板用 `ScrollField.time-scroll` 设置容器属性，数字用 ScrollFieldNumber 的 Typography/颜色资源；
+不要再通过原生面板 Offset 或 ListBoxItem.Tag 控制所选时间。样式中依赖这些内部节点的扩展需要同步迁移。
+
 页面高度消费 `Comp.TimeScroll.ItemHeight`，默认保留 Float `200f / 3f`；容器消费 SurfaceContainerLowest / Large，选中与未选中色分别为 OnSurface / Outline。
 
 `TimePickerTextField` 保留编辑器实例与草稿，只显示当前字段；另一字段使用 TimeSelector 按钮。选择变更在视觉树附着后请求焦点，分离后的延迟请求不再抢占焦点。
@@ -172,10 +183,10 @@ Toggle 与仅有 ToggleTemplate 都参与侧栏分支；字段高度与 120/140d
 Expressive/Standard motion、连续拖动、tap 中断和字段往返。新用例显式对齐字体和相关色彩输入，另留默认平台字体/颜色分支；
 既有 time-picker 与 time-picker-keyboard 的参考配置及比较容差不变。
 
-`TimeScrollTests` 检查初始 12/24 小时时间、页面复用、循环边界、反向、排版/颜色/形状/高度资源变化、配置缺失和卸载后的属性贡献恢复；还遍历全部 60 分钟的正反向滚动及不同 ItemHeight 下的程序更新，防止原生循环 offset 回写改变时间。
+`TimeScrollTests` 检查初始 12/24 小时时间、页面复用、循环边界、反向、排版/颜色/形状/高度资源变化、配置缺失和卸载后的属性贡献恢复；还遍历全部 60 分钟的正反向滚动及不同 ItemHeight 下的程序更新，检查不同页面高度下同步不回写过期时间。另覆盖真实键盘、手势优先级、12 小时跨 12 点、卸载与重新附着。
 双端入口：`./tests/VisualParity/parity.ps1 self-test --family time-scroll`；案例文件为 `TimeScrollCases.cs` / `.kt`。
 
-TimeScroll 最新验证 `20261104-044242-adbed8d6`：13 例执行错误 0、重复及额外截图稳定，图像均 different。静态选中字号/字重/颜色及布局读数相等；数字和冒号在本地约低 1 DIP，非选中数字存在更小的基线差；动态选中提交的动画启动与 Core 约差 32ms，终态一致。未修改容差或增加视觉补偿。原生滚轮是已有批准的适配，不由此声称 Compose Pager 的手势/惯性一致。
+TimeScroll 原生适配阶段验证 `20261104-044242-adbed8d6`：13 例执行错误 0、重复及额外截图稳定，图像均 different。静态选中字号/字重/颜色及布局读数相等；数字和冒号在本地约低 1 DIP，非选中数字存在更小的基线差；动态选中提交的动画启动与 Core 约差 32ms，终态一致。未修改容差或增加视觉补偿。原生滚轮是已有批准的适配，不由此声称 Compose Pager 的手势/惯性一致。
 
 参考端另一次运行 `20261104-041703-d9b8493f` 在反向场景的额外截图出现 `performMeasureAndLayout called during measure layout`，栈涉及 SwingDispatcher 定时任务与 Pager.scrollToPage；随后完整重跑得到上述稳定结果。若重现，推荐调查参考宿主 UI/主协程调度隔离，影响 VisualParity 共用时钟与线程模型，须按其设计约定处理；不通过固定源升级、删除额外截图或重写门禁规避。
 
@@ -201,3 +212,22 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 
 本次最终本地验证：解决方案构建 0 错误（7 条现有警告），控件库测试 1,856/1,856，VisualParity 系统测试 124/124；`git diff --check` 通过。
 这些构建/行为结果不替代上面的双端图像验收，也不扩展已确认适配的范围。
+
+2026-11-07 新增双端 `time-scroll-input`：小时/分钟分别覆盖真实触摸快慢释放、拖动期间外部赋值、滚轮、方向键和相邻项点击，另有 12 小时 RTL 循环。
+保留原 `time-scroll` 13 个静态/动态配置与采样点，只迁移本地实际数字读取器；参考实现及容差未改变。
+
+本轮 `time-scroll-input-first` 14 例无执行错误、重复/额外截图稳定；12 个 LTR 场景的时间、目标虚拟页和字段几何全部相等。
+真实图像仍 different，已查看触摸中间帧，保留数字/冒号排版和共享按压波纹相位差。
+初版 RTL 夹具按物理 X 选第一列，误将分钟作为小时；已改为固定源码的声明顺序读取，并修正本地列顺序，数字仍 LTR。
+修正后两条 RTL 的独立复跑被 Core `performMeasureAndLayout called during measure layout` 阻断（`time-scroll-rtl-*`）；
+不能以旧 14 例结果宣称修正后的 RTL 双端通过。行为测试覆盖动态方向切换的实际窗口坐标和时间不变。
+旧 13 例批量自检也受相同 Core 异常阻断，失败记录 `time-scroll-pager-verified` / `time-scroll-pager-recheck` 保留；
+逐例重跑产物为 `time-scroll-isolated-*`：10 例成功且稳定，3 例受同一 Core 异常阻断；已成功采集的动态 selection/theme 所有结构化读数相等，
+reverse 的 96/160ms 字号/字重/颜色仍不同，detach 的卸载/恢复提交边界仍有差异。没有改基准或容差。
+本轮相关控制器、搜索输入及焦点环行为测试 126 项通过，Catalog 构建通过。
+
+2026-11-07 收尾回归：解决方案构建成功（25 条既有警告），本轮搜索输入、Slider、TimeScroll、日期时间和焦点环相关定向测试 190/190，
+VisualParity 系统测试 134/134。全量控件测试 2404/2405；唯一失败是未修改的 NavigationBar 自动化用例在清理阶段
+重新初始化 Avalonia Headless 时的 Dispatcher 跨线程异常，该例随后包含在上述定向回归中通过。
+首次全量运行曾有 11 个失败，其所在组复跑 75/75；不以复跑覆盖全量失败结论。
+日志为 `artifacts/final-build.log`、`final-control-tests.log`、`final-targeted-tests.log` 和 `final-parity-system-tests.log`。

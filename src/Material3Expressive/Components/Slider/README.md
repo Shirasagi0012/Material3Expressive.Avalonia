@@ -152,6 +152,27 @@ var slider = new RangeSlider
 
 ## 内缩焦点环
 
+原生单值 Slider 也可与 `TooltipLabel` 共用一个交互源：
+
+```csharp
+var source = new MaterialInteractionSource();
+var slider = new Slider { Minimum = 0, Maximum = 100, Value = 40, Width = 280 };
+SliderAppearance.SetInteractionSource(slider, source);
+var label = new TooltipLabel
+{
+    InteractionSource = source,
+    Content = slider,
+    Label = new PlainTooltip { Content = "Volume" }
+};
+```
+
+`SliderAppearance.InteractionSource` 也可通过 XAML 绑定。它连接默认 Thumb、焦点环和原生输入反馈；
+横向与纵向均适用。外部 Press/Drag/Focus 可以驱动反馈，不改变 Slider.Value 或原生焦点。
+保持源身份稳定；换源会结束本适配器在旧源产生的事件，外部事件仍由调用者负责配对。
+Label 响应 hover、press、drag，Focus 本身不显示 Label。Catalog 的 Tooltips 页面有单值组合示例。
+自定义整个 Slider/Track 模板需要自行接入；共享源不改变原生键盘、捕获、数值更新或完成回调约定。
+同帧 hover 后按下的 Label 显示、48 DIP 横截面下的焦点环仍有双端差异，详见维护说明的当前验证结果。
+
 通过可继承的焦点配置启用；默认仍使用透明度反馈：
 
 ```xml

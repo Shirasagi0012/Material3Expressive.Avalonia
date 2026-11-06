@@ -47,7 +47,8 @@ macOS 的 10dp 换算分别保留；只有 Windows 已运行双端，系统滚�
 ## 3. 已确认决定与已知差异
 
 本轮维护者明确授权新增组件、API 和必要共享能力。采用独立状态与模板上下文，保留上游数据关系；
-没有将 TimeScroll 于 2026-10-11 接受的原生 DateTimePickerPanel 适配扩大到通用字段，也没有迁移该历史调用方。
+初次引入时没有将 TimeScroll 于 2026-10-11 接受的原生 DateTimePickerPanel 适配扩大到通用字段，也没有迁移该历史调用方。
+2026-11-07 后续批次依据维护者本轮授权让 TimeScroll 复用此字段，原决定理由与模板迁移见 [时间选择器维护说明](../TimePicker/INTERNALS.md)。
 共享 SnapFling 提取范围见 [共享决定 §30](../../../../docs/DECISIONS.md#30-pager-组件的吸附动画复用)。
 没有破坏性公开 API 调整。
 

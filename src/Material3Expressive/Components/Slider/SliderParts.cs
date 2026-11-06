@@ -374,8 +374,8 @@ public sealed class SliderTrack : Control
         var focusOwner = (Control?)rangeOwner ?? owner;
         if (focusOwner is not null && MaterialInteraction.GetFocusFeedback(focusOwner) == FocusFeedback.InsetRing)
         {
-            var startFocused = rangeOwner?.IsThumbFocused(true) ?? owner?.IsFocused == true;
-            var endFocused = rangeOwner?.IsThumbFocused(false) ?? owner?.IsFocused == true;
+            var startFocused = rangeOwner?.IsThumbFocused(true) ?? owner?.GetValue(SliderAppearance.IsSourceFocusedProperty) == true;
+            var endFocused = rangeOwner?.IsThumbFocused(false) ?? owner?.GetValue(SliderAppearance.IsSourceFocusedProperty) == true;
             if ((centered || range is not null) && startFocused) startSpacing += 4 * scale;
             if (endFocused) endSpacing += 4 * scale;
         }
@@ -453,6 +453,12 @@ internal sealed class SliderThumbPresenter : ContentPresenter
     private readonly InsetFocusRingPresenter _ring = new() { ZIndex = 1 };
     private Slider? _nativeOwner;
     private readonly MaterialInteractionSource _nativeSource = new();
+    private MaterialInteractionSource? _observedNativeSource;
+    private MaterialInteractionSource NativeSource => _observedNativeSource ?? _nativeSource;
+    private readonly List<MaterialInteractionEvent.Focus> _nativeFocusEvents = [];
+    private MaterialInteractionEvent.Press? _nativePress;
+    private Point _nativePressPosition;
+    private bool _nativeReleasing;
     private MaterialInteractionEvent.Focus? _nativeFocus;
     private Thumb? _nativeThumb;
     private MaterialInteractionEvent.HoverEnter? _nativeHover;
@@ -465,43 +471,49 @@ internal sealed class SliderThumbPresenter : ContentPresenter
             previous.PropertyChanged -= ThumbChanged;
             previous.DragStarted -= ThumbDragStarted;
             previous.DragCompleted -= ThumbDragCompleted;
+            previous.RemoveHandler(PointerCaptureLostEvent, NativeCaptureLost);
         }
-        EndNativeHover(); EndNativeDrag();
+        EndNativeHover(); EndNativeDrag(cancel: true);
         _nativeThumb = thumb;
         if (thumb is not null)
         {
             thumb.PropertyChanged += ThumbChanged;
             thumb.DragStarted += ThumbDragStarted;
             thumb.DragCompleted += ThumbDragCompleted;
+            thumb.AddHandler(PointerCaptureLostEvent, NativeCaptureLost, Avalonia.Interactivity.RoutingStrategies.Direct);
         }
     }
     private void ThumbChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property != IsPointerOverProperty) return;
+        // A default SliderThumb publishes its own hoverable bounds when explicitly
+        // connected. Custom native thumbs still need this template bridge.
+        if (_nativeThumb?.GetVisualDescendants().OfType<SliderThumb>().Any(t => t.InteractionSource == _observedNativeSource) == true) return;
         if (_nativeThumb?.IsPointerOver == true && _nativeHover is null)
         {
-            _nativeHover = new(); _nativeSource.Emit(_nativeHover);
+            _nativeHover = new(); NativeSource.Emit(_nativeHover);
         }
         else if (_nativeThumb?.IsPointerOver != true) EndNativeHover();
     }
     private void EndNativeHover()
     {
         var hover = _nativeHover; _nativeHover = null;
-        if (hover is not null) _nativeSource.Emit(new MaterialInteractionEvent.HoverExit(hover));
+        if (hover is not null) NativeSource.Emit(new MaterialInteractionEvent.HoverExit(hover));
     }
     private void ThumbDragStarted(object? sender, VectorEventArgs e)
     {
         if (_nativeDrag is not null) return;
-        _nativeDrag = new(); _nativeSource.Emit(_nativeDrag);
+        EndNativePress(cancel: true);
+        _nativeDrag = new(); NativeSource.Emit(_nativeDrag);
     }
     private void ThumbDragCompleted(object? sender, VectorEventArgs e) => EndNativeDrag();
-    private void EndNativeDrag()
+    private void EndNativeDrag(bool cancel = false)
     {
         var drag = _nativeDrag; _nativeDrag = null;
-        if (drag is not null) _nativeSource.Emit(new MaterialInteractionEvent.DragStop(drag));
+        if (drag is not null) NativeSource.Emit(cancel ? new MaterialInteractionEvent.DragCancel(drag) : new MaterialInteractionEvent.DragStop(drag));
     }
     internal double FocusPadding => MaterialInteraction.GetFocusFeedback((Control?)Owner ?? (Control?)_nativeOwner ?? this) == FocusFeedback.InsetRing
-        && (Owner is { } owner ? owner.IsThumbFocused(IsStart) : _nativeOwner?.IsFocused == true) ? 4 : 0;
+        && (Owner is { } owner ? owner.IsThumbFocused(IsStart) : _nativeOwner?.GetValue(SliderAppearance.IsSourceFocusedProperty) == true) ? 4 : 0;
     internal InsetFocusRingPresenter Ring => _ring;
 
     public SliderThumbPresenter() => VisualChildren.Add(_ring);
@@ -509,7 +521,7 @@ internal sealed class SliderThumbPresenter : ContentPresenter
     {
         if (!this.IsAttachedToVisualTree()) return;
         if (Owner is { } owner) _ring.Connect(owner, owner.ThumbSource(IsStart));
-        else if (_nativeOwner is { } native) _ring.Connect(native, _nativeSource);
+        else if (_nativeOwner is { } native) _ring.Connect(native, NativeSource);
         RefreshRing();
     }
     internal void RefreshRing()
@@ -530,6 +542,10 @@ internal sealed class SliderThumbPresenter : ContentPresenter
             owner.GotFocus += NativeGotFocus;
             owner.LostFocus += NativeLostFocus;
             MaterialInputMode.For(owner);
+            owner.Classes.CollectionChanged += NativeClassesChanged;
+            owner.AddHandler(PointerPressedEvent, NativePointerDown, Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
+            owner.AddHandler(PointerReleasedEvent, NativePointerUp, Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
+            ConnectNativeSource();
         }
         ConnectRing();
     }
@@ -540,10 +556,16 @@ internal sealed class SliderThumbPresenter : ContentPresenter
             owner.PropertyChanged -= NativeChanged;
             owner.GotFocus -= NativeGotFocus;
             owner.LostFocus -= NativeLostFocus;
+            owner.Classes.CollectionChanged -= NativeClassesChanged;
+            owner.RemoveHandler(PointerPressedEvent, NativePointerDown);
+            owner.RemoveHandler(PointerReleasedEvent, NativePointerUp);
             ((ISetInheritanceParent)this).SetParent(null);
         }
-        EndNativeFocus();
+        EndNativeFocus(); EndNativePress(cancel: true);
         ObserveThumb(null);
+        if (_observedNativeSource is { } source) source.Interaction -= NativeInteraction;
+        _observedNativeSource = null; _nativeFocusEvents.Clear();
+        _nativeOwner?.ClearValue(SliderAppearance.IsSourceFocusedProperty);
         _nativeOwner = null;
         _ring.Disconnect();
         base.OnDetachedFromVisualTree(e);
@@ -552,19 +574,71 @@ internal sealed class SliderThumbPresenter : ContentPresenter
     {
         if (_nativeOwner is not { IsFocused: true, IsEffectivelyEnabled: true } owner || _nativeFocus is not null) return;
         MaterialInputMode.For(owner)?.ObserveFocusNavigation(e.NavigationMethod);
-        _nativeFocus = new(); _nativeSource.Emit(_nativeFocus);
+        _nativeFocus = new(); NativeSource.Emit(_nativeFocus);
     }
     private void NativeLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => EndNativeFocus();
     private void EndNativeFocus()
     {
         var focus = _nativeFocus; _nativeFocus = null;
-        if (focus is not null) _nativeSource.Emit(new MaterialInteractionEvent.Unfocus(focus));
+        if (focus is not null) NativeSource.Emit(new MaterialInteractionEvent.Unfocus(focus));
     }
     private void NativeChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == IsEffectivelyEnabledProperty && _nativeOwner?.IsEffectivelyEnabled == false)
-        { EndNativeFocus(); EndNativeDrag(); }
-        if (e.Property == IsFocusedProperty || e.Property == MaterialInteraction.FocusFeedbackProperty) RefreshRing();
+        { EndNativeFocus(); EndNativePress(cancel: true); EndNativeDrag(cancel: true); }
+        if (e.Property == SliderAppearance.InteractionSourceProperty) ConnectNativeSource();
+        if (e.Property == IsFocusedProperty || e.Property == MaterialInteraction.FocusFeedbackProperty || e.Property == SliderAppearance.IsSourceFocusedProperty) RefreshRing();
+    }
+    private void ConnectNativeSource()
+    {
+        if (_nativeOwner is not { } owner) return;
+        var next = SliderAppearance.GetInteractionSource(owner) ?? _nativeSource;
+        if (ReferenceEquals(next, _observedNativeSource)) return;
+        EndNativePress(cancel: true); EndNativeDrag(cancel: true); EndNativeFocus(); EndNativeHover();
+        if (_observedNativeSource is { } old) old.Interaction -= NativeInteraction;
+        _nativeFocusEvents.Clear();
+        _observedNativeSource = next;
+        next.Interaction += NativeInteraction;
+        // collectIsFocusedAsState retains its last value when the effect's source key
+        // changes. The new source's next event recomputes it from its empty focus list.
+        ConnectRing();
+    }
+    private void NativeInteraction(MaterialInteractionEvent interaction)
+    {
+        if (interaction is MaterialInteractionEvent.Focus focus) _nativeFocusEvents.Add(focus);
+        else if (interaction is MaterialInteractionEvent.Unfocus unfocus) _nativeFocusEvents.Remove(unfocus.Start);
+        _nativeOwner?.SetValue(SliderAppearance.IsSourceFocusedProperty, _nativeFocusEvents.Count > 0);
+    }
+    private void NativePointerDown(object? sender, PointerPressedEventArgs e)
+    {
+        _nativeReleasing = false;
+        _nativePressPosition = e.GetPosition(_nativeThumb ?? (Visual?)_nativeOwner);
+    }
+    private void NativePointerUp(object? sender, PointerReleasedEventArgs e)
+    {
+        _nativeReleasing = true;
+        EndNativePress(cancel: false);
+    }
+    private void NativeClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (_nativeOwner is { IsEffectivelyEnabled: true } owner && owner.Classes.Contains(":pressed"))
+        {
+            if (_nativePress is null && _nativeDrag is null)
+            {
+                _nativePress = new(_nativePressPosition); NativeSource.Emit(_nativePress);
+            }
+        }
+        else EndNativePress(cancel: !_nativeReleasing);
+    }
+    private void EndNativePress(bool cancel)
+    {
+        var press = _nativePress; _nativePress = null;
+        if (press is not null) NativeSource.Emit(cancel ? new MaterialInteractionEvent.CancelPress(press) : new MaterialInteractionEvent.Release(press));
+    }
+    private void NativeCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        EndNativePress(cancel: !_nativeReleasing);
+        EndNativeDrag(cancel: !_nativeReleasing);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

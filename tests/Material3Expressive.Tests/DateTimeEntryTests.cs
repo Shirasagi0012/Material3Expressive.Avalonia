@@ -223,16 +223,18 @@ public class DateTimeEntryTests
     [InlineData(false,12,0)]
     public void Scroll_CyclicSelectionAndExternalValueStaySynchronized(bool clock24,int displayHour,int hour)
     {
+        using var clock = new MotionTestClockScope();
         var picker=new TimeScroll {Is24Hour=clock24,SelectedTime=new(0,30)};
         var window=Show(picker);
         try
         {
-            var field=Part<DateTimePickerPanel>(picker,"PART_HourScroll");
-            Assert.True(field.ShouldLoop);
-            field.SelectedValue=displayHour; Flush(window);
+            clock.SendFrame(TimeSpan.Zero);
+            var field=Part<ScrollField>(picker,"PART_HourScroll");
+            Assert.Equal(clock24 ? 24 : 12, field.State!.ItemCount);
+            field.State.SelectedOption=clock24 ? displayHour : displayHour - 1; clock.AdvanceBy(TimeSpan.Zero); Flush(window);
             Assert.Equal(hour,picker.SelectedTime.Hour);
-            picker.SelectedTime=new(5,10);Flush(window);
-            Assert.Equal(5,field.SelectedValue); Assert.Equal(10,Part<DateTimePickerPanel>(picker,"PART_MinuteScroll").SelectedValue);
+            picker.SelectedTime=new(5,10); clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window);
+            Assert.Equal(clock24 ? 5 : 4,field.State.SelectedOption); Assert.Equal(10,Part<ScrollField>(picker,"PART_MinuteScroll").State!.SelectedOption);
         }
         finally {window.Close();}
     }

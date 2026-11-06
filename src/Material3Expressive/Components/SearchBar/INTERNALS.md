@@ -20,6 +20,7 @@
 | `SearchBarDefaults` / `SearchBarTokens` / `SearchViewTokens` | `SearchBarTokenSource` | SurfaceContainerHigh、Outline、ExtraLarge；默认 tonal/shadow 均为 Level0，不误用未被默认参数采用的 Level3 |
 | Core `SearchBar.skiko.kt / getWindowContainerHeight` | `DockedSearchResultsLayout` | 观察 TopLevel.ClientSize，以布局比例将窗口高度和 DIP 常量转换至像素取整 |
 | Core `BackHandler.skiko.kt`、`BackNavigationEventInput` | `CollapseRequested` | 未消费的 Escape KeyDown 请求关闭 |
+| `SearchBarDefaults.InputField(textFieldState, searchBarState, ...)` | `SearchBarInputField.State` | 原生文本绑定、窗口输入模式、交互 Release、长度增长观察和方向导航 |
 | `SearchBarDefaults.InputField(query, expanded, ...)` | `SearchBarInputField` | 同一布尔状态重载；原生单行 TextBox、受控展开/搜索事件、收起延迟清焦 |
 | `SearchBarSearch` / `SuggestionsAvailable` | 组件内部 peer 与 `SearchBarStrings.json` | 固定 Core `skikoMain/.../l10n` 的 86 个地区映射；Name / ItemStatus 投影，保留原生 IValueProvider，应用显式值优先 |
 
@@ -61,18 +62,33 @@
 
 清焦任务只在 IsExpanded 改变时启动，对应 `LaunchedEffect(expanded)`，用根 AnimationScope.DelayAsync 的可取消延迟。收起瞬间若交互源的焦点收集状态为 true，100ms 后调用窗口 FocusManager.Focus(null)；期间重新展开或分离取消。按上游语义，任务启动后即使焦点转向别处或交互源改变，也不额外重判原输入的 IsFocused。默认 accessibility 名称使用当前 UI Culture；展开状态映射到原生 ItemStatus 并发属性变化通知，未建立完整 Compose semantics 树。
 
-旧布尔 `SearchBarDefaults.InputField(query, ..., expanded, interactionSource)` 的共享源直接复用 TextField 模板观察器，公开 `InteractionSource` 与 `MaterialTextField.InteractionSourceProperty` 共用属性身份。上游 `collectIsFocusedAsState` 决定清焦任务，`onFocusChanged` 决定展开请求，两者不能混为一谈。外部 Focus 不请求展开；对真实焦点开始实例发送 Unfocus 后，原生字段即使仍聚焦，收起也不启动任务。源替换不改变以 expanded 为键的任务生命周期。新版状态输入的提交问题仍按下节暂缓，此接入没有改变其批准状态。
+旧布尔 `SearchBarDefaults.InputField(query, ..., expanded, interactionSource)` 的共享源直接复用 TextField 模板观察器，公开 `InteractionSource` 与 `MaterialTextField.InteractionSourceProperty` 共用属性身份。上游 `collectIsFocusedAsState` 决定清焦任务，`onFocusChanged` 决定展开请求，两者不能混为一谈。外部 Focus 不请求展开；对真实焦点开始实例发送 Unfocus 后，原生字段即使仍聚焦，收起也不启动任务。源替换不改变以 expanded 为键的任务生命周期。新版状态输入在本轮授权下接入，保留旧布尔路径；历史暂缓原因和后续处理见下节。
+
+新版输入在非指针模式且 FocusFeedback=InsetRing 时，于 TextField 容器装饰层添加共享 InsetFocusRingPresenter；使用同一交互源和当前圆角，不增加布局空间。输入模式变化于帧末增删该独立 collector，旧 Focus 不回放；固定 Core Indication.skiko.kt 的有符号 Focus/Unfocus 计数仍保留。普通布尔输入不自动获得新版焦点环。
+
+新版输入的 `State` 可为空；非空时以 `CurrentValue` 的 .02 阈值决定展开语义，不写回旧 `IsExpanded`。输入作为状态消费者注册，默认 motion 继续来自同一组 SearchBar Token，独立输入也能驱动状态。输入作用域拥有其发起的动画，换 State 或卸载取消这些操作，状态的其他消费者继续存活。
+
+固定 `InputField` 的三个展开路径分别保留：指针模式原生 focus、交互源 Release，以及初始收起时启动的文本长度观察。后者以 State/输入实例为 effect key，初始展开后再收起不会补启动。换 State 在帧提交后安装 collector，同步修改的文字成为新 collector 的初值；正常文字观察使用 UI dispatcher 合并同一调用中的编辑，对照 snapshotFlow 的已应用快照，而不是每次 TextProperty 改变都展开。Release 观察在源替换时通过已有 ScheduleFrameCommit 于帧末切换，帧前旧源事件仍有效；首次挂载和模板销毁同步连接/清理，不改变原生编辑模板的源替换时机。键盘 Down 的两个事件阶段都处理，已展开时使用 Avalonia `FocusManager.TryMoveFocus(Down)`；具体二维候选搜索由原生焦点系统负责。
 
 ## 3. 已确认决定与已知差异
 
+**本轮授权的状态输入 API**：用户明确授权新增组件 API 与必要共享能力。已有窗口 `MaterialInputMode` 和 TextField 的私有交互源已足够；增加内部 `EffectiveInteractionSource` 仅发布模板实际使用的源，输入订阅同一 Release 流，避免安装第二个编辑手势控制器。公开入口为 `SearchBarInputField { State = state }`，文字仍由原生 TextBox 的 Text/Selection/IME 管理；不新建 TextFieldState 包装。新旧源事件不回放；应用不能在 setter 后同帧向新源投递事件并假设已被新输入观察。旧布尔 API 无迁移要求，新版弹层示例移除额外按钮并共用查询绑定。Compose Input/OutputTransformation、ScrollState 与任意 Shape 不因此宣称已支持。
+
+
 - **授权范围**：本次任务明确授权上游语义内新增组件及非破坏性组件 API；没有新增公共共享框架或改动既有共享决定。
-- **尚未实现**：新版状态 InputField、搜索顶栏自动 ScrollViewer / SmoothScroll 接入、任意 PopupProperties 与非圆角 Shape、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
+- **尚未实现**：搜索顶栏自动 ScrollViewer / SmoothScroll 接入、任意 PopupProperties 与非圆角 Shape、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
 - **未经验证**：触摸输入、复杂多弹层返回栈、屏幕阅读器遍历顺序及带间隙滑动的任意自定义 Keyframes 等规格；已双端验证的自定义规格为 tween、spring、snap 与独立内容淡入淡出。桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
 - **共享适配**：动画尺寸沿用 ComposeAnimation 的 DIP/double 计算，Compose 的 IntSize 中间帧可能在像素取整上不同；不将检测到的视觉差异登记为新批准的近似。
 
-**待决定的状态输入接入**：固定新版 `InputField(TextFieldState, SearchBarState)` 将键盘聚焦与展开解耦，并收集 Press.Release、文字长度增长和输入模式。原生 TextBox 的焦点在鼠标按下时改变，Core 此场景在释放时改变；Core 的新版字段即使 enabled=false 也可能通过 Release 收集器展开，而 Avalonia 禁用控件不投递该事件。直接添加 State 属性的原型在双端核验中暴露了这些差异，因此该 API 暂未交付，也未把差异登记为已接受。文字长度观察还涉及 SnapshotFlow 的提交与合并：换状态后在下一重组前增长文字，不能按每次同步 TextProperty 回调直接替代。
+**历史暂缓依据（本轮授权修订）**：固定新版 `InputField(TextFieldState, SearchBarState)` 将键盘聚焦与展开解耦，并收集 Press.Release、文字长度增长和输入模式。原生 TextBox 的焦点在鼠标按下时改变，Core 此场景在释放时改变；Core 的新版字段即使 enabled=false 也可能通过 Release 收集器展开，而 Avalonia 禁用控件不投递该事件。直接添加 State 属性的原型在双端核验中暴露了这些差异，因此当时没有交付该 API，也未把差异登记为已接受。文字长度观察还涉及 SnapshotFlow 的提交与合并：换状态后在下一重组前增长文字，不能按每次同步 TextProperty 回调直接替代。
 
-推荐维护者先决定 TextField 原生编辑边界下的共享输入事件与提交协议，再接入形如 `new SearchBarInputField { State = searchState, Text = query }` 的组件 API；否则需明确接受原生焦点/禁用投递语义。影响包含禁用字段的交互、Focus 与 Release 顺序、同一事件内多次编辑、InputTransformation/OutputTransformation，以及恢复到收起输入时是否再次展开。当前 Catalog 使用按钮打开和旧布尔输入，避免依赖这项待定方案。调查证据为本机 `20261104-104018-ce4abd78`：14 例执行错误 0 且重复稳定，禁用指针与紧接换状态的文字增长存在实质状态差异；该原型不计入已完成组件或正式回归数量。
+当时推荐维护者先决定 TextField 原生编辑边界下的共享输入事件与提交协议，再接入形如 `new SearchBarInputField { State = searchState, Text = query }` 的组件 API；否则需明确接受原生焦点/禁用投递语义。影响包含禁用字段的交互、Focus 与 Release 顺序、同一事件内多次编辑、InputTransformation/OutputTransformation，以及恢复到收起输入时是否再次展开。当时 Catalog 使用按钮打开和旧布尔输入，避免依赖待定方案。调查证据为本机 `20261104-104018-ce4abd78`：14 例执行错误 0 且重复稳定，禁用指针与紧接换状态的文字增长存在实质状态差异；该原型不计入已完成组件或正式回归数量。
+
+2026-11-07 本轮授权据已有 TextField 私有源发布、MaterialInputMode 与 AnimationScope 提交能力修订上述暂缓决定。
+新增双端 `state-search-batched` 验证同一调用增加后撤销、连续增加、换状态同帧增长；修订前的差异保留于
+`state-search-batched-first`，修订后 `state-search-batched-verified` 三例的状态/焦点/文字长度读数全部相等，
+空行高度差仍如实报告。原生 focus/禁用事件边界没有通过伪造交互消除；真实点击基本流已验证，
+复杂 IME、变换和平台焦点先后仍不在已验证范围内。Catalog 已改用真实输入和共享 State。
 
 **待决定的自动滚动接入**：现有 `AppBarScrollScope` / `AppBarSmoothScrollConnection` 仅连接 Top/BottomAppBar，包含 SmoothScroll 合成线程状态、消费顺序与 Scaffold 的类型约束，不能把 SearchBarScrollBehavior 直接塞入任一槽。建议扩展现有接入点，例如 `new AppBarScrollScope { SearchScrollBehavior = scrolling, Child = viewer }`（示意 API，尚不存在），明确与其他顶栏共存时的先后消费、剩余速度传递、状态归属和卸载中断，再连接同一套同步机制。影响已有嵌套滚动及 Scaffold；未新建共享协议或把方案记为已批准。当前组件可用显式 pre/post-scroll、post-fling 回调和直接拖动独立使用。
 
@@ -129,3 +145,12 @@ Windows Catalog 已实测自动聚焦、查询过滤、选择结果收起及焦�
 完整控件测试通过 **2065/2065**，VisualParity 系统测试通过 **124/124**，解决方案与双端 Release 捕获端构建成功。构建仍有既有 Avalonia 资源、TextField 空引用分析等警告，未为清理警告扩大本组件改动范围。验证日志与捕获产物保存在本机 `artifacts/`；上述图像超差仍未解决，执行成功不代表所有上游行为和图像一致。
 
 2026-11-05 输入交互源补齐：`SearchBarInputFieldTests` **13/13** 通过，Catalog 构建成功。双端 `search-bar-input` 运行 `20261105-063820-587b4028` 共 15 例，执行错误 0，全部重复稳定。新增外部 Focus、真实焦点的配对 Unfocus、延迟执行中换源三个场景，实际 focused / expanded / requests / other-focused 全部相等，包括清焦前 99ms 与 100ms 边界；既有编辑行 56 / 58.5 DIP 及插槽纵坐标差异仍存在，15 例整体状态均为 different。聚焦场景沿用原套件的结构化测量，未把不可虚拟化的原生光标时钟纳入图像通过结论；10 个静态场景仍捕获完整图像。
+
+状态输入回归：`SearchBarInputFieldTests`；双端 `state-search-input` 比较明暗/禁用/RTL 外观与真实焦点、Down、点击、文本增长、外部源 Release/Cancel、收起及反向的状态轨迹。焦点过程沿用输入套件的无截图读数方式，原生 caret 不受动画测试时钟控制。
+
+`state-search-input-verified` 的 22 例均无执行错误且重复稳定。除禁用且无焦点的全窗口 Down 导航外，实际展开/焦点/文本长度/进度读数全部精确一致；原生空行最小高度有 2.5 DIP 差异，共享 Roboto 夹具仍有 1.5 DIP，真实图像据实保留 different，不用固定高度迁就该测量。焦点环套件另以固定容器尺寸隔离描边目标，不改变上述自动高度用例。
+`search-input-ring-verified` 的 19 例均稳定且无执行错误；6 个只读变体为 1 equal / 5 withinTolerance，覆盖焦点进出、反向、输入模式/反馈模式切换、换源及半透明自定义描边。13 个可编辑场景仍有差异：Core 根据外部 FocusInteraction 绘制 caret，本地原生 TextBox 仅在实际键盘聚焦时绘制；这些原始失败保留，未隐藏文字、遮挡 caret 或放宽容差。相关搜索输入与共享焦点环行为测试 73 项通过。
+
+`state-search-batched-verified` 另补 3 例同次提交的文本增减、净增长和状态换源后增长，均稳定且无执行错误。
+展开值、目标、进度、实际焦点和文本长度全部相等；同步增删不再误触发展开，换状态时以提交后的文本作为新 collector 基线。
+这三个场景继续保留原生空行高度差异。完整 `SearchBarInputFieldTests` 当前 28 项通过。

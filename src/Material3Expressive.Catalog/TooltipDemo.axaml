@@ -147,6 +147,12 @@
         <m3:ShortNavigationBarItem x:Name="LabelShortBarItem" Width="144" Icon="{m3:Symbol Settings}" Label="Settings" IconPosition="Start" />
       </m3:TooltipLabel>
     </StackPanel>
+    <TextBlock Text="Single slider: hover, press or drag shows the label; keyboard focus shows the ring" Margin="0,24,0,0" />
+    <m3:TooltipLabel x:Name="SingleSliderLabel">
+      <m3:TooltipLabel.Label><m3:PlainTooltip Content="{Binding #LabelSingleSlider.Value, StringFormat='Volume: {0:0}'}" /></m3:TooltipLabel.Label>
+      <Slider x:Name="LabelSingleSlider" Width="280" Minimum="0" Maximum="100" Value="40"
+              m3:MaterialInteraction.FocusFeedback="InsetRing" />
+    </m3:TooltipLabel>
     <m3:TooltipLabel x:Name="FabLabel" Margin="0,24,0,0">
       <m3:TooltipLabel.Label><m3:PlainTooltip Content="Create a new document" /></m3:TooltipLabel.Label>
       <m3:ExtendedFloatingActionButton x:Name="LabelFab" Icon="{m3:Symbol Add}" Content="New document" />

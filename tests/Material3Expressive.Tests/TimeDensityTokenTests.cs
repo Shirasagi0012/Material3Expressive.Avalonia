@@ -129,13 +129,13 @@ public class TimeDensityTokenTests
         var window = Show(scroll);
         try
         {
-            var panels = scroll.GetVisualDescendants().OfType<DateTimePickerPanel>().ToArray();
+            var panels = scroll.GetVisualDescendants().OfType<ScrollField>().ToArray();
             Assert.Equal(2, panels.Length);
             Assert.All(panels, x => Assert.Equal(32d, x.ItemHeight));
             scroll.Resources[Comp.TimeScroll.ItemHeight] = 48d;
             Flush(window);
             Assert.All(panels, x => Assert.Equal(48d, x.ItemHeight));
-            Assert.Equal(panels, scroll.GetVisualDescendants().OfType<DateTimePickerPanel>().ToArray());
+            Assert.Equal(panels, scroll.GetVisualDescendants().OfType<ScrollField>().ToArray());
         }
         finally { window.Close(); }
     }
