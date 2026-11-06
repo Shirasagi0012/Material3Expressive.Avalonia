@@ -150,11 +150,27 @@ var slider = new RangeSlider
 两端在按下时重合，会按首次有效水平拖动方向选择端点：LTR 左拉起点、右拉终点，RTL 相反；
 此次手势确定后不再换端。普通点击、非重合手势、键盘和自动化仍沿原规则。
 
+## 内缩焦点环
+
+通过可继承的焦点配置启用；默认仍使用透明度反馈：
+
+```xml
+<StackPanel m3:MaterialInteraction.FocusFeedback="InsetRing">
+  <Slider Minimum="0" Maximum="1" Value="0.4" />
+  <Slider Orientation="Vertical" IsDirectionReversed="True" Height="200" Value="40" />
+  <m3:RangeSlider RangeStart="0.25" RangeEnd="0.75" />
+</StackPanel>
+```
+
+焦点时环在核心拇指外扩 4 DIP，轨道两侧间距同步增加；滑块尺寸、值与拇指核心尺寸不变。
+范围滑块两端独立聚焦，支持外部交互源和自定义拇指。单值环属于原生 Track 的拇指槽，替换 Thumb 内容模板仍可保留反馈；替换整个 Slider/Track 模板需自行接入。
+焦点环支持共享的颜色、描边参数和弹簧配置；桌面指针聚焦仍受输入模式过滤，Tab 导航显示焦点环。
+
 ## 迁移与边界
 
 - 旧 `m3:Slider` / `m3:VerticalSlider` 改为原生 Slider / `Orientation`；单值 SliderState、`State`、`ActualState` 已移除，状态交给 ViewModel
 - 旧单值 `Steps` 可换为 `TickFrequency=(Maximum-Minimum)/(Steps+1)`，按需打开吸附；TopToBottom 改为 `IsDirectionReversed`
 - 单值 ShouldAutoSnap、只读 Interaction 和统一完成回调已移除；Thumb/`Track` 内容槽改为原生主题定制。`RangeSlider` 已有的 `State`、完成回调、双端反馈和内容槽不随此迁移删除
-- 可配置 Focus.InsetRing 及其轨道间距尚未实现；真实桌面、触屏/笔、系统屏幕阅读器及平台 numpad 映射未完整验证
+- 真实桌面、触屏/笔、系统屏幕阅读器及平台 numpad 映射未完整验证
 
 水平、垂直、离散、中心与区间示例见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。

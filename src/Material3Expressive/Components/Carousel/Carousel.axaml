@@ -1,0 +1,28 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:MultiAspectCarouselItem}" TargetType="m3:MultiAspectCarouselItem">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Panel>
+            <m3:CarouselMask x:Name="PART_Mask">
+              <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                  ContentTemplate="{TemplateBinding ContentTemplate}" Background="{TemplateBinding Background}"
+                  Padding="{TemplateBinding Padding}"
+                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </m3:CarouselMask>
+            <Canvas IsHitTestVisible="False" FlowDirection="LeftToRight">
+              <m3:SurfaceOutline x:Name="PART_Outline" UsePathOutline="True"
+                  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" />
+            </Canvas>
+          </Panel>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

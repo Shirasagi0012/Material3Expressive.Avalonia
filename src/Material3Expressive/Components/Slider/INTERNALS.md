@@ -92,8 +92,13 @@ Range 的显式 State 与调用者写回职责、内容模板方案同日获确�
 
 ## 尚未实现与未经验证
 
-维护者明确延期可选 `LocalRippleThemeConfiguration.Focus.InsetRing` 及其 padding/轨道间距，
-当前共享 Ripple 无对应配置；默认焦点可用不代表该测量分支存在。
+此前延期 InsetRing 的原因是共享 Ripple 尚无配置与呈现能力；该能力现已由其他组件引入。
+2026-11-06 本轮维护者明确授权自主补齐 API、基础能力与修订历史决定，故补齐此分支；保留 2026-10-03 原生单值输入决定。
+AndroidX/Core 固定 Slider.kt 的焦点实现一致。环复用共享呈现器，直接订阅范围端点源；原生单值将原生 Focus/Unfocus、Thumb hover 与 drag 转成内部配对事件，不接管输入。禁用、替换 Thumb 与卸载结束对应活动事件，保留 RippleNode 在 hover/focus 交错中的事件顺序。
+上游 padded box 的核心尺寸扣除及负偏移，在 Avalonia 表达为不变的核心 slot 与外扩 4 DIP 的视觉环；原生 Track 的密度不变，任意自定义 Thumb 模板同样获得环。
+Range 的原生自动化和焦点目标仍是核心 presenter，未另增自动化节点；内容的 hover 命中盒保持核心尺寸。额外 padding 区域的辅助技术边界未验证。
+轨道先给各端 thumbTrackGapSize 加焦点 padding，再判断是否大于零，因此原始 gap=0 时仍要计入半拇指宽。自定义 Track 也在焦点变化时重新绘制。
+共享呈现器增加内部交互源接入，不增加公共 API；源替换、卸载及 focus mode 切换清理独立动画收藏器，见共享决定 §1。
 真实桌面、触屏/触控笔、原生屏幕阅读器、平台 numpad 映射未经完整验收；
 旧自动化证据来自 Windows Skia headless，不推广到实际 OS 客户端。
 
@@ -114,6 +119,13 @@ Range 的显式 State 与调用者写回职责、内容模板方案同日获确�
 后续需明确组件源绑定的提交边界，影响示例中 RangeSlider / SliderThumb / TooltipLabel 三者的共同换源。
 
 ## 验证入口
+
+2026-11-06 新增 InsetRing 的 30 个双端用例全部重复稳定、执行错误为零，所有图像通过既有门禁。
+报告集合为 `artifacts/visual-parity/runs/slider-focus-verified/summary.md`：4 例全等、6 例在容差内、
+12 例含不可比较字段、8 例有结构差异。后两类不能算作严格一致：原生单值回调字段沿用既有不可比较边界；
+8 个原生 RTL 时间线的有序角点随 Avalonia 坐标系镜像，外接矩形和图像一致，实际角点顺序仍保留。
+覆盖进入/退出弹簧、hover 后失焦、焦点模式切换、端点切换、自定义 Thumb/Track、零轨道间隙与反向垂直轨道。
+本轮相关测试 134 项通过，完整控件测试 2334 项通过；不据此消除上文已有 Label 生命周期时序缺口。
 
 - [控件测试](../../../../tests/Material3Expressive.Tests/SliderTests.cs)：原生模板对照输入/事件顺序、绑定、程序/自动化赋值、Token、几何/不规则刻度及完整 Range 状态、自动化、重合/取消手势。
 - [交互源测试](../../../../tests/Material3Expressive.Tests/RangeSliderInteractionTests.cs)：端点配对、重叠身份、生命周期、回调重入、遮挡和 Label 组合。

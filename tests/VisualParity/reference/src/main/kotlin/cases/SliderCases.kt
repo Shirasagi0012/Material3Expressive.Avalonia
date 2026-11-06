@@ -24,7 +24,7 @@ data class SliderConfig(val kind:String="horizontal", val steps:Int=0, val value
     val enabled:Boolean=true, val rtl:Boolean=false, val topToBottom:Boolean=true, val dark:Boolean=false,
     val centered:Boolean=false, val customCorners:Boolean=false, val stop:Boolean=true, val gap:Double=6.0,
     val length:Double=280.0, val customThumbs:Boolean=false, val customColors:Boolean=false, val hoisted:Boolean=false,
-    val action:String="none",val autoLength:Boolean=false,val crossSize:Double=0.0,val minimum:Float=0f,val maximum:Float=1f)
+    val action:String="none",val autoLength:Boolean=false,val crossSize:Double=0.0,val minimum:Float=0f,val maximum:Float=1f,val focusRing:Boolean=false)
 
 @ParitySuite("slider")
 class SliderCases {
@@ -32,6 +32,8 @@ class SliderCases {
     suspend fun static(writer:CaptureWriter) = capture(writer)
     @ParityScenario("interaction")
     suspend fun interaction(writer:CaptureWriter) = capture(writer)
+    @ParityScenario("focus")
+    suspend fun focus(writer:CaptureWriter) = capture(writer)
     private suspend fun capture(writer:CaptureWriter) {
         val c=writer.readConfig<SliderConfig>()
         // Desktop's ComposeSceneMediator supplies density-scaled 18dp touch slop.
@@ -57,6 +59,27 @@ class SliderCases {
                 else if(c.action=="corner") s.corner=8.0
                 else s.dark=true
                 host.draw(); host.frame(16000); sample("changed"); host.frame(32000); sample("late"); return
+            }
+            if(c.focusRing) {
+                host.advanceTo(16000)
+                if(c.kind=="range") s.focusManager!!.moveFocus(FocusDirection.Next) else s.requester.requestFocus()
+                host.draw();host.frame(16000);sample("focus")
+                listOf(32000L,64000L,128000L,320000L).forEach { time ->
+                    host.advanceTo(time)
+                    if(time==64000L && c.action=="focus-reverse")s.focusManager!!.clearFocus()
+                    if(time==64000L && c.action=="focus-hover-blur") {
+                        val coords=checkNotNull(s.thumb.coordinates)
+                        host.input("move",coords.localToWindow(Offset(coords.size.width/2f,coords.size.height/2f))/ComposeHost.RenderScale.toFloat())
+                    }
+                    if(time==128000L && c.action=="focus-hover-blur")s.focusManager!!.clearFocus()
+                    if(time==64000L && c.action=="focus-mode")s.inset=false
+                    host.draw();host.frame(time);sample("entry-$time")
+                }
+                host.advanceTo(336000)
+                if(c.kind=="range")s.focusManager!!.moveFocus(FocusDirection.Next) else s.focusManager!!.clearFocus()
+                host.draw();host.frame(336000);sample("switch")
+                listOf(352000L,400000L,656000L).forEach { host.frame(it);sample("exit-$it") }
+                return
             }
             if(c.action=="keyboard") {
                 host.advanceTo(1000)
@@ -85,6 +108,7 @@ class SliderCases {
     }
 
     private class SliderScene(val c:SliderConfig) {
+        var inset by mutableStateOf(c.focusRing)
         var enabled by mutableStateOf(c.enabled)
         var dark by mutableStateOf(c.dark)
         var corner by mutableStateOf(4.0)
@@ -111,8 +135,11 @@ class SliderCases {
         fun Content() {
             LaunchedEffect(interaction) { observe(interaction) }
             LaunchedEffect(endInteraction) { observe(endInteraction) }
-            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            // Match the product's expressive motion tokens for the newly configured focus ring.
+            MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),
+                motionScheme=if(c.focusRing) MotionScheme.expressive() else MotionScheme.standard()) {
+                CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                    LocalRippleThemeConfiguration provides if(inset) RippleDefaults.InsetFocusRingThemeConfiguration else RippleDefaults.OpacityFocusThemeConfiguration) {
                     focusManager=LocalFocusManager.current
                     Box(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
                         val colors=if(c.customColors) SliderDefaults.colors(

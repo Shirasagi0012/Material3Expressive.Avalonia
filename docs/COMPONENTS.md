@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 54 个组件的全局索引全景图。
+本文为系统全部 55 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：54 个
+- **已纳管组件总数**：55 个
 
 ---
 
@@ -101,6 +101,7 @@
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
 | `ScrollViewer` | 原生滚动容器的平滑物理滚动与惯性接入 | [README](../src/Material3Expressive/Components/ScrollViewer/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollViewer/INTERNALS.md) | |
+| `Carousel` | 多宽高比内容的视口边缘遮罩与视差 | [README](../src/Material3Expressive/Components/Carousel/README.md) | [INTERNALS](../src/Material3Expressive/Components/Carousel/INTERNALS.md) | 经典 keyline Carousel 与合成线程滚动接入尚未实现 |
 | `PullToRefresh` | 下拉刷新状态、传统/Expressive 指示器与显式滚动消费策略 | [README](../src/Material3Expressive/Components/PullToRefresh/README.md) | [INTERNALS](../src/Material3Expressive/Components/PullToRefresh/INTERNALS.md) | 自动 ScrollViewer 接入尚未实现；回弹途中卸载的末帧保留值存在已记录差异 |
 | `ScrollBar` | 原生滚动条外观与交互动效、只读滚动指示 | [README](../src/Material3Expressive/Components/ScrollBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollBar/INTERNALS.md) | |
 

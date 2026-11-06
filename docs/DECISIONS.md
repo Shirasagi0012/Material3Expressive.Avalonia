@@ -10,6 +10,7 @@
 - **决定方案**：通过可继承 `MaterialInteraction.FocusFeedback` 选择透明度或内缩焦点环模式，默认维持透明度；尺寸集中在不可变 `InsetFocusRingMetrics`，颜色可继承覆盖并在空值时消费实时次要色。独立内部呈现部件持有浮点动画器、子动画作用域、交互订阅与圆角环缓存。共享控制器提供配对指示事件，订阅者各自按桌面平台规则过滤焦点，原始交互仍驱动形状与高度。焦点环不占用唯一的 Surface 波纹挂载点；Surface 内置视觉子节点，Switch 在轨道单独承载。
 - **原因与动机**：Switch 的焦点环与滑块波纹分属不同区域；原生焦点装饰层的显示与即时移除规则无法保留上游的输入模式过滤及退出弹簧。四角不等圆角由绘图上下文轮廓相减支持。纯视觉部件显式桥接继承上下文与资源通知，保留动态主题更新。
 - **适用范围与影响**：圆角矩形反馈（含矩形与圆形）。任意路径、Slider 专用间距在范围之外。
+- **2026-11-06 扩展**：本轮维护者授权自主补齐剩余移植及修订历史范围。原范围排除 Slider 是因其专用间距与双端源尚无适配；现已按固定 Slider.kt 在组件层补齐 4 DIP 外围空间及 Track 间距。共享呈现器可直接订阅既有端点源，避免再建输入控制器；其他调用方的控制器入口不变。任意路径仍不在本决定范围，无破坏性 API 迁移。
 - **确认依据**：2026-10-17 维护者确认方案并要求实施。使用与覆盖边界见 [Interaction 说明](../src/Material3Expressive/Foundation/Interaction/README.md)。
 
 ---
@@ -358,3 +359,10 @@
 - **依据与授权**：2026-11-06 本轮明确授权新增独立 ExposedDropdownMenuBox / Menu。固定 Core 的 Popup 有独立 focus owner，菜单导航期间父场景 TextField 仍保持原 FocusInteraction；本地同窗口 overlay 共享一个 FocusManager。真实只读空字段双端用例确认，直接沿用 native LostFocus 会令标签回落和指示线失焦。
 - **决定**：容器在可聚焦菜单存活期间，通过内部 TextFieldThemeDefaults.RetainPopupFocus 保留字段已有的 native FocusInteraction。它不合成新的 Focus，也不阻止实际键盘焦点转入菜单。模式切换先保留交互再移动焦点；关闭后等原生焦点恢复完成再释放保留标记，避免无意义的 Unfocus/Focus 对。
 - **范围与清理**：仅 ExposedDropdownMenuBox 内标记为 primary 的 TextBox；禁用、换源、模板卸载仍按 TextField 原有配对清理，容器卸载/移除锚点清除标记。外部 source 不被替换，普通 TextBox、原生 ComboBox 和其他 Popup 不自动采用此策略。没有公共焦点协议或破坏性 API 迁移。
+
+## 29. Carousel 路径描边
+
+- **依据与授权**：本轮剩余移植任务明确授权必要共享能力。固定 AndroidX/Core 的 MultiAspectCarousel.MaskShape 总是产生 Outline.Generic，即使输入是圆角形状。Border.kt 的该分支采用离屏双宽描边，再稍微放大反向路径并清除外侧笔画；现有 SurfaceOutline 的圆角直接描边不能替代此算法。
+- **决定**：SurfaceOutline 增加内部显式 UsePathOutline，复用 Foundation/Rendering/PathBorderMask 生成物理像素 alpha 遮罩，纯色描边按上游方式着色并直接裁取位图，其他画笔通过 opacity mask 绘制。保留 BorderCache 对原始布局尺寸与路径尺寸的不同处理，缩小时复用较大缓冲区；缓存键包含实际/原始尺寸、圆角、描边、density、颜色和填充模式，卸载释放位图。PathLayoutSize 保留原始布局尺寸对描边上限的影响。
+- **范围与影响**：当前仅 Carousel 的圆角 MaskShape 开启此分支；普通 Surface 和其他调用方不改变默认路径、布局或公开 API，无仓内调用迁移。它不是任意 Shape API。颜色与画笔透明度只施加一次；复杂画笔及第三方渲染后端仍需专项验证。
+- **验证**：真实双端边框用例原最大降采样通道差 48，新增上游路径后通过既有容差；没有更改基准或放宽门禁。

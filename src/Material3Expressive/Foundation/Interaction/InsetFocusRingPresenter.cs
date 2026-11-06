@@ -36,6 +36,7 @@ internal sealed class InsetFocusRingPresenter : Control
     private Control? _owner;
     private StyledElement? _resourceParent;
     private MaterialInteractionController? _controller;
+    private MaterialInteractionSource? _source;
     private AnimationChildScope? _motion;
     private Animatable<float>? _progress;
     private float _lastAnimatedProgress;
@@ -76,9 +77,9 @@ internal sealed class InsetFocusRingPresenter : Control
         ClipToBounds = false;
     }
 
-    internal void Connect(Control owner)
+    internal void Connect(Control owner, MaterialInteractionSource? source = null)
     {
-        if (ReferenceEquals(owner, _owner)) return;
+        if (ReferenceEquals(owner, _owner) && ReferenceEquals(source, _source)) return;
         Disconnect();
         _owner = owner;
         // A visual-only child has no logical parent to supply styling/resource inheritance.
@@ -88,9 +89,14 @@ internal sealed class InsetFocusRingPresenter : Control
         _resourceParent.ResourcesChanged += ResourcesChangedAtParent;
         Theme = _resourceParent.FindResource(typeof(InsetFocusRingPresenter)) as ControlTheme;
         ApplyStyling();
-        _controller = MaterialInteraction.GetOrCreate(owner);
-        _controller.IndicationInteraction += Receive;
-        _controller.IndicationReset += Reset;
+        _source = source;
+        if (source is not null) source.Interaction += Receive;
+        else
+        {
+            _controller = MaterialInteraction.GetOrCreate(owner);
+            _controller.IndicationInteraction += Receive;
+            _controller.IndicationReset += Reset;
+        }
         owner.PropertyChanged += OwnerChanged;
         AnimationScope.AddScopeChangedHandler(this, ScopeChanged);
     }
@@ -108,6 +114,8 @@ internal sealed class InsetFocusRingPresenter : Control
             controller.IndicationReset -= Reset;
         }
         _owner = null;
+        if (_source is { } source) source.Interaction -= Receive;
+        _source = null;
         _controller = null;
         Reset();
     }
@@ -123,7 +131,7 @@ internal sealed class InsetFocusRingPresenter : Control
         ((ILogical)this).NotifyResourcesChanged(e);
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == MaterialInteraction.FocusFeedbackProperty && _controller?.HasSeparateFocusIndication == true)
+        if (e.Property == MaterialInteraction.FocusFeedbackProperty && (_source is not null || _controller?.HasSeparateFocusIndication == true))
         {
             // Surface adds/removes the focus-only indication when its mode changes.
             Reset();

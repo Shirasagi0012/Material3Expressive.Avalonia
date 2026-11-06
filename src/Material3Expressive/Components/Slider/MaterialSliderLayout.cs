@@ -76,6 +76,8 @@ internal sealed class MaterialSliderLayout : Panel
 internal sealed class MaterialSliderTrack : Track
 {
     internal SliderTrack? Painter;
+    private readonly SliderThumbPresenter _focusRing = new() { IsHitTestVisible = false, ZIndex = 1 };
+    public MaterialSliderTrack() => VisualChildren.Add(_focusRing);
     protected override Size ArrangeOverride(Size finalSize)
     {
         // Initialize native Track's value density and drag bookkeeping before adapting
@@ -98,6 +100,12 @@ internal sealed class MaterialSliderTrack : Track
         var physical = reverse ? length - offset : offset;
         thumb.Arrange(vertical ? new Rect((width - tw) / 2 / scale, physical / scale, tw / scale, th / scale)
             : new Rect(physical / scale, (height - th) / 2 / scale, tw / scale, th / scale));
+        // The indication belongs to the thumb slot, including caller-supplied templates.
+        // It is a sibling of the native Thumb, so neither its clipping nor its input density changes.
+        if (!VisualChildren.Contains(_focusRing)) VisualChildren.Add(_focusRing);
+        _focusRing.ObserveThumb(thumb);
+        _focusRing.Measure(thumb.Bounds.Size);
+        _focusRing.Arrange(thumb.Bounds);
         var extent = vertical ? th : tw;
         void Button(Control? button, int start, int end)
         {

@@ -136,19 +136,23 @@ public sealed partial class RangeSlider : TemplatedControl
         if (sender is not SliderThumbPresenter thumb) return;
         SetFocusInteraction(thumb.IsStart, thumb.IsFocused);
     }
+    internal MaterialInteractionSource ThumbSource(bool start) => start ? StartSource : EndSource;
+    internal bool IsThumbFocused(bool start) => ((start ? _startInteraction : _endInteraction) & InteractionState.Focused) != 0;
     private void RefreshSlots()
     {
         if (StartPresenter is { } start) { start.Content = StartThumb ?? (StartThumbTemplate is not null ? ActualState : _defaultStart); start.ContentTemplate = StartThumbTemplate; }
         if (EndPresenter is { } end) { end.Content = EndThumb ?? (EndThumbTemplate is not null ? ActualState : _defaultEnd); end.ContentTemplate = EndThumbTemplate; }
         if (_defaultStart is SliderThumb first) first.InteractionSource = StartSource;
         if (_defaultEnd is SliderThumb last) last.InteractionSource = EndSource;
+        StartPresenter?.ConnectRing(); EndPresenter?.ConnectRing();
         if (_track is not null) { _track.Content = Track ?? (TrackTemplate is not null ? ActualState : _defaultTrack); _track.ContentTemplate = TrackTemplate; }
     }
     private void RefreshVisuals()
     {
         if (_defaultStart is SliderThumb start) start.Interaction = _startInteraction;
         if (_defaultEnd is SliderThumb end) end.Interaction = _endInteraction;
-        _defaultTrack?.InvalidateVisual();
+        StartPresenter?.RefreshRing(); EndPresenter?.RefreshRing();
+        _track?.Child?.InvalidateVisual();
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs e)
     {
@@ -183,6 +187,7 @@ public sealed partial class RangeSlider : TemplatedControl
             if (this.IsAttachedToVisualTree()) ConnectInteractions();
             RefreshSlots();
         }
+        else if (e.Property == MaterialInteraction.FocusFeedbackProperty) RefreshVisuals();
         else if (e.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) { EndThumbHover(); CancelGesture(); EndFocusInteractions(); }
     }
     private float Scale => (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);

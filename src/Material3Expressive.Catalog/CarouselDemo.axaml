@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.CarouselDemo" Title="Multi-aspect carousel" Width="780" Height="880">
+  <ScrollViewer>
+  <StackPanel Margin="24" Spacing="16">
+    <TextBlock Text="Multi-aspect carousel" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="不同宽高比的内容在视口边缘被压缩；内容保留原尺寸并产生视差。横向区域可按 Shift 滚轮，或使用位置滑块。" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="LTR / RTL" Click="ToggleDirection" />
+      <Button Content="圆角 / 直角" Click="ToggleShape" />
+    </StackPanel>
+    <ScrollViewer x:Name="HorizontalViewer" Height="160" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+      <StackPanel x:Name="HorizontalItems" Orientation="Horizontal" Spacing="12">
+        <m3:MultiAspectCarouselItem Width="260" Height="160" CornerRadius="24" Background="CornflowerBlue">
+          <StackPanel Margin="24"><TextBlock Text="Wide landscape" FontSize="24" /><Button Content="Explore" HorizontalAlignment="Left" /></StackPanel>
+        </m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Width="160" Height="160" CornerRadius="24" Background="Coral">
+          <TextBlock Text="Square" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Width="90" Height="160" CornerRadius="24" Background="DarkSeaGreen">
+          <Border Background="Gold" Width="30" Height="100" />
+        </m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Width="320" Height="160" CornerRadius="24" Background="Plum" BorderBrush="Purple" BorderThickness="2">
+          <TextBlock Text="Panorama" FontSize="30" Margin="24" />
+        </m3:MultiAspectCarouselItem>
+      </StackPanel>
+    </ScrollViewer>
+    <Slider Minimum="0" Maximum="300" ValueChanged="ScrollPositionChanged" />
+    <TextBlock Text="Vertical carousel · 滚轮浏览，按钮与键盘焦点保留" />
+    <ScrollViewer x:Name="VerticalViewer" Height="220" Width="360" HorizontalAlignment="Left"
+                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+      <StackPanel x:Name="VerticalItems" Spacing="12">
+        <m3:MultiAspectCarouselItem Height="160" Orientation="Vertical" CornerRadius="24" Background="LightSkyBlue">
+          <Button Content="First destination" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Height="240" Orientation="Vertical" CornerRadius="24" Background="LightSalmon">
+          <Button Content="Second destination" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Height="120" Orientation="Vertical" CornerRadius="24" Background="LightGreen">
+          <Button Content="Third destination" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </m3:MultiAspectCarouselItem>
+      </StackPanel>
+    </ScrollViewer>
+    <TextBlock Text="Grid carousel · 每个项目使用自己的宽高比" />
+    <ScrollViewer x:Name="GridViewer" Height="188" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+      <Grid RowDefinitions="90,90" ColumnDefinitions="200,120,240,160,160" RowSpacing="8" ColumnSpacing="8">
+        <m3:MultiAspectCarouselItem Grid.Column="0" UseItemCrossAxisSize="True" CornerRadius="20" Background="CornflowerBlue"><TextBlock Text="Landscape" Margin="16" /></m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Grid.Row="1" Grid.Column="0" UseItemCrossAxisSize="True" CornerRadius="20" Background="Coral" />
+        <m3:MultiAspectCarouselItem Grid.Column="1" UseItemCrossAxisSize="True" CornerRadius="20" Background="DarkSeaGreen" />
+        <m3:MultiAspectCarouselItem Grid.Row="1" Grid.Column="1" UseItemCrossAxisSize="True" CornerRadius="20" Background="Plum" />
+        <m3:MultiAspectCarouselItem Grid.Column="2" UseItemCrossAxisSize="True" CornerRadius="20" Background="LightSkyBlue"><TextBlock Text="Panorama" Margin="16" /></m3:MultiAspectCarouselItem>
+        <m3:MultiAspectCarouselItem Grid.Row="1" Grid.Column="2" UseItemCrossAxisSize="True" CornerRadius="20" Background="LightSalmon" />
+        <m3:MultiAspectCarouselItem Grid.Column="3" UseItemCrossAxisSize="True" CornerRadius="20" Background="LightGreen" />
+        <m3:MultiAspectCarouselItem Grid.Row="1" Grid.Column="3" UseItemCrossAxisSize="True" CornerRadius="20" Background="Gold" />
+        <m3:MultiAspectCarouselItem Grid.Column="4" UseItemCrossAxisSize="True" CornerRadius="20" Background="LightSkyBlue" />
+        <m3:MultiAspectCarouselItem Grid.Row="1" Grid.Column="4" UseItemCrossAxisSize="True" CornerRadius="20" Background="LightSalmon" />
+      </Grid>
+    </ScrollViewer>
+  </StackPanel>
+  </ScrollViewer>
+</Window>

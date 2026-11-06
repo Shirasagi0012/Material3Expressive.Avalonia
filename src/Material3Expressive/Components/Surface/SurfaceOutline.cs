@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
@@ -18,11 +19,21 @@ internal sealed class SurfaceOutline : Control
     public CornerRadius CornerRadius { get => GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
     internal static readonly StyledProperty<bool> UseHairlineProperty = AvaloniaProperty.Register<SurfaceOutline, bool>(nameof(UseHairline));
     internal bool UseHairline { get => GetValue(UseHairlineProperty); set => SetValue(UseHairlineProperty, value); }
+    internal static readonly StyledProperty<bool> UsePathOutlineProperty = AvaloniaProperty.Register<SurfaceOutline, bool>(nameof(UsePathOutline));
+    internal bool UsePathOutline { get => GetValue(UsePathOutlineProperty); set => SetValue(UsePathOutlineProperty, value); }
+    internal static readonly StyledProperty<Size> PathLayoutSizeProperty = AvaloniaProperty.Register<SurfaceOutline, Size>(nameof(PathLayoutSize));
+    internal Size PathLayoutSize { get => GetValue(PathLayoutSizeProperty); set => SetValue(PathLayoutSizeProperty, value); }
+    internal static readonly StyledProperty<Rect?> PathBoundsProperty = AvaloniaProperty.Register<SurfaceOutline, Rect?>(nameof(PathBounds));
+    internal Rect? PathBounds { get => GetValue(PathBoundsProperty); set => SetValue(PathBoundsProperty, value); }
+    private WriteableBitmap? _pathMask;
+    private readonly PathBorderMask _pathMaskCache = new();
+    private (Size Size, CornerRadius Corners, float Stroke, float Scale, bool Fill, Point Origin, Color Color, Size Layout) _pathMaskKey;
     private readonly Border _fallback;
 
-    static SurfaceOutline() => AffectsRender<SurfaceOutline>(BorderBrushProperty, BorderThicknessProperty, CornerRadiusProperty, UseHairlineProperty);
+    static SurfaceOutline() => AffectsRender<SurfaceOutline>(BorderBrushProperty, BorderThicknessProperty, CornerRadiusProperty, UseHairlineProperty, UsePathOutlineProperty, PathLayoutSizeProperty, PathBoundsProperty);
     public SurfaceOutline()
     {
+        RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.LowQuality);
         _fallback = new Border
         {
             [!FlowDirectionProperty] = this[!FlowDirectionProperty],
@@ -42,6 +53,13 @@ internal sealed class SurfaceOutline : Control
     protected override Size MeasureOverride(Size availableSize) { _fallback.Measure(availableSize); return default; }
     protected override Size ArrangeOverride(Size finalSize) { _fallback.Arrange(new Rect(finalSize)); return finalSize; }
 
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _pathMask?.Dispose(); _pathMask = null;
+        _pathMaskCache.Dispose();
+        base.OnDetachedFromVisualTree(e);
+    }
+
     public override void Render(DrawingContext context)
     {
         if (!BorderThickness.IsUniform || BorderBrush is null || BorderThickness.Top < 0
@@ -51,6 +69,30 @@ internal sealed class SurfaceOutline : Control
         var height = (float)Bounds.Height * scale;
         var stroke = MathF.Min(BorderThickness.Top == 0 ? 1 : MathF.Ceiling((float)BorderThickness.Top * scale),
             MathF.Ceiling(MathF.Min(width, height) / 2));
+        if (UsePathOutline)
+        {
+            var layout = PathLayoutSize == default ? Bounds.Size : PathLayoutSize;
+            var minimum = MathF.Min((float)layout.Width * scale, (float)layout.Height * scale);
+            stroke = MathF.Min(BorderThickness.Top == 0 ? 1 : MathF.Ceiling((float)BorderThickness.Top * scale), MathF.Ceiling(minimum / 2));
+            var path = PathBounds ?? new Rect(Bounds.Size);
+            var solid = BorderBrush as ISolidColorBrush;
+            var color = solid is null ? Colors.White : Color.FromArgb((byte)Math.Round(solid.Color.A * solid.Opacity), solid.Color.R, solid.Color.G, solid.Color.B);
+            var key = (path.Size, CornerRadius, stroke, scale, stroke * 2 > minimum, path.Position, color, layout);
+            if (_pathMask is null || _pathMaskKey != key)
+            {
+                _pathMask?.Dispose();
+                _pathMask = _pathMaskCache.Update(path.Size, path.Position, CornerRadius, stroke, scale, key.Item5, layout, color);
+                _pathMaskKey = key;
+            }
+            // Preserve the ceil-sized raster instead of stretching it to the fractional path bounds.
+            var maskBounds = new Rect(0, 0, Math.Ceiling(path.Width * scale) / scale, Math.Ceiling(path.Height * scale) / scale);
+            if (solid is not null)
+                context.DrawImage(_pathMask, new Rect(0, 0, Math.Ceiling(path.Width * scale), Math.Ceiling(path.Height * scale)), maskBounds);
+            else
+                using (context.PushOpacityMask(new ImageBrush(_pathMask) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, maskBounds))
+                    context.FillRectangle(BorderBrush, maskBounds);
+            return;
+        }
         if (!CornerRadius.IsUniform)
         {
             // Compose creates the outer rounded path, then subtracts a full-stroke inset

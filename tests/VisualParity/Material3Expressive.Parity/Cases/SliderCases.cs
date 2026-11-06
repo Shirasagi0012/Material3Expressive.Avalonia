@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using NativeSlider = Avalonia.Controls.Slider;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
@@ -18,7 +19,7 @@ public sealed record SliderConfig(string Kind = "horizontal", int Steps = 0, flo
     bool Enabled = true, bool Rtl = false, bool TopToBottom = true, bool Dark = false,
     bool Centered = false, bool CustomCorners = false, bool Stop = true, double Gap = 6,
     double Length = 280, bool CustomThumbs = false, bool CustomColors = false, bool Hoisted = false,
-    string Action = "none", bool AutoLength = false, double CrossSize = 0, float Minimum = 0, float Maximum = 1);
+    string Action = "none", bool AutoLength = false, double CrossSize = 0, float Minimum = 0, float Maximum = 1, bool FocusRing = false);
 
 [ParitySuite("slider")]
 public sealed class SliderCases
@@ -91,6 +92,21 @@ public sealed class SliderCases
             yield return Data($"dynamic.corner.{kind}", new(kind, Steps: 3, Value: 0.25f, CustomCorners: true, Action: "corner"));
         }
     }
+    public static IEnumerable<CaseData<SliderConfig>> FocusConfigurations()
+    {
+        foreach (var kind in new[] { "horizontal", "vertical", "range" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "focus-ring", "focus-reverse", "focus-mode", "focus-hover-blur" })
+            yield return Data($"focus.{kind}.{(rtl ? "rtl" : "ltr")}.{action}", new(kind, Value: .25f, Rtl: rtl, Action: action, FocusRing: true));
+        yield return Data("focus.horizontal.custom", new(CustomThumbs: true, Action: "focus-ring", FocusRing: true));
+        yield return Data("focus.vertical.custom", new("vertical", CustomThumbs: true, Action: "focus-ring", FocusRing: true));
+        yield return Data("focus.range.custom", new("range", CustomThumbs: true, Action: "focus-ring", FocusRing: true));
+        yield return Data("focus.range.zero-gap", new("range", Gap: 0, Steps: 3, Action: "focus-ring", FocusRing: true));
+        yield return Data("focus.horizontal.centered", new(Centered: true, Value: .25f, Action: "focus-ring", FocusRing: true));
+        yield return Data("focus.vertical.reverse", new("vertical", TopToBottom: false, Action: "focus-ring", FocusRing: true));
+    }
+    [ParityScenario("focus", Data = nameof(FocusConfigurations))]
+    public Task Focus(CaptureWriter writer) => Capture(writer);
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
     public Task Static(CaptureWriter writer) => Capture(writer);
     [ParityScenario("interaction", Data = nameof(InteractionConfigurations))]
@@ -155,7 +171,14 @@ public sealed class SliderCases
                 start.Bind(SliderThumb.InteractionProperty, new Avalonia.Data.Binding(nameof(RangeSlider.StartInteraction)) { Source = pair });
                 end.Bind(SliderThumb.InteractionProperty, new Avalonia.Data.Binding(nameof(RangeSlider.EndInteraction)) { Source = pair });
                 pair.StartThumb = start; pair.EndThumb = end;
+                if (c.FocusRing) pair.Track = new Border { Child = (Control)pair.Track! };
             }
+        }
+        if (c.FocusRing)
+        {
+            MaterialInteraction.SetFocusFeedback(control, FocusFeedback.InsetRing);
+            host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Secondary] = Color.Parse("#625B71");
+            host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.OnSecondary] = Colors.White;
         }
         control.IsEnabled = c.Enabled;
         control.HorizontalAlignment = HorizontalAlignment.Left; control.VerticalAlignment = VerticalAlignment.Top;
@@ -205,6 +228,32 @@ public sealed class SliderCases
                 host.Window.Resources[Material3Expressive.Tokens.MaterialTokens.Sys.Color.Surface] = Color.Parse("#141218");
             }
             host.Draw(); host.Frame(16000); Sample("changed"); host.Frame(32000); Sample("late"); return;
+        }
+        if (c.FocusRing)
+        {
+            host.AdvanceTo(16000);
+            if (control is RangeSlider) Part("PART_StartThumb").Focus(NavigationMethod.Tab); else control.Focus(NavigationMethod.Tab);
+            host.Draw(); host.Frame(16000); Sample("focus");
+            foreach (var time in new long[] { 32000, 64000, 128000, 320000 })
+            {
+                host.AdvanceTo(time);
+                if (time == 64000 && c.Action == "focus-reverse") host.Window.FocusManager!.Focus(null);
+                if (time == 64000 && c.Action == "focus-hover-blur")
+                {
+                    var thumb = control.GetVisualDescendants().OfType<SliderThumb>().First();
+                    host.Input("move", thumb.TranslatePoint(new Point(thumb.Bounds.Width / 2, thumb.Bounds.Height / 2), host.Window)!.Value);
+                }
+                if (time == 128000 && c.Action == "focus-hover-blur") host.Window.FocusManager!.Focus(null);
+                if (time == 64000 && c.Action == "focus-mode") MaterialInteraction.SetFocusFeedback(control, FocusFeedback.Opacity);
+                host.Draw(); host.Frame(time); Sample($"entry-{time}");
+            }
+            host.AdvanceTo(336000);
+            if (control is RangeSlider)
+                Part(Part("PART_StartThumb").IsFocused ? "PART_EndThumb" : "PART_StartThumb").Focus(NavigationMethod.Tab);
+            else host.Window.FocusManager!.Focus(null);
+            host.Draw(); host.Frame(336000); Sample("switch");
+            foreach (var time in new long[] { 352000, 400000, 656000 }) { host.Frame(time); Sample($"exit-{time}"); }
+            return;
         }
         if (c.Action == "keyboard")
         {

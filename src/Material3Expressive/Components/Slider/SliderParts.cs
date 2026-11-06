@@ -21,6 +21,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Media;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Interaction;
@@ -267,6 +270,7 @@ public sealed class SliderTrack : Control
     private Action<DrawingContext, Point, Color>? _drawStopIndicator;
     public Action<DrawingContext, Point, Color>? DrawStopIndicator { get => _drawStopIndicator; set { _drawStopIndicator = value; InvalidateVisual(); } }
     private Avalonia.Controls.Slider? _nativeOwner;
+    private RangeSlider? _rangeOwner;
     private INotifyCollectionChanged? _ticks;
     internal bool Vertical => _nativeOwner?.Orientation == Orientation.Vertical;
     internal float[] TickFractions => State is RangeSliderState range ? range.TickFractions
@@ -305,11 +309,15 @@ public sealed class SliderTrack : Control
         if (State is { } state) { state.PropertyChanged -= StateChanged; state.PropertyChanged += StateChanged; }
         _nativeOwner = this.GetVisualAncestors().OfType<Avalonia.Controls.Slider>().FirstOrDefault();
         if (_nativeOwner is { } owner) { owner.PropertyChanged += NativeChanged; SubscribeTicks(); InvalidateMeasure(); }
+        _rangeOwner = this.GetVisualAncestors().OfType<RangeSlider>().FirstOrDefault();
+        if (_rangeOwner is { } range) range.PropertyChanged += NativeChanged;
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (State is { } state) state.PropertyChanged -= StateChanged;
         if (_nativeOwner is { } owner) owner.PropertyChanged -= NativeChanged;
+        if (_rangeOwner is { } range) range.PropertyChanged -= NativeChanged;
+        _rangeOwner = null;
         if (_ticks is not null) _ticks.CollectionChanged -= TicksChanged;
         _ticks = null; _nativeOwner = null;
         base.OnDetachedFromVisualTree(e);
@@ -360,8 +368,19 @@ public sealed class SliderTrack : Control
         var nativeExtent = (float)(vertical ? nativeThumb?.Bounds.Height ?? 0 : nativeThumb?.Bounds.Width ?? 0) * scale;
         var startThumb = range is not null ? range.StartThumbWidth : centered && fractionEnd <= 0.5f ? nativeExtent : 0;
         var endThumb = range is not null ? range.EndThumbWidth : !centered || fractionEnd >= 0.5f ? nativeExtent : 0;
-        var startGap = (centered || range is not null) && ThumbTrackGapSize > 0 ? startThumb / 2 + (float)ThumbTrackGapSize * scale : 0;
-        var endGap = ThumbTrackGapSize > 0 ? endThumb / 2 + (float)ThumbTrackGapSize * scale : 0;
+        var startSpacing = (centered || range is not null) ? (float)ThumbTrackGapSize * scale : 0;
+        var endSpacing = (float)ThumbTrackGapSize * scale;
+        var rangeOwner = _rangeOwner;
+        var focusOwner = (Control?)rangeOwner ?? owner;
+        if (focusOwner is not null && MaterialInteraction.GetFocusFeedback(focusOwner) == FocusFeedback.InsetRing)
+        {
+            var startFocused = rangeOwner?.IsThumbFocused(true) ?? owner?.IsFocused == true;
+            var endFocused = rangeOwner?.IsThumbFocused(false) ?? owner?.IsFocused == true;
+            if ((centered || range is not null) && startFocused) startSpacing += 4 * scale;
+            if (endFocused) endSpacing += 4 * scale;
+        }
+        var startGap = startSpacing > 0 ? startThumb / 2 + startSpacing : 0;
+        var endGap = endSpacing > 0 ? endThumb / 2 + endSpacing : 0;
         var shrinking = range is null && EnableCornerShrinking;
         var enabled = IsEffectivelyEnabled;
         var active = enabled ? Colors?.ActiveTrackColor ?? ActiveTrackColor : Colors?.DisabledActiveTrackColor ?? DisabledActiveTrackColor;
@@ -425,9 +444,148 @@ public sealed class SliderTrack : Control
     }
 }
 
+// The upstream padded indication is placed outside the unchanged core thumb layout.
+// Keeping the core slot unchanged also preserves native Track's input/value density.
 internal sealed class SliderThumbPresenter : ContentPresenter
 {
     internal RangeSlider? Owner;
     internal bool IsStart;
-    protected override Avalonia.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new SliderThumbAutomationPeer(this);
+    private readonly InsetFocusRingPresenter _ring = new() { ZIndex = 1 };
+    private Slider? _nativeOwner;
+    private readonly MaterialInteractionSource _nativeSource = new();
+    private MaterialInteractionEvent.Focus? _nativeFocus;
+    private Thumb? _nativeThumb;
+    private MaterialInteractionEvent.HoverEnter? _nativeHover;
+    private MaterialInteractionEvent.DragStart? _nativeDrag;
+    internal void ObserveThumb(Thumb? thumb)
+    {
+        if (ReferenceEquals(thumb, _nativeThumb)) return;
+        if (_nativeThumb is { } previous)
+        {
+            previous.PropertyChanged -= ThumbChanged;
+            previous.DragStarted -= ThumbDragStarted;
+            previous.DragCompleted -= ThumbDragCompleted;
+        }
+        EndNativeHover(); EndNativeDrag();
+        _nativeThumb = thumb;
+        if (thumb is not null)
+        {
+            thumb.PropertyChanged += ThumbChanged;
+            thumb.DragStarted += ThumbDragStarted;
+            thumb.DragCompleted += ThumbDragCompleted;
+        }
+    }
+    private void ThumbChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != IsPointerOverProperty) return;
+        if (_nativeThumb?.IsPointerOver == true && _nativeHover is null)
+        {
+            _nativeHover = new(); _nativeSource.Emit(_nativeHover);
+        }
+        else if (_nativeThumb?.IsPointerOver != true) EndNativeHover();
+    }
+    private void EndNativeHover()
+    {
+        var hover = _nativeHover; _nativeHover = null;
+        if (hover is not null) _nativeSource.Emit(new MaterialInteractionEvent.HoverExit(hover));
+    }
+    private void ThumbDragStarted(object? sender, VectorEventArgs e)
+    {
+        if (_nativeDrag is not null) return;
+        _nativeDrag = new(); _nativeSource.Emit(_nativeDrag);
+    }
+    private void ThumbDragCompleted(object? sender, VectorEventArgs e) => EndNativeDrag();
+    private void EndNativeDrag()
+    {
+        var drag = _nativeDrag; _nativeDrag = null;
+        if (drag is not null) _nativeSource.Emit(new MaterialInteractionEvent.DragStop(drag));
+    }
+    internal double FocusPadding => MaterialInteraction.GetFocusFeedback((Control?)Owner ?? (Control?)_nativeOwner ?? this) == FocusFeedback.InsetRing
+        && (Owner is { } owner ? owner.IsThumbFocused(IsStart) : _nativeOwner?.IsFocused == true) ? 4 : 0;
+    internal InsetFocusRingPresenter Ring => _ring;
+
+    public SliderThumbPresenter() => VisualChildren.Add(_ring);
+    internal void ConnectRing()
+    {
+        if (!this.IsAttachedToVisualTree()) return;
+        if (Owner is { } owner) _ring.Connect(owner, owner.ThumbSource(IsStart));
+        else if (_nativeOwner is { } native) _ring.Connect(native, _nativeSource);
+        RefreshRing();
+    }
+    internal void RefreshRing()
+    {
+        _ring.Corners = CornerRadius;
+        InvalidateArrange();
+    }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _nativeOwner = this.GetVisualAncestors().OfType<Slider>().FirstOrDefault();
+        if (_nativeOwner is { } owner)
+        {
+            // The native Track adds this indication host as a visual-only sibling.
+            ((ISetInheritanceParent)this).SetParent(owner);
+            ApplyStyling();
+            owner.PropertyChanged += NativeChanged;
+            owner.GotFocus += NativeGotFocus;
+            owner.LostFocus += NativeLostFocus;
+            MaterialInputMode.For(owner);
+        }
+        ConnectRing();
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_nativeOwner is { } owner)
+        {
+            owner.PropertyChanged -= NativeChanged;
+            owner.GotFocus -= NativeGotFocus;
+            owner.LostFocus -= NativeLostFocus;
+            ((ISetInheritanceParent)this).SetParent(null);
+        }
+        EndNativeFocus();
+        ObserveThumb(null);
+        _nativeOwner = null;
+        _ring.Disconnect();
+        base.OnDetachedFromVisualTree(e);
+    }
+    private void NativeGotFocus(object? sender, Avalonia.Input.FocusChangedEventArgs e)
+    {
+        if (_nativeOwner is not { IsFocused: true, IsEffectivelyEnabled: true } owner || _nativeFocus is not null) return;
+        MaterialInputMode.For(owner)?.ObserveFocusNavigation(e.NavigationMethod);
+        _nativeFocus = new(); _nativeSource.Emit(_nativeFocus);
+    }
+    private void NativeLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => EndNativeFocus();
+    private void EndNativeFocus()
+    {
+        var focus = _nativeFocus; _nativeFocus = null;
+        if (focus is not null) _nativeSource.Emit(new MaterialInteractionEvent.Unfocus(focus));
+    }
+    private void NativeChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == IsEffectivelyEnabledProperty && _nativeOwner?.IsEffectivelyEnabled == false)
+        { EndNativeFocus(); EndNativeDrag(); }
+        if (e.Property == IsFocusedProperty || e.Property == MaterialInteraction.FocusFeedbackProperty) RefreshRing();
+    }
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == CornerRadiusProperty) RefreshRing();
+        // ContentPresenter inserts replacement content after existing visual-only children.
+        if (change.Property == ChildProperty)
+        {
+            VisualChildren.Remove(_ring);
+            VisualChildren.Add(_ring);
+            ConnectRing();
+        }
+    }
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var size = base.ArrangeOverride(finalSize);
+        var padding = FocusPadding;
+        _ring.Measure(new Size(size.Width + padding * 2, size.Height + padding * 2));
+        _ring.Arrange(new Rect(-padding, -padding, size.Width + padding * 2, size.Height + padding * 2));
+        return size;
+    }
+    protected override Avalonia.Automation.Peers.AutomationPeer OnCreateAutomationPeer() =>
+        Owner is not null ? new SliderThumbAutomationPeer(this) : base.OnCreateAutomationPeer();
 }

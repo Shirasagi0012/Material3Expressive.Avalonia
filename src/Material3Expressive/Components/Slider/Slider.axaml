@@ -1,6 +1,11 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+    <Style Selector="m3|SliderThumbPresenter">
+        <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleShape}}" />
+        <Setter Property="ClipToBounds" Value="False" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
     <Style Selector="m3|SliderThumb">
         <Setter Property="ThumbColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleColor}}" />
         <Setter Property="DisabledThumbColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledHandleColor}}" />

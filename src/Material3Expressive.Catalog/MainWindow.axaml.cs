@@ -83,6 +83,7 @@ public partial class MainWindow : Window
     private void OnProgressIndicatorDemo(object? sender, RoutedEventArgs e) => new ProgressIndicatorDemo().Show(this);
     private void OnLoadingIndicatorDemo(object? sender, RoutedEventArgs e) => new LoadingIndicatorDemo().Show(this);
     private void OnPullToRefreshDemo(object? sender, RoutedEventArgs e) => new PullToRefreshDemo().Show(this);
+    private void OnCarouselDemo(object? sender, RoutedEventArgs e) => new CarouselDemo().Show(this);
     private void OnListItemDemo(object? sender, RoutedEventArgs e) => new ListItemDemo().Show(this);
 
     private void OnFloatingToolbarDemo(object? sender, RoutedEventArgs e) => new FloatingToolbarDemo().Show(this);

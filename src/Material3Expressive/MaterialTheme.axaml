@@ -86,6 +86,7 @@
     </Styles.Resources>
     
     <StyleInclude Source="/Components/Surface/Surface.axaml" />
+    <StyleInclude Source="/Components/Carousel/Carousel.axaml" />
     <StyleInclude Source="/Components/PullToRefresh/PullToRefresh.axaml" />
     <StyleInclude Source="/Components/ListItem/ListItem.axaml" />
     <StyleInclude Source="/Components/Scaffold/Scaffold.axaml" />

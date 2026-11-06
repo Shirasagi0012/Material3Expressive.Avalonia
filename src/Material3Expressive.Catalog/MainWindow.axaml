@@ -82,6 +82,7 @@
                 <Button Content="Progress Indicator demo" Click="OnProgressIndicatorDemo" HorizontalAlignment="Left" />
                 <Button Content="Loading Indicator demo" Click="OnLoadingIndicatorDemo" HorizontalAlignment="Left" />
                 <Button Content="Pull to refresh indicators" Click="OnPullToRefreshDemo" HorizontalAlignment="Left" />
+                <Button Content="Multi-aspect carousel" Click="OnCarouselDemo" HorizontalAlignment="Left" />
                 <Button Content="List items demo" Click="OnListItemDemo" HorizontalAlignment="Left" />
 
                 <Button Content="FloatingToolbar demo" Click="OnFloatingToolbarDemo" HorizontalAlignment="Left" />
@@ -409,6 +410,12 @@
                 <Slider Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="0.35"
                         m3:SliderAppearance.IsCentered="True" m3:SliderAppearance.EnableCornerShrinking="True" />
                 <m3:RangeSlider Minimum="0" Maximum="100" Steps="9" RangeStart="20" RangeEnd="80" />
+                <TextBlock Text="Inset focus ring · 按 Tab 在拇指之间切换" />
+                <StackPanel Spacing="12" m3:MaterialInteraction.FocusFeedback="InsetRing">
+                    <Slider Minimum="0" Maximum="1" Value="0.4" />
+                    <m3:RangeSlider RangeStart="0.25" RangeEnd="0.75" />
+                    <Slider Orientation="Vertical" IsDirectionReversed="True" Height="160" HorizontalAlignment="Left" Minimum="0" Maximum="1" Value="0.6" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="24">
                     <Slider Orientation="Vertical" IsDirectionReversed="True" Height="180" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="0.35" />
                     <Slider Orientation="Vertical" Height="180" Minimum="0" Maximum="1" TickFrequency="0.25" IsSnapToTickEnabled="True" SmallChange="0.25" LargeChange="0.25" Value="0.5" />
