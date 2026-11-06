@@ -6,6 +6,109 @@ namespace ComposeAnimation.Test;
 
 public class ClockDrivenAnimationTest
 {
+    [Fact]
+    public Task AnimationSamples_PreserveUpdatedContextsWithoutLeakingBetweenRuns() => OnUi(async () =>
+    {
+        using var source = new ManualFrameSource();
+        var window = new AnimationTestWindow(source);
+        try
+        {
+            var context = new AsyncLocal<int>();
+            var firstValues = new List<int>();
+            var secondValues = new List<int>();
+            var spec = new TweenSpec<double>(TimeSpan.FromMilliseconds(32));
+            var first = SuspendAnimation.AnimateToAsync(window.AnimationRoot,
+                new AnimationState<double>(new DoubleConverter(), 0), 100, spec,
+                block: _ => firstValues.Add(++context.Value));
+            context.Value = 100;
+            var second = SuspendAnimation.AnimateToAsync(window.AnimationRoot,
+                new AnimationState<double>(new DoubleConverter(), 0), 100, spec,
+                block: _ => secondValues.Add(++context.Value));
+            context.Value = 999;
+
+            for (var i = 0; i < 3; i++)
+            {
+                source.Pump(TimeSpan.FromMilliseconds(16));
+                Assert.Equal(999, context.Value);
+            }
+            await first;
+            await second;
+            Assert.Equal(new[] { 1, 2, 3 }, firstValues);
+            Assert.Equal(new[] { 101, 102, 103 }, secondValues);
+        }
+        finally { window.Close(); }
+    });
+
+    [Theory]
+    [InlineData("finish")]
+    [InlineData("stop inside sample")]
+    [InlineData("stop outside sample")]
+    [InlineData("failure")]
+    public Task Cleanup_SeesLatestSampleContext(string ending) => OnUi(async () =>
+    {
+        using var source = new ManualFrameSource();
+        var window = new AnimationTestWindow(source);
+        using var cancellation = new CancellationTokenSource();
+        try
+        {
+            var context = new AsyncLocal<string> { Value = "initial" };
+            string? cleanupContext = null;
+            var expected = new InvalidOperationException("sample failure");
+            var driver = new ClockAnimation(window.AnimationRoot, cancellation.Token,
+                () => AnimationEndReason.Canceled,
+                (_, active) =>
+                {
+                    context.Value = "sample";
+                    switch (ending)
+                    {
+                        case "finish": active.Finish(); break;
+                        case "stop inside sample": cancellation.Cancel(); break;
+                        case "failure": throw expected;
+                    }
+                },
+                _ => { cleanupContext = context.Value; context.Value = "cleanup"; });
+            driver.Start();
+            context.Value = "outside";
+            source.Pump(TimeSpan.FromMilliseconds(16));
+            if (ending == "stop outside sample") cancellation.Cancel();
+
+            if (ending == "failure")
+                Assert.Same(expected, await Assert.ThrowsAsync<InvalidOperationException>(() => driver.Completion));
+            else
+                Assert.Equal(ending == "finish" ? AnimationEndReason.Finished : AnimationEndReason.Canceled,
+                    await driver.Completion);
+            Assert.Equal("sample", cleanupContext);
+            Assert.Equal("outside", context.Value);
+            Assert.Equal(0, source.PendingFrameCount);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
+    public Task InitializationContext_FlowsIntoSamplingAndCleanup() => OnUi(async () =>
+    {
+        using var source = new ManualFrameSource();
+        var window = new AnimationTestWindow(source);
+        try
+        {
+            var context = new AsyncLocal<int>();
+            var sampleValue = 0;
+            var cleanupValue = 0;
+            var driver = new ClockAnimation(window.AnimationRoot, default,
+                () => AnimationEndReason.Canceled,
+                (_, active) => { sampleValue = ++context.Value; active.Finish(); },
+                _ => cleanupValue = context.Value);
+            driver.Start(initialize: () => context.Value = 1);
+            Assert.Equal(0, context.Value);
+            source.Pump(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(AnimationEndReason.Finished, await driver.Completion);
+            Assert.Equal(2, sampleValue);
+            Assert.Equal(2, cleanupValue);
+            Assert.Equal(0, context.Value);
+        }
+        finally { window.Close(); }
+    });
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

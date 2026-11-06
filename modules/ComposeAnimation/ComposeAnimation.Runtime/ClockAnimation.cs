@@ -17,7 +17,7 @@ internal sealed class ClockAnimation
     private readonly Action<AnimationEndReason, Exception?>? _onCompleted;
     private readonly FrameClock.Registration _frames;
     private readonly TaskCompletionSource<AnimationEndReason> _completion = new();
-    private readonly ExecutionContext? _executionContext = ExecutionContext.Capture();
+    private ExecutionContext? _executionContext = ExecutionContext.Capture();
     private TimeSpan _frame;
     private CancellationTokenRegistration _lifetimeRegistration, _stopRegistration;
     private AnimationEndReason? _ending;
@@ -105,7 +105,14 @@ internal sealed class ClockAnimation
             else _sample(_frame, this);
         }
         catch (Exception error) { failure = error; }
-        finally { _sampling = false; }
+        finally
+        {
+            _sampling = false;
+            // Capture before Run restores the dispatcher's context. Subsequent samples and
+            // cleanup must see this run's AsyncLocal updates, not its initial snapshot.
+            // A run created with flow suppressed keeps that opt-out.
+            if (_executionContext is not null) _executionContext = ExecutionContext.Capture();
+        }
         if (failure is not null) End(AnimationEndReason.Interrupted, failure);
         else if (_ending is { } reason) End(reason, null);
         else if (IsStopping) RequestStop();
