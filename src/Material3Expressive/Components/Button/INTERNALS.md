@@ -216,9 +216,9 @@ NextFrame 的方案；没有新增组件队列或公开 API。`elevation-commit-
 RTL 非对称描边曾因纯视觉子层缺少方向继承而与背景反向；已在 Surface 内绑定各层的方向，
 保留公开圆角值与既有描边算法。`button-focus` 同时检查描边、悬停状态层、焦点环和按压轮廓的组合。
 
-### 尚未实现
+### 精确指针尺寸分支
 
-- `shouldUsePrecisionPointerComponentSizing=true` 的尺寸/Padding 基线分支；固定 `Button.kt` 在此分支
+**此前延期的理由（保留历史）**：`shouldUsePrecisionPointerComponentSizing=true` 的尺寸/Padding 基线分支；固定 `Button.kt` 在此分支
   将 Small MinHeight 设为 36 DIP、垂直 Padding 设为 8 DIP、图标侧水平 Padding 设为 12 DIP，
   当前不可变 TokenSource 未表达这些选择
 
@@ -228,6 +228,16 @@ RTL 非对称描边曾因纯视觉子层缺少方向继承而与背景反向；�
 推荐先由维护者决定共享输入配置的范围，例如作用域显式选择 `MaterialPrecisionPointer.SetIsEnabled(window, true)`
 （仅调用提议，未提供此 API），再通过各组件的 Token 候选映射实现尺寸/Padding 选择。影响包含运行时重新测量、
 图标侧 Padding、继承与局部覆盖优先级，以及桌面默认是否继续与 Core 一致；该公共共享能力未获批准、未实施。
+
+**2026-11-08 本轮授权修订**：维护者已明确允许自主新增共享能力及修订待定事项。新增可继承的
+`MaterialPrecisionPointer.IsEnabled`，默认 false，应用显式启用；不做 Core 未实现的设备自动监听。
+当前接入普通 Button 的五种外观与 ToggleButton 的四种外观。普通 Small 最小高 36 DIP，
+Toggle 的 `MinHeight` 是固定 40 DIP（两者不能合并），小尺寸竖向 Padding 8 DIP、起始图标侧 12 DIP。
+其他档位和最小交互留白不变。新的三项 precision Token 保留用户默认资源覆盖；主题候选属性承载条件选择，
+再绑定模板布局，普通样式、局部值及绑定不被内部 local value 压住。
+AndroidX/Core 固定 Button.kt、ToggleButton.kt、PrecisionPointer.kt 对照一致；Core Skiko listener 为空。
+原先担心组件局部 bool 分裂环境的理由仍成立，因此共用一个继承环境；AlertDialog 与独立 Expressive 菜单项已接入；原生菜单和 ListItem 后续接入，明确不宣称完整覆盖。
+没有破坏性迁移，默认外观保持原路径。共享决定见 [§34](../../../../docs/DECISIONS.md#34-显式精确指针尺寸环境)。
 
 ### 未决差异与未经验证项
 
@@ -277,3 +287,8 @@ Enter 和高度精度等残余仍按上面的边界保留，不从执行完成�
 运行方式与如何阅读结果见 [VisualParity](../../../../tests/VisualParity/README.md)。
 新增或修正用例遵循[用例编写规则](../../../../tests/VisualParity/AUTHORING.md)，分别报告源码对照、
 单元/headless、双端视觉和桌面交互的实际执行情况；测试源码是复查入口，不是一次运行通过的证明。
+
+2026-11-08 精确指针尺寸增量：`precision-button-delivery` 的 52 例 / 100 个采样全部通过原门禁，
+51 equal、1 withinTolerance，结构化几何全等、重复捕获稳定、执行错误为零。
+覆盖九种外观、起始图标、RTL、其他尺寸保持不变、运行时切换与显式 Padding。
+相关 Button/配置回归 479 项通过；新的继承环境亦用于 AlertDialog，范围见共享决定 §34。

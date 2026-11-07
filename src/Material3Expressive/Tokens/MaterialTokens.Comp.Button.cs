@@ -177,6 +177,9 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<CornerRadius> ContainerShapeSquare = new("md.comp.button-small.container.shape-square");
             public static readonly MaterialTokenKey<CornerRadius> PressedContainerShape = new("md.comp.button-small.pressed.container.shape");
             public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.button-small.content-padding");
+            public static readonly MaterialTokenKey<double> PrecisionContainerHeight = new("md.comp.button-small.precision.container-height");
+            public static readonly MaterialTokenKey<Thickness> PrecisionContentPadding = new("md.comp.button-small.precision.content-padding");
+            public static readonly MaterialTokenKey<double> PrecisionIconSidePadding = new("md.comp.button-small.precision.icon-side-padding");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.button-small.icon.size");
             public static readonly MaterialTokenKey<double> IconLabelSpace = new("md.comp.button-small.icon-label-space");
             public static readonly MaterialTokenKey<Thickness> OutlinedOutlineWidth = new("md.comp.button-small.outlined-outline-width");

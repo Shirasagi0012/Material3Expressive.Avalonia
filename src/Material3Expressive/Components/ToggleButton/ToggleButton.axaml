@@ -12,7 +12,16 @@
       <Setter Property="m3:MaterialButton.PressedCornerRadius" Value="{Binding Path=(m3:ButtonThemeProperties.PressedCornerRadius), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.PressedCornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ToggleButton.SmallPressedShape}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
-      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding">
+        <MultiBinding Converter="{x:Static m3:ButtonPrecisionDefaults.Padding}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.PrecisionContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.PrecisionIconSidePadding}" />
+          <Binding Path="(m3:MaterialButton.Icon)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="(m3:MaterialButton.IconTemplate)" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="m3:MaterialText.Style" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalAlignment" Value="Left" />

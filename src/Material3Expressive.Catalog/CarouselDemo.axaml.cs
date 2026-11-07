@@ -37,6 +37,18 @@ public partial class CarouselDemo : Window
                     new Button { Content = "Explore", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left }
                 } }
             });
+        Virtualized.ItemsSource = Enumerable.Range(0, 10_000).ToArray();
+        Virtualized.ItemTemplate = new FuncDataTemplate<int>((index, _) => new Border
+        {
+            Height = 112 + index % 3 * 24,
+            Background = new[] { Brushes.CornflowerBlue, Brushes.Coral, Brushes.DarkSeaGreen }[index % 3],
+            Padding = new(24),
+            Child = new StackPanel { Spacing = 12, Children =
+            {
+                new TextBlock { Text = $"Destination {index + 1}", FontSize = 24 },
+                new Button { Content = "Explore", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left },
+            } },
+        });
     }
 
     private static FuncControlTemplate<ScrollViewer> NativeTemplate(bool vertical) => new((owner, scope) =>
@@ -46,6 +58,9 @@ public partial class CarouselDemo : Window
             CanHorizontallyScroll = !vertical, CanVerticallyScroll = vertical,
             [!ScrollContentPresenter.OffsetProperty] = owner[!ScrollViewer.OffsetProperty],
         }.RegisterInNameScope(scope));
+
+    private void ToggleVirtualHeight(object? sender, RoutedEventArgs e) =>
+        Virtualized.Height = double.IsNaN(Virtualized.Height) ? 160 : double.NaN;
 
     private void ScrollPositionChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
@@ -102,7 +117,12 @@ public partial class CarouselDemo : Window
     private void FocusNextHero(object? sender, RoutedEventArgs e)
     {
         var index = (CenteredHero.CurrentItem + 1) % CenteredHero.ItemCount;
+        CenteredHero.ScrollIntoView(index);
         if (CenteredHero.Items[index] is CarouselItem { Content: StackPanel content })
             content.Children.OfType<Button>().First().Focus();
     }
+
+    private void JumpVirtual(object? sender, RoutedEventArgs e) => Virtualized.ScrollToItem(5000);
+    private void ResetVirtual(object? sender, RoutedEventArgs e) => Virtualized.ScrollToItem(0);
+    private async void AnimateVirtual(object? sender, RoutedEventArgs e) => await Virtualized.AnimateScrollToItemAsync(9999);
 }

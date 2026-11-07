@@ -93,6 +93,15 @@
                 <Button Content="Menu / DropdownMenu demo" Click="OnMenuDemo" HorizontalAlignment="Left" />
                 <Button Content="CommandBar demo" Click="OnCommandBarDemo" HorizontalAlignment="Left" />
                 <Button Content="ComboBox demo" Click="OnComboBoxDemo" HorizontalAlignment="Left" />
+                <TextBlock Text="Precision pointer sizing" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <CheckBox x:Name="PrecisionSizing" Content="使用精确指针尺寸" IsChecked="False" />
+                <WrapPanel m3:MaterialPrecisionPointer.IsEnabled="{Binding IsChecked, ElementName=PrecisionSizing}">
+                    <Button Content="Save" Margin="0,0,12,0" />
+                    <Button Content="Add" m3:MaterialButton.Icon="{m3:Symbol Add}" Margin="0,0,12,0" />
+                    <ToggleButton Content="Pin" m3:MaterialButton.Icon="{m3:Symbol PushPin}" Margin="0,0,12,0" />
+                    <Button Content="Medium" Classes="medium" Margin="0,0,12,0" />
+                    <Button Content="Standard override" m3:MaterialPrecisionPointer.IsEnabled="False" />
+                </WrapPanel>
                 <TextBlock Text="Card" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <WrapPanel>
                     <m3:Card Width="180" Height="100" Margin="0,0,16,16">

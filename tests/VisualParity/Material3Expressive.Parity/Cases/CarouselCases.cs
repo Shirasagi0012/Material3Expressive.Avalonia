@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Layout;
@@ -7,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.Headless;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
 
@@ -15,7 +17,7 @@ namespace Material3Expressive.Parity;
 public sealed record CarouselConfig(string Variant = "MultiBrowse", bool Rtl = false, int Count = 8,
     int Item = 0, double Width = 320, double ItemWidth = 160, double Spacing = 8,
     double Before = 0, double After = 0, double Radius = 16, string Action = "none", double Border = 0,
-    string Mode = "Default", double Velocity = 0, double Offset = 0);
+    string Mode = "Default", double Velocity = 0, double Offset = 0, bool ObserveRealization = false, bool AutoHeight = false);
 
 [ParitySuite("carousel")]
 public sealed class CarouselCases
@@ -54,15 +56,21 @@ public sealed class CarouselCases
         var c = writer.Metadata.ReadConfig<CarouselConfig>();
         var resize = c.Action.StartsWith("focus-shrink") || c.Action == "focus-grow";
         await using var host = new AvaloniaHost(writer, resize ? 480 : 400, 180, new ManualTimeProvider());
-        var carousel = new HorizontalCarousel { Width = c.Width, Height = 120, ItemWidth = c.ItemWidth == 0 ? double.NaN : c.ItemWidth,
+        var carousel = new HorizontalCarousel { Width = c.Width, Height = c.AutoHeight ? double.NaN : 120, ItemWidth = c.ItemWidth == 0 ? double.NaN : c.ItemWidth,
             Variant = Enum.Parse<CarouselVariant>(c.Variant), ItemSpacing = c.Spacing,
             FlingMode = Enum.Parse<CarouselFlingMode>(c.Mode),
             UserScrollEnabled = c.Action is not ("semantics-disabled" or "wheel-disabled" or "key-disabled" or "focus-disabled" or "focus-shrink-disabled"),
             ContentPadding = new(c.Before, 0, c.After, 0), HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
-        var items = Enumerable.Range(0, c.Count).Select(i => new CarouselItem { CornerRadius = new(c.Radius), Content = new Marker(i) { Focusable = c.Action.StartsWith("key-") || c.Action.StartsWith("focus-") },
+        var items = Enumerable.Range(0, c.ObserveRealization ? 0 : c.Count).Select(i => new CarouselItem { CornerRadius = new(c.Radius), Content = new Marker(i) { Focusable = c.Action.StartsWith("key-") || c.Action.StartsWith("focus-") },
             BorderBrush = Brushes.Black, BorderThickness = new(c.Border) }).ToArray();
-        foreach (var item in items) carousel.Items.Add(item);
+        if (c.ObserveRealization)
+        {
+            carousel.ItemsSource = Enumerable.Range(0, c.Count).ToArray();
+            carousel.ItemTemplate = new FuncDataTemplate<int>((index, _) => new Marker(index)
+            { Tag = index, Height = c.AutoHeight ? index < 10 ? 40 : 90 : double.NaN, Focusable = c.Action.StartsWith("nav-") && (c.Action != "nav-sparse" || index % 3 == 0) });
+        }
+        else foreach (var item in items) carousel.Items.Add(item);
         host.Mount(new Grid { Margin = new Thickness(24), Children = { carousel } }); host.Frame(0);
         carousel.ScrollToItem(c.Item); host.Draw();
         if (c.Offset != 0) { carousel.ScrollOffset += c.Offset; host.Draw(); }
@@ -72,6 +80,14 @@ public sealed class CarouselCases
             var points = new List<ProbePoint> { new("viewport", "viewport", null, [
                 Measurement.Numeric("currentItem", carousel.CurrentItem, "index", definition: "carousel.currentItem"),
                 Measurement.Numeric("scrollOffset", Math.Clamp(carousel.ScrollOffset, 0, carousel.MaximumScrollOffset), "dip", definition: "carousel.scrollOffset")]) };
+            if (c.AutoHeight) points.Add(new("height", "viewport", "viewport", [
+                Measurement.Numeric("height", carousel.Bounds.Height, "dip", definition: "carousel.viewportHeight")]));
+            if (c.ObserveRealization) points.Add(new("pages", "lifecycle", "viewport", [
+                Measurement.Text("realized", string.Join(",", carousel.GetRealizedContainers().Select(carousel.IndexFromContainer).Order()),
+                    definition: "carousel.measuredPageIndices")]));
+            if (c.Action.StartsWith("nav-")) points.Add(new("focus", "input", "viewport", [
+                Measurement.Numeric("focusedItem", (host.Window.FocusManager!.GetFocusedElement() as Control)?.Tag is int index ? index : -1,
+                    "index", definition: "carousel.focusedItem")]));
             if (c.Action.StartsWith("semantics-")) points.Add(new("actions", "semantics", "viewport", [
                 Measurement.Flag("pagingAvailable", ControlAutomationPeer.CreatePeerForElement(carousel)!.GetProvider<IScrollProvider>() is not null,
                     definition: "carousel.pagingAvailable")]));
@@ -79,9 +95,9 @@ public sealed class CarouselCases
                 Measurement.Flag("accepted", focusAccepted, definition: "carousel.focusRequestAccepted")]));
             if (c.Action.StartsWith("focus-shrink") || c.Action == "focus-grow") points.Add(new("size", "viewport", "viewport", [
                 Measurement.Numeric("width", carousel.Bounds.Width, "dip", definition: "carousel.viewportWidth")]));
-            if (items.Length > 0)
+            if (c.Count > 0)
             {
-                var info = items[carousel.CurrentItem].DrawInfo;
+                var info = ((CarouselItem)carousel.ContainerFromIndex(carousel.CurrentItem)!).DrawInfo;
                 points.Add(new("current", "item", "viewport", [
                     Measurement.Numeric("size", info.Size, "dip", definition: "carousel.mask.size"),
                     Measurement.Numeric("minSize", info.MinSize, "dip", definition: "carousel.mask.minimum"),
@@ -91,6 +107,27 @@ public sealed class CarouselCases
         }
         Sample("initial");
         if (c.Action == "none") return;
+        if (c.Action.StartsWith("nav-"))
+        {
+            carousel.ContainerFromIndex(c.Item)!.GetVisualDescendants().OfType<Control>().Single(control => control.Tag is int).Focus();
+            host.Draw();
+            for (long time = 16000; time <= 1280000; time += 16000)
+            {
+                host.AdvanceTo(time);
+                if (time is 16000 or 336000 or 656000 or 976000)
+                {
+                    var backwards = c.Action == "nav-reverse" && time >= 656000;
+                    var key = c.Action != "nav-next" ? Key.Tab : c.Rtl ? Key.Left : Key.Right;
+                    var modifiers = backwards ? RawInputModifiers.Shift : RawInputModifiers.None;
+                    host.Window.KeyPress(key, modifiers, PhysicalKey.None, null);
+                    host.Window.KeyRelease(key, modifiers, PhysicalKey.None, null);
+                    writer.Record(time, "input", $"focus navigation {key}");
+                }
+                host.Frame(time);
+                if (time <= 96000 || time % 80000 == 0 || time is 336000 or 656000 or 976000) Sample($"time-{time}");
+            }
+            return;
+        }
         if (c.Action.StartsWith("focus-"))
         {
             for (long time = 16000; time <= 640000; time += 16000)
@@ -199,7 +236,7 @@ public sealed class CarouselCases
         else if (c.Action.StartsWith("semantics-"))
             ControlAutomationPeer.CreatePeerForElement(carousel)!.GetProvider<IScrollProvider>()?.Scroll(
                 c.Action == "semantics-previous" ? ScrollAmount.LargeDecrement : ScrollAmount.LargeIncrement, ScrollAmount.NoAmount);
-        else animation = carousel.AnimateScrollToItemAsync(c.Action == "far" ? 7 : 1);
+        else animation = carousel.AnimateScrollToItemAsync(c.Action == "far" ? c.ObserveRealization ? c.Count - 1 : 7 : 1);
         var duration = c.Action == "fling" ? 1600000 : 640000;
         for (long time = 16000; time <= duration; time += 16000)
         {
@@ -226,6 +263,59 @@ public sealed class CarouselCases
             context.FillRectangle(Brushes.Gold, new Rect(Bounds.Width * .6, Bounds.Height * .5, Bounds.Width * .2, Bounds.Height * .4));
         }
     }
+}
+
+[ParitySuite("carousel-virtualization")]
+public sealed class CarouselVirtualizationCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "none", "jump", "far", "reverse" })
+        {
+            var id = $"{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Count: 1000, Item: action == "none" ? 500 : 0,
+                Radius: 0, Action: action, ObserveRealization: true));
+        }
+    }
+    [ParityScenario("pages", Data = nameof(Configurations))]
+    public Task Pages(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-auto-height")]
+public sealed class CarouselAutoHeightCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "far", "reverse" })
+        {
+            var id = $"{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Count: 100, Item: action == "reverse" ? 50 : 0,
+                Radius: 0, Action: action, ObserveRealization: true, AutoHeight: true));
+        }
+    }
+    [ParityScenario("resize", Data = nameof(Configurations))]
+    public Task Resize(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-focus-search")]
+public sealed class CarouselFocusSearchCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "nav-next", "nav-tab", "nav-reverse", "nav-sparse" })
+        {
+            var id = $"{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Count: 50, Radius: 0, Action: action, ObserveRealization: true));
+        }
+    }
+    [ParityScenario("keys", Data = nameof(Configurations))]
+    public Task Keys(CaptureWriter writer) => CarouselCases.Capture(writer);
 }
 
 [ParitySuite("carousel-semantics")]

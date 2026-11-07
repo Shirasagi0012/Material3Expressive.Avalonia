@@ -7,13 +7,15 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
 
 public sealed record MenuConfig(string Variant = "standard", bool Selected = false, bool Enabled = true,
     bool Dark = false, bool Rtl = false, bool Icon = true, double Width = 200,
-    double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false, bool NativeCheck = false, bool AutoWidth = false, bool ComboItem = false);
+    double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false, bool NativeCheck = false, bool AutoWidth = false, bool ComboItem = false,
+    bool Precision = false, bool Trailing = false);
 
 [ParitySuite("menu")]
 public sealed class MenuCases
@@ -91,11 +93,13 @@ public sealed class MenuCases
         Action<bool> select;
         var iconSize = config.Variant == "baseline" ? 24 : 20;
         var icon = new MenuMarker(new Size(iconSize, iconSize));
+        var trailing = new MenuMarker(new Size(20, 20));
         if (independent)
         {
             DropdownMenuItem dropdown = config.Variant == "baseline" ? new DropdownMenuItem()
                 : new SelectableDropdownMenuItem { IsSelected = config.Selected };
             dropdown.Content = marker; dropdown.LeadingIcon = config.Icon ? icon : null;
+            dropdown.TrailingContent = config.Trailing ? trailing : null;
             if (config.SelectedIcon) dropdown.SelectedLeadingIcon = new MenuMarker(new Size(iconSize, iconSize));
             dropdown.Click += (_, _) => clicks++;
             selected = () => dropdown is SelectableDropdownMenuItem { IsSelected: true };
@@ -119,6 +123,7 @@ public sealed class MenuCases
             item = native;
         }
         item.IsEnabled = config.Enabled;
+        MaterialPrecisionPointer.SetIsEnabled(item, config.Precision);
         MenuAppearance.SetColorStyle(item, config.Variant == "vibrant" ? MenuColorStyle.Vibrant : MenuColorStyle.Standard);
         var allocation = new Grid { Width = config.Width, Children = { item } };
         // The Compose fixture supplies DropdownMenu's ambient content color around the
@@ -161,6 +166,9 @@ public sealed class MenuCases
         }
         switch (config.Action)
         {
+            case "precision":
+                Change(1000, "precision-on", () => MaterialPrecisionPointer.SetIsEnabled(item, true));
+                Change(2000, "precision-off", () => MaterialPrecisionPointer.SetIsEnabled(item, false)); break;
             case "icon-enter": case "icon-exit":
                 Change(1000, "toggle-selection", () => select(!config.Selected)); Times(16000, 32000, 64000);
                 Change(65000, "add-leading", () => SetIcon(icon));

@@ -72,7 +72,26 @@ MultiAspect 不拥有滚动容器。在已加载 MaterialTheme 的应用中，�
 
 ## 内容槽与定制
 
-`HorizontalCarousel` 支持 `ItemsSource`、`ItemTemplate` 和 `ItemContainerTheme`，自动创建 `CarouselItem`。在容器主题中设置 `CornerRadius`、`BorderBrush`、`BorderThickness`；内容保留完整宽度，仅改变可见遮罩。可在内容中放图片、文字或按钮。
+`HorizontalCarousel` 支持 `ItemsSource`、`ItemTemplate` 和 `ItemContainerTheme`，按视口创建并复用 `CarouselItem`。在容器主题中设置 `CornerRadius`、`BorderBrush`、`BorderThickness`；内容保留完整宽度，仅改变可见遮罩。可在内容中放图片、文字或按钮。
+
+较大集合使用数据和模板，避免预先创建全部控件：
+
+```xml
+<m3:HorizontalCarousel ItemsSource="{Binding Destinations}" Height="160" ItemWidth="240">
+  <m3:HorizontalCarousel.ItemTemplate>
+    <DataTemplate><TextBlock Text="{Binding Name}" Margin="24" /></DataTemplate>
+  </m3:HorizontalCarousel.ItemTemplate>
+</m3:HorizontalCarousel>
+```
+
+`Destinations` 为应用数据集合；使用编译绑定时为模板声明实际数据类型。项目自己的持续状态应放在数据中，不能依赖容器永久存在。
+MultiBrowse / CenteredHero 还保留可见分页两侧各两个项目，Uncontained 只保留可见分页；持有键盘焦点的项目在焦点离开前保留。
+未显式设置高度时，高度由当前创建的项目决定。
+
+迁移：`ContainerFromIndex(index)` 现在可以返回 null。需要操作远处项目时，挂载并完成首次布局后调用
+`carousel.ScrollIntoView(index)`，再取得容器；仅查询当前容器使用 `GetRealizedContainers()`。
+`ScrollToItem` 和 `AnimateScrollToItemAsync` 仍使用原有索引和吸附位置，后者完成前不要假定目标容器已创建。
+直接声明的 CarouselItem 离开范围时会卸载，返回后复用原控件与内容；不要把它的旧 Bounds 当作当前显示坐标。
 
 `MultiAspectCarouselItem.Content` / `ContentTemplate` 可承载图片、文字和交互控件。`Background` 和内容一起产生视差，边框保持在遮罩上；子控件自己的变换与绑定不被替换。
 
@@ -101,7 +120,9 @@ item.DrawInfo = null;
 
 ## 使用限制与注意事项
 
-经典容器支持触屏／笔拖动、水平滚轮、PageUp/PageDown 及程序导航，鼠标左键拖动不启用。原生滚轮事件采用当前平台的默认单位换算；设备专用触控板 Pan/惯性和嵌套滚动尚未实现。普通纵向滚轮不会改为横向浏览，鼠标用户也可用外部滑块绑定 `ScrollOffset` 或导航按钮。它不虚拟化项目，适合有限集合；因此离屏内容仍可获得焦点，与 Compose 未组合项目的焦点拒绝存在差异。请勿在滚动方向无限测量的容器中使用。动画需要按接入指南初始化窗口的 `AnimationScope`。
+经典容器支持触屏／笔拖动、水平滚轮、Tab / Shift+Tab、PageUp/PageDown 及程序导航，鼠标左键拖动不启用。原生滚轮事件采用当前平台的默认单位换算；设备专用触控板 Pan/惯性和嵌套滚动尚未实现。普通纵向滚轮不会改为横向浏览，鼠标用户也可用外部滑块绑定 `ScrollOffset` 或导航按钮。Tab / Shift+Tab 会逐页查找下一可聚焦内容，最多额外搜索两个视口的页数，找到后释放临时页并保留焦点页。到达边界后由窗口继续原生导航；内容自己的 TabIndex、导航组和已消费按键保持有效。此搜索不因 UserScrollEnabled=false 而关闭。固定 Core 桌面端不把左右键映射成默认焦点遍历，本地也不新增该映射。
+
+未创建的内容不能直接通过 Focus() 获得焦点，应先滚入。请勿在滚动方向无限测量的容器中使用。动画需要按接入指南初始化窗口的 `AnimationScope`。
 
 `CarouselItem` 的遮罩与边框都记住首次形状，与 MultiAspect 生命周期不同；布局中的遮罩位置和尺寸仍持续更新。在吸附点直接调用单项 fling 可以消费速度但不换页。中途重定向程序动画按固定移植基线计算位移，可能保留起始页内偏移；需要精确定位时调用 `ScrollToItem`。
 
@@ -109,4 +130,4 @@ MultiAspect 自动测量针对 UI 布局坐标随滚动更新的视口。全局 
 
 `MultiAspectCarouselItem` 不拥有滚动、吸附、惯性或分页状态；滚动和键盘焦点仍由宿主及内容处理。视口必须裁剪溢出内容，沿滚动轴提供有限尺寸。当前支持圆角矩形遮罩。
 
-Catalog 的 Carousel 窗口同时演示三种经典布局及 MultiAspect 的两轴滚动、交互内容、RTL、圆角切换和边框。移植范围与验证见 [INTERNALS.md](INTERNALS.md)。
+Catalog 的 Carousel 窗口同时演示三种经典布局、10,000 项数据集合与远距离跳转，以及 MultiAspect 的两轴滚动、交互内容、RTL、圆角切换和边框。移植范围与验证见 [INTERNALS.md](INTERNALS.md)。

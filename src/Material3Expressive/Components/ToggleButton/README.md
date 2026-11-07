@@ -44,6 +44,10 @@
 容器最小高分别 32/40/56/96/136 DIP，外层默认预留至少 48 DIP 布局空间，不是鼠标目标扩展。
 本族没有普通 Button 的 58 DIP 默认最小宽度；显式尺寸和 `MinWidth`/`MinHeight` 保留调用方约束。
 
+精确指针模式使用可继承的 `MaterialPrecisionPointer.IsEnabled=True`，默认关闭。Small 的最小高仍为 40 DIP，
+竖向 Padding 变为 8 DIP，共享起始图标槽一侧变为 12 DIP；其他尺寸和最小交互留白不变。
+作用域、覆盖和 Token 用法见 [Button 精确指针尺寸](../Button/README.md#精确指针尺寸)。
+
 ## 标签、图标与圆角
 
 `Content`/`ContentTemplate` 是标签槽，自动字符串复用 Button 的排版。图标使用共享的

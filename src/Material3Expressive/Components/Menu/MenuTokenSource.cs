@@ -17,6 +17,8 @@ public sealed class MenuTokenSource : ITokenSource
         [Comp.Menu.SupportingItemMargin] = new Thickness(4, 2),
         [Comp.Menu.BaselineContentSpacing] = 12d,
         [Comp.Menu.VerticalContentSpacing] = 8d,
+        [Comp.Menu.PrecisionContentSpacing] = 12d,
+        [Comp.Menu.PrecisionItemPadding] = new Thickness(16, 12, 10, 12),
         [Comp.Menu.SeparatorMargin] = new Thickness(12, 2),
         [Comp.Menu.InactiveGroupShape] = new TokenRef(Sys.Shape.Small),
         [Comp.Menu.BaselineContainer] = new TokenRef(Sys.Color.SurfaceContainer),

@@ -8,6 +8,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.PageInfo
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -35,7 +36,7 @@ import kotlinx.serialization.Serializable
 data class CarouselConfig(val variant:String="MultiBrowse",val rtl:Boolean=false,val count:Int=8,
     val item:Int=0,val width:Double=320.0,val itemWidth:Double=160.0,val spacing:Double=8.0,
     val before:Double=0.0,val after:Double=0.0,val radius:Double=16.0,val action:String="none",val border:Double=0.0,
-    val mode:String="Default",val velocity:Double=0.0,val offset:Double=0.0)
+    val mode:String="Default",val velocity:Double=0.0,val offset:Double=0.0,val observeRealization:Boolean=false,val autoHeight:Boolean=false)
 
 @ParitySuite("carousel")
 class CarouselCases {
@@ -58,6 +59,7 @@ class CarouselCases {
             val carouselProbe=Probe()
             val requesters=Array(c.count) { FocusRequester() }
             var focusAccepted=false
+            var focusedIndex=-1
             lateinit var scope:CoroutineScope
             lateinit var fling:TargetedFlingBehavior
             var radius by mutableStateOf(c.radius)
@@ -79,8 +81,10 @@ class CarouselCases {
                                 infos[index]=carouselItemDrawInfo
                                 DisposableEffect(index) { onDispose { infos.remove(index) } }
                                 val shape=RoundedCornerShape(radius.toFloat().dp)
-                                var itemModifier=Modifier.fillMaxSize()
+                                var itemModifier=if(c.autoHeight)Modifier.fillMaxWidth().height(if(index<10)40.dp else 90.dp) else Modifier.fillMaxSize()
                                 if(c.action.startsWith("key-") || c.action.startsWith("focus-"))itemModifier=itemModifier.focusRequester(requesters[index]).focusable()
+                                if(c.action.startsWith("nav-") && (c.action!="nav-sparse" || index%3==0))
+                                    itemModifier=itemModifier.focusRequester(requesters[index]).onFocusChanged { if(it.isFocused)focusedIndex=index }.focusable()
                                 if(c.border>0)itemModifier=itemModifier.maskBorder(BorderStroke(c.border.toFloat().dp,Color.Black),shape)
                                 Canvas(itemModifier.maskClip(shape)) {
                                     drawRect(listOf(Color(0xFF6495ED),Color(0xFFFF7F50),Color(0xFF8FBC8F))[index%3])
@@ -88,7 +92,7 @@ class CarouselCases {
                                     drawRect(Color(0xFFFFD700),topLeft=Offset(size.width*.6f,size.height*.5f),size=Size(size.width*.2f,size.height*.4f))
                                 }
                             }
-                            val modifier=Modifier.size(viewportWidth.toFloat().dp,120.dp).then(carouselProbe.modifier())
+                            val modifier=(if(c.autoHeight)Modifier.width(viewportWidth.toFloat().dp) else Modifier.size(viewportWidth.toFloat().dp,120.dp)).then(carouselProbe.modifier())
                             val padding=PaddingValues(start=c.before.toFloat().dp,end=c.after.toFloat().dp)
                             val itemWidth=if(c.itemWidth==0.0)c.width else c.itemWidth
                             when(c.variant) {
@@ -113,6 +117,18 @@ class CarouselCases {
                 val points=mutableListOf(ProbePoint("viewport","viewport",null,listOf(
                     number("currentItem",state.currentItem.toDouble(),"index",definition="carousel.currentItem"),
                     number("scrollOffset",(scrollOffset.invoke(pager) as Int)/d.toDouble(),"dip",definition="carousel.scrollOffset"))))
+                if(c.autoHeight)points+=ProbePoint("height","viewport","viewport",listOf(
+                    number("height",carouselProbe.coordinates!!.size.height/d.toDouble(),"dip",definition="carousel.viewportHeight")))
+                if(c.observeRealization)points+=ProbePoint("pages","lifecycle","viewport",listOf(
+                    text("realized",run {
+                        val layout=(pager as PagerState).layoutInfo
+                        val before=field(layout,"extraPagesBefore") as List<*>
+                        val after=field(layout,"extraPagesAfter") as List<*>
+                        (layout.visiblePagesInfo + before.filterIsInstance<PageInfo>() + after.filterIsInstance<PageInfo>())
+                            .map { it.index }.sorted().joinToString(",")
+                    },definition="carousel.measuredPageIndices")))
+                if(c.action.startsWith("nav-"))points+=ProbePoint("focus","input","viewport",listOf(
+                    number("focusedItem",focusedIndex.toDouble(),"index",definition="carousel.focusedItem")))
                 if(c.action.startsWith("semantics-"))points+=ProbePoint("actions","semantics","viewport",listOf(
                     flag("pagingAvailable",paging()!=null,definition="carousel.pagingAvailable")))
                 if(c.action.startsWith("focus-"))points+=ProbePoint("focus","input","viewport",listOf(
@@ -127,6 +143,21 @@ class CarouselCases {
             }
             sample("initial")
             if(c.action=="none")return
+            if(c.action.startsWith("nav-")) {
+                requesters[c.item].requestFocus();host.scheduler.runCurrent();host.draw()
+                for(time in 16000L..1280000L step 16000L) {
+                    host.advanceTo(time)
+                    if(time==16000L || time==336000L || time==656000L || time==976000L) {
+                        val backwards=c.action=="nav-reverse" && time>=656000L
+                        val key=if(c.action!="nav-next")Key.Tab else if(c.rtl)Key.DirectionLeft else Key.DirectionRight
+                        host.scene.sendKeyEvent(KeyEvent(key,KeyEventType.KeyDown,isShiftPressed=backwards));host.scene.sendKeyEvent(KeyEvent(key,KeyEventType.KeyUp,isShiftPressed=backwards))
+                        host.scheduler.runCurrent();writer.record(time,"input","focus navigation $key")
+                    }
+                    host.frame(time)
+                    if(time<=96000L || time%80000L==0L || time==336000L || time==656000L || time==976000L)sample("time-$time")
+                }
+                return
+            }
             if(c.action.startsWith("focus-")) {
                 for(time in 16000L..640000L step 16000L) {
                     host.advanceTo(time)
@@ -208,7 +239,7 @@ class CarouselCases {
                 val action=if(c.action=="semantics-previous")SemanticsActions.PageLeft else SemanticsActions.PageRight
                 check(checkNotNull(config[action].action).invoke())
             }
-            else scope.launch { if(c.action=="jump")state.scrollToItem(3) else state.animateScrollToItem(if(c.action=="far")7 else 1) }
+            else scope.launch { if(c.action=="jump")state.scrollToItem(3) else state.animateScrollToItem(if(c.action=="far") { if(c.observeRealization)c.count-1 else 7 } else 1) }
             val duration=if(c.action=="fling")1600000L else 640000L
             for(time in 16000L..duration step 16000L) {
                 if(time==128000L && c.action=="reverse") {
@@ -219,6 +250,16 @@ class CarouselCases {
             }
         }
     }
+}
+
+@ParitySuite("carousel-virtualization")
+class CarouselVirtualizationCases {
+    @ParityScenario("pages") suspend fun pages(writer:CaptureWriter)=CarouselCases().capture(writer)
+}
+
+@ParitySuite("carousel-focus-search")
+class CarouselFocusSearchCases {
+    @ParityScenario("keys") suspend fun keys(writer:CaptureWriter)=CarouselCases().capture(writer)
 }
 
 @ParitySuite("carousel-fling")
@@ -254,4 +295,9 @@ class CarouselFocusCases {
 @ParitySuite("carousel-resize")
 class CarouselResizeCases {
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=CarouselCases().capture(writer)
+}
+
+@ParitySuite("carousel-auto-height")
+class CarouselAutoHeightCases {
+    @ParityScenario("resize") suspend fun resize(writer:CaptureWriter)=CarouselCases().capture(writer)
 }

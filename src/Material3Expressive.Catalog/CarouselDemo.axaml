@@ -34,6 +34,16 @@
     <m3:HorizontalCarousel x:Name="CenteredHero" Height="160" Variant="CenteredHero" ContentPadding="24,0,24,0" ItemSpacing="12" />
     <TextBlock Text="Uncontained" />
     <m3:HorizontalCarousel x:Name="Uncontained" Height="140" Variant="Uncontained" ItemWidth="220" ItemSpacing="12" />
+    <TextBlock Text="Virtualized collection · 10,000 destinations" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+    <TextBlock Text="只创建视口附近的项目；聚焦 Explore 后连续按 Tab / Shift+Tab 可跨越尚未创建的页。跳转后也可继续遍历，焦点页保留到焦点离开。" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="跳到第 5001 项" Click="JumpVirtual" />
+      <Button Content="动画到最后一项" Click="AnimateVirtual" />
+      <Button Content="回到开头" Click="ResetVirtual" />
+      <Button Content="固定 / 自动高度" Click="ToggleVirtualHeight" />
+      <TextBlock Text="{Binding CurrentItem, ElementName=Virtualized}" VerticalAlignment="Center" />
+    </StackPanel>
+    <m3:HorizontalCarousel x:Name="Virtualized" Height="160" ItemWidth="250" ItemSpacing="12" />
     <TextBlock Text="Multi-aspect carousel" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
     <TextBlock Text="不同宽高比的内容在视口边缘被压缩；内容保留原尺寸并产生视差。横向区域可按 Shift 滚轮，或使用位置滑块。" TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Spacing="12">

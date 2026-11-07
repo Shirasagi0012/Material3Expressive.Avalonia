@@ -13,12 +13,37 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Interaction;
 using Xunit;
 
 namespace Material3Expressive.Tests;
 
 public class DropdownMenuTests
 {
+    [AvaloniaFact]
+    public void ExpressivePopup_InheritsPrecision_AndTracksChangesWhileOpen()
+    {
+        using var clock = new MotionTestClockScope();
+        var item = new SelectableDropdownMenuItem { Content = new Border { Width = 48, Height = 16 } };
+        var group = new DropdownMenuGroup { Items = { item } };
+        var menu = new DropdownMenuPopup { Items = { group } };
+        var (window, _) = Show(menu);
+        try
+        {
+            MaterialPrecisionPointer.SetIsEnabled(menu, true);
+            menu.IsOpen = true; Flush(window); Advance(clock, window, 100);
+            Assert.Equal(new Thickness(16, 12, 10, 12), item.Padding);
+            Assert.Equal(12, item.LeadingSpacing);
+            MaterialPrecisionPointer.SetIsEnabled(group, false); Flush(window);
+            Assert.Equal(new Thickness(12), item.Padding); Assert.Equal(8, item.LeadingSpacing);
+            group.ClearValue(MaterialPrecisionPointer.IsEnabledProperty); Flush(window);
+            Assert.Equal(new Thickness(16, 12, 10, 12), item.Padding);
+            MaterialPrecisionPointer.SetIsEnabled(menu, false); Flush(window);
+            Assert.Equal(new Thickness(12), item.Padding);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]

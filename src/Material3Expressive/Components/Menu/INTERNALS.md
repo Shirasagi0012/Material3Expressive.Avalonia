@@ -37,6 +37,19 @@ scale 从 .8、alpha 从 0 入场，分别使用 FastSpatial / FastEffects。外
 Separator 按最终列宽 Stretch。小图标槽保留内容实际测量尺寸，箭头和勾选标记保留 24×24 画布后缩放到槽尺寸。
 首尾组 / 项的组合圆角取 reference ShapeTokens，普通圆角保持 Token 绑定。Core precision pointer 分支默认未启用。
 
+**精确指针尺寸增量（2026-11-08 本轮授权）**：沿用共享决定 §34 的显式继承环境，
+独立 Expressive / Checkable / Selectable 主题直接选择固定两端 `MenuDefaults.kt` 的实时 getter：
+`itemHorizontalArrangement` 间距 12 DIP、`DropdownMenuSelectableItemContentPadding` 为 16/12/10/12。
+既有 Padding 和 spacing 属性承载主题默认值，调用方样式/局部值优先，无新菜单状态或高度算法。
+原先默认关闭的理由仍成立：固定 Core 桌面监听为空，不能自动检测鼠标开启。
+Baseline 使用自身常量路径，不静默改写；原生 MenuItem 与专用 trailing label/default icon 辅助 API 仍未接入。
+这次不改变尾部槽的 20 DIP 默认最小宽度，它直接来自固定 SegmentedMenuTokens，而非 precision 的推荐图标大小。
+新增行为测试覆盖继承、动态切换、样式/局部覆盖和 Token 更新；双端 `precision-menu-item` 覆盖首尾内容有无、RTL 和切换恢复。
+
+本次 `precision-menu-item-delivery` 16 例 / 32 个采样全部 equal，零执行错误，重复/额外截图稳定；
+已查看首尾图标场景的真实双端图像。相关菜单/精确指针行为测试 112 项通过，包含真实 Popup 打开后的继承和局部覆盖。
+最终解决方案构建通过，保留 6 项既有警告。精确尺寸不改变布局高度和原有选中图标动画参数。
+
 选中图标的可见宽度按动画排列，弹层自然宽度读取保留内容的完整宽度。进入初始零宽也需使父级测量失效。
 目标在 composition 对应帧合并，宽度 spring 使用上游泛型规格的 0.01 阈值。退出完成后释放内容和模板，反向保留运行状态。
 普通 leading 槽从无变有时，上游会移除 AnimatedVisibility 分支。本地同时释放该分支的作用域、延迟目标提交、值订阅和 Transition，

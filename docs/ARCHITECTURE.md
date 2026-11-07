@@ -76,6 +76,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 - **事件流模型**：`MaterialInteractionSource` 提供 UI 线程上的配对事件流，结束事件引用开始对象，订阅从后续事件开始。`MaterialInteractionController` 将原生输入接入该流；组件独立维护形状、高度等收集状态，源替换和模板重建的生命周期见各组件内部契约。
 - **状态层与波纹**：状态层按存活顺序选择交互，并以开始对象身份判断动画重启，同类型的新交互也会重新启动动画。波纹动画独立持有子生命周期，按压释放与取消时执行平滑淡出。
 - **焦点环机制**：`MaterialInteraction.FocusFeedback` 提供透明度与内缩焦点环两种模式，独立呈现器负责动画与四角不等圆角绘制。Surface / Switch 切换模式时重建 indication；CheckBox / RadioButton / ListItem 更新同一 ripple 配置，保留活动反馈。配置与缓存契约见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
+- **精确指针尺寸环境**：`MaterialPrecisionPointer.IsEnabled` 提供默认关闭的继承开关，由应用显式选择。目前消费方为 Button / ToggleButton / AlertDialog / 独立 Expressive 菜单项；不改变最小交互留白，不自动检测设备。范围与精确 Token 选择见 [决定 §34](DECISIONS.md#34-显式精确指针尺寸环境)。
 - **最小交互留白**：通过 `MaterialInteractiveSize.Minimum` 建立可继承的布局环境，为触摸与无障碍操作预留外层空间，不强行扩张绘制边界。
 
 ---

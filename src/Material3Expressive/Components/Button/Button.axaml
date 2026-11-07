@@ -39,7 +39,16 @@
       <Setter Property="Foreground" Value="{Binding Path=(m3:ButtonThemeProperties.Foreground), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FilledButton.ContentColor}}" />
       <Setter Property="Padding" Value="{Binding Path=(m3:ButtonThemeProperties.Padding), RelativeSource={RelativeSource Self}}" />
-      <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}}" />
+      <Setter Property="m3:ButtonThemeProperties.Padding">
+        <MultiBinding Converter="{x:Static m3:ButtonPrecisionDefaults.Padding}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.ContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.PrecisionContentPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.PrecisionIconSidePadding}" />
+          <Binding Path="(m3:MaterialButton.Icon)" RelativeSource="{RelativeSource Self}" />
+          <Binding Path="(m3:MaterialButton.IconTemplate)" RelativeSource="{RelativeSource Self}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="m3:MaterialText.Style" Value="{Binding Path=(m3:ButtonThemeProperties.TextStyle), RelativeSource={RelativeSource Self}}" />
       <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.LabelTextStyle}}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -58,6 +67,13 @@
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FilledButton.DisabledContainerElevation}" />
         </MultiBinding>
       </Setter>
+      <Setter Property="m3:ButtonThemeProperties.ContainerMinHeight">
+        <MultiBinding Converter="{x:Static m3:ButtonPrecisionDefaults.Height}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+ButtonSmall.PrecisionContainerHeight}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="Template">
         <ControlTemplate>
           <m3:ButtonLayout CollectButtonInteractions="True" Width="{TemplateBinding Width}"
@@ -66,7 +82,7 @@
                            MinHeight="{TemplateBinding MinHeight}"
                            HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                            VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                           ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}">
+                           ContainerMinHeight="{TemplateBinding m3:ButtonThemeProperties.ContainerMinHeight}">
             <!-- TextElement.Foreground re-asserts the owner's content color onto the part:
                  a standalone MaterialSurface gets TextElement.Foreground from its implicit theme,
                  and any set value there would shadow the Button.Foreground inheritance. Template
@@ -123,8 +139,8 @@
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.LabelTextStyle}}" />
       </Style>
-      <Style Selector="^.xsmall /template/ m3|ButtonLayout">
-        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
+      <Style Selector="^.xsmall">
+        <Setter Property="m3:ButtonThemeProperties.ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xsmall /template/ m3|ButtonContentRow">
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXSmall.IconSize}}" />
@@ -137,8 +153,8 @@
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.LabelTextStyle}}" />
       </Style>
-      <Style Selector="^.medium /template/ m3|ButtonLayout">
-        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
+      <Style Selector="^.medium">
+        <Setter Property="m3:ButtonThemeProperties.ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.ContainerHeight}}" />
       </Style>
       <Style Selector="^.medium /template/ m3|ButtonContentRow">
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonMedium.IconSize}}" />
@@ -151,8 +167,8 @@
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.LabelTextStyle}}" />
       </Style>
-      <Style Selector="^.large /template/ m3|ButtonLayout">
-        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
+      <Style Selector="^.large">
+        <Setter Property="m3:ButtonThemeProperties.ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.large /template/ m3|ButtonContentRow">
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonLarge.IconSize}}" />
@@ -165,8 +181,8 @@
         <Setter Property="m3:ButtonThemeProperties.Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContentPadding}}" />
         <Setter Property="m3:ButtonThemeProperties.TextStyle" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.LabelTextStyle}}" />
       </Style>
-      <Style Selector="^.xlarge /template/ m3|ButtonLayout">
-        <Setter Property="ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
+      <Style Selector="^.xlarge">
+        <Setter Property="m3:ButtonThemeProperties.ContainerMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.ContainerHeight}}" />
       </Style>
       <Style Selector="^.xlarge /template/ m3|ButtonContentRow">
         <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonXLarge.IconSize}}" />

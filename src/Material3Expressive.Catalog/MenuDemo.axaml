@@ -120,6 +120,7 @@
         <TextBlock Text="Independent DropdownMenu" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
         <StackPanel Orientation="Horizontal" Spacing="16">
             <Button x:Name="DropdownAnchor" Content="Dropdown" Click="OnDropdown" />
+            <CheckBox x:Name="PrecisionMenu" Content="Precision sizing" />
             <Button x:Name="GroupedAnchor" Content="Grouped / selectable" Click="OnGrouped" />
         </StackPanel>
         <m3:DropdownMenu x:Name="Dropdown" PlacementTarget="{Binding #DropdownAnchor}"
@@ -130,7 +131,7 @@
             <Separator />
             <m3:DropdownMenuItem Content="Unavailable" IsEnabled="False" />
         </m3:DropdownMenu>
-        <m3:DropdownMenuPopup x:Name="Grouped" PlacementTarget="{Binding #GroupedAnchor}"
+        <m3:DropdownMenuPopup m3:MaterialPrecisionPointer.IsEnabled="{Binding #PrecisionMenu.IsChecked}" x:Name="Grouped" PlacementTarget="{Binding #GroupedAnchor}"
                               DismissRequested="OnDropdownDismiss" m3:MenuAppearance.ColorStyle="Standard">
             <m3:DropdownMenuPopup.ItemsPanel>
                 <ItemsPanelTemplate>

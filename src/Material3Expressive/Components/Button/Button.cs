@@ -20,10 +20,10 @@ namespace Material3Expressive.Components;
 /// from ButtonXSmall/Small/Medium/Large/XLargeTokens v0_11_0 at docs/upstream-baseline.json's pins.
 /// Shapes hop into the sys corner scale; typography follows ButtonDefaults.textStyleFor.
 /// ContentPadding is a local compound slot derived from ButtonDefaults.contentPaddingFor with
-/// hasStartIcon/hasEndIcon false and shouldUsePrecisionPointerComponentSizing false, the upstream
-/// default. It includes the composable's extra-small 12dp correction and vertical padding, which
-/// are not raw size tokens. The precision-pointer branch (small vertical 8dp, icon side 12dp) is
-/// not represented by this immutable baseline.
+/// hasStartIcon/hasEndIcon false. It includes the composable's extra-small 12dp correction and
+/// vertical padding, which are not raw size tokens. Separate precision slots provide the
+/// small 36dp minimum, 8dp vertical padding and 12dp icon-side padding; themes select them
+/// through the inherited MaterialPrecisionPointer environment.
 /// Immutable baseline: <see cref="Changed"/> is a documented no-op.
 /// </summary>
 public class ButtonSizesTokenSource : ITokenSource
@@ -53,6 +53,9 @@ public class ButtonSizesTokenSource : ITokenSource
         [Comp.ButtonSmall.ContainerShapeSquare] = new TokenRef(Sys.Shape.Medium),
         [Comp.ButtonSmall.PressedContainerShape] = new TokenRef(Sys.Shape.Small),
         [Comp.ButtonSmall.ContentPadding] = new Thickness(16, 10),
+        [Comp.ButtonSmall.PrecisionContainerHeight] = 36d,
+        [Comp.ButtonSmall.PrecisionContentPadding] = new Thickness(16, 8),
+        [Comp.ButtonSmall.PrecisionIconSidePadding] = 12d,
         [Comp.ButtonSmall.IconSize] = 20d,
         [Comp.ButtonSmall.IconLabelSpace] = 8d,
         [Comp.ButtonSmall.OutlinedOutlineWidth] = new Thickness(1),

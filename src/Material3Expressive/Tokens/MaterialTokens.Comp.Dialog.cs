@@ -12,6 +12,9 @@ public static partial class MaterialTokens
         public static class Dialog
         {
             public static readonly MaterialTokenKey<Thickness> ContentPadding = new("md.comp.dialog.content-padding");
+            public static readonly MaterialTokenKey<Thickness> PrecisionContentPadding = new("md.comp.dialog.precision.content-padding");
+            public static readonly MaterialTokenKey<double> PrecisionSupportingTextBottomSpacing = new("md.comp.dialog.precision.supporting-text-bottom-spacing");
+            public static readonly MaterialTokenKey<TextStyle> PrecisionHeadlineStyleOverride = new("md.comp.dialog.precision.headline-style-override");
             public static readonly MaterialTokenKey<double> IconBottomSpacing = new("md.comp.dialog.icon-bottom-spacing");
             public static readonly MaterialTokenKey<double> HeadlineBottomSpacing = new("md.comp.dialog.headline-bottom-spacing");
             public static readonly MaterialTokenKey<double> SupportingTextBottomSpacing = new("md.comp.dialog.supporting-text-bottom-spacing");

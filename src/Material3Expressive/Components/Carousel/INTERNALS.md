@@ -16,6 +16,8 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 为逻辑依据，Core `a9e4
 | `Arrangement` / `multiBrowseKeylineList` / `uncontainedKeylineList` / `heroKeylineList` | `CarouselArrangement` / `CarouselKeylines` |
 | `KeylineList` / `Strategy` / `getSnapPositionOffset` | `CarouselKeylineList` / `CarouselStrategy` |
 | 三种 Horizontal Carousel / `carouselItem` | `HorizontalCarousel.Variant` / `CarouselPanel` / `CarouselItem` |
+| `LazyLayoutBeyondBoundsProviderModifierNode` / `PagerBeyondBoundsState` / Core `RootNodeOwner.handleFocusKeys` | `CarouselPanel.MoveFocus` / `HorizontalCarousel.OnKeyDown` |
+| `PagerMeasure.measurePager` / `createPagesBeforeList` / `createPagesAfterList` | `CarouselPanel.Virtualization`：页范围、容器生成/回收与焦点页保留 |
 | `PagerState.performScroll` / `PagerMeasureResult.copyWithScrollDeltaWithoutRemeasure` | `CarouselScrollPosition` / `CarouselPanel.LayoutStateAt` |
 | `SnapFlingBehavior` / `PagerSnapLayoutInfoProvider` / `CarouselDefaults` | `CarouselFling` / panel 的 approach、snap 计算 / `FlingMode` |
 | Core `DragGestureNode` / `Lsq2VelocityTracker` | `HorizontalCarousel.Input` / 现有共享 `VelocityTracker` |
@@ -35,6 +37,18 @@ MultiAspect 主轴尺寸不随遮罩变化；内容在原尺寸中绘制，再�
 公开 ActualDrawInfo 通过 DirectProperty 通知。显式 DrawInfo 优先；清除后重新读取实际几何，不把旧快照当作当前布局。
 
 经典路径先在物理像素中分配 keyline，保留 Float 的计算顺序、加权 lerp 和 Kotlin 的 roundToInt；最终排列及 mask 才换回 DIP。项目内容始终按大项目尺寸测量，遮罩随 keyline 插值，不能用压缩内容代替。主轴 padding 由 Strategy 分摊尺寸并恢复原 unadjustedOffset，交叉轴 padding 才作为普通布局留白。
+
+虚拟页范围由遮罩前的整数 Pager 网格和含尾部 spacing 的可见区间决定；固定 Carousel.kt 为 MultiBrowse/Hero 指定两侧各两页，Uncontained 为零。
+布局、最大滚动距离及吸附使用完整 Items.Count，不能使用已创建容器数。页内位置和 snap 只遍历当前可见页，不扫描整个数据集。
+生成容器经原生 ItemContainerGenerator 的 prepare / prepared / clear 生命周期复用；直接 CarouselItem 只卸载，不能 clear 用户 Content。
+离开范围会真正 detach，结束内容自己的动画和交互作用域。焦点页保留到 LostFocus 后的下一次布局；自动高度读取当前实现页与保留页。
+ScrollIntoView 在首次布局后同步创建目标容器；普通 ScrollToItem 仍在下一次布局呈现。集合或 ItemTemplate 更新重新 prepare 数据。
+保留页的布局对应 `calculatePagesOffsets`：可见页之前/之后的额外页连续放置，即使其索引有空洞；keyline 平移仍使用真实索引。不能用远处索引乘步长替代保留页位置。
+
+Tab 搜索沿默认页范围逐次增加一页，上限是 `2 * max(1, viewport / (pageSize + spacing))`；成功或失败都同步释放临时范围。焦点本身使目标页保留。窗口继续处理搜索失败后的离开/回绕，RTL 的 Next/Previous 仍按逻辑页序。固定 Core `RootNodeOwner.skiko.kt` 只默认映射 Tab/Shift+Tab（以及 Enter/Exit），没有左右键映射。原先尝试给左右键默认移动的实验已按这份平台源码撤回，双端 `nav-next` 保留为无移动断言。
+
+**2026-11-08 本轮授权的框架适配**：Avalonia 12.1.5 公开 `IFocusManager.FindNextElement` 与实际窗口的 Tab 路径不同；在新增虚拟页后，前者返回回绕目标，后者正确找到页内目标。组件局部绑定内部 `KeyboardNavigationHandler.GetNext`，只查询目标，实际焦点仍由原生 Focus 建立；用 `DynamicDependency` 保留裁剪目标，缺失方法明确失败。查询期间内部面板临时使用 Contained 导航，结束即释放，不阻止窗口离开。这样保留 TabIndex、组内遍历、自定义导航与子控件消费键盘的能力，而不复制整套 Avalonia 导航。此内部依赖须随 Avalonia 升级重跑测试；不推广为全库公共抽象。
+
 首尾吸附位置随项目索引变化，不使用统一步长取代 `getSnapPositionOffset`。RTL 只翻转排列，不翻转内容内部绘图。模板独立承担遮罩与路径边框，不覆盖用户内容的变换。
 经典 Carousel 的 `carouselItem` 在圆角 maskClip 和 maskBorder 外还施加矩形 keyline 裁剪；它与 MultiAspect 的外层不裁剪不同，不能省掉，否则小项目边框的末缘采样越界。
 
@@ -50,7 +64,7 @@ PageUp/PageDown 对应固定 AndroidX/Core `ScrollableNode.onKeyEvent`，由聚�
 
 焦点及显式 BringIntoView 请求按包含关系排序，不相交的新请求替换旧请求；帧后根据真实布局更新目标，保留速度的默认 float spring 对应 UpdatableAnimationState。使用分页网格而非 Carousel focal keyline 纠正位置，RTL 保留 layoutAwareFirstOffset 和最后物理滚动方向。最后方向仅在实际整数像素位移非零时改变；小数修正不能翻转目标。禁用用户滚动不阻止焦点滚入，正在进行的用户拖动/滚轮优先；导航和卸载取消旧请求。动画使用既有帧作用域和 Animation 优先级绑定。
 
-本轮授权把原生 GotFocus / RequestBringIntoView 接入上述协议；Avalonia routed 请求没有可等待的调用方，故没有新增 await/cancel API。坐标取自绕过镜像策略的 CarouselPanel，不能直接用 owner 的镜像局部坐标替代 Compose 物理布局坐标。外层容器仍可继续处理 routed 请求。不新增公开类型或破坏性迁移。此前焦点未实现的原因是组件没有请求队列和逐帧重测连接；此处按固定源补齐，虚拟化仍是独立缺口。
+本轮授权把原生 GotFocus / RequestBringIntoView 接入上述协议；Avalonia routed 请求没有可等待的调用方，故没有新增 await/cancel API。坐标取自绕过镜像策略的 CarouselPanel，不能直接用 owner 的镜像局部坐标替代 Compose 物理布局坐标。外层容器仍可继续处理 routed 请求。此前焦点未实现的原因是组件没有请求队列和逐帧重测连接；虚拟化现在另行接入容器生命周期。
 
 视口缩小按 ContentInViewNode.onRemeasured 检查旧布局中的焦点矩形；RTL 预先扣除视口尺寸差，只有原本最大可见且现在被遮挡的焦点启动跟随。显式请求优先于跟随目标，焦点离开、导航、卸载或变为最大可见时结束跟随。尺寸/步长/吸附位置变化保留旧当前页与页内比例，按新的 Pager 网格取整重建位置；不能保留旧绝对像素偏移而改变所选项目。放大视口不启动新的跟随动画。
 
@@ -69,12 +83,30 @@ Pager 的绝对页坐标与实际视口 offset 分开计算边界；无法复用
 
 辅助技术沿用本轮适配授权：`IScrollProvider` 的大／小增减都映射为上游一项分页，百分比设置映射为逻辑滚动范围的即时定位；垂直操作不支持。分页单独保留 Pager 的 `calculateDistanceTo`（扣除当前 fraction、整数取整、范围钳制），不混用 CarouselState 的程序导航位移。禁用用户滚动时不公开该 provider；原生控件禁用时拒绝操作。此适配未增加公开自定义自动化 API。
 
-**尚未实现**：经典 Carousel 的虚拟 Pager、设备专用触控板 Pan/惯性、嵌套滚动；任意路径 Shape；SmoothScroll 合成线程遮罩接入。
+**虚拟化决定与迁移**：2026-11-08 本轮授权新增共享能力与破坏性 API 迁移，改用 Avalonia VirtualizingPanel，保留既有 Carousel 页算法，不引入通用 Pager。
+原先急切创建所有项是尚缺页生命周期的阶段性实现，并无已批准的永久保活语义；固定 AndroidX/Core PagerMeasure 与 Carousel.kt 的 beyondViewportPageCount 是新依据。
+容器查询由“全量存在”变为“仅当前实现页存在”；调用方应先 ScrollIntoView 再访问远处容器，仓内 Catalog 和布局测试已迁移。
+仍保留原公开滚动 API 与索引。自动预取、程序式二维焦点搜索及通用可保存页状态尚未移植，不能把视口虚拟化称为完整 Foundation Pager。
+
+**尚未实现**：设备专用触控板 Pan/惯性、嵌套滚动；任意路径 Shape；SmoothScroll 合成线程遮罩接入。
 滚轮共享抽取与设备元数据限制依据本轮授权，见 [共享决定 §33](../../../../docs/DECISIONS.md#33-pager-组件的桌面滚轮算法复用)。此前没有滚轮入口的原因是组件尚未连接桌面协议；现有 ScrollField 已提供同一固定 Core 算法，故复用而不另建引擎。无破坏性 API 迁移。
 
 **未经验证**：实际触屏、精确滚轮／触控板硬件、辅助技术、跨平台栅格、非均匀/非纯色描边以及第三方虚拟化宿主的适配。双端失败如实保留，不修改基准或容差。
 
 ## 4. 验证入口
+
+2026-11-08 虚拟页与 Tab 搜索增量：相关 Carousel 行为测试 75 项通过，解决方案构建通过（5 项既有警告）。`carousel-focus-search-delivery` 的 24 例 / 600 个采样全部全等，重复捕获稳定、错误为零，覆盖三种布局、LTR/RTL、连续 Tab、反向、稀疏可聚焦页与桌面方向键不移动。已查看稀疏焦点页的双端图像。`carousel-virtual-regression` 原有 78 例 / 558 个采样通过原门禁。
+
+最终 `carousel-virtual-delivery` 24 例全等；`carousel-auto-height-delivery` 12 例通过原门禁（11 equal、1 withinTolerance），重复捕获稳定、错误为零；覆盖千项数据、远距离与反向动画、运行时可见页自适应高度。Catalog 增加万项数据模板、远距离定位和高度切换。
+
+本次跨组件全量测试没有全部通过：最后一次 2461 项中 2453 通过、8 失败，7 项为 Headless
+初始化/清理的 dispatcher 线程异常，另一项为 `NonInteractiveScrollBarTests.Fade_DelayRestartsOnObservedOffsetsAndScrollInterruptsFade`。
+失败方法与菜单新实现合并复跑 125 项，124 通过，滚动条时间断言仍失败。未修改这些无关组件，
+日志保留在 `artifacts/precision-pointer/full-tests-final.log` 与 `menu-and-failure-retry.log`。
+VisualParity 系统测试 134 项通过；本段不覆盖上面分组件的独立通过结果，也不把历史全量通过记录当作本次结果。
+
+新增页探针最终读取真实 `PagerMeasureResult.visiblePagesInfo + extraPagesBefore + extraPagesAfter`，对比本地活动实现容器。早期 `DisposableEffect` 的组合清单还包含已停用的可复用槽，不是活动测量页，故改正观测定义为 `carousel.measuredPageIndices`。未改参考组件、容差、图像或采样时间；初次错误观测、保留页位置差异等探索报告仍保存。Uncontained RTL 连续 Tab 可在两个视口搜索上限耗尽后回绕，这是固定 Core 实测结果，不以强制滚到焦点索引改写它。
+
 
 2026-11-08 桌面交互与视口跟随增量：全解决方案构建通过；控件全量测试 2435 项、相关 Carousel/ScrollField 测试 75 项、VisualParity 系统测试 134 项通过。早期一次全量运行出现 AppBar 输入断言和五项测试清理异常，对应方法单独重跑 19 项及最终全量均通过；未修改这些无关组件。新增用法及 Catalog 焦点按钮、键盘/滚轮/缩窗演示说明齐备，无公开 API 破坏性迁移。
 

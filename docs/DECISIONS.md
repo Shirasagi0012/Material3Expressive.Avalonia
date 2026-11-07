@@ -397,3 +397,11 @@
 - **决定**：原 ScrollFieldWheel 的排队、差分速度、6 DIP 即时位移、最长 100ms 线性动画与 50ms 结束等待移到 Foundation/Input/MouseWheelScroll。组件继续拥有输入路由、滚动取消、范围消费与完成后的 fling，不创建公共 Pager 或新的滚动框架。原 ScrollField API 与调用方无需迁移。
 - **平台边界**：保留原生 PointerWheelEventArgs 缺少 AWT scrollAmount、block-scroll 和精确设备标记的原理由，沿用 Core 无元数据事件的默认换算；不能据此声称支持专用 Pan/惯性协议。轴向判定在换算后执行，绝对值相等时归纵轴；不把纵向滚轮自动映射为横向。
 - **影响**：Carousel 的三种 TargetedFlingBehavior 均在滚轮结束后接入现有吸附/衰减。键盘 PageUp/PageDown 则按固定 AndroidX/Core ScrollableNode 即时消费一个视口，不混用 fling。现有触摸、程序导航与辅助技术入口保持各自语义。
+
+## 34. 显式精确指针尺寸环境
+
+- **原问题与理由**：Button 维护说明此前延后 precision 分支，因为固定 Core 的监听器为空，不能凭 Avalonia 鼠标自动开启；按钮局部 bool 又会分裂上游 Button/ToggleButton/Menu/ListItem/AlertDialog 的共享环境。
+- **本轮授权与新决定（2026-11-08）**：使用 `MaterialPrecisionPointer.IsEnabled` 继承附加属性，默认 false，作用域由应用显式选择，允许局部关闭及运行时切换。它表达输入尺寸环境，不是通用密度倍率，也不改最小交互布局。维护者本轮已授权必要公共能力与历史待定事项决策，无需再次逐项确认。
+- **实施范围**：本批接入 Button 五种主题、ToggleButton 四种主题、AlertDialog 及独立 Expressive 菜单项；Small 普通按钮最小高 36 DIP，Toggle 仍为 40 DIP，二者 Small 竖向留白为 8 DIP、图标侧 12 DIP。AlertDialog 的容器/正文下留白为 20/16 DIP，标题合并 20/26 字号/行高覆盖。独立 Expressive 菜单项选择 12 DIP 内容间距与 16/12/10/12 留白，原有高度规则不变。依据固定两端 Button.kt、ToggleButton.kt、AlertDialog.kt、MenuDefaults.kt 与 Core PrecisionPointer.skiko.kt，未混入其他提交。
+- **默认值与覆盖**：precision 候选使用独立 Token，主题内部选择写到既有默认配置流程；普通样式、显式 Padding/MinHeight 和绑定优先。默认 false 以及其他尺寸的既有 Token 不变，没有破坏性迁移。
+- **剩余范围**：原生 MenuItem、菜单专用尾部辅助 API 与 ListItem 尚未消费此环境，当前不宣称已实现全库 precision 分支；后续复用同一个环境，不为各组件再建开关。真实指针设备监听也未实现。

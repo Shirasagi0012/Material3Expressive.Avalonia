@@ -122,3 +122,11 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 `withinTolerance` 与严格一致是不同结论。已接受差异仍保留真实参考和精确比较结果，
 不得修改门禁来隐藏差异。复核时记录代码与依赖版本、执行环境和新生成的报告，
 分别说明执行错误、双端差异、稳定性及未覆盖项。
+
+## 2026-11-08 精确指针尺寸增量
+
+本轮授权接入共享 `MaterialPrecisionPointer` 继承环境。固定 `ToggleButtonDefaults.MinHeight` 仍为
+ButtonSmallTokens.ContainerHeight（40 DIP）；只按 `contentPaddingFor` 切换 Small 的 8 DIP 竖向留白和
+12 DIP 图标侧留白。不能复用普通 Button 的精确模式 36 DIP 最小高。模板-only 图标也进入该分支，
+RTL 由原内容布局保持逻辑起点。复用现有主题候选/默认属性流程和新 precision Token，没有替换原生选择与输入 owner。
+默认关闭及其他组件尚未接入的边界见 [共享决定 §34](../../../../docs/DECISIONS.md#34-显式精确指针尺寸环境)。

@@ -141,9 +141,27 @@
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="IsExpressive" Value="True" />
-      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
-      <Setter Property="LeadingSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}}" />
-      <Setter Property="TrailingSpacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}}" />
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionItemPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="LeadingSpacing">
+        <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionContentSpacing}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="TrailingSpacing">
+        <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionContentSpacing}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="CornerRadius"><Setter.Value><MultiBinding Converter="{StaticResource DropdownShapeConverter}" ConverterParameter="Shape">
         <Binding Path="Shapes" RelativeSource="{RelativeSource Self}" /><m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.ItemShape}" />
       </MultiBinding></Setter.Value></Setter>

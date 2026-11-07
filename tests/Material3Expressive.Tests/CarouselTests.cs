@@ -419,14 +419,14 @@ public class CarouselTests
         var window = DialogTests.Show(carousel);
         try
         {
-            var items = carousel.GetVisualDescendants().OfType<CarouselItem>().ToArray();
-            Assert.Equal(8, items.Length);
+            var items = carousel.Items.Cast<CarouselItem>().ToArray();
+            Assert.InRange(carousel.GetRealizedContainers().Count(), 1, 7);
             Assert.True(carousel.MaximumScrollOffset > 0);
             var width = items[0].Bounds.Width;
             carousel.ScrollToItem(3); Flush(window);
             Assert.Equal(3, carousel.CurrentItem);
             Assert.Equal(0, carousel.CurrentItemOffsetFraction, 5);
-            Assert.All(items, item => Assert.Equal(width, item.Bounds.Width));
+            Assert.All(carousel.GetRealizedContainers(), item => Assert.Equal(width, item.Bounds.Width));
             Assert.True(items[3].DrawInfo.Size > items[4].DrawInfo.MinSize);
             carousel.ScrollToItem(100); Flush(window);
             Assert.Equal(7, carousel.CurrentItem);

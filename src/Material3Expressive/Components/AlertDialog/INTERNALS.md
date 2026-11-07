@@ -73,10 +73,22 @@ DialogTokens.ContainerElevation 保留 Level3，但固定 AlertDialogContent
 
 ## 一致性边界与验证
 
-尚未实现系统/IME inset、平台安全窗口选项及 Android precision-pointer 紧凑分支；Foundation 的其他缺口见
+尚未实现系统/IME inset、平台安全窗口选项；Foundation 的其他缺口见
 [Overlays 当前边界](../../Foundation/Overlays/README.md#当前边界)。
 未经验证的范围包括文字像素、真实 OS IME、屏幕阅读器隔离、触屏、多显示器 DPI 切换和跨平台冻结。
 Headless 和离屏双端结果不构成真实桌面验收。
+
+**精确指针尺寸（2026-11-08 本轮授权）**：原先 precision 分支延后，原因是缺少共享输入尺寸环境，
+且固定 Core 的桌面监听为空，不能自行按鼠标检测启用。共享决定 §34 现在提供显式继承环境；
+模板直接选择固定 AndroidX/Core `AlertDialog.kt` 的 20 DIP 容器留白、16 DIP 正文下间距和
+20/26 标题字号/行高。标题使用标准 HeadlineFont 合并局部覆盖，保留字体、字重等其余属性。
+BasicAlertDialog 没有新增内置留白。无公共破坏性迁移，不改变弹窗宿主、焦点或进出场动画。
+`PrecisionPointerTests` 验证跨 overlay 继承、局部关闭、运行时恢复、真实动作按钮和 Token 覆盖；
+`precision-alert-dialog` 双端用例观察 LTR/RTL、图标有无、按钮换行和动态切换的实际布局与标题指标。
+
+本次 `precision-alert-dialog-delivery` 16 例 / 40 个采样通过原门禁，12 equal、4 withinTolerance，
+结构化事实全等、执行错误为零、重复/额外截图稳定；已查看堆叠动作的双端截图。
+相关 AlertDialog/PrecisionPointer 行为测试 22 项通过。文字采用继承字号/行高读数，仍未验证文字栅格。
 
 **自定义交互尺寸接入决定**：本轮依据用户扩大授权重新决定，采用原建议的环境派生默认值，
 保留 `ActionVerticalSpacing` 有限覆盖值的最终间距语义。Token 默认改为 NaN（自动），

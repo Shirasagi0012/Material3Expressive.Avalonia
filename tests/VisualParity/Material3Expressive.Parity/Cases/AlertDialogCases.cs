@@ -12,6 +12,7 @@ using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Overlays;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Typography;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -20,7 +21,24 @@ public sealed record AlertDialogConfig(bool Basic = false, bool Icon = true, boo
     bool Dismiss = true, bool Dark = false, bool Rtl = false, bool PlatformWidth = true,
     double? Width = null, double? Height = null, int HostWidth = 520, int HostHeight = 360,
     double ContentWidth = 160, double ContentHeight = 40, double ButtonWidth = 80,
-    string Colors = "default", string Action = "none", bool AllowDismiss = true, double? MinimumInteractiveSize = null);
+    string Colors = "default", string Action = "none", bool AllowDismiss = true, double? MinimumInteractiveSize = null,
+    bool Precision = false, bool ObserveTypography = false);
+
+[ParitySuite("precision-alert-dialog")]
+public sealed class PrecisionAlertDialogCases
+{
+    public static IEnumerable<CaseData<AlertDialogConfig>> Configurations()
+    {
+        foreach (var rtl in new[] { false, true })
+        foreach (var icon in new[] { false, true })
+        foreach (var stack in new[] { false, true })
+        foreach (var action in new[] { "none", "precision" })
+            yield return AlertDialogCases.Data($"sizing.{(rtl ? "rtl" : "ltr")}.{(icon ? "icon" : "no-icon")}.{(stack ? "stack" : "row")}.{action}",
+                new(Rtl: rtl, Icon: icon, ButtonWidth: stack ? 180 : 80, Action: action, Precision: action == "none", ObserveTypography: true));
+    }
+    [ParityScenario("sizing", Data = nameof(Configurations))]
+    public Task Sizing(CaptureWriter writer) => AlertDialogScene.Capture(writer, writer.Metadata.ReadConfig<AlertDialogConfig>().Action != "none");
+}
 
 [ParitySuite("alert-dialog")]
 public sealed class AlertDialogCases
@@ -129,6 +147,7 @@ internal sealed class AlertDialogScene
         mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
         Dialog = config.Basic ? new BasicAlertDialog() : new AlertDialog();
         MaterialInteractiveSize.SetMinimum(Dialog, config.MinimumInteractiveSize);
+        MaterialPrecisionPointer.SetIsEnabled(Dialog, config.Precision);
         Dialog.AnimateTransition = config.Action is "transition" or "interrupt" or "immediate";
         Dialog.IsOpen = !Dialog.AnimateTransition;
         Dialog.UsePlatformDefaultWidth = config.PlatformWidth;
@@ -191,6 +210,14 @@ internal sealed class AlertDialogScene
         if (!Dialog.IsOpen) return points.ToArray();
         var container = host.Window.GetVisualDescendants().OfType<Control>().Single(c => c.Name == "PART_Surface");
         points.Add(new("container", "dialog", null, AvaloniaMeasurements.Geometry(container, host.Window).Where(m => m.Name == "size").ToArray()));
+        if (config.ObserveTypography && config.Title)
+        {
+            var title = host.Window.GetVisualDescendants().OfType<Control>().Single(c => c.Name == "PART_Title");
+            var style = MaterialText.GetStyle(title)!;
+            points.Add(new("headline", "title", null, [
+                Measurement.Numeric("fontSize", style.FontSize!.Value, "sp", definition: "dialog.headline-font-size"),
+                Measurement.Numeric("lineHeight", style.LineHeight!.Value, "sp", definition: "dialog.headline-line-height")]));
+        }
         foreach (var (id, marker) in markers.Where(p => p.Value.IsAttachedToVisualTree()))
         {
             var box = new Rect(marker.Bounds.Size).TransformToAABB(marker.TransformToVisual(container)!.Value);
@@ -240,6 +267,9 @@ internal sealed class AlertDialogScene
         }
         switch (config.Action)
         {
+            case "precision":
+                Change(1000, "precision-on", () => MaterialPrecisionPointer.SetIsEnabled(scene.Dialog, true));
+                Change(2000, "precision-off", () => MaterialPrecisionPointer.SetIsEnabled(scene.Dialog, false)); break;
             case "minimum":
                 Change(1000, "minimum-40", () => MaterialInteractiveSize.SetMinimum(scene.Dialog, 40));
                 Change(2000, "minimum-44", () => MaterialInteractiveSize.SetMinimum(scene.Dialog, 44));

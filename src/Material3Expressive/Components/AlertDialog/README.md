@@ -89,7 +89,15 @@ Basic 默认宽度为 280–560 DIP，无默认高度；显式 `Width` / `MinWid
 相应 Material 默认约束，例如 `Width="100"` 可以小于 280。默认还受 Foundation 平台宽度上限
 约束：按客户区短边选择 320 / 440 / 580 DIP；`UsePlatformDefaultWidth="False"` 只关闭该平台上限。
 
-AlertDialog 自带 24 DIP 容器留白。图标居中；有图标时标题居中，否则靠 start。
+AlertDialog 默认自带 24 DIP 容器留白。图标居中；有图标时标题居中，否则靠 start。
+
+在对话框或祖先上设置 `m3:MaterialPrecisionPointer.IsEnabled="True"` 可启用固定上游的精确指针尺寸：
+容器留白 20 DIP、正文下间距 16 DIP、标题字号/行高 20/26，其余标题字体属性保留。
+设置可继承到弹窗和动作按钮，并支持打开时切换及局部关闭；不会改变 48 DIP 最小交互布局。
+例如 `<m3:AlertDialog Title="确认操作" m3:MaterialPrecisionPointer.IsEnabled="True" ... />`。
+独立 Token 为 `Comp.Dialog.PrecisionContentPadding`、`PrecisionSupportingTextBottomSpacing` 和
+`PrecisionHeadlineStyleOverride`；最后一项合并到标准标题样式，仅覆盖指定字段。
+`BasicAlertDialog` 的自定义内容布局仍由调用方决定。Catalog 对话框示例提供此开关。
 正文使用剩余高度但不主动撑满，不自动滚动；较长正文应自行使用 `ScrollViewer`。
 按钮横排时 LTR 下取消在左、确认在右，空间不足则确认在上；RTL 调整水平位置。
 `m3:MaterialInteractiveSize.Minimum="40"` 可设置动作的最小交互尺寸；换行时默认行间距随环境调整，

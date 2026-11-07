@@ -12,6 +12,9 @@ public sealed class DialogTokenSource : ITokenSource
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
         [Comp.Dialog.ContentPadding] = new Avalonia.Thickness(24),
+        [Comp.Dialog.PrecisionContentPadding] = new Avalonia.Thickness(20),
+        [Comp.Dialog.PrecisionSupportingTextBottomSpacing] = 16d,
+        [Comp.Dialog.PrecisionHeadlineStyleOverride] = new Foundation.Typography.TextStyle { FontSize = 20, LineHeight = 26 },
         [Comp.Dialog.IconBottomSpacing] = 16d,
         [Comp.Dialog.HeadlineBottomSpacing] = 16d,
         [Comp.Dialog.SupportingTextBottomSpacing] = 24d,

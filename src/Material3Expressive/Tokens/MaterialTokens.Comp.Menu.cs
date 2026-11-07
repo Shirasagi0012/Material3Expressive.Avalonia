@@ -14,6 +14,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Thickness> SupportingItemMargin = new("md.comp.menu.supporting-item-margin");
             public static readonly MaterialTokenKey<double> BaselineContentSpacing = new("md.comp.menu.baseline-content-spacing");
             public static readonly MaterialTokenKey<double> VerticalContentSpacing = new("md.comp.menu.vertical-content-spacing");
+            public static readonly MaterialTokenKey<double> PrecisionContentSpacing = new("md.comp.menu.precision-content-spacing");
+            public static readonly MaterialTokenKey<Thickness> PrecisionItemPadding = new("md.comp.menu.precision-item-padding");
             public static readonly MaterialTokenKey<Thickness> SeparatorMargin = new("md.comp.menu.separator-margin");
             public static readonly MaterialTokenKey<CornerRadius> InactiveGroupShape = new("md.comp.menu.inactive-group-shape");
             public static readonly MaterialTokenKey<Color> BaselineContainer = new("md.comp.menu.baseline-container");

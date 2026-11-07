@@ -95,6 +95,14 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 
 ## 内容槽与定制
 
+独立 Expressive / Checkable / Selectable 项可继承 `MaterialPrecisionPointer.IsEnabled`：
+例如 `<m3:DropdownMenuPopup m3:MaterialPrecisionPointer.IsEnabled="True" ... />`。
+启用后左右留白为 start 16 / end 10 DIP、上下 12 DIP，首尾内容间距为 12 DIP；项目高度规则保持原值。
+支持打开时切换、局部关闭及显式 `Padding` / `LeadingSpacing` / `TrailingSpacing` 覆盖。
+默认值可用 `Comp.Menu.PrecisionItemPadding` 和 `PrecisionContentSpacing` Token 配置。
+Catalog 的 grouped / selectable 示例提供开关。当前 Baseline 与原生 MenuItem 不消费此尺寸环境，
+专用尾部标签辅助 API 尚未移植；不要把环境开关理解为所有菜单尺寸已完成接入。
+
 独立项目支持 Content、LeadingIcon、SelectedLeadingIcon、TrailingContent、SupportingText 及对应模板。
 仅选中图标存在时使用展开和淡入效果。MenuDefaults.ItemShape / GroupShape 按调用方提供的 index、count 生成首尾形状，组间距由容器设置，默认参考 MenuDefaults.GroupSpacing。
 同时提供普通和选中图标时按选择状态直接替换；运行中添加普通图标会结束选中图标的展开/淡入淡出，移除后重新按当前选择状态建立动画分支。内容或模板均适用，Catalog 提供可切换示例。

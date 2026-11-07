@@ -64,6 +64,19 @@ public partial class HorizontalCarousel
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (!e.Handled && IsEffectivelyEnabled && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Meta)) == 0)
+        {
+            var direction = e.Key switch
+            {
+                Key.Tab => e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? NavigationDirection.Previous : NavigationDirection.Next,
+                _ => (NavigationDirection?)null,
+            };
+            if (direction is { } navigation && _panel?.MoveFocus(navigation, e.KeyModifiers) == true)
+            {
+                e.Handled = true;
+                return;
+            }
+        }
         // Fixed AndroidX/Core ScrollableNode.onKeyEvent: viewport-sized UserInput,
         // no fling or snap; descendants may consume the key before it bubbles here.
         if (e.Handled || !CanDrag || e.Key is not (Key.PageUp or Key.PageDown) ||

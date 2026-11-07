@@ -18,7 +18,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MenuConfig(val variant:String="standard", val selected:Boolean=false, val enabled:Boolean=true,
     val dark:Boolean=false, val rtl:Boolean=false, val icon:Boolean=true, val width:Double=200.0,
-    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false, val nativeCheck:Boolean=false, val autoWidth:Boolean=false, val comboItem:Boolean=false)
+    val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false, val nativeCheck:Boolean=false, val autoWidth:Boolean=false, val comboItem:Boolean=false,
+    val precision:Boolean=false,val trailing:Boolean=false)
 
 @ParitySuite("menu")
 class MenuCases {
@@ -28,6 +29,12 @@ class MenuCases {
     @ParityScenario("native-check") suspend fun nativeCheck(writer:CaptureWriter)=capture(writer,false)
     internal suspend fun capture(writer:CaptureWriter,dynamic:Boolean) {
         val config=writer.readConfig<MenuConfig>()
+        @Suppress("UNCHECKED_CAST")
+        val precision=Class.forName("androidx.compose.material3.PrecisionPointer").declaredMethods
+            .single { it.name.startsWith("getShouldUsePrecisionPointerComponentSizing") }.invoke(null) as MutableState<Boolean>
+        val previous=precision.value
+        precision.value=config.precision
+        try {
         ComposeHost(writer,320,160).use { host ->
             val scene=Scene(config)
             host.mount { scene.Content() }; host.frame(-1000); host.frame(0)
@@ -42,6 +49,10 @@ class MenuCases {
             val outside=Offset(8f,8f)
             fun event(time:Long,action:String,point:Offset) { advance(time);host.input(action,point);host.draw();host.frame(time) }
             when(config.action) {
+                "precision" -> {
+                    change(1000,"precision-on") {precision.value=true}
+                    change(2000,"precision-off") {precision.value=false}
+                }
                 "icon-enter", "icon-exit" -> {
                     change(1000,"toggle-selection") {scene.selected=!config.selected};times(16000,32000,64000)
                     change(65000,"add-leading") {scene.hasIcon=true};times(80000,96000,160000,400000)
@@ -67,6 +78,7 @@ class MenuCases {
                 }
             }
         }
+        } finally { precision.value=previous }
     }
     private class Scene(val config:MenuConfig) {
         var selected by mutableStateOf(config.selected)
@@ -98,6 +110,7 @@ class MenuCases {
                                 }
                             }
                             else SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,
+                                trailingContent=if(config.trailing)({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
                                 shapes=MenuDefaults.itemShapes(),modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
                                 contentPadding=if(config.comboItem) ExposedDropdownMenuDefaults.ItemContentPadding else MenuDefaults.DropdownMenuSelectableItemContentPadding,
                                 selectedLeadingIcon=if(config.nativeCheck) ({Icon(Icons.Filled.Check,null,Modifier.size(20.dp))}) else if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,

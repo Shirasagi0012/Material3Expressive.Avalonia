@@ -1,9 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.AlertDialogDemo" Width="680" Height="520" Title="Alert dialogs">
-  <Grid>
+  <Grid m3:MaterialPrecisionPointer.IsEnabled="{Binding #PrecisionMode.IsChecked}">
     <StackPanel Margin="32" Spacing="16" HorizontalAlignment="Left">
       <TextBlock Text="AlertDialog" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+      <CheckBox x:Name="PrecisionMode" Content="Use precision pointer sizing" />
       <Button Content="Open alert dialog" Click="OnOpenAlert" />
       <Button Content="Open stacked actions (40 DIP targets)" Click="OnOpenCompact" />
       <Button Content="Open custom basic dialog" Click="OnOpenBasic" Theme="{StaticResource MaterialTonalButtonTheme}" />

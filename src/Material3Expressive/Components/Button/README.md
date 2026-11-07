@@ -66,6 +66,28 @@
 
 默认水平靠左、垂直居中；需要铺满父布局时设置 `HorizontalAlignment="Stretch"`。
 
+## 精确指针尺寸
+
+在窗口或局部容器显式启用，子控件可单独覆盖；默认关闭，不自动检测鼠标：
+
+```xml
+<StackPanel m3:MaterialPrecisionPointer.IsEnabled="True">
+  <Button Content="保存" />
+  <Button Content="新增" m3:MaterialButton.Icon="{m3:Symbol Add}" />
+  <ToggleButton Content="固定" />
+  <Button Content="标准尺寸" m3:MaterialPrecisionPointer.IsEnabled="False" />
+</StackPanel>
+```
+
+Small 普通 Button 容器最小高变为 36 DIP，ToggleButton 保持 40 DIP；两族竖向 Padding 为 8 DIP，
+有共享起始图标槽时起始 Padding 为 12 DIP，无图标时水平仍为 16 DIP。外层最小交互留白仍为 48 DIP。
+其他尺寸档位不变；本地 Padding/MinHeight、绑定、普通样式仍可覆盖默认值。模式支持运行时切换及树继承。
+自定义精确模式默认值使用 `Comp.ButtonSmall.PrecisionContainerHeight`、`PrecisionContentPadding`、
+`PrecisionIconSidePadding` Token；其中高度 Token 只由普通 Button 消费。
+
+当前接入 Button / ToggleButton / AlertDialog 及独立 Expressive 菜单项；原生菜单和 ListItem 尚未消费这个作用域，
+不能把它视为全库密度缩放开关。Catalog 首页提供切换示例；平台依据见 [共享决定 §34](../../../../docs/DECISIONS.md#34-显式精确指针尺寸环境)。
+
 ## 命令、事件与状态
 
 绑定现有 ViewModel 的 `ICommand`，参数用原生 `CommandParameter`：
@@ -259,6 +281,6 @@ C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 
 - 默认键盘焦点反馈为状态层；可通过 `m3:MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环，支持四角不等圆角。继承配置、颜色和尺寸见 [交互反馈](../../Foundation/Interaction/README.md)；主题关闭了原生 `FocusAdorner`
 - 普通 Button 不提供选中/切换状态，需要此行为时见 [ToggleButton](../ToggleButton/README.md)
-- 默认尺寸与 Padding 未实现上游 precision-pointer 紧凑分支；需要更紧凑布局时可显式覆盖尺寸与 `Padding`
+- 精确指针分支由 `MaterialPrecisionPointer.IsEnabled` 显式启用；真实设备自动监听尚未实现
 - 替换整个 `Template` 后，不保证保留 Material 的布局、形状动画或交互反馈接入
 - 当前实现不是完整视觉一致性承诺；未决差异、验证入口及已接受适配见 [INTERNALS.md](INTERNALS.md#一致性边界与验证)

@@ -24,7 +24,14 @@ data class AlertDialogConfig(val basic:Boolean=false,val icon:Boolean=true,val t
     val dismiss:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,val platformWidth:Boolean=true,
     val width:Double?=null,val height:Double?=null,val hostWidth:Int=520,val hostHeight:Int=360,
     val contentWidth:Double=160.0,val contentHeight:Double=40.0,val buttonWidth:Double=80.0,
-    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val minimumInteractiveSize:Double?=null)
+    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val minimumInteractiveSize:Double?=null,
+    val precision:Boolean=false,val observeTypography:Boolean=false)
+
+@ParitySuite("precision-alert-dialog")
+class PrecisionAlertDialogCases {
+    @ParityScenario("sizing") suspend fun sizing(writer:CaptureWriter) =
+        captureAlertDialog(writer,writer.readConfig<AlertDialogConfig>().action!="none")
+}
 
 @ParitySuite("alert-dialog")
 class AlertDialogCases {
@@ -39,6 +46,12 @@ class BasicAlertDialogCases {
 
 private suspend fun captureAlertDialog(writer:CaptureWriter,dynamic:Boolean) {
     val config=writer.readConfig<AlertDialogConfig>()
+    @Suppress("UNCHECKED_CAST")
+    val precision=Class.forName("androidx.compose.material3.PrecisionPointer").declaredMethods
+        .single { it.name.startsWith("getShouldUsePrecisionPointerComponentSizing") }.invoke(null) as MutableState<Boolean>
+    val previous=precision.value
+    precision.value=config.precision
+    try {
     val empty:PlatformContext=PlatformContext.Empty()
     val context=object:PlatformContext by empty {
         override val windowInfo=object:WindowInfo by empty.windowInfo {
@@ -70,6 +83,10 @@ private suspend fun captureAlertDialog(writer:CaptureWriter,dynamic:Boolean) {
             times.forEach { advance(it); host.draw(); sample("time-$it") }
         }
         when(config.action) {
+            "precision" -> {
+                change(1000,"precision-on") {precision.value=true}
+                change(2000,"precision-off") {precision.value=false}
+            }
             "minimum" -> {
                 change(1000,"minimum-40") {scene.minimumInteractiveSize=40.0}
                 change(2000,"minimum-44") {scene.minimumInteractiveSize=44.0}
@@ -121,6 +138,7 @@ private suspend fun captureAlertDialog(writer:CaptureWriter,dynamic:Boolean) {
         host.advanceTo(host.timeUs+1000);sample("idle",false)
         } finally { dispatcher.removeInput(navigationInput) }
     }
+    } finally { precision.value=previous }
 }
 
 private class AlertDialogScene(val config:AlertDialogConfig) {
@@ -134,6 +152,7 @@ private class AlertDialogScene(val config:AlertDialogConfig) {
     val container=Probe()
     val probes=mutableMapOf<String,Probe>()
     val painted=mutableMapOf<String,Color>()
+    var headline:androidx.compose.ui.text.TextStyle?=null
     @Composable fun Content() {
         MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(surface=Color(0xFFFFFBFE))) {
             CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
@@ -171,6 +190,7 @@ private class AlertDialogScene(val config:AlertDialogConfig) {
         }
     }
     @Composable fun Marker(id:String,width:Double,height:Double,fixedColor:Color?=null) {
+        if(id=="title") headline=LocalTextStyle.current
         val color=fixedColor ?: LocalContentColor.current
         painted[id]=color
         val probe=probes.getOrPut(id) {Probe()}
@@ -188,6 +208,12 @@ private class AlertDialogScene(val config:AlertDialogConfig) {
         if(!open) return points
         val coordinates=checkNotNull(container.coordinates)
         points+=ProbePoint("container","dialog",null,container.geometry().filter {it.name=="size"})
+        if(config.observeTypography && config.title) {
+            val style=checkNotNull(headline)
+            points+=ProbePoint("headline","title",null,listOf(
+                number("fontSize",style.fontSize.value.toDouble(),"sp",definition="dialog.headline-font-size"),
+                number("lineHeight",style.lineHeight.value.toDouble(),"sp",definition="dialog.headline-line-height")))
+        }
         probes.filter {it.value.coordinates?.isAttached==true}.forEach { (id,probe) ->
             val c=checkNotNull(probe.coordinates)
             val origin=coordinates.localPositionOf(c,Offset.Zero)/ComposeHost.RenderScale.toFloat()

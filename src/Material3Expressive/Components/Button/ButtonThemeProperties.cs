@@ -10,6 +10,11 @@ namespace Material3Expressive.Components;
 // The values have no independent fallback policy; ControlThemes supply all Material defaults.
 internal static class ButtonThemeProperties
 {
+    public static readonly AttachedProperty<double> ContainerMinHeightProperty =
+        AvaloniaProperty.RegisterAttached<Button, double>("ContainerMinHeight", typeof(ButtonThemeProperties));
+    public static double GetContainerMinHeight(Button owner) => owner.GetValue(ContainerMinHeightProperty);
+    public static void SetContainerMinHeight(Button owner, double value) => owner.SetValue(ContainerMinHeightProperty, value);
+
     public static readonly AttachedProperty<IBrush?> BackgroundProperty =
         AvaloniaProperty.RegisterAttached<Button, IBrush?>("Background", typeof(ButtonThemeProperties));
     public static IBrush? GetBackground(Button owner) => owner.GetValue(BackgroundProperty);
