@@ -5,6 +5,7 @@
 AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 为逻辑依据，Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e` 为桌面依据。
 两端 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/carousel/MultiAspectCarousel.kt` 内容相同。
 经典路径的 `Arrangement.kt`、`KeylineList.kt`、`Keylines.kt`、`Strategy.kt`、`KeylineSnapPosition.kt`、`Carousel.kt`、`CarouselState.kt` 和 `CarouselItemScope.kt` 亦逐文件核对相同。
+焦点相关 `Pager.kt`、`UpdatableAnimationState.kt` 和 `BringIntoViewRequestPriorityQueue.kt` 两端相同；`ContentInViewNode.kt` 仅取消错误消息是否打印绝对值不同，算法与执行顺序相同。
 
 | 上游职责 | 本地位置 |
 | --- | --- |
@@ -19,6 +20,8 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 为逻辑依据，Core `a9e4
 | `SnapFlingBehavior` / `PagerSnapLayoutInfoProvider` / `CarouselDefaults` | `CarouselFling` / panel 的 approach、snap 计算 / `FlingMode` |
 | Core `DragGestureNode` / `Lsq2VelocityTracker` | `HorizontalCarousel.Input` / 现有共享 `VelocityTracker` |
 | `pagerSemantics` / `PagerScrollScope.calculateDistanceTo` | `HorizontalCarousel.Automation` / panel 的 Pager 位移分支 |
+| Core `MouseWheelScrollingLogic` / `ScrollableNode.onKeyEvent` | 共享 `MouseWheelScroll` / `HorizontalCarousel.Wheel` / `OnKeyDown` |
+| `ContentInViewNode` / `BringIntoViewRequestPriorityQueue` / `DefaultPagerBringIntoViewSpec` / `UpdatableAnimationState` | `HorizontalCarousel.Focus` |
 
 ## 2. 关键机制与架构契约
 
@@ -41,6 +44,20 @@ Fling 分为 decay approach 与 spring snap 两阶段，接续速度及帧时刻
 
 Core `CanDragCalculation` 排除鼠标；触屏／笔在主轴越过 18 DIP 后捕获指针，保留超出阈值的位移。固定 Core 的 `isDraggableVelocityTrackerFixEnabled=false`，因此速度采样不包括越过阈值之前的 MOVE。拖动事件通过共享 InteractionSource 配对，禁用／捕获丢失终止手势，程序导航和卸载取消旧手势与动画。配置变更的取消回弹使用已有 `ScheduleFrameCommit`，对应 Core 在重组后启动副作用；正常释放与捕获丢失不延迟，后续导航或卸载会撤销待提交回弹。
 
+水平滚轮按固定 Core `OneDimensionalScrollValueAdapter` 选择主轴，RTL 在消费前转为逻辑方向。已开始的滚轮序列在 Tunnel 优先接收，否则在 Bubble 等待后代；静止时不能消费的方向继续传递。共享 MouseWheelScroll 保留批量合并、物理像素阈值、线性余量和差分速度，完成后调用原 Carousel fling；无鼠标 DragInteraction。导航和卸载取消旧滚轮运动，不让旧 timeout 启动迟到的 fling；Animation 优先级贡献保留 ScrollOffset 绑定。
+
+PageUp/PageDown 对应固定 AndroidX/Core `ScrollableNode.onKeyEvent`，由聚焦后代冒泡到 Carousel；Ctrl、KeyUp 和已消费事件不处理。每次按键消费物理像素取整后的视口宽度，RTL 反转，不追加吸附。
+
+焦点及显式 BringIntoView 请求按包含关系排序，不相交的新请求替换旧请求；帧后根据真实布局更新目标，保留速度的默认 float spring 对应 UpdatableAnimationState。使用分页网格而非 Carousel focal keyline 纠正位置，RTL 保留 layoutAwareFirstOffset 和最后物理滚动方向。最后方向仅在实际整数像素位移非零时改变；小数修正不能翻转目标。禁用用户滚动不阻止焦点滚入，正在进行的用户拖动/滚轮优先；导航和卸载取消旧请求。动画使用既有帧作用域和 Animation 优先级绑定。
+
+本轮授权把原生 GotFocus / RequestBringIntoView 接入上述协议；Avalonia routed 请求没有可等待的调用方，故没有新增 await/cancel API。坐标取自绕过镜像策略的 CarouselPanel，不能直接用 owner 的镜像局部坐标替代 Compose 物理布局坐标。外层容器仍可继续处理 routed 请求。不新增公开类型或破坏性迁移。此前焦点未实现的原因是组件没有请求队列和逐帧重测连接；此处按固定源补齐，虚拟化仍是独立缺口。
+
+视口缩小按 ContentInViewNode.onRemeasured 检查旧布局中的焦点矩形；RTL 预先扣除视口尺寸差，只有原本最大可见且现在被遮挡的焦点启动跟随。显式请求优先于跟随目标，焦点离开、导航、卸载或变为最大可见时结束跟随。尺寸/步长/吸附位置变化保留旧当前页与页内比例，按新的 Pager 网格取整重建位置；不能保留旧绝对像素偏移而改变所选项目。放大视口不启动新的跟随动画。
+
+Core 的 afterFrame 不等同于本地强制完成一次全部布局：增量 Pager placement 延后到 draw；强制重测先应用整数页位置，图层平移仍沿用上一轮 draw。滚入循环在消费前保留真实目标矩形，按是否重测补上实际页位移，在该阶段判定请求并计算下一目标，之后才完成本地可视布局。此顺序由双端逐帧跟踪确认；直接使用最终可视矩形会令 RTL MultiBrowse 少滚一页。整数页的 RTL 排列先于 Float 图层平移，不重新结合表达式。
+
+Pager 的绝对页坐标与实际视口 offset 分开计算边界；无法复用增量布局时，按当前页与 fraction 重建位置并重测。fraction 的半页钳制仍保留，不能仅累加物理 offset，否则 Uncontained 末端惯性会越过参考最终位置。
+
 ## 3. 已确认决定与已知差异
 
 此前 MultiAspect 移植已获授权使用可模板化内容控件承载 modifier 的职责，提供独立数值读数供布局适配；不另建列表或通用 Pager 框架。
@@ -52,10 +69,34 @@ Core `CanDragCalculation` 排除鼠标；触屏／笔在主轴越过 18 DIP 后�
 
 辅助技术沿用本轮适配授权：`IScrollProvider` 的大／小增减都映射为上游一项分页，百分比设置映射为逻辑滚动范围的即时定位；垂直操作不支持。分页单独保留 Pager 的 `calculateDistanceTo`（扣除当前 fraction、整数取整、范围钳制），不混用 CarouselState 的程序导航位移。禁用用户滚动时不公开该 provider；原生控件禁用时拒绝操作。此适配未增加公开自定义自动化 API。
 
-**尚未实现**：经典 Carousel 的虚拟 Pager、滚轮／触控板、嵌套滚动和焦点自动滚入；任意路径 Shape；SmoothScroll 合成线程遮罩接入。
-**未经验证**：实际触屏、辅助技术、跨平台栅格、非均匀/非纯色描边以及第三方虚拟化宿主的适配。双端失败如实保留，不修改基准或容差。
+**尚未实现**：经典 Carousel 的虚拟 Pager、设备专用触控板 Pan/惯性、嵌套滚动；任意路径 Shape；SmoothScroll 合成线程遮罩接入。
+滚轮共享抽取与设备元数据限制依据本轮授权，见 [共享决定 §33](../../../../docs/DECISIONS.md#33-pager-组件的桌面滚轮算法复用)。此前没有滚轮入口的原因是组件尚未连接桌面协议；现有 ScrollField 已提供同一固定 Core 算法，故复用而不另建引擎。无破坏性 API 迁移。
+
+**未经验证**：实际触屏、精确滚轮／触控板硬件、辅助技术、跨平台栅格、非均匀/非纯色描边以及第三方虚拟化宿主的适配。双端失败如实保留，不修改基准或容差。
 
 ## 4. 验证入口
+
+2026-11-08 桌面交互与视口跟随增量：全解决方案构建通过；控件全量测试 2435 项、相关 Carousel/ScrollField 测试 75 项、VisualParity 系统测试 134 项通过。早期一次全量运行出现 AppBar 输入断言和五项测试清理异常，对应方法单独重跑 19 项及最终全量均通过；未修改这些无关组件。新增用法及 Catalog 焦点按钮、键盘/滚轮/缩窗演示说明齐备，无公开 API 破坏性迁移。
+
+双端 self-test 共 181 例、4297 个采样，重复捕获稳定、执行错误为零；169 例通过原有门禁，12 例仍有差异。不是全部一致。报告位于 `artifacts/visual-parity/runs/<目录>/summary.md`：
+
+| 目录 | 用例 | 通过 | 差异 | 覆盖 |
+| --- | ---: | ---: | ---: | --- |
+| `carousel-wheel-delivery` | 54 | 54 | 0 | 三变体、RTL、批量/反向/边界滚轮、禁用与取消 |
+| `scroll-field-wheel-shared` | 10 | 10 | 0 | 共享算法抽取后的 ScrollField 回归 |
+| `carousel-keyboard-phase` | 24 | 22 | 2 | PageUp/Down、重复按键及禁用 |
+| `carousel-focus-phase` | 36 | 30 | 6 | 焦点请求、反向替换、导航取消、禁用 |
+| `carousel-resize-delivery` | 18 | 14 | 4 | 缩窄、禁用下缩窄、动画中放大 |
+| `carousel-fling-desktop-regression` | 21 | 21 | 0 | 页坐标消费调整后的 fling 回归 |
+| `carousel-touch-desktop-regression` | 18 | 18 | 0 | 同一消费路径的真实触摸事件回归 |
+
+剩余差异分别记录，不视为已接受的上游语义偏离：
+
+- Uncontained 重复键盘分页的 LTR/RTL 两例、焦点导航取消的两例、LTR 视口变化的三例：结构化位置/尺寸一致，部分采样仍有裁剪/边缘栅格超差。已检查实际 diff 图；分离图层变换的实验未消除差异，已撤回，不放宽门禁。
+- Uncontained `previous` / `reverse` 的 LTR/RTL 四例：固定 Core 未组合或停用的目标拒绝 FocusRequester，本地全部实现化的项目接受 Focus；RTL 还因此产生后续滚动差异。`focus.accepted` 直接采集真实结果，保留失败，不以屏蔽请求掩盖虚拟化缺口。
+- MultiBrowse LTR `grow`：已有焦点动画在放大视口后 96–160ms 有短暂位置差异（96ms 为 Compose 141.5 DIP / Avalonia 141 DIP），240ms 起一致；中途重测与剩余弹簧目标更新仍待完全对齐。缩窄跟随及全部 RTL 尺寸用例的结构化事实一致。
+
+尺寸夹具在输入后发送一帧，再执行布局，对齐 Compose 在该帧重组应用宽度的顺序；不在发送帧前额外强制 Avalonia 布局。固定参考组件、采样时间、探针语义与容差均未调整。探索失败报告保留。Catalog 真实窗口已验证滚轮与 PageDown；后续桌面控制由用户 Escape 停止，新焦点/缩窗功能由行为与双端测试覆盖，最新窗口人工验证仍未完成。
 
 - `MultiAspectCarouselTests`：宽高比与边界、双轴滚动、不变布局尺寸、换内容与用户变换、显式读数、卸载重挂。
 - `MultiAspectCarouselCases.cs` / `.kt`：真实 Compose LazyRow/LazyColumn，横纵 × LTR/RTL × 六个宽高比分支，以及滚动、尺寸、圆角变化、边框和超宽项。

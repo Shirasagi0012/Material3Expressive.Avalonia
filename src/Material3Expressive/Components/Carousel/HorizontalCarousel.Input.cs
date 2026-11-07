@@ -32,6 +32,20 @@ public partial class HorizontalCarousel
         AddHandler(PointerMovedEvent, PointerMove, RoutingStrategies.Bubble);
         AddHandler(PointerReleasedEvent, PointerUp, RoutingStrategies.Tunnel);
         AddHandler(PointerCaptureLostEvent, PointerLost);
+        AddHandler(PointerWheelChangedEvent, PointerWheel, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+        AddHandler(GotFocusEvent, (_, e) =>
+        {
+            if (e.Source is Control child && child != this)
+            {
+                _focusedChild = child;
+                BringChildIntoView(child, null);
+            }
+        });
+        AddHandler(LostFocusEvent, (_, e) => { if (ReferenceEquals(_focusedChild, e.Source)) _focusedChild = null; });
+        AddHandler(RequestBringIntoViewEvent, (_, e) =>
+        {
+            if (e.TargetObject is Control child && child != this) BringChildIntoView(child, e.TargetRect);
+        });
         AddHandler(Thumb.DragStartedEvent, (_, _) => CancelPointer(false), RoutingStrategies.Bubble, true);
     }
 
@@ -45,6 +59,26 @@ public partial class HorizontalCarousel
         _velocity.Reset();
         _velocity.Add(e.Timestamp, (float)(_down.X * (TopLevel.GetTopLevel(this)?.RenderScaling ?? 1)));
         if (IsScrollInProgress) StartDrag(e);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        // Fixed AndroidX/Core ScrollableNode.onKeyEvent: viewport-sized UserInput,
+        // no fling or snap; descendants may consume the key before it bubbles here.
+        if (e.Handled || !CanDrag || e.Key is not (Key.PageUp or Key.PageDown) ||
+            e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
+        CancelPointer(false);
+        CancelScroll();
+        var density = (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
+        _scrollPosition.Rebase(Math.Clamp(ScrollOffset, 0, MaximumScrollOffset), density);
+        var delta = Foundation.MathUtils.DipToPx(Bounds.Width, density) * (e.Key == Key.PageDown ? 1 : -1);
+        if (FlowDirection == FlowDirection.RightToLeft) delta = -delta;
+        SetAndRaise(IsScrollInProgressProperty, ref _scrolling, true);
+        _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density, _panel);
+        SetCurrentValue(ScrollOffsetProperty, _scrollPosition.Value);
+        SetAndRaise(IsScrollInProgressProperty, ref _scrolling, false);
+        e.Handled = true;
     }
 
     private void StartDrag(PointerEventArgs e)
@@ -80,7 +114,7 @@ public partial class HorizontalCarousel
         // changes are sampled, but moves that have not crossed touch slop are not.
         _velocity.Add(e.Timestamp, (float)position.X * density);
         var delta = (float)(position.X - _last.X) * density * (FlowDirection == FlowDirection.RightToLeft ? 1 : -1);
-        _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density);
+        _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density, _panel);
         SetCurrentValue(ScrollOffsetProperty, _scrollPosition.Value);
         _last = position;
         e.Handled = true;

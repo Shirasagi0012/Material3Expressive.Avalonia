@@ -98,4 +98,11 @@ public partial class CarouselDemo : Window
     {
         foreach (var carousel in new[] { MultiBrowse, CenteredHero, Uncontained }) carousel.UserScrollEnabled = !carousel.UserScrollEnabled;
     }
+
+    private void FocusNextHero(object? sender, RoutedEventArgs e)
+    {
+        var index = (CenteredHero.CurrentItem + 1) % CenteredHero.ItemCount;
+        if (CenteredHero.Items[index] is CarouselItem { Content: StackPanel content })
+            content.Children.OfType<Button>().First().Focus();
+    }
 }

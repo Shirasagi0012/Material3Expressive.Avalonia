@@ -13,7 +13,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`、Core `a9e47e8aa04c95cfe572
 | `VerticalPager` 的固定页与中心吸附 | `ScrollFieldPanel`：可见页按身份实现、整数物理像素布局 |
 | `animateScrollToPage` / `performScroll` | State：远距离预跳、默认 spring、局部整数位置与小数累积 |
 | `ScrollFieldDefaults.Item` | `ScrollFieldNumber`：FastSpatial 排版与颜色动画、本地数字符号 |
-| Core `MouseWheelScrollingLogic` | `ScrollFieldWheel`：合并、即时阈值、线性插值、结束等待及吸附 |
+| Core `MouseWheelScrollingLogic` | `ScrollFieldWheel`：输入与吸附；共享 `MouseWheelScroll`：合并、即时阈值、线性插值、结束等待 |
 | `clearAndSetSemantics` / `setProgress` | 字段 peer：单节点 RangeValue、目标页范围与选项描述 |
 
 ## 2. 关键机制与架构契约

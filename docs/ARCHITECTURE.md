@@ -19,7 +19,7 @@
 
 ### Foundation 子系统职责
 
-- **Input**：内部手势、速度追踪及 Pager 组件共享的 SnapFling 吸附执行流程；组件保留各自的页面定位与规格。触摸使用绝对位置 LSQ2，滚轮使用 DifferentialVelocityTracker 的差分 Impulse 算法，不能互换。
+- **Input**：内部手势、速度追踪及 Pager 组件共享的 SnapFling 吸附执行流程；组件保留各自的页面定位与规格。触摸使用绝对位置 LSQ2，滚轮使用 DifferentialVelocityTracker 的差分 Impulse 算法，不能互换。ScrollField 与经典 Carousel 共用内部 MouseWheelScroll 的事件合并、平台换算、6 DIP 即时量、线性余量动画及结束等待；各组件保留滚动所有权、边界和吸附策略。
 - **Tokens**：Token 身份模型、资源树级联组合、引用链路解析与多重绑定转换。
 - **Typography**：文字角色聚合、动态继承合并与文字度量换算。
 - **Interaction**：指针与按键事件接入、状态层驱动、波纹动画编排与内缩焦点环呈现。

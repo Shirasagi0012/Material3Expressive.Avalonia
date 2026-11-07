@@ -4,7 +4,7 @@
   <ScrollViewer>
   <StackPanel Margin="24" Spacing="16">
     <TextBlock Text="Keyline carousels" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
-    <TextBlock Text="三种布局按视口自动分配大、中、小项目。触屏可拖动并释放；按钮和位置滑块也可浏览。单项与多项吸附、无吸附衰减使用同一套物理动画。" TextWrapping="Wrap" />
+    <TextBlock Text="三种布局按视口自动分配大、中、小项目。触屏可拖动并释放，水平滚轮可平滑浏览；聚焦项目内 Explore 按钮后可用 PageUp / PageDown 翻动一屏。按钮和位置滑块也可浏览。单项与多项吸附、无吸附衰减使用同一套物理动画。" TextWrapping="Wrap" />
     <StackPanel Orientation="Horizontal" Spacing="12">
       <Button Content="上一项" Click="PreviousClassic" />
       <Button Content="下一项" Click="NextClassic" />
@@ -26,7 +26,11 @@
     <m3:HorizontalCarousel x:Name="MultiBrowse" Height="160" ItemWidth="250" ItemSpacing="12" />
     <Slider Minimum="0" Maximum="{Binding MaximumScrollOffset, ElementName=MultiBrowse}"
             Value="{Binding ScrollOffset, ElementName=MultiBrowse, Mode=TwoWay}" />
-    <TextBlock Text="Centered hero · 两侧留白" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <TextBlock Text="Centered hero · 两侧留白" VerticalAlignment="Center" />
+      <Button Content="聚焦下一项" Click="FocusNextHero" />
+    </StackPanel>
+    <TextBlock Text="Tab 或按钮将焦点移入项目时，内容会自动滚入；禁用用户滚动后仍可演示。聚焦 Explore 后使用 PageUp / PageDown，缩窄窗口可观察焦点跟随。" TextWrapping="Wrap" />
     <m3:HorizontalCarousel x:Name="CenteredHero" Height="160" Variant="CenteredHero" ContentPadding="24,0,24,0" ItemSpacing="12" />
     <TextBlock Text="Uncontained" />
     <m3:HorizontalCarousel x:Name="Uncontained" Height="140" Variant="Uncontained" ItemWidth="220" ItemSpacing="12" />

@@ -390,3 +390,10 @@
 - **结果与异常**：动画结果增加 Interrupted（替换/Stop/拒绝）、Canceled（调用方）、ScopeEnded。Snap 和 seek 返回 bool。真实采样、转换、帧源、用户回调和清理错误保留；无关 OCE 仍是故障，采样和清理同时失败时保留两个错误。兼容入口 NextFrameAsync 及未提供 interruptedResult 的通用 MutatorMutex 业务调用仍保留原取消契约，不在内部动画热路径使用。
 - **顺序与上游边界**：停止先撤销后续采样，当前回调退出后清理，再释放互斥区、允许替换运行采样。保持起始时间、速度快照、播放倍率、弹簧/衰减算法、边界钳制和时钟批次；保留 TimePicker 的 100ms 选择等待。组件后续步骤显式检查停止，避免已卸载或被替换的旧操作继续切换、吸附或发布完成。这是 C# 异步控制流适配，不修改固定 Compose 动画参数或视觉目标。
 - **迁移**：`var result = await value.AnimateToAsync(scope, target, cancellationToken: ct); if (result.EndReason != AnimationEndReason.Finished) return;`。按场景单独处理 BoundReached。不能再用 Task.IsCanceled 判断动画替换；ScrollField 的公开滚动入口返回 bool，Tooltip 的 ShowAsync 停止返回 false。新增结果签名需要调用方重新编译。
+
+## 33. Pager 组件的桌面滚轮算法复用
+
+- **依据与授权**：本轮维护者明确授权新增交互和必要共享能力。固定 Core 的 `MouseWheelScrollingLogic.kt`、`NonTouchScrollingLogic.kt` 与 `DesktopScrollable.desktop.kt` 同时支撑 ScrollField 的 VerticalPager 和 Carousel 的 HorizontalPager；新增 Carousel 滚轮复用同一内部算法。
+- **决定**：原 ScrollFieldWheel 的排队、差分速度、6 DIP 即时位移、最长 100ms 线性动画与 50ms 结束等待移到 Foundation/Input/MouseWheelScroll。组件继续拥有输入路由、滚动取消、范围消费与完成后的 fling，不创建公共 Pager 或新的滚动框架。原 ScrollField API 与调用方无需迁移。
+- **平台边界**：保留原生 PointerWheelEventArgs 缺少 AWT scrollAmount、block-scroll 和精确设备标记的原理由，沿用 Core 无元数据事件的默认换算；不能据此声称支持专用 Pan/惯性协议。轴向判定在换算后执行，绝对值相等时归纵轴；不把纵向滚轮自动映射为横向。
+- **影响**：Carousel 的三种 TargetedFlingBehavior 均在滚轮结束后接入现有吸附/衰减。键盘 PageUp/PageDown 则按固定 AndroidX/Core ScrollableNode 即时消费一个视口，不混用 fling。现有触摸、程序导航与辅助技术入口保持各自语义。

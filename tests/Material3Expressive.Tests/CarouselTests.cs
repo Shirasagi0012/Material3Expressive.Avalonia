@@ -21,6 +21,184 @@ namespace Material3Expressive.Tests;
 public class CarouselTests
 {
     [AvaloniaTheory]
+    [InlineData(CarouselVariant.MultiBrowse)]
+    [InlineData(CarouselVariant.CenteredHero)]
+    [InlineData(CarouselVariant.Uncontained)]
+    public void ViewportResize_PreservesCurrentPageAndFraction(CarouselVariant variant)
+    {
+        var carousel = Create(variant); carousel.ItemWidth = 160;
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            carousel.ScrollToItem(3); Flush(window);
+            carousel.Width = 240; Flush(window);
+            Assert.Equal(3, carousel.CurrentItem);
+            Assert.Equal(0, carousel.CurrentItemOffsetFraction, 5);
+            carousel.Width = 400; Flush(window);
+            Assert.Equal(3, carousel.CurrentItem);
+            Assert.Equal(0, carousel.CurrentItemOffsetFraction, 5);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void ShrinkingViewport_KeepsVisibleFocusInViewEvenWhenUserScrollingIsDisabled()
+    {
+        using var clock = new MotionTestClockScope();
+        var carousel = Create(CarouselVariant.MultiBrowse); carousel.ItemWidth = 160;
+        carousel.UserScrollEnabled = false;
+        var child = new Border { Focusable = true };
+        ((CarouselItem)carousel.Items[1]!).Content = child;
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            child.Focus(); Flush(window); Advance(60);
+            Assert.Equal(0, carousel.ScrollOffset);
+            carousel.Width = 240; Flush(window);
+            Assert.True(carousel.IsScrollInProgress);
+            Advance(90);
+            Assert.True(carousel.ScrollOffset > 0);
+            Assert.True(child.IsFocused);
+            Assert.False(carousel.IsScrollInProgress);
+            carousel.Width = 400; Flush(window); Advance(90);
+            Assert.False(carousel.IsScrollInProgress);
+            Assert.Equal(0, clock.PendingFrameCount);
+        }
+        finally { window.Close(); }
+        void Advance(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); } }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FocusRelocation_ZeroDurationCompletesAndPreservesTwoWayBinding(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var carousel = Create(CarouselVariant.CenteredHero);
+        carousel.Width = 320; carousel.ItemWidth = 160;
+        carousel.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        var source = new HorizontalCarousel();
+        carousel.Bind(HorizontalCarousel.ScrollOffsetProperty, new Avalonia.Data.Binding(nameof(HorizontalCarousel.ScrollOffset))
+        { Source = source, Mode = Avalonia.Data.BindingMode.TwoWay });
+        var child = new Border { Focusable = true };
+        ((CarouselItem)carousel.Items[3]!).Content = child;
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            window.MotionRoot.DurationScale = 0;
+            carousel.ScrollToItem(3); Flush(window); child.Focus(); Flush(window);
+            for (var i = 0; i < 3; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
+            Assert.Equal(232, carousel.ScrollOffset);
+            Assert.False(carousel.IsScrollInProgress);
+            Assert.Equal(carousel.ScrollOffset, source.ScrollOffset);
+            source.ScrollOffset = 100; Flush(window);
+            Assert.Equal(100, carousel.ScrollOffset);
+            Assert.Equal(0, clock.PendingFrameCount);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(CarouselVariant.CenteredHero, false, 4, 348)]
+    [InlineData(CarouselVariant.CenteredHero, true, 4, 232)]
+    [InlineData(CarouselVariant.MultiBrowse, false, 2, 504)]
+    [InlineData(CarouselVariant.MultiBrowse, true, 2, 168)]
+    [InlineData(CarouselVariant.Uncontained, false, 4, 704)]
+    [InlineData(CarouselVariant.Uncontained, true, 4, 528)]
+    public void FocusRelocation_UsesPhysicalPanelCoordinatesAndRetainsSettledPosition(CarouselVariant variant, bool rtl, int target, double expected)
+    {
+        using var clock = new MotionTestClockScope();
+        var carousel = Create(variant);
+        carousel.Width = 320; carousel.ItemWidth = 160;
+        carousel.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        foreach (var item in carousel.Items.OfType<CarouselItem>()) item.Content = new Border { Focusable = true };
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            window.SetRenderScaling(4); Flush(window);
+            carousel.ScrollToItem(3); Flush(window);
+            ((Control)((CarouselItem)carousel.Items[target]!).Content!).Focus(); Flush(window);
+            for (var i = 0; i < 90; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
+            Assert.Equal(expected, carousel.ScrollOffset);
+            Assert.False(carousel.IsScrollInProgress);
+            Assert.Equal(0, clock.PendingFrameCount);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FocusRelocation_UsesPagerGridEvenWhenDisabledAndNavigationCancelsIt(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var carousel = Create(CarouselVariant.CenteredHero);
+        carousel.Width = 320; carousel.ItemWidth = 160;
+        carousel.UserScrollEnabled = false;
+        carousel.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        foreach (var item in carousel.Items.OfType<CarouselItem>()) item.Content = new Border { Focusable = true };
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            carousel.ScrollToItem(3); Flush(window);
+            Assert.Equal(300, carousel.ScrollOffset);
+            ((Control)((CarouselItem)carousel.Items[3]!).Content!).Focus(); Flush(window);
+            Assert.True(carousel.IsScrollInProgress);
+            Advance(90);
+            Assert.Equal(232, carousel.ScrollOffset);
+            Assert.False(carousel.IsScrollInProgress);
+            carousel.ScrollToItem(3); Flush(window);
+            ((Control)((CarouselItem)carousel.Items[4]!).Content!).Focus(); Flush(window);
+            Advance(3); Assert.True(carousel.IsScrollInProgress);
+            carousel.ScrollToItem(0); Advance(90);
+            Assert.Equal(0, carousel.ScrollOffset); Assert.False(carousel.IsScrollInProgress);
+            ((Control)((CarouselItem)carousel.Items[2]!).Content!).BringIntoView(); Flush(window);
+            Advance(3); window.Content = null; Flush(window); Advance(90);
+            Assert.False(carousel.IsScrollInProgress);
+        }
+        finally { window.Close(); }
+        void Advance(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); } }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PageKeys_ScrollViewportWithoutSnappingAndRespectChildHandling(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var carousel = Create(CarouselVariant.MultiBrowse);
+        carousel.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        var button = new Button { Content = "Focusable content" };
+        ((CarouselItem)carousel.Items[3]!).Content = button;
+        var interactions = new List<MaterialInteractionEvent>();
+        carousel.InteractionSource.Interaction += interactions.Add;
+        var window = DialogTests.Show(carousel);
+        try
+        {
+            carousel.ScrollToItem(3); Flush(window); button.Focus(); Flush(window);
+            var initial = carousel.ScrollOffset;
+            window.KeyPress(Key.PageDown, RawInputModifiers.None, PhysicalKey.PageDown, null); Flush(window);
+            Assert.Equal(initial + (rtl ? -400 : 400), carousel.ScrollOffset);
+            var afterDown = carousel.ScrollOffset;
+            window.KeyRelease(Key.PageDown, RawInputModifiers.None, PhysicalKey.PageDown, null); Flush(window);
+            Assert.Equal(afterDown, carousel.ScrollOffset);
+            for (var i = 0; i < 90; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); Flush(window); }
+            Assert.Equal(afterDown, carousel.ScrollOffset); // Page keys do not fling or snap.
+            window.KeyPress(Key.PageUp, RawInputModifiers.None, PhysicalKey.PageUp, null); Flush(window);
+            Assert.Equal(initial, carousel.ScrollOffset);
+            window.KeyPress(Key.PageDown, RawInputModifiers.Control, PhysicalKey.PageDown, null); Flush(window);
+            Assert.Equal(initial, carousel.ScrollOffset);
+            carousel.UserScrollEnabled = false; window.KeyPress(Key.PageDown, RawInputModifiers.None, PhysicalKey.PageDown, null); Flush(window);
+            Assert.Equal(initial, carousel.ScrollOffset);
+            carousel.UserScrollEnabled = true;
+            button.KeyDown += (_, e) => e.Handled = true;
+            window.KeyPress(Key.PageDown, RawInputModifiers.None, PhysicalKey.PageDown, null); Flush(window);
+            Assert.Equal(initial, carousel.ScrollOffset); Assert.Empty(interactions);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
     public void AutomationPagesAndPercentage_RespectBoundsAndUserScrolling(bool rtl)
@@ -164,6 +342,9 @@ public class CarouselTests
         position.Consume(.2f, 100); position.Consume(.2f, 100);
         Assert.Equal(1, position.Position);
         Assert.Equal(.25, position.Value);
+        Assert.True(position.LastScrolledForward);
+        position.Consume(-.1f, 100);
+        Assert.True(position.LastScrolledForward); // No integer movement: retain direction.
         Assert.Equal(-1, position.Consume(-20, 100));
         Assert.Equal(0, position.Position);
         position.Rebase(24, 4);

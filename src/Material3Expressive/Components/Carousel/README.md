@@ -1,6 +1,6 @@
 # Carousel
 
-`HorizontalCarousel` 提供 MultiBrowse、Uncontained 和 CenteredHero 三种横向布局，支持数据模板、项目跳转和动画。`MultiAspectCarouselItem` 为不同宽高比的内容添加视口边缘遮罩和视差，可放在横向或纵向列表、网格及自定义滚动布局中。
+`HorizontalCarousel` 提供 MultiBrowse、Uncontained 和 CenteredHero 三种横向布局，支持数据模板、项目跳转、滚轮、键盘分页和动画。`MultiAspectCarouselItem` 为不同宽高比的内容添加视口边缘遮罩和视差，可放在横向或纵向列表、网格及自定义滚动布局中。
 
 ## 基础用法
 
@@ -53,7 +53,11 @@ MultiAspect 不拥有滚动容器。在已加载 MaterialTheme 的应用中，�
 - 布局完成后调用 `ScrollToItem(index)` 或 `await AnimateScrollToItemAsync(index)`；后者可传 `IAnimationSpec<float>` 和取消令牌。新的导航会取消旧动画，卸载也会取消。
 - 触屏／笔拖动使用 18 DIP 阈值，释放后按 `FlingMode` 吸附或衰减。`Default` 为 MultiBrowse / CenteredHero 选择 `SingleAdvance`，为 Uncontained 选择 `NoSnap`；也可显式选择 `MultiBrowse` 多项惯性吸附。
 - `FlingAsync(velocity)` 接受逻辑方向的 DIP/s，返回未消费速度。`SnapAnimationSpec` / `DecayAnimationSpec` 可替换 fling 规格，规格内部值使用物理像素；不影响程序导航的单独规格。
-- `UserScrollEnabled` 控制手势；程序导航不受影响。`IsScrollInProgress` 包括拖动和动画。`InteractionSource` 发布配对的 `DragStart` / `DragStop` / `DragCancel`，结束事件引用原开始对象。
+- 水平滚轮输入自动合并并平滑滚动，结束后使用当前 `FlingMode`；纵向输入留给外层滚动区。RTL 自动反转逻辑方向，静止时首尾向外的事件可继续传递。
+- 当项目内的控件持有键盘焦点时，PageUp / PageDown 按一个视口宽度即时滚动，不额外吸附；Ctrl 组合键和子控件已处理的按键不接管。
+- 项目内的控件获得焦点或调用 `BringIntoView()` 时，自动按 Pager 分页网格弹簧滚入。可以直接调用内容按钮的 `Focus()`，无需先导航；`UserScrollEnabled="False"` 也允许焦点滚入。新导航和用户拖动会取消旧的滚入动画。
+- 视口缩小时，原本可见的焦点内容会继续滚入可见范围；放大视口不主动启动焦点动画。尺寸变化按当前页和页内比例重新计算位置，保持当前项目。
+- `UserScrollEnabled` 控制手势和键盘分页；程序导航不受影响。`IsScrollInProgress` 包括拖动和动画。`InteractionSource` 发布配对的 `DragStart` / `DragStop` / `DragCancel`，结束事件引用原开始对象。
 - 辅助技术可通过原生滚动接口前后翻页或设置滚动百分比；`UserScrollEnabled="False"` 同时移除用户分页操作。Catalog 提供实际调用这一接口的前后翻页按钮。
 - `CarouselItem.DrawInfo` 发布当前遮罩尺寸、最小／最大尺寸和局部遮罩矩形，可绑定实现内容淡化等效果。
 
@@ -97,7 +101,7 @@ item.DrawInfo = null;
 
 ## 使用限制与注意事项
 
-经典容器支持触屏／笔拖动及程序导航，鼠标左键拖动与固定 Core 一样不启用。滚轮、触控板、嵌套滚动和焦点自动滚入尚未实现；鼠标用户可用外部滑块绑定 `ScrollOffset` 或导航按钮。它不虚拟化项目，适合有限集合。请勿在滚动方向无限测量的容器中使用。动画需要按接入指南初始化窗口的 `AnimationScope`。
+经典容器支持触屏／笔拖动、水平滚轮、PageUp/PageDown 及程序导航，鼠标左键拖动不启用。原生滚轮事件采用当前平台的默认单位换算；设备专用触控板 Pan/惯性和嵌套滚动尚未实现。普通纵向滚轮不会改为横向浏览，鼠标用户也可用外部滑块绑定 `ScrollOffset` 或导航按钮。它不虚拟化项目，适合有限集合；因此离屏内容仍可获得焦点，与 Compose 未组合项目的焦点拒绝存在差异。请勿在滚动方向无限测量的容器中使用。动画需要按接入指南初始化窗口的 `AnimationScope`。
 
 `CarouselItem` 的遮罩与边框都记住首次形状，与 MultiAspect 生命周期不同；布局中的遮罩位置和尺寸仍持续更新。在吸附点直接调用单项 fling 可以消费速度但不换页。中途重定向程序动画按固定移植基线计算位移，可能保留起始页内偏移；需要精确定位时调用 `ScrollToItem`。
 

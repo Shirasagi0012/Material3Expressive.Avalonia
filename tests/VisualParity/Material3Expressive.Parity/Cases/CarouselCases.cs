@@ -5,6 +5,7 @@ using Avalonia.Automation.Provider;
 using Avalonia.Layout;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
+using Avalonia.Headless;
 using Avalonia.Media;
 using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
@@ -51,19 +52,21 @@ public sealed class CarouselCases
     internal static async Task Capture(CaptureWriter writer)
     {
         var c = writer.Metadata.ReadConfig<CarouselConfig>();
-        await using var host = new AvaloniaHost(writer, 400, 180, new ManualTimeProvider());
+        var resize = c.Action.StartsWith("focus-shrink") || c.Action == "focus-grow";
+        await using var host = new AvaloniaHost(writer, resize ? 480 : 400, 180, new ManualTimeProvider());
         var carousel = new HorizontalCarousel { Width = c.Width, Height = 120, ItemWidth = c.ItemWidth == 0 ? double.NaN : c.ItemWidth,
             Variant = Enum.Parse<CarouselVariant>(c.Variant), ItemSpacing = c.Spacing,
             FlingMode = Enum.Parse<CarouselFlingMode>(c.Mode),
-            UserScrollEnabled = c.Action != "semantics-disabled",
+            UserScrollEnabled = c.Action is not ("semantics-disabled" or "wheel-disabled" or "key-disabled" or "focus-disabled" or "focus-shrink-disabled"),
             ContentPadding = new(c.Before, 0, c.After, 0), HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
-        var items = Enumerable.Range(0, c.Count).Select(i => new CarouselItem { CornerRadius = new(c.Radius), Content = new Marker(i),
+        var items = Enumerable.Range(0, c.Count).Select(i => new CarouselItem { CornerRadius = new(c.Radius), Content = new Marker(i) { Focusable = c.Action.StartsWith("key-") || c.Action.StartsWith("focus-") },
             BorderBrush = Brushes.Black, BorderThickness = new(c.Border) }).ToArray();
         foreach (var item in items) carousel.Items.Add(item);
         host.Mount(new Grid { Margin = new Thickness(24), Children = { carousel } }); host.Frame(0);
         carousel.ScrollToItem(c.Item); host.Draw();
         if (c.Offset != 0) { carousel.ScrollOffset += c.Offset; host.Draw(); }
+        var focusAccepted = false;
         void Sample(string id)
         {
             var points = new List<ProbePoint> { new("viewport", "viewport", null, [
@@ -72,6 +75,10 @@ public sealed class CarouselCases
             if (c.Action.StartsWith("semantics-")) points.Add(new("actions", "semantics", "viewport", [
                 Measurement.Flag("pagingAvailable", ControlAutomationPeer.CreatePeerForElement(carousel)!.GetProvider<IScrollProvider>() is not null,
                     definition: "carousel.pagingAvailable")]));
+            if (c.Action.StartsWith("focus-")) points.Add(new("focus", "input", "viewport", [
+                Measurement.Flag("accepted", focusAccepted, definition: "carousel.focusRequestAccepted")]));
+            if (c.Action.StartsWith("focus-shrink") || c.Action == "focus-grow") points.Add(new("size", "viewport", "viewport", [
+                Measurement.Numeric("width", carousel.Bounds.Width, "dip", definition: "carousel.viewportWidth")]));
             if (items.Length > 0)
             {
                 var info = items[carousel.CurrentItem].DrawInfo;
@@ -84,6 +91,78 @@ public sealed class CarouselCases
         }
         Sample("initial");
         if (c.Action == "none") return;
+        if (c.Action.StartsWith("focus-"))
+        {
+            for (long time = 16000; time <= 640000; time += 16000)
+            {
+                host.AdvanceTo(time);
+                if (time == 16000)
+                {
+                    var index = c.Action == "focus-previous" ? c.Item - 1 : c.Action is "focus-current" or "focus-disabled" ? c.Item : c.Item + 1;
+                    focusAccepted = ((Control)items[index].Content!).Focus(); host.Draw();
+                    writer.Record(time, "input", $"focus item {index}");
+                }
+                if (time == 80000 && c.Action == "focus-reverse")
+                {
+                    focusAccepted = ((Control)items[c.Item - 1].Content!).Focus(); host.Draw();
+                    writer.Record(time, "input", $"focus item {c.Item - 1}");
+                }
+                if (time == 80000 && c.Action == "focus-navigation") { carousel.ScrollToItem(0); host.Draw(); }
+                if (time == 80000 && (c.Action.StartsWith("focus-shrink") || c.Action == "focus-grow"))
+                {
+                    // Compose applies this state change during the next frame's recomposition.
+                    // Let Frame draw the invalidated layout after its animation waiter batch.
+                    carousel.Width = c.Action == "focus-grow" ? 400 : 240;
+                    writer.Record(time, "input", $"viewport width {carousel.Width}");
+                }
+                host.Frame(time);
+                if (time <= 160000 || time % 80000 == 0) Sample($"time-{time}");
+            }
+            return;
+        }
+        if (c.Action.StartsWith("key-"))
+        {
+            ((Control)items[c.Item].Content!).Focus(); host.Draw();
+            for (long time = 16000; time <= 320000; time += 16000)
+            {
+                host.AdvanceTo(time);
+                if (time == 16000 || c.Action == "key-repeat" && time is 32000 or 48000)
+                {
+                    var key = c.Action == "key-up" ? Key.PageUp : Key.PageDown;
+                    host.Window.KeyPress(key, RawInputModifiers.None, key == Key.PageUp ? PhysicalKey.PageUp : PhysicalKey.PageDown, null); host.Window.KeyRelease(key, RawInputModifiers.None, key == Key.PageUp ? PhysicalKey.PageUp : PhysicalKey.PageDown, null);
+                    writer.Record(time, "input", $"key {key}");
+                }
+                host.Frame(time);
+                if (time <= 80000 || time % 80000 == 0) Sample($"time-{time}");
+            }
+            return;
+        }
+        if (c.Action.StartsWith("wheel-"))
+        {
+            var impl = typeof(TopLevel).GetProperty("PlatformImpl", System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.GetValue(host.Window)!;
+            var root = (IInputRoot)impl.GetType().GetProperty("InputRoot")!.GetValue(impl)!;
+            var input = (Action<RawInputEventArgs>)impl.GetType().GetProperty("Input")!.GetValue(impl)!;
+            var mouse = (IMouseDevice)impl.GetType().GetProperty("MouseDevice")!.GetValue(impl)!;
+            for (long time = 16000; time <= 1600000; time += 16000)
+            {
+                host.AdvanceTo(time);
+                if (time == 16000 || c.Action == "wheel-burst" && time is 32000 or 48000 || c.Action == "wheel-reverse" && time == 48000)
+                {
+                    var delta = c.Action == "wheel-small" ? -.1 : c.Action == "wheel-large" ? -12 : -3;
+                    if (c.Action == "wheel-reverse" && time == 48000) delta = 6;
+                    if (c.Action == "wheel-start-bound") delta = 3;
+                    if (c.Rtl) delta = -delta;
+                    var vector = c.Action == "wheel-vertical" ? new Vector(0, -3) : new Vector(delta, 0);
+                    input((RawInputEventArgs)Activator.CreateInstance(typeof(RawMouseWheelEventArgs), mouse, (ulong)(1000 + time / 1000), root,
+                        new Point(184, 84), vector, RawInputModifiers.None)!);
+                    writer.Record(time, "input", $"wheel {vector}");
+                }
+                host.Frame(time);
+                if (time <= 240000 || time % 80000 == 0) Sample($"time-{time}");
+            }
+            return;
+        }
         if (c.Action.StartsWith("touch-"))
         {
             using var touch = Activator.CreateInstance<TouchDevice>();
@@ -196,6 +275,71 @@ public sealed class CarouselFlingCases
         yield return new("dynamic.rtl", "RTL fling", new(Rtl: true, Count: 12, Item: 3, Action: "fling", Mode: "SingleAdvance", Velocity: -1400, Offset: -45));
         yield return new("dynamic.at-snap", "Release exactly at snap", new(Count: 12, Item: 3, Action: "fling", Mode: "SingleAdvance", Velocity: 1400));
         yield return new("dynamic.start-bound", "Start-bound velocity", new(Action: "fling", Mode: "NoSnap", Velocity: -2800));
+    }
+    [ParityScenario("dynamic", Data = nameof(Configurations))] public Task Dynamic(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-wheel")]
+public sealed class CarouselWheelCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "single", "small", "large", "burst", "reverse", "vertical", "disabled", "start-bound", "end-bound" })
+        {
+            var id = $"dynamic.{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Item: action == "start-bound" ? 0 : action == "end-bound" ? 7 : 2,
+                Action: "wheel-" + action));
+        }
+    }
+    [ParityScenario("dynamic", Data = nameof(Configurations))] public Task Dynamic(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-keyboard")]
+public sealed class CarouselKeyboardCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "down", "up", "repeat", "disabled" })
+        {
+            var id = $"dynamic.{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Item: 3, Action: "key-" + action));
+        }
+    }
+    [ParityScenario("dynamic", Data = nameof(Configurations))] public Task Dynamic(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-focus")]
+public sealed class CarouselFocusCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "current", "next", "previous", "reverse", "navigation", "disabled" })
+        {
+            var id = $"dynamic.{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Item: 3, Action: "focus-" + action));
+        }
+    }
+    [ParityScenario("dynamic", Data = nameof(Configurations))] public Task Dynamic(CaptureWriter writer) => CarouselCases.Capture(writer);
+}
+
+[ParitySuite("carousel-resize")]
+public sealed class CarouselResizeCases
+{
+    public static IEnumerable<CaseData<CarouselConfig>> Configurations()
+    {
+        foreach (var variant in Enum.GetNames<CarouselVariant>())
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "shrink", "shrink-disabled", "grow" })
+        {
+            var id = $"dynamic.{variant.ToLowerInvariant()}.{(rtl ? "rtl" : "ltr")}.{action}";
+            yield return new(id, id, new(variant, rtl, Width: action == "grow" ? 240 : 400, Action: "focus-" + action));
+        }
     }
     [ParityScenario("dynamic", Data = nameof(Configurations))] public Task Dynamic(CaptureWriter writer) => CarouselCases.Capture(writer);
 }

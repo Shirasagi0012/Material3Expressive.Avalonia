@@ -66,6 +66,11 @@ public partial class HorizontalCarousel : ItemsControl
         base.OnApplyTemplate(e);
     }
     internal void SetPanel(CarouselPanel panel) => _panel = panel;
+    internal void RebaseAfterMeasure(double offset, float density)
+    {
+        if (_scrollCancellation is not null) _scrollPosition.Rebase(offset, density);
+        else SetCurrentValue(ScrollOffsetProperty, offset);
+    }
     internal void Publish(double maximum, int current, double fraction)
     {
         SetAndRaise(MaximumScrollOffsetProperty, ref _maximum, maximum);
@@ -85,6 +90,7 @@ public partial class HorizontalCarousel : ItemsControl
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _focusedChild = null;
         CancelPointer(false);
         CancelScroll();
         base.OnDetachedFromVisualTree(e);
@@ -139,7 +145,7 @@ public partial class HorizontalCarousel : ItemsControl
                 await SuspendAnimation.AnimateAsync(scope, new FloatConverter(), 0, displacement,
                     animationSpec: animationSpec ?? new SpringSpec<float>(), block: (value, _) =>
                     {
-                        var consumed = _scrollPosition.Consume(value - previous, (float)MaximumScrollOffset * density);
+                        var consumed = _scrollPosition.Consume(value - previous, (float)MaximumScrollOffset * density, panel);
                         previous += consumed;
                     }, cancellationToken: cancellation.Token);
             }
@@ -162,6 +168,9 @@ public partial class HorizontalCarousel : ItemsControl
         : throw new InvalidOperationException("Lay out the carousel at a finite width before scrolling to an item.");
     private void CancelScroll()
     {
+        _bringRequests.Clear();
+        _bringingIntoView = false;
+        _trackingFocusedChild = false;
         _pendingSettle?.Dispose();
         _pendingSettle = null;
         var offset = ScrollOffset;
@@ -208,7 +217,7 @@ public partial class HorizontalCarousel : ItemsControl
             {
                 using var binding = scope.BindAnimatedValue(this, ScrollOffsetProperty, _scrollPosition);
                 var remaining = await SnapFling.RunAsync(scope, (float)velocity * density, decay, snap,
-                    delta => _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density),
+                    delta => _scrollPosition.Consume(delta, (float)MaximumScrollOffset * density, panel),
                     (speed, decayOffset) => mode == CarouselFlingMode.NoSnap ? decayOffset
                         : panel.ApproachOffset(_scrollPosition.Position, speed, decayOffset, mode),
                     speed => mode == CarouselFlingMode.NoSnap ? 0
@@ -238,6 +247,8 @@ internal sealed class CarouselPanel : Panel
     private int _layoutCurrent;
     private float _layoutFraction;
     internal CarouselStrategy? Strategy { get; private set; }
+    internal float PageStride => _pageSize + _spacing;
+    internal bool LastScrollRemeasured { get; private set; }
     protected override bool BypassFlowDirectionPolicies => true;
 
     protected override Size MeasureOverride(Size availableSize)
@@ -248,6 +259,11 @@ internal sealed class CarouselPanel : Panel
         if (!double.IsFinite(availableSize.Width))
             throw new InvalidOperationException("HorizontalCarousel needs a finite width along its scrolling axis.");
         var owner = _owner;
+        var previousWidth = Strategy?.AvailableSpace / _density;
+        var previousStride = PageStride;
+        var previousDensity = _density;
+        var previousState = Strategy?.IsValid == true ? LayoutStateAt((float)owner.ScrollOffset * _density) : ((int Current, float Fraction)?)null;
+        var previousSnap = previousState is { } state ? Strategy!.SnapPosition(state.Current, Children.Count) : 0;
         _density = (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
         var space = (float)CarouselStrategy.Round((float)availableSize.Width * _density);
         _spacing = CarouselStrategy.Round((float)owner.ItemSpacing * _density);
@@ -258,8 +274,18 @@ internal sealed class CarouselPanel : Panel
         Strategy = new(keylines, space, _spacing, (float)padding.Left * _density, (float)padding.Right * _density);
         _layoutScroll = null;
         _pageSize = CarouselStrategy.Round(Strategy.ItemSize);
+        if (previousState is { } old && (previousWidth != space / _density || previousStride != PageStride || previousDensity != _density ||
+            previousSnap != Strategy.SnapPosition(old.Current, Children.Count)))
+        {
+            var scroll = Math.Clamp(old.Current * PageStride - CarouselStrategy.Round(
+                Strategy.SnapPosition(old.Current, Children.Count) - old.Fraction * PageStride), 0, MaxOffset);
+            owner.RebaseAfterMeasure(scroll / _density, _density);
+            var (current, fraction) = LayoutStateAt(scroll);
+            owner.Publish(MaxOffset / _density, current, fraction);
+        }
         var cross = Math.Max(0, availableSize.Height - padding.Top - padding.Bottom);
         foreach (var child in Children) child.Measure(new Size(_pageSize / _density, cross));
+        if (previousWidth is { } oldWidth) owner.TrackFocusOnResize(oldWidth, space / _density);
         var height = Children.Select(child => child.DesiredSize.Height).DefaultIfEmpty(0).Max() + padding.Top + padding.Bottom;
         return new(availableSize.Width, height);
     }
@@ -298,6 +324,46 @@ internal sealed class CarouselPanel : Panel
         return (target - current) * (_pageSize + _spacing) + strategy.SnapPosition(current, Children.Count)
             - strategy.SnapPosition(target, Children.Count);
     }
+    // PagerState.performScroll uses absolute page coordinates for bounds. When the
+    // incremental layout cannot be reused, PagerMeasure reconstructs placement from
+    // currentPage/currentPageOffsetFraction, including its half-page fraction clamp.
+    internal (float Position, float Consumed, bool Coerced) ApplyScroll(float scroll, float delta)
+    {
+        if (Strategy is not { IsValid: true } strategy || Children.Count == 0) return (scroll, 0, true);
+        var (current, fraction) = LayoutStateAt(scroll);
+        var stride = PageStride;
+        var absolute = current * stride + CarouselStrategy.Round(fraction * stride);
+        var maximum = MaxOffset + Math.Clamp(strategy.SnapPosition(Children.Count - 1, Children.Count), 0, strategy.AvailableSpace);
+        var minimum = Math.Min(maximum, Math.Clamp(strategy.SnapPosition(0, Children.Count), 0, strategy.AvailableSpace));
+        var updated = absolute + delta;
+        var coerced = Math.Clamp(updated, minimum, maximum);
+        var consumed = coerced - absolute;
+        var incremental = CanApplyScroll(scroll, consumed, fraction);
+        LastScrollRemeasured = !incremental;
+        var position = incremental ? scroll + consumed
+            : current * stride - CarouselStrategy.Round(strategy.SnapPosition(current, Children.Count) - (fraction + consumed / stride) * stride);
+        position = Math.Clamp(position, 0, MaxOffset);
+        if (!incremental) _layoutScroll = null;
+        LayoutStateAt(position);
+        return (position, consumed, updated != coerced);
+    }
+
+    private bool CanApplyScroll(float scroll, float amount, float fraction)
+    {
+        var stride = PageStride;
+        var space = Strategy!.AvailableSpace;
+        var first = (int)(scroll / stride);
+        var last = Math.Min(Children.Count - 1, (int)MathF.Ceiling((scroll + space) / stride) - 1);
+        var firstOffset = first * stride - scroll;
+        var lastOffset = last * stride - scroll;
+        var firstScroll = scroll - first * stride + amount;
+        var nextFraction = fraction + amount / stride;
+        var canApply = amount > 0
+            ? MathF.Min(firstOffset + stride, lastOffset + stride - space) > amount
+            : MathF.Min(-firstOffset, space - lastOffset) > -amount;
+        return firstScroll >= 0 && firstScroll < stride && nextFraction > -.5f && nextFraction < .5f && canApply;
+    }
+
     private (int Current, float Fraction) LayoutStateAt(float scroll)
     {
         if (Children.Count == 0 || Strategy is not { IsValid: true } strategy) return (0, 0);
@@ -308,16 +374,8 @@ internal sealed class CarouselPanel : Panel
             // PagerMeasureResult.copyWithScrollDeltaWithoutRemeasure preserves the current
             // page and accumulates Float fractions until its visible-page boundaries change.
             var delta = previous - scroll;
-            var first = (int)(previous / stride);
-            var last = Math.Min(Children.Count - 1, (int)MathF.Ceiling((previous + strategy.AvailableSpace) / stride) - 1);
-            var firstOffset = first * stride - previous;
-            var lastOffset = last * stride - previous;
-            var firstScroll = previous - first * stride - delta;
             var fraction = _layoutFraction - delta / stride;
-            var canApply = delta < 0
-                ? MathF.Min(firstOffset + stride, lastOffset + stride - strategy.AvailableSpace) > -delta
-                : MathF.Min(-firstOffset, strategy.AvailableSpace - lastOffset) > delta;
-            if (firstScroll >= 0 && firstScroll < stride && fraction > -.5f && fraction < .5f && canApply)
+            if (CanApplyScroll(previous, -delta, _layoutFraction))
             {
                 _layoutScroll = scroll;
                 _layoutFraction = fraction;
@@ -406,8 +464,12 @@ internal sealed class CarouselPanel : Panel
             var keyline = CarouselKeyline.Lerp(before, after, progress);
             var translation = keyline.Offset - center;
             if (before == after) translation += (center - keyline.UnadjustedOffset) / keyline.Size;
-            var x = CarouselStrategy.Round(i * stride - scroll) + translation;
-            if (owner.FlowDirection == FlowDirection.RightToLeft) x = (float)finalSize.Width * _density - x - _pageSize;
+            var pageOffset = CarouselStrategy.Round(i * stride - scroll);
+            // Pager places the integer page (including RTL) before carouselItem applies
+            // its Float layer translation. Reassociation changes edge visibility in BIV.
+            var x = owner.FlowDirection == FlowDirection.RightToLeft
+                ? (float)finalSize.Width * _density - pageOffset - _pageSize - translation
+                : pageOffset + translation;
             var child = Children[i];
             // Avalonia ZIndex is integer; this preserves the order/ties of 1f / (1 + distance).
             child.ZIndex = Children.Count - Math.Abs(i - current);
