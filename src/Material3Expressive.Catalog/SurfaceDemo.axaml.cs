@@ -12,6 +12,8 @@ public partial class SurfaceDemo : Window
     {
         AnimationScope.Initialize(this);
         InitializeComponent();
+        CutRtl.IsCheckedChanged += (_, _) => CutExamples.FlowDirection = CutRtl.IsChecked == true
+            ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
     }
     private void OnOpen(object? sender, RoutedEventArgs e) => Status.Text = $"Opened {_opens += 1} times";
     private void OnSelect(object? sender, RoutedEventArgs e)

@@ -91,7 +91,25 @@ Button/RadioButton/CheckBox 角色；请给自定义内容设置有意义的 `Au
 支持四角不等圆角并跟随当前形变，不增加 Padding 或期望尺寸。默认仍为 Opacity。
 配置与组件接入边界见 [交互反馈](../../Foundation/Interaction/README.md)。
 
-当前形状入口为圆角矩形，没有任意 Shape API。普通圆角数值按 DIP 表达，超过可绘尺寸时按当前尺寸归一化。现有 Full Token 的 1000 值是
+`Shape` 可设置 `CutCornerShape`，覆盖背景、内容裁剪、均匀描边、阴影、波纹和焦点环的外形；
+静态与三种交互 Surface 都支持。四角按逻辑 Start/End 定义，随 RTL 交换；百分比以短边为基准：
+
+```xml
+<m3:ClickableSurface Width="160" Height="80" Padding="24" Content="切角表面">
+  <m3:ClickableSurface.Shape>
+    <m3:CutCornerShape TopStart="24" TopEnd="10%" BottomEnd="24" BottomStart="10%" />
+  </m3:ClickableSurface.Shape>
+</m3:ClickableSurface>
+```
+
+形状是可共享的 Avalonia 对象，四角可绑定并在运行时修改。清除 `Shape` 恢复 `CornerRadius`。
+自定义轮廓可派生 `MaterialShape`，实现 `CreateOutline(Size, FlowDirection, double density)`，
+返回新建的闭合 `PathGeometry`；坐标为物理左上角起算的 DIP，调用方在方法中处理方向。
+支持直线、曲线、凹轮廓与带孔路径。形状参数使用 Avalonia 属性时会自动通知已挂载的消费方。
+显式路径只支持均匀 `BorderThickness`；路径不改变内容布局，内容留白仍由 Padding 控制。
+Catalog **Interactive surfaces / Cut corners** 展示切角 Surface、Card、RTL 与键盘焦点环。
+
+未设置 `Shape` 时，普通圆角数值按 DIP 表达，超过可绘尺寸时按当前尺寸归一化。现有 Full Token 的 1000 值是
 兼容约定，按当前短边的 50% 解析；它不能同时用于表达真正的 1000 DIP 圆角。
 真实阴影依赖项目固定的 Skia 后端，
 更换渲染后端不等于保留效果；共享适配和验证范围见 [INTERNALS](INTERNALS.md)。

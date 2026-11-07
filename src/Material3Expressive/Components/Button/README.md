@@ -44,6 +44,26 @@
 
 每个按钮只选一档尺寸 class。Small 不需要 class；没有额外的 `small` 或 `square` 尺寸/形状开关。
 
+五种主题也支持显式路径形状。`MaterialButton.Shape` 覆盖容器轮廓；未设置时继续使用
+`CornerRadius` 和 `MaterialButton.PressedCornerRadius`。`PressedShape` 要与 `Shape` 配合使用：
+两个 `CutCornerShape` 使用同一弹簧连续变形，快速释放保留反向动量，百分比随当前容器尺寸计算；
+其他自定义 `MaterialShape` 路径直接切换。未设置 PressedShape 时轮廓保持固定，波纹照常播放。
+
+```xml
+<Button Content="保存" Theme="{StaticResource MaterialOutlinedButtonTheme}">
+  <m3:MaterialButton.Shape>
+    <m3:CutCornerShape TopStart="24" TopEnd="8" BottomEnd="24" BottomStart="8" />
+  </m3:MaterialButton.Shape>
+  <m3:MaterialButton.PressedShape>
+    <m3:CutCornerShape TopStart="12%" TopEnd="12%" BottomEnd="12%" BottomStart="12%" />
+  </m3:MaterialButton.PressedShape>
+</Button>
+```
+
+显式路径的边框要求均匀厚度；自定义路径契约见 [Surface](../Surface/README.md)。
+Catalog 的 Interactive surfaces 窗口提供固定切角、按压变形和快速反向示例。
+本入口接入普通 Button 的五种主题、[IconButton](../IconButton/README.md) 与 [ToggleButton](../ToggleButton/README.md)；SplitButton 尚未接入显式路径。
+
 | 尺寸 | `Classes` | 默认容器最小高度（DIP） |
 | --- | --- | --- |
 | Extra small | `xsmall` | 32 |

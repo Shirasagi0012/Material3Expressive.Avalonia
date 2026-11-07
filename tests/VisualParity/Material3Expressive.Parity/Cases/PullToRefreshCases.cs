@@ -14,13 +14,22 @@ namespace Material3Expressive.Parity;
 
 public sealed record PullToRefreshConfig(string Kind = "circular", double Fraction = 1, bool Refreshing = false,
     bool Dark = false, bool Rtl = false, double? Constraint = null, bool CustomColors = false,
-    double MaxDistance = 80, string Action = "none", bool Translucent = false, bool CustomMotion = false);
+    double MaxDistance = 80, string Action = "none", bool Translucent = false, bool CustomMotion = false, bool CutShape = false);
 
 [ParitySuite("pull-to-refresh")]
 public sealed class PullToRefreshCases
 {
     public static IEnumerable<CaseData<PullToRefreshConfig>> Configurations()
     {
+        foreach (var rtl in new[] { false, true })
+        {
+            foreach (var fraction in new[] { .25, .5, 1, 1.5 })
+                yield return new($"cut.static.{(rtl ? "rtl" : "ltr")}.{fraction.ToString(CultureInfo.InvariantCulture)}", "Cut IndicatorBox clipping and shadow",
+                    new("custom", fraction, Rtl: rtl, CutShape: true));
+            foreach (var action in new[] { "progress", "state", "refresh", "reverse" })
+                yield return new($"cut.dynamic.{(rtl ? "rtl" : "ltr")}.{action}", "Cut IndicatorBox state animation",
+                    new("custom", 1, Rtl: rtl, Action: action, CutShape: true));
+        }
         // The arrow's first 40%, threshold, overshoot and tension cap have distinct drawing paths.
         foreach (var kind in new[] { "circular", "loading" })
         {
@@ -62,6 +71,9 @@ public sealed class PullToRefreshCases
             _ => new PullToRefreshIndicator()
         };
         indicator.State = state; indicator.IsRefreshing = c.Refreshing; indicator.MaxDistance = c.MaxDistance;
+        if (c.CutShape) indicator.Shape = new Material3Expressive.Foundation.Rendering.CutCornerShape {
+            TopStart = new(12, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+            BottomEnd = new(.25, RelativeUnit.Relative), BottomStart = new(0, RelativeUnit.Absolute) };
         if (c.CustomColors)
         {
             indicator.Background = Brushes.Yellow;

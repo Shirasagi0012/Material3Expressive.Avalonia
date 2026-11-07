@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Rendering;
 using System.Globalization;
 
 namespace Material3Expressive.Components;
@@ -11,6 +12,12 @@ namespace Material3Expressive.Components;
 /// <summary>Material appearance of a native ToggleButton; state, commands and input remain native.</summary>
 public static class ToggleButtonAppearance
 {
+    /// <summary>The checked path used with MaterialButton.Shape. Explicit pressed shapes take precedence.</summary>
+    public static readonly AttachedProperty<MaterialShape?> CheckedShapeProperty =
+        AvaloniaProperty.RegisterAttached<ToggleButton, MaterialShape?>("CheckedShape", typeof(ToggleButtonAppearance));
+    public static MaterialShape? GetCheckedShape(ToggleButton owner) => owner.GetValue(CheckedShapeProperty);
+    public static void SetCheckedShape(ToggleButton owner, MaterialShape? value) => owner.SetValue(CheckedShapeProperty, value);
+
     static ToggleButtonAppearance()
     {
         // Preserve legacy attached-property lookup by owner/name while sharing MaterialButton's

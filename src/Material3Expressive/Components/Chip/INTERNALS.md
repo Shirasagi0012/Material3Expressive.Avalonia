@@ -132,7 +132,12 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 - [Core Desktop 焦点](../../../../docs/DECISIONS.md)：真实焦点影响 elevation，indication 单独过滤首次鼠标聚焦
 - [共享键盘职责](../../../../docs/DECISIONS.md)：保留原生 Enter 按下激活
 
-尚未实现任意路径/切角 Shape 和通用 Arrangement。文字栅格和真实辅助技术未经验证。
+四类 Chip 已接入固定 `Shape`，共享 Surface 的路径、边框、阴影、波纹和焦点环。
+显式 Shape 抑制 `ChipShapes` 圆角播放器，清除后按当前选中/按压状态重新初始化；不改写公开 Shapes
+值，也不改变已确认的颜色/间距/图标 motion 独立策略。切角选择态之间的 ChipShapes 插值和通用
+Arrangement 尚未实现。文字栅格和真实辅助技术未经验证。
+固定路径新增验证见 `MaterialShapeTests` 和双端 `material-shape.*.chip-*`，覆盖四族及三种 Elevated、
+百分比/逻辑切角、选择、按压和焦点；Catalog 主窗口提供 Fixed cut chips。
 
 历史未解决且未接受的 `morph.source-disable` 阴影差异涉及 Filter、ElevatedFilter 和 Input。
 复现使用 `new ChipElevation(2, 3, 4, 5, 9, 1)`，外部 Press 后 65ms 禁用，在 160ms 捕获。

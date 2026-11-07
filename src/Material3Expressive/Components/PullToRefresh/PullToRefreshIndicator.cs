@@ -3,12 +3,16 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Positions and clips custom pull-to-refresh content above the top edge of its layout box.</summary>
 public class PullToRefreshIndicatorBox : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<PullToRefreshIndicatorBox>();
+    /// <summary>An explicit container path; null retains CornerRadius. Translation and top-edge clipping are unchanged.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<PullToRefreshState?> StateProperty =
         AvaloniaProperty.Register<PullToRefreshIndicatorBox, PullToRefreshState?>(nameof(State));
     public static readonly StyledProperty<bool> IsRefreshingProperty =

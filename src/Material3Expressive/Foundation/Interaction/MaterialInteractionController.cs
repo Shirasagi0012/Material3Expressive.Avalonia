@@ -228,7 +228,7 @@ internal sealed partial class MaterialInteractionController
     /// <param name="brush">The state layer colour — the content colour, in Material.</param>
     /// <param name="cornerRadius">The container's corners, so the layers follow any morph.</param>
     /// <param name="size">The interaction area: the presenter's own bounds.</param>
-    internal void DrawLayers(DrawingContext context, IBrush? brush, CornerRadius cornerRadius, Size size)
+    internal void DrawLayers(DrawingContext context, IBrush? brush, CornerRadius cornerRadius, Size size, Geometry? shape = null)
     {
         if (brush is null)
             return;
@@ -247,7 +247,7 @@ internal sealed partial class MaterialInteractionController
         {
             if (IsRippleBounded)
             {
-                using var rippleClip = context.PushClip(new RoundedRect(area, cornerRadius));
+                using var rippleClip = shape is null ? context.PushClip(new RoundedRect(area, cornerRadius)) : context.PushGeometryClip(shape);
                 DrawRipples(context, composeColorBrush, size);
             }
             else
@@ -260,7 +260,7 @@ internal sealed partial class MaterialInteractionController
         {
             if (IsRippleBounded)
             {
-                using var stateClip = context.PushClip(new RoundedRect(area, cornerRadius));
+                using var stateClip = shape is null ? context.PushClip(new RoundedRect(area, cornerRadius)) : context.PushGeometryClip(shape);
                 DrawStateLayer(context, composeColorBrush, area, opacity);
             }
             else
@@ -685,8 +685,10 @@ internal sealed partial class MaterialInteractionController
 
     private void DrawRipples(DrawingContext context, IBrush brush, Size size)
     {
+        var mirrored = _presenter is { Shape: not null } presenter && TopLevel.GetTopLevel(presenter) is { } root
+            && presenter.TransformToVisual(root) is { M11: < 0 };
         foreach (var ripple in _ripples)
-            ripple.Draw(context, brush, OpacityFor(InteractionState.Pressed), size, RippleFollowsPresenterCenter);
+            ripple.Draw(context, brush, OpacityFor(InteractionState.Pressed), size, RippleFollowsPresenterCenter, mirrored);
     }
 
     // Switch's ThumbNode measures its current animated size before launching the pressed snap.

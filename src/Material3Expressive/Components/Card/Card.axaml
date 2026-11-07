@@ -57,7 +57,7 @@
       <Setter Property="DefaultTemplate">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-                CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
+                Shape="{TemplateBinding Shape}" CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}" StateLayerBrush="{TemplateBinding Foreground}"
                 TextElement.Foreground="{TemplateBinding Foreground}">
               <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
@@ -76,7 +76,7 @@
                 HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}"
                 ContainerMinWidth="0" ContainerMinHeight="0" MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Button.MinimumInteractiveSize}}">
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-                CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
+                Shape="{TemplateBinding Shape}" CornerRadius="{TemplateBinding CornerRadius}" BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}" StateLayerBrush="{TemplateBinding Foreground}"
                 TextElement.Foreground="{TemplateBinding Foreground}">
               <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}"

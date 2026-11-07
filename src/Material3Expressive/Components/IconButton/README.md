@@ -208,7 +208,7 @@ XS 的 32 DIP 也不是强制尺寸。形状变化不改变内容/尺寸布局�
 
 ## 使用边界
 
-- 尚未提供任意路径 Shape；详见维护说明
+- `MaterialButton.Shape / PressedShape` 支持固定路径与切角按压变形，见下例；`IconToggleButton.CheckedShape` 提供第三个选中目标
 - Outlined 默认描边按上游 helper 对所有尺寸使用 Small 的 1 DIP；显式 BorderBrush / BorderThickness 仍可覆盖默认值
 - 模板内部图标按两轴约束分别缩小（例如 20×40 容器获得 20×24 图标盒）；替换模板需自行维护尺寸、形状和反馈接入
 - 默认焦点反馈为状态层；可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用共享内缩焦点环，各尺寸/变体尚未独立完成双端焦点环验收
@@ -234,3 +234,22 @@ tooltipLabel.InteractionSource = source;
 尚未结束的外部按压则按上游保留已记忆状态和正在进行的形变，直到新源首个事件重新计算状态。
 卸载停止订阅。
 从固定形状切换到形变会重新开始形状状态收集；按住期间才设置 PressedCornerRadius 不会重放旧按压。
+
+## 切角和自定义轮廓
+
+六种 IconButton 主题及 IconToggleButton 共用显式路径入口：
+
+```xml
+<m3:IconToggleButton Symbol="Favorite" AutomationProperties.Name="收藏"
+                    IsChecked="{Binding IsFavorite}" Command="{Binding ToggleFavoriteCommand}">
+  <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="20" BottomEnd="20" /></m3:MaterialButton.Shape>
+  <m3:IconToggleButton.CheckedShape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:IconToggleButton.CheckedShape>
+  <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:MaterialButton.PressedShape>
+</m3:IconToggleButton>
+```
+
+应用仍负责写回 IsChecked。显式按压路径优先于选中路径，未设置的目标保留对应静止/选中轮廓。
+全部目标为切角时连续插值，快速反向保留动量，第三目标从当前可见轮廓开始；包含自定义路径时直接切换。
+仅设置 Shape 得到固定轮廓；清除后恢复 CornerRadius / PressedCornerRadius / CheckedCornerRadius。
+百分比按当前短边计算，逻辑四角支持 RTL。显式路径要求均匀边框；自定义契约见 [Surface](../Surface/README.md)。
+Catalog 主窗口提供切角动作与三状态收藏按钮。

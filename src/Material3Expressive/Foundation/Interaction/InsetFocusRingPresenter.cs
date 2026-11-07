@@ -46,6 +46,12 @@ internal sealed class InsetFocusRingPresenter : Control
     private (Size Size, float Scale) _paintGeometry;
 
     internal float Progress => _progress?.Value ?? 0;
+    private PathGeometry? _shapePath;
+    internal PathGeometry? ShapePath
+    {
+        get => _shapePath;
+        set { if (ReferenceEquals(_shapePath, value)) return; _shapePath = value; InvalidateRing(); }
+    }
     internal CornerRadius Corners
     {
         get => _corners;
@@ -233,17 +239,41 @@ internal sealed class InsetFocusRingPresenter : Control
             _captureDefaultColors = false;
             _paintGeometry = (Bounds.Size, scale);
         }
+        if (ShapePath is { } path)
+        {
+            bool Fills(double width, double inset)
+            {
+                var pixels = MathF.Min((float)Bounds.Width * scale, (float)Bounds.Height * scale);
+                var insetPx = MathF.Ceiling((float)inset * Progress * scale);
+                var widthPx = MathF.Min(MathF.Ceiling((float)width * Progress * scale), MathF.Ceiling((pixels - insetPx * 2) / 2));
+                return insetPx == 0 && widthPx * 2 > pixels;
+            }
+            // Fixed RippleNode uses ONE BorderLogicLayerDelegate for both strokes. In the
+            // generic branch both recorded drawLayer commands reference that same layer;
+            // recording the outer stroke replaces its inner recording before playback.
+            // Reproduce the two replays of the final recording, including edge alpha, rather
+            // than introducing independent layers that would reveal an extra inner ring.
+            if (!Fills(metrics.InnerStrokeWidth, metrics.InnerStrokeInset) && !Fills(metrics.OuterStrokeWidth, metrics.OuterStrokeInset)
+                && (MaterialInteraction.GetFocusRingOuterColor(_owner) ?? _paintedDefaultOuterColor) is { } color)
+            {
+                _outerBrush.Color = color;
+                for (var replay = 0; replay < 2; replay++)
+                    _outer.Draw(context, _outerBrush, Bounds.Size, Corners, scale,
+                        (float)metrics.OuterStrokeWidth * Progress, (float)metrics.OuterStrokeInset * Progress, path);
+                return;
+            }
+        }
         if ((MaterialInteraction.GetFocusRingInnerColor(_owner) ?? _paintedDefaultInnerColor) is { } inner)
         {
             _innerBrush.Color = inner;
             _inner.Draw(context, _innerBrush, Bounds.Size, Corners, scale,
-                (float)metrics.InnerStrokeWidth * Progress, (float)metrics.InnerStrokeInset * Progress);
+                (float)metrics.InnerStrokeWidth * Progress, (float)metrics.InnerStrokeInset * Progress, ShapePath);
         }
         if ((MaterialInteraction.GetFocusRingOuterColor(_owner) ?? _paintedDefaultOuterColor) is { } outer)
         {
             _outerBrush.Color = outer;
             _outer.Draw(context, _outerBrush, Bounds.Size, Corners, scale,
-                (float)metrics.OuterStrokeWidth * Progress, (float)metrics.OuterStrokeInset * Progress);
+                (float)metrics.OuterStrokeWidth * Progress, (float)metrics.OuterStrokeInset * Progress, ShapePath);
         }
     }
 }

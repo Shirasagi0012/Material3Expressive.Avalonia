@@ -16,6 +16,28 @@ internal sealed class PathBorderMask : IDisposable
     {
         var width = (float)size.Width * density;
         var height = (float)size.Height * density;
+        var left = (float)origin.X * density;
+        var top = (float)origin.Y * density;
+        using var rounded = new SKRoundRect();
+        rounded.SetRectRadii(new SKRect(left, top, left + width, top + height),
+            [new((float)corners.TopLeft * density, (float)corners.TopLeft * density),
+             new((float)corners.TopRight * density, (float)corners.TopRight * density),
+             new((float)corners.BottomRight * density, (float)corners.BottomRight * density),
+             new((float)corners.BottomLeft * density, (float)corners.BottomLeft * density)]);
+        using var builder = new SKPathBuilder();
+        builder.AddRoundRect(rounded, SKPathDirection.Clockwise);
+        using var path = builder.Detach();
+        return Update(path, stroke, density, fill, layoutSize, color);
+    }
+
+    // The caller owns the physical-pixel path. Focus borders additionally erase the inset stroke.
+    internal WriteableBitmap Update(SKPath path, float stroke, float density, bool fill, Size layoutSize, Color color, float inset = 0)
+    {
+        var bounds = path.Bounds;
+        var width = bounds.Width;
+        var height = bounds.Height;
+        var left = bounds.Left;
+        var top = bounds.Top;
         var pixels = new PixelSize((int)MathF.Ceiling(width), (int)MathF.Ceiling(height));
         // BorderCache checks the original layout size, but allocates the path bounds.
         // On shrink it keeps the larger buffer. Its pixels outside the current source rectangle
@@ -30,23 +52,17 @@ internal sealed class PathBorderMask : IDisposable
         using var canvas = new SKCanvas(bitmap);
         using (var clear = new SKPaint { BlendMode = SKBlendMode.Clear })
             canvas.DrawRect(0, 0, pixels.Width, pixels.Height, clear);
-        var left = (float)origin.X * density;
-        var top = (float)origin.Y * density;
         canvas.Translate(-left, -top);
-        using var rounded = new SKRoundRect();
-        rounded.SetRectRadii(new SKRect(left, top, left + width, top + height),
-            [new((float)corners.TopLeft * density, (float)corners.TopLeft * density),
-             new((float)corners.TopRight * density, (float)corners.TopRight * density),
-             new((float)corners.BottomRight * density, (float)corners.BottomRight * density),
-             new((float)corners.BottomLeft * density, (float)corners.BottomLeft * density)]);
-        using var builder = new SKPathBuilder();
-        builder.AddRoundRect(rounded, SKPathDirection.Clockwise);
-        using var path = builder.Detach();
         using var paint = new SKPaint { IsAntialias = true, Color = SKColors.White,
-            Style = fill ? SKPaintStyle.Fill : SKPaintStyle.Stroke, StrokeWidth = stroke * 2 };
+            Style = fill ? SKPaintStyle.Fill : SKPaintStyle.Stroke, StrokeWidth = (stroke + inset) * 2 };
         canvas.DrawPath(path, paint);
         if (!fill)
         {
+            if (inset > 0)
+            {
+                paint.StrokeWidth = inset * 2; paint.BlendMode = SKBlendMode.Clear;
+                canvas.DrawPath(path, paint);
+            }
             using var rectBuilder = new SKPathBuilder();
             rectBuilder.AddRect(new SKRect(left, top, left + width, top + height));
             using var rectangle = rectBuilder.Detach();

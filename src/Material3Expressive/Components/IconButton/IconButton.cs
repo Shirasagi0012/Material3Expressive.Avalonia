@@ -44,7 +44,9 @@ public class IconButton : Button
         // The static shapeForInteraction branch has no remembered press collector. Keep the
         // source connection for indication, but recreate the shape collector at this boundary.
         var animated = MaterialButton.GetPressedCornerRadius(this) is not null
-            || this is IconToggleButton { CheckedCornerRadius: not null };
+            || this is IconToggleButton { CheckedCornerRadius: not null }
+            || MaterialButton.GetShape(this) is not null && (MaterialButton.GetPressedShape(this) is not null
+                || this is IconToggleButton { CheckedShape: not null });
         if (_usesAnimatedShape == animated) return;
         _usesAnimatedShape = animated;
         _presses.Clear();
@@ -71,7 +73,9 @@ public class IconButton : Button
     {
         // Reset before template bindings observe a newly enabled target and initialize its shape.
         if (change.Property == MaterialButton.PressedCornerRadiusProperty
-            || change.Property == IconToggleButton.CheckedCornerRadiusProperty)
+            || change.Property == IconToggleButton.CheckedCornerRadiusProperty
+            || change.Property == MaterialButton.ShapeProperty || change.Property == MaterialButton.PressedShapeProperty
+            || change.Property == IconToggleButton.CheckedShapeProperty)
             UpdateShapeCollection();
         base.OnPropertyChanged(change);
         if (change.Property == InteractionSourceProperty) ConnectSource();

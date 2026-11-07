@@ -19,6 +19,39 @@
         </StackPanel>
       </m3:ClickableSurface>
       <TextBlock x:Name="Status" Text="No action yet" />
+      <TextBlock Text="Cut corners and shared outlines" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CheckBox x:Name="CutRtl" Content="Right-to-left shapes" />
+      <StackPanel x:Name="CutExamples" Orientation="Horizontal" Spacing="16">
+        <m3:ClickableSurface Width="160" Height="80" Padding="20" TonalElevation="3" Click="OnOpen"
+                             m3:MaterialInteraction.FocusFeedback="InsetRing">
+          <m3:ClickableSurface.Shape><m3:CutCornerShape TopStart="24" TopEnd="8" BottomEnd="24" BottomStart="8" /></m3:ClickableSurface.Shape>
+          <TextBlock Text="Cut surface" />
+        </m3:ClickableSurface>
+        <m3:ElevatedCard Width="160" Height="80" IsClickable="True" Click="OnOpen"
+                         m3:MaterialInteraction.FocusFeedback="InsetRing">
+          <m3:ElevatedCard.Shape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:ElevatedCard.Shape>
+          <TextBlock Text="Percentage cuts" Margin="24" />
+        </m3:ElevatedCard>
+        <m3:OutlinedCard Width="160" Height="80" IsClickable="True" Click="OnOpen"
+                         m3:MaterialInteraction.FocusFeedback="InsetRing">
+          <m3:OutlinedCard.Shape><m3:CutCornerShape TopStart="32" BottomEnd="32" /></m3:OutlinedCard.Shape>
+          <TextBlock Text="Cut outline" Margin="24" />
+        </m3:OutlinedCard>
+      </StackPanel>
+      <TextBlock Text="Cut button morphs · press and release quickly to reverse; hold to reach percentage corners" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <Button Content="Cut filled" Click="OnOpen" Height="56">
+          <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="24" TopEnd="8" BottomEnd="24" BottomStart="8" /></m3:MaterialButton.Shape>
+          <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="12%" TopEnd="12%" BottomEnd="12%" BottomStart="12%" /></m3:MaterialButton.PressedShape>
+        </Button>
+        <Button Content="Cut outlined" Theme="{StaticResource MaterialOutlinedButtonTheme}" Click="OnOpen" Height="56">
+          <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="28" BottomEnd="28" /></m3:MaterialButton.Shape>
+          <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:MaterialButton.PressedShape>
+        </Button>
+        <Button Content="Static cut tonal" Theme="{StaticResource MaterialTonalButtonTheme}" Click="OnOpen" Height="56">
+          <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="24" BottomEnd="24" /></m3:MaterialButton.Shape>
+        </Button>
+      </StackPanel>
       <TextBlock Text="Ripple origin and quick taps" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <TextBlock Text="Press near an edge, release quickly, or tap again while the previous wave is fading. Each wave finishes its expansion before fading out." TextWrapping="Wrap" />
       <StackPanel Orientation="Horizontal" Spacing="24">

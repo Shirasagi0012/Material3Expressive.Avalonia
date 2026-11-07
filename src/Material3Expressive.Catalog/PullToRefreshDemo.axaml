@@ -12,7 +12,7 @@
       <Button Content="停止 / 隐藏" Click="StopRefresh" />
       <Button Content="明 / 暗" Click="ToggleTheme" />
     </StackPanel>
-    <Grid ColumnDefinitions="*,*" Height="260">
+    <Grid ColumnDefinitions="*,*,*" Height="260">
       <Border BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" BorderThickness="1" Margin="0,0,8,0">
         <Grid><TextBlock Text="Circular" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" />
           <m3:PullToRefreshIndicator x:Name="Circular" />
@@ -21,6 +21,15 @@
       <Border Grid.Column="1" BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" BorderThickness="1" Margin="8,0,0,0">
         <Grid><TextBlock Text="Expressive" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" />
           <m3:PullToRefreshLoadingIndicator x:Name="Expressive" />
+        </Grid>
+      </Border>
+      <Border Grid.Column="2" BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OutlineVariant}}" BorderThickness="1" Margin="8,0,0,0">
+        <Grid><TextBlock Text="Custom cut container" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" />
+          <m3:PullToRefreshIndicatorBox State="{Binding #Circular.State}" IsRefreshing="{Binding #Circular.IsRefreshing}"
+                                      Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}">
+            <m3:PullToRefreshIndicatorBox.Shape><m3:CutCornerShape TopStart="12" TopEnd="4" BottomEnd="12" BottomStart="4" /></m3:PullToRefreshIndicatorBox.Shape>
+            <m3:MaterialSymbol Symbol="Refresh" Width="24" Height="24" />
+          </m3:PullToRefreshIndicatorBox>
         </Grid>
       </Border>
     </Grid>

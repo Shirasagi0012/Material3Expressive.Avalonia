@@ -82,6 +82,24 @@ Small 默认按压角 6 DIP。普通用户 Style、局部值或绑定优先于�
 
 具体配对和禁用规则见 [Button 的共享交互源](../Button/README.md#命令事件与状态)。
 
+## 切角与路径形状
+
+四种主题通过 `MaterialButton.Shape / PressedShape` 与 `ToggleButtonAppearance.CheckedShape`
+提供显式静止、按压和选中路径。三个目标都是切角时使用上游 FastSpatial 弹簧，按压优先于选中，
+支持中途反向和第三目标；包含自定义 MaterialShape 时直接切换。
+
+```xml
+<ToggleButton Content="固定" IsChecked="{Binding IsPinned}">
+  <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="16" BottomEnd="16" /></m3:MaterialButton.Shape>
+  <m3:ToggleButtonAppearance.CheckedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:ToggleButtonAppearance.CheckedShape>
+  <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:MaterialButton.PressedShape>
+</ToggleButton>
+```
+
+只设置 Shape 即得到固定轮廓；清除 Shape 后恢复原圆角配置。未设置的目标沿用静止/选中轮廓。
+边框必须均匀；逻辑切角和百分比随 RTL、当前容器尺寸更新。原生 IsChecked 先切换再 Click 的顺序不变。
+自定义路径契约见 [Surface](../Surface/README.md)，Catalog 主窗口提供 Cut toggle 示例。
+
 ## 颜色与使用边界
 
 `Background`/`Foreground`、`BorderBrush`/`BorderThickness`、`Padding` 和内容对齐可按原生属性定制。

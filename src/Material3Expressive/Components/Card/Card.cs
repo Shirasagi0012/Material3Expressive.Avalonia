@@ -9,12 +9,15 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Card.kt's filled container; opt in to the clickable overload with IsClickable.</summary>
 public class Card : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<Card>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<bool> IsClickableProperty = AvaloniaProperty.Register<Card, bool>(nameof(IsClickable));
     public bool IsClickable { get => GetValue(IsClickableProperty); set => SetValue(IsClickableProperty, value); }
     public static readonly StyledProperty<Color> ContainerColorProperty = AvaloniaProperty.Register<Card, Color>(nameof(ContainerColor));

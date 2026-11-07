@@ -1,4 +1,5 @@
 using Avalonia;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Foundation.Interaction;
 
@@ -27,6 +28,21 @@ internal abstract record CornerShape
     {
         public override CornerRadius Resolve(Size size) =>
             AnimatedCornerRadius.Lerp(From.Resolve(size), To.Resolve(size), Progress);
+    }
+
+    // A value snapshot, independent of the mutable XAML configuration. Logical corner order
+    // occupies the four CornerRadius slots; the outline factory performs the RTL mapping.
+    internal sealed record Cut(RelativeScalar TopStart, RelativeScalar TopEnd,
+        RelativeScalar BottomEnd, RelativeScalar BottomStart) : CornerShape
+    {
+        internal static Cut From(CutCornerShape shape) => new(shape.TopStart, shape.TopEnd, shape.BottomEnd, shape.BottomStart);
+        public override CornerRadius Resolve(Size size)
+        {
+            float Resolve(RelativeScalar corner) => corner.Unit == RelativeUnit.Relative
+                ? (float)Math.Min(size.Width, size.Height) * (((float)corner.Scalar * 100f) / 100f)
+                : (float)corner.Scalar;
+            return new(Resolve(TopStart), Resolve(TopEnd), Resolve(BottomEnd), Resolve(BottomStart));
+        }
     }
 
     // CornerBasedShape.createOutline: each vertical pair is limited by the smaller extent.

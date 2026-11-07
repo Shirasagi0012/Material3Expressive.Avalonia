@@ -76,6 +76,18 @@ Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard
 需要权重或复杂对齐时，可在内容槽组合其他布局容器。
 卡片 `Padding` 或内容 `Margin` 都可用于留白。
 
+三种卡片的普通与可点击模式均支持 `Shape`。例如保留默认描边颜色、使用两角切角：
+
+```xml
+<m3:OutlinedCard IsClickable="True" Padding="24" Content="打开详情">
+  <m3:OutlinedCard.Shape><m3:CutCornerShape TopStart="24" BottomEnd="24" /></m3:OutlinedCard.Shape>
+</m3:OutlinedCard>
+```
+
+`CutCornerShape` 支持 DIP、百分比、RTL 和动态绑定；也可派生 `MaterialShape` 返回自定义闭合路径。
+阴影、内容裁剪、均匀描边与交互反馈共用此形状；`Shape=null` 恢复主题或显式 `CornerRadius`。
+路径不增加内容留白，也不改变点击、命令或高度动画。示例见 Catalog **Interactive surfaces / Cut corners**。
+
 正常态与禁用态分别使用 `ContainerColor` / `ContentColor`、`DisabledContainerColor` /
 `DisabledContentColor`。容器色为 Color，内容色为 IBrush，保留环境非纯色画刷。
 这些都是独立 Avalonia 属性，支持 Style、Binding、局部值和 ClearValue。

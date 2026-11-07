@@ -284,6 +284,18 @@ public class TonalButtonTokenSource : ITokenSource
 /// <summary>Material options for Avalonia buttons using an interactive MaterialSurface template.</summary>
 public static class MaterialButton
 {
+    /// <summary>An explicit static shape, or null to use the button's CornerRadius.</summary>
+    public static readonly AttachedProperty<MaterialShape?> ShapeProperty =
+        AvaloniaProperty.RegisterAttached<Button, MaterialShape?>("Shape", typeof(MaterialButton));
+    public static MaterialShape? GetShape(Button button) => button.GetValue(ShapeProperty);
+    public static void SetShape(Button button, MaterialShape? value) => button.SetValue(ShapeProperty, value);
+
+    /// <summary>The pressed shape. Two CutCornerShapes morph; other paths switch directly. Requires Shape.</summary>
+    public static readonly AttachedProperty<MaterialShape?> PressedShapeProperty =
+        AvaloniaProperty.RegisterAttached<Button, MaterialShape?>("PressedShape", typeof(MaterialButton));
+    public static MaterialShape? GetPressedShape(Button button) => button.GetValue(PressedShapeProperty);
+    public static void SetPressedShape(Button button, MaterialShape? value) => button.SetValue(PressedShapeProperty, value);
+
     /// <summary>An optional shared input and feedback stream for native Material button themes.</summary>
     public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
         AvaloniaProperty.RegisterAttached<Button, MaterialInteractionSource?>("InteractionSource", typeof(MaterialButton));

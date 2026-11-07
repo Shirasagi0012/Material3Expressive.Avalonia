@@ -11,6 +11,8 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Styles;
+using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Foundation.Interaction;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -18,6 +20,47 @@ namespace Material3Expressive.Tests;
 
 public class IconToggleButtonTests
 {
+    [AvaloniaTheory]
+    [InlineData("Standard")]
+    [InlineData("Filled")]
+    [InlineData("Tonal")]
+    [InlineData("Outlined")]
+    public void ExplicitCutsKeepPressedPriorityAndCaptureAThirdDestination(string variant)
+    {
+        using var clock = new MotionTestClockScope();
+        var button = new IconToggleButton { Width = 64, Height = 64, CheckedShape = new CutCornerShape(16) };
+        MaterialButton.SetShape(button, new CutCornerShape(24));
+        MaterialButton.SetPressedShape(button, new CutCornerShape(4));
+        var window = DialogTests.Show(new Grid { Children = { button } });
+        try
+        {
+            button.Theme = (ControlTheme)window.FindResource($"Material{variant}IconToggleButtonTheme")!;
+            window.UpdateLayout(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            double Cut() => ((PathGeometry)surface.ContainerGeometry!).Figures![0].StartPoint.Y;
+            button.IsChecked = true;
+            for (var i = 0; i < 4; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.InRange(Cut(), 16.01, 23.99);
+            var before = Cut(); button.Focus(NavigationMethod.Tab);
+            window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            Assert.Equal(before, Cut());
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(4, Cut());
+            button.IsChecked = false;
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(4, Cut());
+            window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.False(button.IsChecked); Assert.Equal(24, Cut());
+            button.IsChecked = true;
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            ((CutCornerShape)button.CheckedShape!).TopStart = new(12, RelativeUnit.Absolute);
+            clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(12, Cut());
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
     [AvaloniaTheory]
     [InlineData("Filled")]
     [InlineData("Tonal")]

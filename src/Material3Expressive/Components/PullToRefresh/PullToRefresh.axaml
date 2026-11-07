@@ -13,7 +13,7 @@
         <ControlTemplate>
           <m3:PullToRefreshIndicatorLayout
               ContainerWidth="{TemplateBinding ContainerWidth}" ContainerHeight="{TemplateBinding ContainerHeight}">
-            <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}">
               <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />

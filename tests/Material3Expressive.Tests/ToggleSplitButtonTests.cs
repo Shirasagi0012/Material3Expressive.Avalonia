@@ -13,6 +13,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using Xunit;
 using System.ComponentModel;
 using Split = Material3Expressive.Components.SplitButton;
@@ -21,6 +22,42 @@ namespace Material3Expressive.Tests;
 
 public class ToggleSplitButtonTests
 {
+    [AvaloniaTheory]
+    [InlineData("Filled")]
+    [InlineData("Tonal")]
+    [InlineData("Elevated")]
+    [InlineData("Outlined")]
+    public void CutShapesFollowNativeActivationAndRestoreRoundConfiguration(string variant)
+    {
+        using var clock = new MotionTestClockScope();
+        var button = new ToggleButton { Width = 120, Height = 64, Content = "Choice" };
+        MaterialButton.SetShape(button, new CutCornerShape(24));
+        MaterialButton.SetPressedShape(button, new CutCornerShape(4));
+        ToggleButtonAppearance.SetCheckedShape(button, new CutCornerShape(12));
+        var window = DialogTests.Show(new Grid { Children = { button } });
+        try
+        {
+            button.Theme = (ControlTheme)window.FindResource($"Material{variant}ToggleButtonTheme")!;
+            window.UpdateLayout(); clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            var surface = button.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            double Cut() => ((PathGeometry)surface.ContainerGeometry!).Figures![0].StartPoint.Y;
+            Assert.Equal(24, Cut());
+            bool? checkedAtClick = null; button.Click += (_, _) => checkedAtClick = button.IsChecked;
+            button.Focus(NavigationMethod.Tab);
+            window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(4, Cut()); Assert.False(button.IsChecked);
+            window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.True(checkedAtClick); Assert.Equal(12, Cut());
+            MaterialButton.SetShape(button, null);
+            for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Null(surface.ContainerGeometry);
+            Assert.Equal(ToggleButtonAppearance.GetCheckedCornerRadius(button), surface.EffectiveCornerRadius);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
     [AvaloniaTheory]
     [InlineData("xsmall", 32, 12, 8)]
     [InlineData("small", 40, 12, 6)]

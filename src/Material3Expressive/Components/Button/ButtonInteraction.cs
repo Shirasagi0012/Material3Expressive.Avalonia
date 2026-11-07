@@ -38,12 +38,14 @@ internal sealed class ButtonInteraction : IDisposable
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == MaterialButton.InteractionSourceProperty) ConnectSource();
-        if (e.Property == MaterialButton.PressedCornerRadiusProperty) UpdateShapeCollection();
+        if (e.Property == MaterialButton.PressedCornerRadiusProperty || e.Property == MaterialButton.ShapeProperty
+            || e.Property == MaterialButton.PressedShapeProperty) UpdateShapeCollection();
     }
 
     private void UpdateShapeCollection()
     {
-        var collect = _owner is ToggleButton || MaterialButton.GetPressedCornerRadius(_owner) is not null;
+        var collect = _owner is ToggleButton || MaterialButton.GetPressedCornerRadius(_owner) is not null
+            || MaterialButton.GetShape(_owner) is not null && MaterialButton.GetPressedShape(_owner) is not null;
         if (_collectPresses == collect) return;
         _collectPresses = collect;
         _presses.Clear();

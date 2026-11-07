@@ -37,6 +37,14 @@ class 和资源恢复。ButtonLayout 的共享 48 DIP 留白来自 `Comp.Button.
 
 ## 模板与布局不变量
 
+显式 `MaterialButton.Shape / PressedShape` 和 `IconToggleButton.CheckedShape` 进入同一个 Surface。
+固定 IconButton.kt 的 isCornerBasedShape / shapeByInteraction 分支在当前切角族复用原圆角播放器：
+按压优先、checked 次之，保留第三目标捕获、反向速度、百分比尺寸和 key(shapes) 重建。普通路径
+直接切换，同时按 Core ripple(focusRingShape) 重新建立 indication，不重放旧按压。原圆角 API 保留。
+默认未设置显式 Shape 时仍沿原流程；自定义路径不参加任意几何 morph。
+新增验证为 `ButtonShapeApiTests` / `IconToggleButtonTests` 以及双端 `material-shape.*.icon-*`：
+六种动作主题、四种切换主题、RTL、按压反向、百分比缩放与第三目标。Catalog 主窗口演示两类入口。
+
 Vibrant Standard 持有完整模板和原有颜色 Token 配置，普通 Standard 派生后改用 ambient；
 Filled/Tonal 及两种 Outlined 入口以 BasedOn 修改颜色/描边，隐式主题为普通 Standard。
 模板为 ButtonLayout → MaterialSurface#PART_Container → IconButtonSymbol，没有 ContentPresenter。
@@ -101,7 +109,7 @@ Standard indication 仍在内容色 provider 之外，读取外部 ambient；Out
 固定 upstream 的 Outlined Vibrant helper 写入普通 Outlined 缓存而没有写回自身缓存；本地无这类全局缓存，
 默认返回的六个颜色槽保持对应关系，不将该 helper 的跨入口缓存副作用扩散到组件状态。
 
-**尚未实现：** 任意 Shape。
+**已实现但范围有限：** 静态 MaterialShape、CutCornerShape 同族按压/选中插值；任意路径之间不提供几何插值，按固定上游直接切换。
 可选 InsetRing 通过 Surface 自动接入。`icon-button-focus` 覆盖普通四主题、两种旧 Vibrant 主题的
 五种尺寸，以及 dark / RTL / wide / square 下的焦点反向；当前未覆盖全部形变中按压与焦点交织组合。
 对应原始 Token 可以存在，不意味着模板已经消费或有公开入口。

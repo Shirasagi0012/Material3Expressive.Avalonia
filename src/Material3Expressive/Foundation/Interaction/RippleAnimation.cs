@@ -51,6 +51,7 @@ public sealed class RippleAnimation : IDisposable
     private readonly bool _bounded;
     private readonly Size _initialBounds;
     private bool _drawInitialized;
+    private double _drawWidth;
 
     private bool _finishedFadingIn;
     private bool _finishRequested;
@@ -177,7 +178,7 @@ public sealed class RippleAnimation : IDisposable
         => Draw(context, brush, opacity, _initialBounds);
 
     internal void Draw(DrawingContext context, IBrush brush, double opacity, Size size,
-        bool followUnboundedCenter = false)
+        bool followUnboundedCenter = false, bool mirrored = false)
     {
         InitializeDrawGeometry(size);
         // CommonRipple first creates color.copy(alpha = pressedAlpha), which packs sRGB
@@ -187,9 +188,12 @@ public sealed class RippleAnimation : IDisposable
         if (alpha <= 0)
             return;
 
+        var center = followUnboundedCenter && !_bounded ? new Rect(size).Center : Center;
+        // Compose retains physical origin/center after the first draw. Avalonia mirrors an
+        // RTL subtree around its current width, so compensate when that width changes.
+        if (mirrored && !(followUnboundedCenter && !_bounded)) center = new(center.X + size.Width - _drawWidth, center.Y);
         using (context.PushOpacity(MaterialInteractionRendering.ComposeOpacity(alpha)))
-            context.DrawEllipse(brush, null,
-                followUnboundedCenter && !_bounded ? new Rect(size).Center : Center, Radius, Radius);
+            context.DrawEllipse(brush, null, center, Radius, Radius);
     }
 
     internal void InitializeDrawGeometry(Size size)
@@ -199,6 +203,7 @@ public sealed class RippleAnimation : IDisposable
         // The target radius was already resolved by CommonRipple when the press was added.
         if (!_drawInitialized)
         {
+            _drawWidth = size.Width;
             var pixels = PixelSize(size);
             _startRadius = StartRadius(pixels);
             _center = new Point((float)pixels.Width / 2f, (float)pixels.Height / 2f);

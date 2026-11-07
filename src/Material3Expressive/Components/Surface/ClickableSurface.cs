@@ -4,12 +4,15 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A Material surface with click and command handling, without button padding or shape defaults.</summary>
 public class ClickableSurface : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<ClickableSurface>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<double> TonalElevationProperty = MaterialSurface.TonalElevationProperty.AddOwner<ClickableSurface>();
     public static readonly StyledProperty<double> ShadowElevationProperty = MaterialSurface.ShadowElevationProperty.AddOwner<ClickableSurface>();
     public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =

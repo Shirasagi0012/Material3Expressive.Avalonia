@@ -53,6 +53,7 @@
               MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.MinimumInteractiveSize}}"
               ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Chip.ContainerHeight}}">
             <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                Shape="{TemplateBinding Shape}"
                 StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:Chip}}}}"
                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                 TextElement.Foreground="{TemplateBinding Foreground}">

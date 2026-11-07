@@ -20,6 +20,17 @@
 
 ## 2. 关键机制与架构契约
 
+`Shape` 接入共享 `MaterialShape`，映射固定 Foundation `shape/CutCornerShape.kt` / `CornerBasedShape.kt`，
+通用边框和焦点边框分别映射 Foundation 与 material3-ripple 的 `Border.kt::drawGenericBorder`。
+四个 `RelativeScalar` 保留 DIP/百分比，先在物理 Float 坐标归一化，再返回 DIP。
+切角全部为零时按 Rectangle 分支呈现边框与焦点，不能当作通用路径而丢失内环。
+路径快照的 FillRule 与 Transform 必须传到 Skia；多轮廓 EvenOdd 尤其不能在 AddPath 后恢复为 Winding。
+Shape 变更与尺寸/方向变化同步更新几何；只在挂载期间订阅其属性，换源先退订，重挂读取最新值。
+普通 `CornerRadius` 仍独立保留；Shape 清空后恢复。同族 CutCornerShape 复用现有播放器的四角尺寸插值，
+自定义路径直接切换，不执行任意路径插值。通用边框的渐变尺寸取 ceil 后的路径缓存，原点保持在布局坐标原点；
+遮罩单独移到路径 bounds，不能把画刷原点一起移到 bounds，也不能只移动裁剪区域而不移动遮罩。
+API 与历史范围修订见 [共享决定 §35](../../../../docs/DECISIONS.md#35-surface-与-card-的显式路径形状)。
+
 Surface 主题将系统 Shadow、Surface、SurfaceTint、EffectsDefault 和四个 state-layer opacity
 Token 绑定到内部配置属性；绘制、形状动画和共享交互控制器只消费属性有效值，不自行解析 Token
 或回退到另一套 Material 常量。ShadowColor 的 null 仍明确表示使用主题 DefaultShadowColor。
@@ -100,7 +111,7 @@ Tooltip 的内部 `SetContainerGeometry` 接入背景、内容 clip 与阴影的
   未匹配释放不激活，换源/禁用/失焦/卸载清理。共享 controller 继续负责每个键的事件配对和波纹。
   原生输入连到一个私有或外部 MaterialInteractionSource，换源取消旧的自身输入并重建 indication，
   卸载断开源；外部事件不产生业务操作。模板绘制部分继续由 MaterialSurface 自身释放。
-- 尚未实现任意 Shape 及完整 Compose semantics。UIA 通过 Custom 类型和 Invoke/SelectionItem/Toggle
+- 自定义路径 Shape 已接入，完整 Compose semantics 尚未实现。UIA 通过 Custom 类型和 Invoke/SelectionItem/Toggle
   表达上游未指定 role 的语义；屏幕阅读器实际表现未经验证。
 - 原生 ContentPresenter 可以传播 Stretch 分配，但不能令任意显式 Width/Height 子控件服从 Compose
   Box 的最小约束。该边界不是已接受的语义等价：推荐先明确全库父级最小约束传递能力，
@@ -109,10 +120,32 @@ Tooltip 的内部 `SetContainerGeometry` 接入背景、内容 clip 与阴影的
 - 非均匀 Thickness 描边沿用原生绘制。
 - 既有阴影坐标与栅格差异按共享决定的特定范围保留。
 - 各真实桌面后端、设备 DPI 切换和全部调用方组合的视觉一致性未经验证。
+- 2026-11-08 新增 `material-shape.dynamic.{click,card,elevated,outlined}.resize.{ltr,rtl}`
+  保留八个未解决的方向切换差异：33ms 切换 FlowDirection 时，固定 Core 的背景/裁剪已经换向，
+  通用描边仍保留旧方向；49ms 尺寸变化后描边恢复。本地同帧更新这些层。已对照实际截图，
+  尚未确认 Core cache delegate 的失效传播原因；这不是已接受差异，不能用任意延迟本地描边消除。
+  同族 Button 快速反向的少量 Core 重复/额外截图也可能不稳定，Avalonia 重复稳定；分别读取 case.yaml，
+  不把两端 withinTolerance 等同于参考重复性通过。
 
 ## 4. 验证入口
 
+2026-11-08 显式形状交付：`material-shape-final` 305 例为 30 equal、267 withinTolerance、8 different，
+零执行错误。八个差异均为上文方向切换描边；9 例参考重复性不稳定（8 个 Button reverse 的 160ms
+及 click.hit.zero 的 176ms），均只发生在 Core，Avalonia 两种重复检查全部稳定。保留原始差异与自检门禁。
+额外 `shape-{radial,conic}-{cut,offset}` 四例为 2 equal、2 withinTolerance，均稳定且无执行错误；
+线性渐变的切角、孔洞与偏移路径已包含在 305 例中。未以这些样本宣称任意自定义画刷和全部 DPI 已验证。
+已查看方向切换、非圆角焦点、孔洞、偏移渐变和 RTL 三状态动画的实际双端截图。
+
+最终整仓 Debug/Release 及 Catalog Release 构建通过；受影响的控件行为回归 318/318 通过。
+全库最终 Debug 运行 2532/2538：5 项 Headless DefaultRenderLoop.Add 清理线程访问异常，
+1 项 NonInteractiveScrollBar 淡出断言失败；这六项所在类隔离重跑 63/63 通过。此结果不能写为全量通过，
+也不足以证明失败与本轮改动无关。日志为 `artifacts/shape-full-tests-final.log` 与
+`artifacts/shape-full-failures-recheck.log`。固定提交、依赖锁、比较容差均未改变。
+
 - `MaterialSurfaceTests` 覆盖主题、模板优先级、描边布局、tonal gate、嵌套累积及重挂。
+- `MaterialShapeTests` 覆盖切角归一化、百分比、RTL、真实模板、孔洞 FillRule、快照、命中及生命周期。
+  `material-shape` 双端族覆盖 Surface/Card/Button/Chip/IconButton/ToggleButton 的路径、阴影、裁剪、
+  波纹、焦点、按压反向、三目标形变和中途尺寸变化。新增 Catalog 示例位于 SurfaceDemo 与主窗口。
 - `InteractiveSurfaceTests` 覆盖三个交互入口的自然尺寸、最小留白、描边、内容色、键盘释放/取消、
   受控绑定、automation、命令禁用、源替换与重挂；Catalog `SurfaceDemo` 提供完整接线。
 - `MaterialSurfaceRenderTests` 用 Skia headless 渲染检查阴影、覆盖、圆角和 hairline，`InsetFocusRingTests` 检查反馈缓存与形状重绘。

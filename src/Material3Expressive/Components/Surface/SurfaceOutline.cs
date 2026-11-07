@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Media.Immutable;
 using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
@@ -26,6 +27,18 @@ internal sealed class SurfaceOutline : Control
     internal static readonly StyledProperty<Rect?> PathBoundsProperty = AvaloniaProperty.Register<SurfaceOutline, Rect?>(nameof(PathBounds));
     internal Rect? PathBounds { get => GetValue(PathBoundsProperty); set => SetValue(PathBoundsProperty, value); }
     private WriteableBitmap? _pathMask;
+    private PathGeometry? _shapePath;
+    internal PathGeometry? ShapePath
+    {
+        get => _shapePath;
+        set
+        {
+            if (ReferenceEquals(_shapePath, value)) return;
+            _shapePath = value;
+            _pathMask?.Dispose(); _pathMask = null;
+            InvalidateVisual();
+        }
+    }
     private readonly PathBorderMask _pathMaskCache = new();
     private (Size Size, CornerRadius Corners, float Stroke, float Scale, bool Fill, Point Origin, Color Color, Size Layout) _pathMaskKey;
     private readonly Border _fallback;
@@ -69,6 +82,65 @@ internal sealed class SurfaceOutline : Control
         var height = (float)Bounds.Height * scale;
         var stroke = MathF.Min(BorderThickness.Top == 0 ? 1 : MathF.Ceiling((float)BorderThickness.Top * scale),
             MathF.Ceiling(MathF.Min(width, height) / 2));
+        if (ShapePath is { } shape)
+        {
+            if (stroke * 2 > MathF.Min(width, height))
+            {
+                context.DrawGeometry(BorderBrush, null, shape);
+                return;
+            }
+            using var path = ShapeGeometry.ToSkiaPath(shape, scale);
+            if (path.Bounds.Width <= 0 || path.Bounds.Height <= 0) return;
+            var solid = BorderBrush as ISolidColorBrush;
+            var color = solid is null ? Colors.White : Color.FromArgb((byte)Math.Round(solid.Color.A * solid.Opacity), solid.Color.R, solid.Color.G, solid.Color.B);
+            var bounds = path.Bounds;
+            var key = (new Size(bounds.Width / scale, bounds.Height / scale), default(CornerRadius), stroke, scale,
+                false, new Point(bounds.Left / scale, bounds.Top / scale), color, Bounds.Size);
+            if (_pathMask is null || _pathMaskKey != key)
+            {
+                _pathMask?.Dispose();
+                _pathMask = _pathMaskCache.Update(path, stroke, scale, false, Bounds.Size, color);
+                _pathMaskKey = key;
+            }
+            var destination = new Rect(bounds.Left / scale, bounds.Top / scale,
+                MathF.Ceiling(bounds.Width) / scale, MathF.Ceiling(bounds.Height) / scale);
+            if (solid is not null)
+                context.DrawImage(_pathMask, new Rect(0, 0, MathF.Ceiling(bounds.Width), MathF.Ceiling(bounds.Height)), destination);
+            else
+                using (context.PushTransform(Matrix.CreateTranslation(destination.X, destination.Y)))
+                using (context.PushOpacityMask(new ImageBrush(_pathMask) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, new Rect(destination.Size)))
+                {
+                    // Compose sizes the shader to the ceil-sized cache, then translates the
+                    // canvas by -pathBounds.origin. Avalonia normally anchors it to the filled
+                    // rectangle instead. Preserve the shader's original coordinate system.
+                    var brush = BorderBrush;
+                    if (brush is IGradientBrush gradient)
+                    {
+                        var origin = gradient.TransformOrigin.ToPixels(destination.Size);
+                        var transform = new ImmutableTransform(Matrix.CreateTranslation(-origin.X, -origin.Y)
+                            * (gradient.Transform?.Value ?? Matrix.Identity)
+                            * Matrix.CreateTranslation(origin.X - destination.X, origin.Y - destination.Y));
+                        var stops = gradient.GradientStops.Select(s => new ImmutableGradientStop(s.Offset, s.Color)).ToArray();
+                        brush = gradient switch
+                        {
+                            ILinearGradientBrush linear => new ImmutableLinearGradientBrush(stops, gradient.Opacity, transform,
+                                RelativePoint.TopLeft, gradient.SpreadMethod, linear.StartPoint, linear.EndPoint),
+                            IRadialGradientBrush radial => new RadialGradientBrush
+                            {
+                                GradientStops = [.. gradient.GradientStops.Select(s => new GradientStop(s.Color, s.Offset))],
+                                Opacity = gradient.Opacity, Transform = transform, TransformOrigin = RelativePoint.TopLeft,
+                                SpreadMethod = gradient.SpreadMethod, Center = radial.Center, GradientOrigin = radial.GradientOrigin,
+                                RadiusX = radial.RadiusX, RadiusY = radial.RadiusY
+                            },
+                            IConicGradientBrush conic => new ImmutableConicGradientBrush(stops, gradient.Opacity, transform,
+                                RelativePoint.TopLeft, gradient.SpreadMethod, conic.Center, conic.Angle),
+                            _ => brush
+                        };
+                    }
+                    context.FillRectangle(brush, new Rect(destination.Size));
+                }
+            return;
+        }
         if (UsePathOutline)
         {
             var layout = PathLayoutSize == default ? Bounds.Size : PathLayoutSize;

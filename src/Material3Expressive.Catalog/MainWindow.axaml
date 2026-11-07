@@ -100,6 +100,11 @@
                     <Button Content="Save" Margin="0,0,12,0" />
                     <Button Content="Add" m3:MaterialButton.Icon="{m3:Symbol Add}" Margin="0,0,12,0" />
                     <ToggleButton Content="Pin" m3:MaterialButton.Icon="{m3:Symbol PushPin}" Margin="0,0,12,0" />
+                    <ToggleButton Content="Cut toggle" Theme="{StaticResource MaterialOutlinedToggleButtonTheme}" Margin="0,0,12,0">
+                        <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="16" BottomEnd="16" /></m3:MaterialButton.Shape>
+                        <m3:ToggleButtonAppearance.CheckedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:ToggleButtonAppearance.CheckedShape>
+                        <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:MaterialButton.PressedShape>
+                    </ToggleButton>
                     <Button Content="Medium" Classes="medium" Margin="0,0,12,0" />
                     <Button Content="Standard override" m3:MaterialPrecisionPointer.IsEnabled="False" />
                 </WrapPanel>
@@ -166,12 +171,39 @@
                     </m3:InputChip>
                     <m3:InputChip Content="Disabled contact" IsSelected="True" IsEnabled="False" />
                 </WrapPanel>
+                <TextBlock Text="Fixed cut chips" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <m3:AssistChip Content="Cut assist" IsElevated="True" Margin="0,0,12,0">
+                        <m3:AssistChip.Shape><m3:CutCornerShape TopStart="12" BottomEnd="12" /></m3:AssistChip.Shape>
+                    </m3:AssistChip>
+                    <m3:SuggestionChip Content="Cut suggestion" Margin="0,0,12,0">
+                        <m3:SuggestionChip.Shape><m3:CutCornerShape TopStart="25%" BottomEnd="25%" /></m3:SuggestionChip.Shape>
+                    </m3:SuggestionChip>
+                    <m3:FilterChip Content="Fixed cut filter" Click="OnChipClick" Margin="0,0,12,0">
+                        <m3:FilterChip.Shape><m3:CutCornerShape TopStart="12" TopEnd="4" BottomEnd="12" BottomStart="4" /></m3:FilterChip.Shape>
+                    </m3:FilterChip>
+                    <m3:InputChip Content="Cut contact" Click="OnChipClick" TrailingIcon="{m3:Symbol Close}">
+                        <m3:InputChip.Shape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:InputChip.Shape>
+                    </m3:InputChip>
+                </WrapPanel>
                 <TextBlock Text="Icon button widths" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <m3:IconButton Symbol="Remove" WidthOption="Narrow" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Narrow" />
                     <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Uniform" />
                     <m3:IconButton Symbol="Add" WidthOption="Wide" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Wide" />
                     <m3:IconButton Symbol="Favorite" WidthOption="Wide" Classes="medium" Theme="{StaticResource MaterialTonalIconButtonTheme}" AutomationProperties.Name="Medium wide" />
+                </StackPanel>
+                <TextBlock Text="Cut icon button morphs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <m3:IconButton Symbol="Add" Width="64" Height="56" Theme="{StaticResource MaterialOutlinedIconButtonTheme}" AutomationProperties.Name="Cut corner add">
+                        <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="20" BottomEnd="20" /></m3:MaterialButton.Shape>
+                        <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:MaterialButton.PressedShape>
+                    </m3:IconButton>
+                    <m3:IconToggleButton Symbol="Favorite" Width="64" Height="56" Theme="{StaticResource MaterialFilledIconToggleButtonTheme}" CheckedChangeRequested="OnIconCheckedChange" AutomationProperties.Name="Cut corner favorite">
+                        <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="24" BottomEnd="24" /></m3:MaterialButton.Shape>
+                        <m3:IconToggleButton.CheckedShape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:IconToggleButton.CheckedShape>
+                        <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:MaterialButton.PressedShape>
+                    </m3:IconToggleButton>
                 </StackPanel>
                 <TextBlock Text="Ambient and vibrant icon colors" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12" TextElement.Foreground="#245A80">

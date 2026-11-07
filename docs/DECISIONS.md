@@ -408,3 +408,17 @@
 - **默认值与覆盖**：precision 候选使用独立 Token，主题内部选择写到既有默认配置流程；普通样式、显式 Padding/MinHeight 和绑定优先。默认 false 以及其他尺寸的既有 Token 不变，没有破坏性迁移。
 - **尾部标签接入（本轮剩余移植授权）**：`DropdownMenuItemTrailingLabel` 复用同一继承环境，选择固定 MenuDefaults 的末尾 6 DIP 留白；显式 Padding 优先，无公共 API 迁移。分组标签不使用 precision 分支。
 - **剩余范围**：原生 MenuItem、推荐尾部图标大小与 ListItem 尚未消费此环境，当前不宣称已实现全库 precision 分支；后续复用同一个环境，不为各组件再建开关。ListItem 的 ContentPadding 与对齐阈值是初始化值，并非实时 getter，不能直接套用动态选择。真实指针设备监听也未实现。
+
+## 35. Surface 与 Card 的显式路径形状
+
+- **原限制**：§27 仅开放 Tooltip 内部背景/裁剪/阴影入口，§29 仅供 Carousel 的圆角路径描边；原理由是共享描边、波纹和焦点环尚无完整的任意轮廓接入。两个原入口及其调用契约继续保留。
+- **本轮授权与依据（2026-11-08）**：维护者明确授权新增共享能力、API 和历史范围修订。固定两端 Surface.kt/Card.kt 接受 Shape；Foundation CornerBasedShape/CutCornerShape、Border.kt 和 material3-ripple Border.kt 提供现成算法。补齐其实际消费方，不另造形状动画框架。
+- **决定**：`MaterialShape : AvaloniaObject` 以 `CreateOutline(Size, FlowDirection, density)` 返回新闭合 `PathGeometry`；`CutCornerShape` 使用原生 RelativeScalar 表达 DIP/百分比，并保留 Float 物理像素计算、两侧独立归一化及逻辑四角。Surface、三个交互 Surface、三种 Card 的 `Shape` 为普通样式属性，null 保留原 CornerRadius，现有调用方无需迁移。自定义路径采用物理方向，Surface 抵消 Avalonia 子树镜像，内容仍沿原生逻辑方向布局。
+- **共享管线**：路径在消费点复制，背景/内容 clip/波纹/均匀边框/焦点环/阴影共用该快照；阴影继续使用既有 FromPath 托管快照。描边复用 §29 的 doubled stroke、逆路径 Clear、整数缓存与 Float 运算。焦点路径新增 inset stroke Clear；路径分支按固定 RippleNode 的单一可重录图层保留两次最终外环回放，而非擅自为内外环各建图层。矩形/圆角仍沿原分支。
+- **初始范围及边界**：初始接入上述 Surface/Card，后续本轮扩展的入口见下文；其他组件未自动获得 Shape。显式路径要求均匀 BorderThickness，非均匀输入明确拒绝；原生圆角的非均匀分支不变。属性变化、布局尺寸、方向和重挂重新求值；卸载断开形状订阅并释放位图缓存。不改变布局、输入状态、Card 高度和 CornerRadius 动画，不提供任意路径之间的形变。
+- **验证**：`MaterialShapeTests` 与双端 `material-shape` 验证切角、百分比、RTL、曲线/凹轮廓/偏移/孔洞、内容裁剪、阴影、波纹、焦点、动态尺寸与输入；实际差异留在组件 INTERNALS，不以本决定免除门禁。
+- **本轮后续接入**：普通 Button 五种主题新增 `MaterialButton.Shape / PressedShape`，对应固定 Button.kt 的静态/交互形状；两个切角形状复用现有 AnimatedCornerRadius 的进度与取消时序，其他路径直接切换。内部 CornerShape 新增不可变切角尺寸快照，保留百分比尺寸和第三目标 Blend；未引入第二套动画框架。公开圆角 API 和仓内调用方无需迁移。上述“无跨路径形变”仍适用于任意路径，不限制同族切角尺寸插值。
+- **Chip 固定重载接入**：四类 Chip 与 Elevated 外观新增 `Shape`，对应固定 Chip.kt 的 shape 入口；显式 Shape 优先于 Shapes，取消圆角播放器，清除后恢复当前选择状态。保留原 Shapes 仅管形变、颜色/间距/图标动画独立的维护者决定，不以本次形状入口捆绑切换这些行为，无破坏性迁移。
+- **图标按钮接入**：六种 IconButton 主题复用 MaterialButton.Shape/PressedShape，IconToggleButton 新增 CheckedShape；同族切角的三状态继续使用原播放器。普通路径切换按 Core 的 focusRingShape 身份变化重建 indication；RTL 显式形状缩放补偿原生子树镜像，保证波纹首次绘制后保留物理中心。圆角分支未扩大变更范围。
+- **原生 ToggleButton 接入**：四种主题同样接入 MaterialButton.Shape/PressedShape，CheckedShape 置于既有 ToggleButtonAppearance；保留固定 ToggleButton.kt 的 FastSpatial 规格、三状态优先级和边框动画。原生先切换 IsChecked 再 Click 的已确认适配不变，未改变颜色、尺寸或圆角 API，无迁移步骤。
+- **下拉刷新接入**：PullToRefreshIndicatorBox.Shape 对应固定 PullToRefresh.kt 的 IndicatorBox shape 参数，复用 Surface 路径，不改变外层顶部裁剪、平移和高度条件。两个内置指示器继承此属性是本地便利入口（固定上游这两个函数不公开 shape），已由本轮授权采纳；自动滚动容器所缺的 pre-fling 协议仍未实现，不以本次接入宣称完成。

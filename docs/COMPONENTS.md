@@ -15,14 +15,14 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `Button` | 原生按钮的五种 Material 主题、尺寸变体与精确指针尺寸 | [README](../src/Material3Expressive/Components/Button/README.md) | [INTERNALS](../src/Material3Expressive/Components/Button/INTERNALS.md) | |
-| `IconButton` | 图标按钮，提供标准、填充、浅色与轮廓样式 | [README](../src/Material3Expressive/Components/IconButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/IconButton/INTERNALS.md) | |
+| `Button` | 原生按钮五种主题、精确指针尺寸及圆角/切角按压形变 | [README](../src/Material3Expressive/Components/Button/README.md) | [INTERNALS](../src/Material3Expressive/Components/Button/INTERNALS.md) | |
+| `IconButton` | 图标按钮六种主题及四种切换主题，支持三状态切角形变 | [README](../src/Material3Expressive/Components/IconButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/IconButton/INTERNALS.md) | |
 | `Icon` | 位图、矢量与自定义图片图标，内容色着色、Fit 缩放和可选 RTL 镜像 | [README](../src/Material3Expressive/Components/Icon/README.md) | [INTERNALS](../src/Material3Expressive/Components/Icon/INTERNALS.md) | |
-| `ToggleButton` | 原生切换按钮的四种 Material 主题、精确指针尺寸与选中状态形变 | [README](../src/Material3Expressive/Components/ToggleButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/ToggleButton/INTERNALS.md) | |
+| `ToggleButton` | 原生切换按钮四种主题、精确指针尺寸及选中/按压切角形变 | [README](../src/Material3Expressive/Components/ToggleButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/ToggleButton/INTERNALS.md) | |
 | `SegmentedButton` | 单选与多选分段按钮，支持首尾平滑圆角 | [README](../src/Material3Expressive/Components/SegmentedButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md) | |
 | `SplitButton` | 双操作按钮组合，主操作与次级菜单联动 | [README](../src/Material3Expressive/Components/SplitButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SplitButton/INTERNALS.md) | |
 | `ButtonGroup` | 按压扩宽、相邻项压缩与自动溢出收纳 | [README](../src/Material3Expressive/Components/ButtonGroup/README.md) | [INTERNALS](../src/Material3Expressive/Components/ButtonGroup/INTERNALS.md) | |
-| `Chip` | 辅助、建议、过滤与输入四类操作标签 | [README](../src/Material3Expressive/Components/Chip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Chip/INTERNALS.md) | |
+| `Chip` | 辅助、建议、过滤与输入标签，含 Elevated 和固定路径形状 | [README](../src/Material3Expressive/Components/Chip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Chip/INTERNALS.md) | |
 | `FloatingActionButton` | 浮动操作按钮、扩展按钮、切换按钮与菜单 | [README](../src/Material3Expressive/Components/FloatingActionButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/FloatingActionButton/INTERNALS.md) | |
 | `CommandBar` | 原生命令栏的三套紧凑操作主题 | [README](../src/Material3Expressive/Components/CommandBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/CommandBar/INTERNALS.md) | |
 | `FloatingToolbar` | 横向与纵向浮动工具栏，支持两轴留白平衡 | [README](../src/Material3Expressive/Components/FloatingToolbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/FloatingToolbar/INTERNALS.md) | |
@@ -68,8 +68,8 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `Surface` | 基础表面容器，承载背景、阴影、多角圆角与描边 | [README](../src/Material3Expressive/Components/Surface/README.md) | [INTERNALS](../src/Material3Expressive/Components/Surface/INTERNALS.md) | |
-| `Card` | 填充、浅色、抬升与描边卡片容器 | [README](../src/Material3Expressive/Components/Card/README.md) | [INTERNALS](../src/Material3Expressive/Components/Card/INTERNALS.md) | |
+| `Surface` | 基础表面容器，承载背景、阴影、圆角/切角/自定义轮廓与描边 | [README](../src/Material3Expressive/Components/Surface/README.md) | [INTERNALS](../src/Material3Expressive/Components/Surface/INTERNALS.md) | |
+| `Card` | 填充、抬升与描边卡片，支持切角及自定义轮廓 | [README](../src/Material3Expressive/Components/Card/README.md) | [INTERNALS](../src/Material3Expressive/Components/Card/INTERNALS.md) | |
 | `Scaffold` | 屏幕标准槽位骨架，自动处理窗口插桩与内边距传播 | [README](../src/Material3Expressive/Components/Scaffold/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scaffold/INTERNALS.md) | |
 | `ListItem` | 标准五槽列表行、分段列表行与受控选择状态 | [README](../src/Material3Expressive/Components/ListItem/README.md) | [INTERNALS](../src/Material3Expressive/Components/ListItem/INTERNALS.md) | |
 | `DragHandle` | 三状态竖向拖动手柄与共享交互反馈 | [README](../src/Material3Expressive/Components/DragHandle/README.md) | [INTERNALS](../src/Material3Expressive/Components/DragHandle/INTERNALS.md) | |
@@ -105,7 +105,7 @@
 | `ScrollViewer` | 原生滚动容器的平滑物理滚动与惯性接入 | [README](../src/Material3Expressive/Components/ScrollViewer/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollViewer/INTERNALS.md) | |
 | `ScrollView` | 面向照片与自由画布的平滑缩放、漫游与悬浮滚动条主题接入 | [README](../src/Material3Expressive/Components/ScrollView/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollView/INTERNALS.md) | |
 | `Carousel` | 三种经典 keyline 布局、视口虚拟化、Tab 边界搜索、触摸拖动、水平滚轮、键盘分页、焦点滚入与视口缩小跟随、吸附／衰减、导航动画、辅助技术分页及多宽高比遮罩与视差 | [README](../src/Material3Expressive/Components/Carousel/README.md) | [INTERNALS](../src/Material3Expressive/Components/Carousel/INTERNALS.md) | 设备专用触控板、嵌套滚动与合成线程接入尚未实现 |
-| `PullToRefresh` | 下拉刷新状态、传统/Expressive 指示器与显式滚动消费策略 | [README](../src/Material3Expressive/Components/PullToRefresh/README.md) | [INTERNALS](../src/Material3Expressive/Components/PullToRefresh/INTERNALS.md) | 自动 ScrollViewer 接入尚未实现；回弹途中卸载的末帧保留值存在已记录差异 |
+| `PullToRefresh` | 下拉刷新状态、可定制轮廓的传统/Expressive 指示器及显式滚动消费策略 | [README](../src/Material3Expressive/Components/PullToRefresh/README.md) | [INTERNALS](../src/Material3Expressive/Components/PullToRefresh/INTERNALS.md) | 自动 ScrollViewer 接入尚未实现；回弹途中卸载的末帧保留值存在已记录差异 |
 | `ScrollBar` | 原生滚动条外观与交互动效、只读滚动指示 | [README](../src/Material3Expressive/Components/ScrollBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollBar/INTERNALS.md) | |
 
 ---

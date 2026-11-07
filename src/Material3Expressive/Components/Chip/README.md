@@ -88,6 +88,19 @@ Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局�
 
 ### 形状与间距
 
+四类 Chip（含 Elevated 外观）可用 `Shape` 设置固定切角或自定义 `MaterialShape` 路径：
+
+```xml
+<m3:FilterChip Content="未读" IsSelected="{Binding IsUnread}" Command="{Binding ToggleUnreadCommand}">
+  <m3:FilterChip.Shape><m3:CutCornerShape TopStart="12" TopEnd="4" BottomEnd="12" BottomStart="4" /></m3:FilterChip.Shape>
+</m3:FilterChip>
+```
+
+显式 `Shape` 优先于 `Shapes` 和 `CornerRadius`，选择/按压不改变这个固定轮廓；颜色、间距、
+图标进入退出动画继续独立工作。清除 Shape 后恢复当前 Shapes 的圆角变形，无需修改主题默认值。
+百分比切角按当前容器短边计算，逻辑四角支持 RTL；边框须均匀厚度。路径契约见
+[Surface](../Surface/README.md)。Catalog 主窗口 Chip 区提供四类实例。
+
 
 
 Filter/Input 的主题默认将 `UnselectedShape` / `SelectedShape` / `PressedShape` Token 组装成完整
@@ -173,7 +186,8 @@ Catalog **Drag handle demo** 提供配置切换、启用开关及与 Card 共享
 ## 使用限制与注意事项
 
 Selectable Chip 默认最大宽度 1000 DIP，显式 Width / MinWidth 保留调用方约束。
-形状配置使用圆角矩形，布局支持前后槽间距。共享焦点环可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用。
+`Shapes` 配置圆角形变；固定 `Shape` 可使用切角或自定义路径。布局支持前后槽间距。
+共享焦点环可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用。
 透明平面 Filter 恢复 1 DIP 悬浮阴影可能出现已知 GPU 灰环；当前双端验证范围见维护说明。
 四族、Elevated、头像和禁用组合见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 

@@ -19,6 +19,11 @@
 
 ## 2. 关键机制与架构契约
 
+`Shape` 由两个默认模板绑定到 MaterialSurface，三种派生卡片及模式切换共用相同入口。
+对应固定 Card.kt 的 shape 参数；无状态副本或另一个裁剪节点。动态切角、路径边框、阴影及反馈
+遵循 [Surface 契约](../Surface/INTERNALS.md)和[共享决定 §35](../../../../docs/DECISIONS.md#35-surface-与-card-的显式路径形状)，
+null 保留既有 CornerRadius。此非破坏性扩展在本轮剩余移植自主决策授权内实施。
+
 普通模板直接持有 `MaterialSurface#PART_Container`，可点击模板外包 ButtonLayout，默认
 48 DIP 交互布局空间与可见容器分开；内容都由 `PART_ContentPresenter` 呈现。
 原生 `Click` / `Command` 属 Button，普通模式不运行这些激活路径，也不提供 Invoke，
@@ -80,7 +85,11 @@ Card 的数值适配范围以组件确认记录为准。
 [Core 焦点](../../../../docs/DECISIONS.md)与
 [Surface 描边](../../../../docs/DECISIONS.md)，不在组件内建立另一套规则。
 
-尚未实现任意路径/切角 Shape 和完整 ColumnScope。文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
+切角及自定义路径通过 Shape 接入共享 Surface；完整 ColumnScope 尚未实现。文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
+
+切角卡片新增验证位于双端 `material-shape` 族，包含三种主题、普通/可点击、RTL、焦点、波纹及动态尺寸。
+方向切换瞬间 Core 描边保留旧方向的六个卡片用例仍超差，详见 [Surface 已知差异](../Surface/INTERNALS.md#3-已确认决定与已知差异)；
+没有放宽容差或从用例集中移除。此差异不属于此前允许的阴影/数值边界。
 
 ## 4. 验证入口
 

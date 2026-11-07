@@ -1,4 +1,5 @@
 using Avalonia.LogicalTree;
+using Avalonia.Layout;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 using ComposeAnimation;
 using System;
@@ -32,6 +33,17 @@ namespace Material3Expressive.Components;
 /// </remarks>
 public sealed class MaterialSurface : Control
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty =
+        AvaloniaProperty.Register<MaterialSurface, MaterialShape?>(nameof(Shape));
+    /// <summary>An explicit container path, or null to use CornerRadius. Path borders require uniform thickness.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+    /// <summary>The pressed path for an explicit Shape. Cut corners interpolate; other paths switch directly.</summary>
+    public static readonly StyledProperty<MaterialShape?> PressedShapeProperty =
+        AvaloniaProperty.Register<MaterialSurface, MaterialShape?>(nameof(PressedShape));
+    public MaterialShape? PressedShape { get => GetValue(PressedShapeProperty); set => SetValue(PressedShapeProperty, value); }
+    internal static readonly StyledProperty<MaterialShape?> CheckedShapeProperty =
+        AvaloniaProperty.Register<MaterialSurface, MaterialShape?>(nameof(CheckedShape));
+    internal MaterialShape? CheckedShape { get => GetValue(CheckedShapeProperty); set => SetValue(CheckedShapeProperty, value); }
     internal static readonly StyledProperty<bool> ApplyTonalElevationProperty =
         AvaloniaProperty.Register<MaterialSurface, bool>(nameof(ApplyTonalElevation), true);
     internal bool ApplyTonalElevation { get => GetValue(ApplyTonalElevationProperty); set => SetValue(ApplyTonalElevationProperty, value); }
@@ -138,19 +150,90 @@ public sealed class MaterialSurface : Control
     private IBrush? _effectiveBackground;
     private Geometry? _containerGeometry;
     private ComposeShadowShape? _containerShadowShape;
+    private MaterialShape? _observedShape;
+    private MaterialShape? _observedPressedShape;
+    private MaterialShape? _observedCheckedShape;
+    private MaterialShape? _pathRest;
+    private MaterialShape? _pathPressed;
+    private MaterialShape? _pathChecked;
+    private CornerShape.Cut? _cutRest;
+    private CornerShape.Cut? _cutPressed;
+    private CornerShape.Cut? _cutChecked;
+    private MaterialShape? _indicationPath;
+    private PathGeometry? _shapeGeometry;
+    private ComposeShadowShape? _shapeShadow;
+    private Geometry? EffectiveGeometry => _shapeGeometry ?? _containerGeometry;
+    private bool CanMorphCuts => Shape is CutCornerShape && (PressedShape is not null || CheckedShape is not null)
+        && (PressedShape is null or CutCornerShape) && (CheckedShape is null or CutCornerShape);
+    private MaterialShape? SelectedPath => Shape is null ? null
+        : (ButtonSurfaceState.GetIsPressed(this) ?? _interactionController?.Interaction.HasFlag(InteractionState.Pressed)) == true
+            && PressedShape is { } pressed ? pressed
+            : ButtonSurfaceState.GetIsChecked(this) == true && CheckedShape is { } selected ? selected : Shape;
+    private PathGeometry? GenericShapePath => SelectedPath is CutCornerShape { IsRectangle: true }
+        && (!CanMorphCuts || _shapeMorph is null || _shapeMorph.Current == default) ? null : _shapeGeometry;
+
+    private void ObserveShape()
+    {
+        if (_observedShape is { } old) old.PropertyChanged -= ShapeChanged;
+        if (_observedPressedShape is { } oldPressed) oldPressed.PropertyChanged -= ShapeChanged;
+        if (_observedCheckedShape is { } oldChecked) oldChecked.PropertyChanged -= ShapeChanged;
+        _observedShape = this.IsAttachedToVisualTree() ? Shape : null;
+        _observedPressedShape = this.IsAttachedToVisualTree() ? PressedShape : null;
+        _observedCheckedShape = this.IsAttachedToVisualTree() ? CheckedShape : null;
+        if (_observedShape is { } shape) shape.PropertyChanged += ShapeChanged;
+        if (_observedPressedShape is { } pressed) pressed.PropertyChanged += ShapeChanged;
+        if (_observedCheckedShape is { } selected) selected.PropertyChanged += ShapeChanged;
+    }
+
+    private void ShapeChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        QueueShapeMorph();
+        UpdateShape();
+    }
+
+    private void UpdateShape()
+    {
+        if (SelectedPath is { } shape && _shapeSize.Width > 0 && _shapeSize.Height > 0)
+        {
+            if (!BorderThickness.IsUniform)
+                throw new InvalidOperationException("MaterialShape borders require uniform BorderThickness.");
+            var density = LayoutHelper.GetLayoutScale(this);
+            var geometry = CanMorphCuts && _shapeMorph is { } morph
+                ? CutCornerShape.CreateOutline(_shapeSize, FlowDirection, density, morph.Current)
+                : shape.CreateOutline(_shapeSize, FlowDirection, density);
+            _shapeGeometry = PathGeometry.Parse(geometry.ToString());
+            _shapeGeometry.FillRule = geometry.FillRule;
+            _shapeGeometry.Transform = new MatrixTransform(geometry.Transform?.Value ?? Matrix.Identity);
+            // The factory returns physical coordinates; Avalonia mirrors the entire RTL
+            // subtree, so cancel that mirror on the outline while retaining logical content.
+            if (FlowDirection == FlowDirection.RightToLeft)
+                _shapeGeometry.Transform = new MatrixTransform((geometry.Transform?.Value ?? Matrix.Identity)
+                    * new Matrix(-1, 0, 0, 1, _shapeSize.Width, 0));
+            using var path = ShapeGeometry.ToSkiaPath(_shapeGeometry);
+            _shapeShadow = path.IsEmpty ? null : ComposeShadowShape.FromPath(path);
+        }
+        else { _shapeGeometry = null; _shapeShadow = null; }
+        UpdateCornerRadius();
+        _outline.ShapePath = GenericShapePath;
+        _chrome.ClipToBounds = EffectiveGeometry is null;
+        _chrome.Clip = EffectiveGeometry;
+        _interactionOverlay.InvalidateVisual();
+        if (_focusRing is { } ring) { ring.ShapePath = GenericShapePath; ring.Corners = EffectiveCornerRadius; }
+        InvalidateVisual();
+    }
 
     // Tooltip's union outline: background, child clip and shadow share the same shape.
-    // Internal until arbitrary-shape borders and interaction outlines have a complete contract.
+    // Retained for Tooltip's internally assembled union; public paths use MaterialShape.
     internal void SetContainerGeometry(Geometry? geometry, ComposeShadowShape? shadowShape)
     {
         _containerGeometry = geometry;
         _containerShadowShape = shadowShape;
-        _chrome.ClipToBounds = geometry is null;
-        _chrome.Clip = geometry;
+        _chrome.ClipToBounds = EffectiveGeometry is null;
+        _chrome.Clip = EffectiveGeometry;
         InvalidateVisual();
     }
 
-    internal Geometry? ContainerGeometry => _containerGeometry;
+    internal Geometry? ContainerGeometry => EffectiveGeometry;
 
     public MaterialSurface()
     {
@@ -272,17 +355,18 @@ public sealed class MaterialSurface : Control
         }
     }
 
-    private CornerShape.Defined SelectedShape
+    private CornerShape SelectedShape
     {
         get
         {
+            if (CanMorphCuts) return CornerShape.Cut.From((CutCornerShape)SelectedPath!);
             var fullFraction = ButtonSurfaceState.GetSplitOuterCorners(this) ? 1f : .5f;
             if ((ButtonSurfaceState.GetIsPressed(this) ?? _interactionController?.Interaction.HasFlag(InteractionState.Pressed)) == true
                 && PressedCornerRadius is { } pressed)
-                return new(pressed, fullFraction);
+                return new CornerShape.Defined(pressed, fullFraction);
             if (ButtonSurfaceState.GetIsChecked(this) == true && ButtonSurfaceState.GetCheckedCornerRadius(this) is { } selected)
-                return new(selected);
-            return new(CornerRadius, fullFraction);
+                return new CornerShape.Defined(selected);
+            return new CornerShape.Defined(CornerRadius, fullFraction);
         }
     }
     private CornerRadius CurrentCornerRadius => _animatedCorners ?? _shapeMorph?.Current ?? SelectedShape.Resolve(_shapeSize);
@@ -300,7 +384,7 @@ public sealed class MaterialSurface : Control
     public override void Render(DrawingContext context)
     {
         DrawShadow(context);
-        if (_containerGeometry is { } geometry) context.DrawGeometry(EffectiveBackground, null, geometry);
+        if (EffectiveGeometry is { } geometry) context.DrawGeometry(EffectiveBackground, null, geometry);
         else context.DrawRectangle(EffectiveBackground, null, new RoundedRect(new Rect(Bounds.Size), EffectiveCornerRadius));
         base.Render(context);
     }
@@ -310,11 +394,12 @@ public sealed class MaterialSurface : Control
         var bounds = new Rect(Bounds.Size);
         if (ShadowElevation <= 0 || bounds.Width <= 0 || bounds.Height <= 0 || TopLevel.GetTopLevel(this) is null)
             return;
+        if (Shape is not null && _shapeShadow is null) return;
 
         ComposeShadowRenderer.Draw(
             context,
             this,
-            _containerShadowShape ?? ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
+            _shapeShadow ?? _containerShadowShape ?? ComposeShadowShape.RoundedRectangle(bounds, EffectiveCornerRadius),
             ComposeShadowParameters.Material(ShadowElevation, ResolveShadowColor()));
     }
 
@@ -333,6 +418,7 @@ public sealed class MaterialSurface : Control
         _shapeSize = finalSize;
         if (_shapeMorph is not null)
             _shapeMorph.Size = finalSize;
+        UpdateShape();
         if (UpdateCornerRadius())
             _interactionOverlay.InvalidateVisual();
         var rect = new Rect(finalSize);
@@ -352,6 +438,14 @@ public sealed class MaterialSurface : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+
+        if (change.Property == ShapeProperty || change.Property == PressedShapeProperty || change.Property == CheckedShapeProperty)
+        {
+            ObserveShape();
+            QueueShapeMorph();
+            UpdateShape();
+        }
+        else if (change.Property == FlowDirectionProperty && _chrome is not null) UpdateShape();
 
         if (change.Property == ApplyTonalElevationProperty || change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
             || change.Property == TonalSurfaceTintColorProperty)
@@ -392,6 +486,8 @@ public sealed class MaterialSurface : Control
         }
         else if (change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty)
         {
+            if (Shape is not null && !BorderThickness.IsUniform)
+                throw new InvalidOperationException("MaterialShape borders require uniform BorderThickness.");
             UpdateButtonBorder();
         }
     }
@@ -399,6 +495,8 @@ public sealed class MaterialSurface : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        ObserveShape();
+        UpdateShape();
 
         // The theme supplies the current tonal palette through effective properties.
         UpdateEffectiveBackground();
@@ -432,6 +530,12 @@ public sealed class MaterialSurface : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (_observedShape is { } shape) shape.PropertyChanged -= ShapeChanged;
+        _observedShape = null;
+        if (_observedPressedShape is { } pressed) pressed.PropertyChanged -= ShapeChanged;
+        _observedPressedShape = null;
+        if (_observedCheckedShape is { } selected) selected.PropertyChanged -= ShapeChanged;
+        _observedCheckedShape = null;
         if (TemplatedParent is Control host) host.PropertyChanged -= FocusConfigurationChanged;
         _focusRing?.Disconnect();
         base.OnDetachedFromVisualTree(e);
@@ -547,6 +651,7 @@ public sealed class MaterialSurface : Control
 
     private void UpdateInteractionVisuals()
     {
+        if (Shape is not null && (PressedShape is not null || CheckedShape is not null)) UpdateShape();
         UpdateCornerRadius();
         _interactionOverlay.InvalidateVisual();
         if (_focusRing is { } focusRing) focusRing.Corners = FocusRingCornerRadius ?? EffectiveCornerRadius;
@@ -564,7 +669,7 @@ public sealed class MaterialSurface : Control
             && _interactionController?.HasSeparateFocusIndication != false) return;
         if (_focusRing is null)
         {
-            _focusRing = new InsetFocusRingPresenter { ZIndex = 2, Corners = FocusRingCornerRadius ?? EffectiveCornerRadius };
+            _focusRing = new InsetFocusRingPresenter { ZIndex = 2, Corners = FocusRingCornerRadius ?? EffectiveCornerRadius, ShapePath = GenericShapePath };
             VisualChildren.Add(_focusRing);
             InvalidateMeasure();
         }
@@ -573,7 +678,7 @@ public sealed class MaterialSurface : Control
 
     private bool UpdateCornerRadius()
     {
-        var cornerRadius = CornerShape.Normalize(CurrentCornerRadius, _shapeSize);
+        var cornerRadius = Shape is null ? CornerShape.Normalize(CurrentCornerRadius, _shapeSize) : default;
         // Optical centering consumes unnormalized corners: they can change even while the
         // painted outline remains at its size limit.
         if (Child is SplitButtonOpticalLayout optical) optical.InvalidateArrange();
@@ -599,7 +704,8 @@ public sealed class MaterialSurface : Control
         // Do not create a zero-stiffness spring or replace an effect's captured valid spec.
         if (!TryGetShapeMorphSpec(out var initialSpec))
             return;
-        if (_shapeMorph is null && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null))
+        if (_shapeMorph is null && (CanMorphCuts || Shape is null
+            && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null)))
             RecreateShapeMorph(motion, initialSpec);
         if (_shapeCommitPending)
             return;
@@ -620,8 +726,20 @@ public sealed class MaterialSurface : Control
             if (!TryGetShapeMorphSpec(out var spec))
                 return;
             var target = SelectedShape;
+            if (Shape is not null && !CanMorphCuts && !ReferenceEquals(_indicationPath, SelectedPath))
+            {
+                // Core Surface passes the selected Shape into ripple(focusRingShape). A
+                // direct path switch replaces that indication node; active presses are not replayed.
+                var replaced = _indicationPath is not null;
+                _indicationPath = SelectedPath;
+                if (replaced) _interactionController?.ResetSourceIndication(preserveSurfaceMotion: true);
+            }
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
-                || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec);
+                || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec)
+                || _pathRest != Shape || _pathPressed != PressedShape || _pathChecked != CheckedShape
+                || _cutRest != (Shape is CutCornerShape rest ? CornerShape.Cut.From(rest) : null)
+                || _cutPressed != (PressedShape is CutCornerShape pressed ? CornerShape.Cut.From(pressed) : null)
+                || _cutChecked != (CheckedShape is CutCornerShape selected ? CornerShape.Cut.From(selected) : null);
             var recreate = configurationChanged && (ButtonSurfaceState.GetResetOnShapeChange(this) || !_shapeSpec.Equals(spec));
             if (configurationChanged && !recreate)
             {
@@ -679,8 +797,15 @@ public sealed class MaterialSurface : Control
         _shapeRest = CornerRadius;
         _shapePressed = PressedCornerRadius;
         _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
+        _pathRest = Shape; _pathPressed = PressedShape; _pathChecked = CheckedShape;
+        _indicationPath = SelectedPath;
+        _cutRest = Shape is CutCornerShape rest ? CornerShape.Cut.From(rest) : null;
+        _cutPressed = PressedShape is CutCornerShape pressed ? CornerShape.Cut.From(pressed) : null;
+        _cutChecked = CheckedShape is CutCornerShape selected ? CornerShape.Cut.From(selected) : null;
         _shapeSpec = spec;
-        _shapeMorph = PressedCornerRadius is null && _shapeChecked is null ? null
+        _shapeMorph = Shape is not null ? CanMorphCuts
+            ? new AnimatedCornerRadius(SelectedShape, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size } : null
+            : PressedCornerRadius is null && _shapeChecked is null ? null
             : new AnimatedCornerRadius(SelectedShape, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
         UpdateInteractionVisuals();
     }
@@ -761,7 +886,8 @@ public sealed class MaterialSurface : Control
                 context,
                 _owner.StateLayerBrush,
                 _owner.EffectiveCornerRadius,
-                Bounds.Size);
+                Bounds.Size,
+                _owner._shapeGeometry);
         }
     }
 }

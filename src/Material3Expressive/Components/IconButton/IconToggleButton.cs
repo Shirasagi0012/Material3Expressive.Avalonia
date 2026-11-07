@@ -5,12 +5,17 @@ using Avalonia.Automation.Provider;
 using Avalonia.Data.Converters;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>An icon toggle with standard, filled, tonal, and outlined themes. The application owns the checked state.</summary>
 public class IconToggleButton : IconButton
 {
+    public static readonly StyledProperty<MaterialShape?> CheckedShapeProperty =
+        AvaloniaProperty.Register<IconToggleButton, MaterialShape?>(nameof(CheckedShape));
+    /// <summary>The explicit checked outline. Requires MaterialButton.Shape; an explicit pressed shape takes precedence.</summary>
+    public MaterialShape? CheckedShape { get => GetValue(CheckedShapeProperty); set => SetValue(CheckedShapeProperty, value); }
     public static readonly StyledProperty<bool> IsCheckedProperty =
         AvaloniaProperty.Register<IconToggleButton, bool>(nameof(IsChecked));
 

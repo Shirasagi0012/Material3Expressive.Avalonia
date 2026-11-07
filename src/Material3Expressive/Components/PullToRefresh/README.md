@@ -28,6 +28,20 @@ await Indicator.State.AnimateToHiddenAsync();
 
 ## 变体与属性
 
+自定义内容容器支持固定上游 IndicatorBox 的形状入口。`Shape` 使用共享 MaterialShape，null 保留
+CornerRadius；形状同时用于背景、阴影和内容裁剪，不改变距离、布局大小或顶部裁剪。
+
+```xml
+<m3:PullToRefreshIndicatorBox State="{Binding RefreshState}" Background="#EADDFF">
+  <m3:PullToRefreshIndicatorBox.Shape><m3:CutCornerShape TopStart="12" TopEnd="4" BottomEnd="12" BottomStart="4" /></m3:PullToRefreshIndicatorBox.Shape>
+  <m3:MaterialSymbol Symbol="Refresh" Width="24" Height="24" />
+</m3:PullToRefreshIndicatorBox>
+```
+
+两个内置指示器继承该容器属性，方便本地定制；固定 Compose 的 Indicator/LoadingIndicator 快捷函数
+没有独立 shape 参数，直接对应的参考入口是 IndicatorBox 自定义内容组合。Catalog 的下拉刷新窗口
+同时显示圆形、Expressive 和切角自定义容器，共用距离和刷新状态。
+
 - `PullToRefreshIndicator`：40 DIP 容器，拉动时显示箭头，刷新时显示旋转进度。
 - `PullToRefreshLoadingIndicator`：48 DIP 容器，拉动时形变，刷新时循环形变；超过阈值继续旋转。
 - `State.DistanceFraction` 为只读距离比例，1 表示阈值，允许大于 1。`SnapToAsync(fraction)` 设置拉动距离，两个 `AnimateTo…Async` 方法使用可中断弹簧。

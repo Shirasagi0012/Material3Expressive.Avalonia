@@ -95,6 +95,8 @@
                                 TextElement.Foreground="{TemplateBinding Foreground}"
                                 StateLayerBrush="{TemplateBinding Foreground}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
+                                Shape="{TemplateBinding m3:MaterialButton.Shape}"
+                                PressedShape="{TemplateBinding m3:MaterialButton.PressedShape}"
                                 PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}" m3:ButtonSurfaceState.IsPressed="{TemplateBinding m3:ButtonInteraction.IsPressed}">
               <m3:ButtonContentRow FillContentWhenNoIcon="True"
                                    IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.IconSize}}"

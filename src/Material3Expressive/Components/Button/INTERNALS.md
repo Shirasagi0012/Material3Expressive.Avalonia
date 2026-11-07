@@ -52,6 +52,15 @@ ButtonSizesTokenSource 与各外观 TokenSource 保存基线和 TokenRef；主�
 
 ## 模板与默认值
 
+`MaterialButton.Shape / PressedShape` 映射固定 Button.kt 的 `shape / shapes`，将显式路径送入共享
+Surface。两个 CutCornerShape 的四个逻辑角形成不可变值快照，复用 AnimatedCornerRadius 已有的
+进度、反向速度、取消后 join、配置替换重建规则；只扩充其内部端点表示，不增加动画播放器。
+轮廓按每帧未归一化的角尺寸构造，再执行 CornerBasedShape 的两侧归一化和 RTL。
+百分比值保留到当前尺寸解析，第三目标的 Blend 也保留尺寸依赖。自定义非切角路径直接选择目标。
+显式 Shape 生效时不使用原圆角动画；清除后恢复原圆角接口。IconButton 模板另行接入同一入口。
+验证入口为 `ButtonShapeApiTests` 及双端 `material-shape.*.button-*`；Catalog SurfaceDemo 包含固定切角、
+按压百分比和快速反向示例。参考端重复性及共享方向切换边界见 [Surface 验证说明](../Surface/INTERNALS.md)。
+
 `MaterialFilledButtonTheme` 持有完整模板和尺寸选择器；另四种主题用 `BasedOn` 改变颜色、描边和
 高度配置。隐式 `{x:Type Button}` 主题基于 Filled。尺寸 class 仅选择默认值，不重新创建一套控件。
 

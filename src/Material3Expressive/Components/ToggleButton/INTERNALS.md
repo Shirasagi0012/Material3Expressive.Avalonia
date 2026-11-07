@@ -80,7 +80,12 @@ IsChecked 先变更再触发 Click/Command，Enter 按下、Space 默认松开�
 
 ## 一致性边界
 
-尚未实现任意 Shape/CutCornerShape。
+显式 `MaterialButton.Shape / PressedShape` 与 `ToggleButtonAppearance.CheckedShape` 已接入共享
+Surface。切角族保留固定 ToggleButton.kt 的 CornerBasedShape 三状态插值、FastSpatial 规格和
+配置重建；普通路径按上游直接切换。显式 Shape 为空时原圆角 API 与 Token 默认值不变。
+非圆角边框复用共享 PathBorderMask，仍由既有 AnimatedButtonBorder 提供动画线宽/颜色。
+`ToggleSplitButtonTests` 和双端 `material-shape.*.toggle-*` 覆盖四种主题的固定切角、按压、三状态切换、
+RTL 与中途缩放；另验证原生 Click 顺序、清除恢复、配置变更及卸载。Catalog 主窗口提供 Cut toggle。
 旧 4× headless 记录中，静态场景均在既定容差内，动态仍有原生 Enter 及属性/主题/禁用当帧时机差异。
 三个 hover 场景在 64ms 的共享 elevation 残差约 0.0000003–0.0000006 DIP，旧记录明确未认定为已接受；
 不能从[Chip 精度决定](../../../../docs/DECISIONS.md#本次保留-tween--bezier-精度差异)自动扩大授权。

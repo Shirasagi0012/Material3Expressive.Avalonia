@@ -64,6 +64,8 @@
                               BorderThickness="{TemplateBinding BorderThickness}"
                               TextElement.Foreground="{TemplateBinding Foreground}"
                               CornerRadius="{TemplateBinding CornerRadius}"
+                              Shape="{TemplateBinding m3:MaterialButton.Shape}"
+                              PressedShape="{TemplateBinding m3:MaterialButton.PressedShape}"
                               m3:ButtonSurfaceState.IsPressed="{TemplateBinding SourceIsPressed}"
                               PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
             <m3:IconButtonSymbol Symbol="{TemplateBinding Symbol}"
@@ -284,6 +286,7 @@
       <Style Selector="^ /template/ m3|MaterialSurface#PART_Container">
         <Setter Property="m3:ButtonSurfaceState.IsChecked" Value="{Binding $parent[m3:IconToggleButton].IsChecked}" />
         <Setter Property="m3:ButtonSurfaceState.CheckedCornerRadius" Value="{Binding $parent[m3:IconToggleButton].CheckedCornerRadius}" />
+        <Setter Property="CheckedShape" Value="{Binding $parent[m3:IconToggleButton].CheckedShape}" />
         <Setter Property="StateLayerBrush" Value="{Binding $parent[m3:IconButton].Parent.(TextElement.Foreground)}" />
       </Style>
       <Style Selector="^:pointerover /template/ m3|MaterialSurface#PART_Container, ^:focus-visible /template/ m3|MaterialSurface#PART_Container, ^:pressed /template/ m3|MaterialSurface#PART_Container">

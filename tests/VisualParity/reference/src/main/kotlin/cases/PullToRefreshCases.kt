@@ -5,6 +5,8 @@ package parity
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
@@ -17,7 +19,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class PullToRefreshConfig(val kind:String="circular",val fraction:Double=1.0,val refreshing:Boolean=false,
     val dark:Boolean=false,val rtl:Boolean=false,val constraint:Double?=null,val customColors:Boolean=false,
-    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false,val customMotion:Boolean=false)
+    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false,val customMotion:Boolean=false,val cutShape:Boolean=false)
 
 @ParitySuite("pull-to-refresh")
 class PullToRefreshCases {
@@ -39,6 +41,7 @@ class PullToRefreshCases {
                                     scope=rememberCoroutineScope()
                                     when(c.kind) {
                                         "custom" -> PullToRefreshDefaults.IndicatorBox(state,refreshing,indicator.modifier(),
+                                            shape=if(c.cutShape)CutCornerShape(CornerSize(12.dp),CornerSize(4.dp),CornerSize(25),CornerSize(0.dp)) else PullToRefreshDefaults.indicatorShape,
                                             maxDistance=c.maxDistance.toFloat().dp,containerColor=Color.Yellow) {
                                             Box(Modifier.size(12.dp).background(Color.Blue))
                                         }

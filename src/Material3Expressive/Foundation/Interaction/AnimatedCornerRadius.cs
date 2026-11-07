@@ -10,8 +10,9 @@ namespace Material3Expressive.Foundation.Interaction;
 /// Morphs between two corner radii with a spring, handling interruption.
 /// </summary>
 /// <remarks>
-/// Ported from androidx <c>material3/internal/AnimatedShape.kt</c>, narrowed to what a Material
-/// button's press actually does: a corner-radius interpolation, not a polygon morph.
+/// Ported from androidx <c>material3/internal/AnimatedShape.kt</c>. The public adapter resolves
+/// rounded corners; internal cut-corner consumers share the same four-corner interpolation.
+/// This does not perform arbitrary polygon morphing.
 /// <para>
 /// Full (the legacy <c>CornerRadius(1000)</c>) resolves as 50% of the smaller extent.
 /// Ordinary DIP corners are interpolated without clamping. The consumer normalizes the
@@ -31,8 +32,8 @@ public sealed class AnimatedCornerRadius : IDisposable
     private readonly Action? _onFrame;
     private SpringSpec _spec;
     private CornerShape _start;
-    private CornerShape.Defined _target;
-    private CornerShape.Defined _requestedTarget;
+    private CornerShape _target;
+    private CornerShape _requestedTarget;
     private int _generation;
     private bool _disposed;
 
@@ -41,7 +42,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         Action? onFrame = null)
         : this(new CornerShape.Defined(initial), spec, parentScope, onFrame) { }
 
-    internal AnimatedCornerRadius(CornerShape.Defined initial, SpringSpec spec, AnimationScope parentScope,
+    internal AnimatedCornerRadius(CornerShape initial, SpringSpec spec, AnimationScope parentScope,
         Action? onFrame = null)
     {
         ArgumentNullException.ThrowIfNull(parentScope);
@@ -58,8 +59,8 @@ public sealed class AnimatedCornerRadius : IDisposable
     public double Progress => _progress.Value;
 
     /// <summary>The original corners being animated towards.</summary>
-    public CornerRadius Target => _requestedTarget.Corners;
-    internal CornerShape.Defined TargetShape => _requestedTarget;
+    public CornerRadius Target => _requestedTarget is CornerShape.Defined defined ? defined.Corners : _requestedTarget.Resolve(default);
+    internal CornerShape TargetShape => _requestedTarget;
 
     public bool IsRunning => _progress.IsRunning;
 
@@ -80,7 +81,7 @@ public sealed class AnimatedCornerRadius : IDisposable
         CancellationToken cancellationToken = default) =>
         AnimateToAsync(new CornerShape.Defined(corners), spec, cancellationToken);
 
-    internal async Task AnimateToAsync(CornerShape.Defined corners, SpringSpec? spec = null,
+    internal async Task AnimateToAsync(CornerShape corners, SpringSpec? spec = null,
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

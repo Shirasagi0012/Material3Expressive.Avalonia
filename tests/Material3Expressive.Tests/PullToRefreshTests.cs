@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -17,6 +18,38 @@ namespace Material3Expressive.Tests;
 
 public class PullToRefreshTests
 {
+    [AvaloniaTheory]
+    [InlineData("box")]
+    [InlineData("circular")]
+    [InlineData("loading")]
+    public async Task ExplicitPathRetainsPullTranslationAndUpdatesItsContentClip(string kind)
+    {
+        using var clock = new MotionTestClockScope();
+        var state = new PullToRefreshState(.5f);
+        PullToRefreshIndicatorBox indicator = kind switch {
+            "circular" => new PullToRefreshIndicator(), "loading" => new PullToRefreshLoadingIndicator(),
+            _ => new PullToRefreshIndicatorBox { Content = new Border { Background = Brushes.Blue } } };
+        var shape = new CutCornerShape(12); indicator.Shape = shape; indicator.State = state;
+        var window = Show(indicator);
+        try
+        {
+            var surface = Surface(indicator); var layout = Layout(indicator);
+            Assert.Same(shape, surface.Shape);
+            Assert.False(surface.ContainerGeometry!.FillContains(new Point(1, 1)));
+            Assert.Equal(.5 * indicator.MaxDistance - surface.Bounds.Height, layout.TranslationY);
+            var bounds = indicator.Bounds;
+            await state.SnapToAsync(1.5f); Flush(window);
+            Assert.Equal(1.5 * indicator.MaxDistance - surface.Bounds.Height, layout.TranslationY);
+            Assert.Equal(bounds, indicator.Bounds);
+            shape.TopStart = new(0, RelativeUnit.Absolute);
+            Assert.True(surface.ContainerGeometry!.FillContains(new Point(1, 1)));
+            indicator.Shape = null; Flush(window);
+            Assert.Null(surface.ContainerGeometry);
+            Assert.Equal(bounds, indicator.Bounds);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
     [AvaloniaFact]
     public async Task DerivedMotionPreservesOvershootReverseSnapAndCancellation()
     {

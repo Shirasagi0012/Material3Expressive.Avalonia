@@ -13,6 +13,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Rendering;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 
@@ -21,6 +22,9 @@ namespace Material3Expressive.Components;
 /// <summary>Shared Chip.kt content and surface composition. Click/Command requests an action.</summary>
 public abstract class Chip : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<Chip>();
+    /// <summary>An explicit fixed outline. When set, it takes precedence over the selectable chip's Shapes.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<object?> LeadingIconProperty = AvaloniaProperty.Register<Chip, object?>(nameof(LeadingIcon));
     public object? LeadingIcon { get => GetValue(LeadingIconProperty); set => SetValue(LeadingIconProperty, value); }
     public static readonly StyledProperty<IDataTemplate?> LeadingIconTemplateProperty = AvaloniaProperty.Register<Chip, IDataTemplate?>(nameof(LeadingIconTemplate));
@@ -57,7 +61,7 @@ public abstract class Chip : Button
     internal double DisabledAvatarOpacity { get => GetValue(DisabledAvatarOpacityProperty); set => SetValue(DisabledAvatarOpacityProperty, value); }
     internal bool Selected => this is SelectableChip { IsSelected: true };
     internal bool Elevated => this switch { AssistChip c => c.IsElevated, SuggestionChip c => c.IsElevated, FilterChip c => c.IsElevated, _ => false };
-    internal ChipShapes? MorphShapes => (this as SelectableChip)?.Shapes;
+    internal ChipShapes? MorphShapes => Shape is null ? (this as SelectableChip)?.Shapes : null;
     private MaterialSurface? _surface;
     private ChipContentLayout? _content;
     private ChipIconSlot? _leading;
@@ -165,7 +169,7 @@ public abstract class Chip : Button
             || change.Property == LeadingIconTemplateProperty || change.Property == TrailingIconTemplateProperty
             || change.Property == LeadingIconColorProperty || change.Property == TrailingIconColorProperty
             || change.Property == ForegroundProperty || change.Property == DisabledAvatarOpacityProperty
-            || change.Property == ShapeAnimationProperty || change.Property == ElevationProperty || change.Property == SpacingProperty
+            || change.Property == ShapeProperty || change.Property == ShapeAnimationProperty || change.Property == ElevationProperty || change.Property == SpacingProperty
             || change.Property == IsEffectivelyEnabledProperty || change.Property == CornerRadiusProperty
             || change.Property == SelectableChip.IsSelectedProperty || change.Property == SelectableChip.ShapesProperty
             || change.Property == AssistChip.IsElevatedProperty || change.Property == FilterChip.IsElevatedProperty
