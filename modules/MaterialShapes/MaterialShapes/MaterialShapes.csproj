@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <PackageId>Shirasagi0012.MaterialShapes</PackageId>
-    <Version>0.1.3-alpha</Version>
+    <Version>0.1.4</Version>
     <Authors>Shirasagi0012</Authors>
     <Description>Avalonia port of androidx graphics-shapes: rounded polygons, the Material 3 shape catalog, and shape morphing.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

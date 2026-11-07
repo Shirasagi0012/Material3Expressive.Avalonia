@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>Shirasagi0012.ComposeAnimation.TestSupport</PackageId>
-        <Version>0.3.1-alpha</Version>
+        <Version>0.4.0</Version>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="../ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj"/>

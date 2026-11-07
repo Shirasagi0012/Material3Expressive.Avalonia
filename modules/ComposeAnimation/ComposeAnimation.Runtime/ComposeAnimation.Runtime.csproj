@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>Shirasagi0012.ComposeAnimation.Runtime</PackageId>
-        <Version>0.3.1-alpha</Version>
+        <Version>0.4.0</Version>
         <Description>Compose animation-core APIs and animation algorithms ported to .NET for Avalonia.</Description>
     </PropertyGroup>
 

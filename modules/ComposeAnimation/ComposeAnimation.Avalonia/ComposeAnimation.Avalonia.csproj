@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>ComposeAnimation</RootNamespace>
         <PackageId>Shirasagi0012.ComposeAnimation.Avalonia</PackageId>
-        <Version>0.3.1-alpha</Version>
+        <Version>0.4.0</Version>
         <Description>Compose animations, transitions and cooperative lookahead layouts for Avalonia.</Description>
     </PropertyGroup>
 
