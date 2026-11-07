@@ -12,6 +12,9 @@
           <Button Content="Date language: 中文 / English" Click="ToggleDateLanguage" Margin="12,0,0,0" />
         </WrapPanel>
         <TextBlock Text="Compose date content — calendar and input modes" FontSize="20" />
+        <TextBlock Text="Months: use the navigation arrows for animated paging, swipe with touch and release to snap, or scroll horizontally on a trackpad. Reverse an animation with the other arrow. Vertical wheel scrolling remains available to this page." TextWrapping="Wrap" />
+        <TextBlock Text="{Binding #Date.DisplayedMonth, StringFormat='First visible month: {0:yyyy-MM}'}" />
+        <TextBlock Text="Date keyboard: open the year selector, use arrows and Enter, or Tab / Shift+Tab to leave and return. In the calendar, Left / Right skips disabled dates and animates across month boundaries." TextWrapping="Wrap" />
         <WrapPanel>
           <m3:DatePicker Name="Date" Margin="0,0,24,0" />
           <m3:DateRangePicker Name="Range" Width="420" />

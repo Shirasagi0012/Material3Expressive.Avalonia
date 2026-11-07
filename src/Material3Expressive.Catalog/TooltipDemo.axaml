@@ -44,6 +44,12 @@
       <Button Content="Show tooltip" Click="OnShow" />
     </m3:TooltipBox>
     <TextBlock Text="RichTooltip" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <m3:TooltipBox AnchorPosition="Below">
+      <m3:TooltipBox.Tooltip>
+        <m3:RichTooltip x:Name="CurvedTooltip" ShadowElevation="6" Title="Custom curved caret" Content="The same outline supplies the background, content clip, and shadow." />
+      </m3:TooltipBox.Tooltip>
+      <Button Content="Curved tooltip caret" />
+    </m3:TooltipBox>
     <m3:TooltipBox x:Name="RichHelp" AnchorPosition="Above" HasAction="True" EnableUserInput="False">
       <m3:TooltipBox.Tooltip>
         <m3:RichTooltip CaretSize="16,8" Title="Collections" Content="Save related items together so you can find them again.">

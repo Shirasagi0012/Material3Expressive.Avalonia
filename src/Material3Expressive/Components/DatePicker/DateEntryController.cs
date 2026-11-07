@@ -68,6 +68,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private DateOnly _month;
     private readonly List<WeakReference<DateMonthPanel>> _months = [];
     private StackPanel? _calendar;
+    private DateMonthStrip? _monthStrip;
     private Button? _monthButton, _previousMonth, _nextMonth;
     private Panel? _yearButtons;
     private AnimatedVisibility? _yearPane;
@@ -239,6 +240,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         {
             _body = new Grid { Tag = Mode };
             _rangeList = null;
+            _monthStrip = null;
+            _calendar = null;
             _months.Clear();
             _inputs.Clear();
             UpdateHeader();
@@ -275,6 +278,25 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             navigation, Comp.DatePickerModal.NavigationButtonSize);
         var calendar = new StackPanel();
         var years = new WrapPanel { Orientation = Orientation.Horizontal };
+        var yearDivider = new Separator { Focusable = true };
+        Button? month = null;
+        void FocusDisplayedYear()
+        {
+            var selected = years.Children.OfType<Button>().FirstOrDefault(button => Equals(button.Tag, _month.Year));
+            if (selected?.Focus(NavigationMethod.Tab) != true)
+                TopLevel.GetTopLevel(owner)?.FocusManager?.TryMoveFocus(NavigationDirection.Down);
+        }
+        void ExitYears(bool backwards)
+        {
+            if (backwards) month?.Focus(NavigationMethod.Tab, KeyModifiers.Shift);
+            else TopLevel.GetTopLevel(owner)?.FocusManager?.TryMoveFocus(NavigationDirection.Next,
+                new FindNextElementOptions { FocusedElement = yearDivider });
+        }
+        yearDivider.GotFocus += (_, e) =>
+        {
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) FocusDisplayedYear();
+            else ExitYears(false);
+        };
         BindToken(years, Layoutable.WidthProperty, Comp.DatePickerModal.YearGridWidth);
         BindToken(years, Layoutable.MarginProperty, Comp.DatePickerModal.YearGridVerticalMargin);
         for (int year = FirstYear; year <= LastYear; year++)
@@ -285,7 +307,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
                 if (_yearPane is { }) _yearPane.Visible = false;
                 if (_previousMonth is { }) _previousMonth.IsVisible = _nextMonth!.IsVisible = true;
                 var target = new DateOnly(selected, _month.Month, 1);
-                if (target != _month) SetMonth(target);
+                _monthStrip?.JumpToMonth(target);
             });
             button.Tag = year;
             button.Bind(StyledElement.ThemeProperty, new DynamicResourceExtension("MaterialDateYearTheme"));
@@ -295,6 +317,20 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             button.Classes.Set("today", year == DateTime.Today.Year);
             button.IsEnabled = owner.GetValue(DatePicker.IsYearSelectableProperty)?.Invoke(year) ?? true;
             AutomationProperties.SetName(button, Text("DatePickerNavigateToYearDescription", year));
+            button.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Tab && (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Meta)) == 0)
+                {
+                    ExitYears(e.KeyModifiers.HasFlag(KeyModifiers.Shift)); e.Handled = true;
+                }
+                else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+                {
+                    var direction = e.Key switch { Key.Left => NavigationDirection.Left, Key.Right => NavigationDirection.Right,
+                        Key.Up => NavigationDirection.Up, _ => NavigationDirection.Down };
+                    TopLevel.GetTopLevel(owner)?.FocusManager?.TryMoveFocus(direction);
+                    e.Handled = true;
+                }
+            };
             years.Children.Add(button);
         }
 
@@ -302,7 +338,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             Content = years, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
         BindToken(scroll, Layoutable.HeightProperty, Comp.DatePickerModal.YearScrollHeight);
-        var yearContent = new StackPanel { Children = { scroll, new Separator() } };
+        var yearContent = new StackPanel { Children = { scroll, yearDivider } };
         yearContent.Bind(Panel.BackgroundProperty, new Binding(nameof(TemplatedControl.Background)) { Source = owner });
         var yearVisibility = new AnimatedVisibility {
             Visible = _years, VerticalAlignment = VerticalAlignment.Top, ClipToBounds = true, Content = yearContent,
@@ -310,16 +346,26 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
                 new FadeIn { InitialAlpha = 0.6, Spec = _switcher.EffectsSpec() },
             Exit = new ShrinkVertically { Spec = _switcher.SizeSpec(true) } + new FadeOut { Spec = _switcher.EffectsSpec(true) }
         };
-        Button month = Button(_month.ToString("Y", Culture), () => {
+        month = Button(_month.ToString("Y", Culture), () => {
             _years = !_years;
             yearVisibility.Visible = _years;
             previous.IsVisible = next.IsVisible = !_years;
             if (_years)
             {
-                Dispatcher.UIThread.Post(() =>
-                    scroll.Offset = new Vector(0, Math.Max(0, ((_month.Year - FirstYear) / 3 - 3) * years.Children.OfType<Button>().First().Height)));
+                Dispatcher.UIThread.Post(() => {
+                    if (!_years || !years.IsAttachedToVisualTree()) return;
+                    scroll.Offset = new Vector(0, Math.Max(0, ((_month.Year - FirstYear - 3) / 3) * years.Children.OfType<Button>().First().Height));
+                    FocusDisplayedYear();
+                });
             }
         });
+        month.KeyDown += (_, e) =>
+        {
+            if (_years && e.Key == Key.Tab && e.KeyModifiers == KeyModifiers.None)
+            {
+                FocusDisplayedYear(); e.Handled = true;
+            }
+        };
         month.HorizontalAlignment = HorizontalAlignment.Left;
         previous.IsEnabled = _month > new DateOnly(FirstYear, 1, 1);
         next.IsEnabled = _month < new DateOnly(LastYear, 12, 1);
@@ -335,9 +381,12 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         navigation.Children.Add(next);
         content.Children.Add(navigation);
         calendar.Children.Add(WeekDays());
-        DateMonthPanel days = Month(_month);
-        WireMonthGestures(days);
-        calendar.Children.Add(days);
+        var strip = new DateMonthStrip(new(FirstYear, 1, 1), new(LastYear, 12, 1), _month,
+            Month, value => { SetMonth(value); ShowDisplayedMonth(); }, () => new ComposeAnimation.Runtime.SpringSpec<float>(
+                _switcher!.Effects.DampingRatio, _switcher.Effects.Stiffness, .01f));
+        BindToken(strip, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
+        _monthStrip = strip;
+        calendar.Children.Add(strip);
         content.Children.Add(new Grid { Children = { calendar, yearVisibility } });
         _calendar = calendar;
         _monthButton = month;
@@ -352,55 +401,12 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     {
         if (_calendar is null || _monthButton is null || _previousMonth is null || _nextMonth is null) return;
         _monthButton.Content = _month.ToString("Y", Culture);
-        _previousMonth.IsEnabled = _month > new DateOnly(FirstYear, 1, 1);
-        _nextMonth.IsEnabled = _month < new DateOnly(LastYear, 12, 1);
-        if (_calendar.Children.Count > 1) _calendar.Children.RemoveAt(1);
-        DateMonthPanel days = Month(_month);
-        WireMonthGestures(days);
-        _calendar.Children.Add(days);
+        _monthStrip?.ShowMonth(_month);
+        _previousMonth.IsEnabled = _monthStrip?.CanScrollPrevious ?? false;
+        _nextMonth.IsEnabled = _monthStrip?.CanScrollNext ?? false;
         if (_yearButtons is null) return;
         foreach (Button button in _yearButtons.Children.OfType<Button>())
             button.Classes.Set("selected", button.Tag is int year && year == _month.Year);
-    }
-
-    private void WireMonthGestures(Control days)
-    {
-        days.PointerWheelChanged += (_, e) => {
-            if (e.Delta.Y != 0 || e.Delta.X != 0)
-            {
-                MoveMonth(e.Delta.Y + e.Delta.X < 0 ? 1 : -1);
-                e.Handled = true;
-            }
-        };
-        Point? press = null;
-        bool swiping = false;
-        days.AddHandler(InputElement.PointerPressedEvent, (_, e) => {
-            if (e.GetCurrentPoint(days).Properties.IsLeftButtonPressed)
-            {
-                press = e.GetPosition(days);
-                swiping = false;
-            }
-        }, RoutingStrategies.Tunnel);
-        days.AddHandler(InputElement.PointerMovedEvent, (_, e) => {
-            if (press is { } start && Math.Abs(e.GetPosition(days).X - start.X) > 12)
-            {
-                swiping = true;
-                e.Pointer.Capture(days);
-                e.Handled = true;
-            }
-        }, RoutingStrategies.Tunnel);
-        days.AddHandler(InputElement.PointerReleasedEvent, (_, e) => {
-            if (swiping && press is { } start)
-            {
-                double dx = e.GetPosition(days).X - start.X;
-                e.Pointer.Capture(null);
-                e.Handled = true;
-                if (Math.Abs(dx) > 48) MoveMonth((dx < 0 ? 1 : -1) * (owner.FlowDirection == FlowDirection.RightToLeft ? -1 : 1));
-            }
-
-            press = null;
-            swiping = false;
-        }, RoutingStrategies.Tunnel);
     }
 
     private Button MonthArrow(MaterialSymbolCodepoint symbol, Action click)
@@ -489,7 +495,9 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private DateMonthPanel Month(DateOnly month)
     {
-        var panel = new DateMonthPanel(month, Culture, Selectable, Select, FocusDate);
+        var panel = new DateMonthPanel(month, Culture, Selectable, Select, FocusDate,
+            range ? null : () => _nextMonth?.Focus(NavigationMethod.Tab, KeyModifiers.Shift),
+            range ? null : () => _monthStrip?.IsScrollInProgress == true);
         BindToken(panel, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
         panel.UpdateSelection(Selection);
         _months.RemoveAll(reference => !reference.TryGetTarget(out _));
@@ -497,12 +505,24 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         return panel;
     }
 
-    private void FocusDate(DateOnly date)
+    private async void FocusDate(DateOnly date)
     {
         if (date.Year < FirstYear || date.Year > LastYear) return;
         var month = new DateOnly(date.Year, date.Month, 1);
         if (range) _rangeList?.ScrollIntoView(month);
-        else if (month != _month) SetMonth(month);
+        else if (month != _month && _monthStrip is { } strip)
+        {
+            var forward = month > _month;
+            await strip.AnimateToAsync(month);
+            if (!Selectable(date))
+            {
+                var days = Enumerable.Range(1, DateTime.DaysInMonth(month.Year, month.Month))
+                    .Select(day => new DateOnly(month.Year, month.Month, day));
+                var enabled = (forward ? days : days.Reverse()).Where(Selectable).Select(day => (DateOnly?)day).FirstOrDefault();
+                if (enabled is null) return;
+                date = enabled.Value;
+            }
+        }
         Dispatcher.UIThread.Post(() => _body?.GetVisualDescendants()
            .OfType<Button>()
            .FirstOrDefault(button => Equals(button.Tag, date))
@@ -513,7 +533,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     {
         if ((delta < 0 && _month == new DateOnly(FirstYear, 1, 1)) ||
             (delta > 0 && _month == new DateOnly(LastYear, 12, 1))) return;
-        SetMonth(_month.AddMonths(delta));
+        if (_monthStrip is { } strip) _ = strip.AnimateToAsync(_month.AddMonths(delta));
     }
 
     private void SetMonth(DateOnly month)
@@ -756,7 +776,9 @@ internal sealed class DateMonthPanel : Control
         CultureInfo culture,
         Func<DateOnly, bool> selectable,
         Action<DateOnly> select,
-        Action<DateOnly> focus
+        Action<DateOnly> focus,
+        Action? returnFocus = null,
+        Func<bool>? scrolling = null
     )
     {
         _month = month;
@@ -771,6 +793,38 @@ internal sealed class DateMonthPanel : Control
             button.Click += (_, _) => select(date);
             Children.Add(button);
             button.KeyDown += (_, e) => {
+                if (returnFocus is not null)
+                {
+                    var enabled = Children.Where(child => child.IsEffectivelyEnabled).ToArray();
+                    var index = Array.IndexOf(enabled, button);
+                    if (e.Key == Key.Tab && index == 0 && e.KeyModifiers == KeyModifiers.Shift)
+                    {
+                        returnFocus(); e.Handled = true; return;
+                    }
+                    if (e.Key == Key.Tab && index == enabled.Length - 1 && e.KeyModifiers == KeyModifiers.None)
+                    {
+                        TopLevel.GetTopLevel(this)?.FocusManager?.TryMoveFocus(NavigationDirection.Down);
+                        e.Handled = true; return;
+                    }
+                    if ((index == 0 || index == enabled.Length - 1) && scrolling?.Invoke() == true)
+                    {
+                        e.Handled = true; return;
+                    }
+                    if (e.Key is Key.Left or Key.Right)
+                    {
+                        var forward = (e.Key == Key.Right) != (FlowDirection == FlowDirection.RightToLeft);
+                        var target = index + (forward ? 1 : -1);
+                        if (target >= 0 && target < enabled.Length) enabled[target].Focus(NavigationMethod.Directional);
+                        else
+                        {
+                            var edge = forward ? new DateOnly(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month))
+                                : new DateOnly(date.Year, date.Month, 1);
+                            if (forward && edge < DateOnly.MaxValue || !forward && edge > DateOnly.MinValue)
+                                focus(edge.AddDays(forward ? 1 : -1));
+                        }
+                        e.Handled = true; return;
+                    }
+                }
                 int delta = e.Key switch {
                     Key.Left => FlowDirection == FlowDirection.RightToLeft ? 1 : -1,
                     Key.Right => FlowDirection == FlowDirection.RightToLeft ? -1 : 1, Key.Up => -7, Key.Down => 7, _ => 0

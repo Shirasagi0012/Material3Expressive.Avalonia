@@ -1,13 +1,13 @@
 # 组件全景索引
 
-本文为系统全部 57 个组件的全局索引全景图。
+本文为系统全部 58 个组件的全局索引全景图。
 每个组件目录严格遵循双文件架构：`README.md` 面向外部业务开发者，提供使用示例与参数说明；`INTERNALS.md` 面向框架维护者与 AI Agent，提供上游基线映射、核心机制与已知差异。通用规则见 [组件文档与维护规约](COMPONENT_DOCS.md)。
 
 ---
 
 ## 概览统计
 
-- **已纳管组件总数**：57 个
+- **已纳管组件总数**：58 个
 
 ---
 
@@ -17,6 +17,7 @@
 | --- | --- | --- | --- | --- |
 | `Button` | 原生按钮的五种 Material 主题、尺寸变体与精确指针尺寸 | [README](../src/Material3Expressive/Components/Button/README.md) | [INTERNALS](../src/Material3Expressive/Components/Button/INTERNALS.md) | |
 | `IconButton` | 图标按钮，提供标准、填充、浅色与轮廓样式 | [README](../src/Material3Expressive/Components/IconButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/IconButton/INTERNALS.md) | |
+| `Icon` | 位图、矢量与自定义图片图标，内容色着色、Fit 缩放和可选 RTL 镜像 | [README](../src/Material3Expressive/Components/Icon/README.md) | [INTERNALS](../src/Material3Expressive/Components/Icon/INTERNALS.md) | |
 | `ToggleButton` | 原生切换按钮的四种 Material 主题、精确指针尺寸与选中状态形变 | [README](../src/Material3Expressive/Components/ToggleButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/ToggleButton/INTERNALS.md) | |
 | `SegmentedButton` | 单选与多选分段按钮，支持首尾平滑圆角 | [README](../src/Material3Expressive/Components/SegmentedButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md) | |
 | `SplitButton` | 双操作按钮组合，主操作与次级菜单联动 | [README](../src/Material3Expressive/Components/SplitButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SplitButton/INTERNALS.md) | |
@@ -43,7 +44,7 @@
 | `Switch` | 原生滑动开关、非交互展示与滑块图标动画 | [README](../src/Material3Expressive/Components/Switch/README.md) | [INTERNALS](../src/Material3Expressive/Components/Switch/INTERNALS.md) | |
 | `Slider` | 原生滑块、共享交互源、Label 组合及焦点环 | [README](../src/Material3Expressive/Components/Slider/README.md) | [INTERNALS](../src/Material3Expressive/Components/Slider/INTERNALS.md) | |
 | `ScrollField` | 循环选择、虚拟页、触摸/滚轮吸附与可复用数字动画 | [README](../src/Material3Expressive/Components/ScrollField/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollField/INTERNALS.md) | 设备专用触控板/滚轮元数据及嵌套滚动尚未实现 |
-| `DatePicker` | 月历选择、日期文本输入与日期范围选择 | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | |
+| `DatePicker` | 月份连续滚动与吸附、日期/年份键盘导航、日期输入与范围选择 | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | |
 | `TimePicker` | 钟面指针交互、时间文本输入；TimeScroll 分页拖动、惯性吸附、循环与键盘 | [README](../src/Material3Expressive/Components/TimePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePicker/INTERNALS.md) | |
 | `DateTimePicker` | 原生日期/时间选择器的 Material 外观主题 | [README](../src/Material3Expressive/Components/DateTimePicker/README.md) | - | |
 
@@ -83,13 +84,13 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `Menu` | 独立下拉菜单、精确指针项布局、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
+| `Menu` | 独立下拉菜单、分组/尾随标签、精确指针项布局、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
 | `AlertDialog` | 标准确认对话框、精确指针尺寸与自定义内容弹窗 | [README](../src/Material3Expressive/Components/AlertDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md) | |
 | `BottomSheet` | 树内三态面板、常驻脚手架与模态面板 | [README](../src/Material3Expressive/Components/BottomSheet/README.md) | [INTERNALS](../src/Material3Expressive/Components/BottomSheet/INTERNALS.md) | |
 | `Scrim` | 可点击或装饰性遮罩 | [README](../src/Material3Expressive/Components/Scrim/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scrim/INTERNALS.md) | |
 | `DatePickerDialog` | 日期选择器专用对话框容器 | [README](../src/Material3Expressive/Components/DatePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePickerDialog/INTERNALS.md) | |
 | `TimePickerDialog` | 普通与 Vibrant 时间选择器对话框容器 | [README](../src/Material3Expressive/Components/TimePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePickerDialog/INTERNALS.md) | |
-| `Tooltip` | 带可选箭头的简单/富内容提示、提示框与交互标签 | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
+| `Tooltip` | 默认/自定义箭头的简单与富内容提示、提示框与交互标签 | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
 | `Snackbar` | 底部短消息与全局消息队列宿主 | [README](../src/Material3Expressive/Components/Snackbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/Snackbar/INTERNALS.md) | |
 | `Badge` | 数字与圆点徽标，配合徽标容器定位 | [README](../src/Material3Expressive/Components/Badge/README.md) | [INTERNALS](../src/Material3Expressive/Components/Badge/INTERNALS.md) | |
 | `ProgressIndicator` | 线性与圆形进度条，支持直线与表现型波浪动画 | [README](../src/Material3Expressive/Components/ProgressIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/ProgressIndicator/INTERNALS.md) | |

@@ -40,7 +40,7 @@ public sealed class ComposeShadowContractTests
     }
 
     [Fact]
-    public void OpenAndUnsupportedContoursFailAtSnapshotTime()
+    public void OpenContoursFailAndCubicControlPointsAreRetained()
     {
         using var builder = new SKPathBuilder();
         builder.MoveTo(0, 0); builder.LineTo(10, 10);
@@ -48,7 +48,11 @@ public sealed class ComposeShadowContractTests
         Assert.Throws<ArgumentException>(() => ComposeShadowShape.FromPath(open));
         builder.CubicTo(10, 20, 0, 20, 0, 0); builder.Close();
         using var cubic = builder.Detach();
-        Assert.Throws<NotSupportedException>(() => ComposeShadowShape.FromPath(cubic));
+        var snapshot = ComposeShadowShape.FromPath(cubic);
+        var segment = Assert.Single(snapshot.PathData!, part => part.Verb == SKPathVerb.Cubic);
+        Assert.Equal(new SKPoint(10,20), segment.First);
+        Assert.Equal(new SKPoint(0,20), segment.Second);
+        Assert.Equal(new SKPoint(0,0), segment.Third);
 
         using var mixedBuilder = new SKPathBuilder();
         mixedBuilder.MoveTo(0, 0); mixedBuilder.LineTo(10, 10);

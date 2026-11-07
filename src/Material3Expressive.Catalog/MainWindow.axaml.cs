@@ -57,6 +57,7 @@ public partial class MainWindow : Window
     private void OnContainedSearchDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo(SearchPresentation.Contained).Show(this);
     private void OnCommandBarDemo(object? sender, RoutedEventArgs e) => new CommandBarDemo().Show(this);
     private void OnMenuDemo(object? sender, RoutedEventArgs e) => new MenuDemo().Show(this);
+    private void OnIconDemo(object? sender, RoutedEventArgs e) => new IconDemo().Show(this);
     private void OnTooltipDemo(object? sender, RoutedEventArgs e) => new TooltipDemo().Show(this);
     private void OnDragHandleDemo(object? sender, RoutedEventArgs e) => new DragHandleDemo().Show(this);
     private void OnSnackbarDemo(object? sender, RoutedEventArgs e) => new SnackbarDemo().Show(this);

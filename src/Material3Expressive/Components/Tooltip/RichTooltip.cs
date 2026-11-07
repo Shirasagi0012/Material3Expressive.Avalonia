@@ -9,6 +9,8 @@ namespace Material3Expressive.Components;
 /// <remarks>Content is the supporting text. Actions do not implicitly dismiss the containing TooltipBox.</remarks>
 public class RichTooltip : ContentControl
 {
+    public static readonly StyledProperty<TooltipCaretShape?> CaretShapeProperty = PlainTooltip.CaretShapeProperty.AddOwner<RichTooltip>();
+    public TooltipCaretShape? CaretShape { get => GetValue(CaretShapeProperty); set => SetValue(CaretShapeProperty, value); }
     public static readonly StyledProperty<Size?> CaretSizeProperty = PlainTooltip.CaretSizeProperty.AddOwner<RichTooltip>();
     public Size? CaretSize { get => GetValue(CaretSizeProperty); set => SetValue(CaretSizeProperty, value); }
     // The slot layout resolves logical start explicitly, as do other Material layouts.

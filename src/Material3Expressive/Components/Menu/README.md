@@ -95,6 +95,24 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 
 ## 内容槽与定制
 
+分组标题使用 `DropdownMenuGroupLabel`，尾部提示使用 `DropdownMenuItemTrailingLabel`：
+
+```xml
+<m3:DropdownMenuGroup>
+  <m3:DropdownMenuGroupLabel Content="编辑" />
+  <m3:DropdownMenuItem Content="复制">
+    <m3:DropdownMenuItem.TrailingContent>
+      <m3:DropdownMenuItemTrailingLabel Content="Ctrl+C" />
+    </m3:DropdownMenuItem.TrailingContent>
+  </m3:DropdownMenuItem>
+</m3:DropdownMenuGroup>
+```
+
+两者支持 `ContentTemplate`、`Padding` 和内容对齐，默认使用 LabelLarge 并继承所在位置的前景色。
+分组标题默认宽度范围 112–280 DIP、最小高度 32 DIP；父约束和显式尺寸优先，默认起始/末尾留白为 12/4 DIP。
+尾部标签在精确指针环境下增加末尾 6 DIP 留白，运行时切换有效；显式 Padding 或样式优先。
+标题不会参与菜单项激活或键盘焦点。Catalog 的 Grouped / selectable 菜单展示这两个入口。
+
 独立 Expressive / Checkable / Selectable 项可继承 `MaterialPrecisionPointer.IsEnabled`：
 例如 `<m3:DropdownMenuPopup m3:MaterialPrecisionPointer.IsEnabled="True" ... />`。
 启用后左右留白为 start 16 / end 10 DIP、上下 12 DIP，首尾内容间距为 12 DIP；项目高度规则保持原值。

@@ -26,6 +26,7 @@ public class DateTimeEntryTests
     [AvaloniaFact]
     public void DateSelection_PreservesBinding_RespectsBlackout_AndChangesMonth()
     {
+        using var clock = new MotionTestClockScope();
         var source = new DatePicker { SelectedDate = new(2024, 2, 15) };
         var picker = new DatePicker { DisplayedMonth = new(2024, 2, 1), Culture = CultureInfo.GetCultureInfo("en-US"),
             IsDateSelectable = d => d.Day != 16 };
@@ -39,6 +40,7 @@ public class DateTimeEntryTests
             source.SelectedDate=new(2024,2,28); Flush(window);
             Assert.Contains("selected",Day(picker,new(2024,2,28)).Classes);
             Invoke(picker.GetVisualDescendants().OfType<Button>().Single(b => AutomationProperties.GetName(b) == "Change to next month")); Flush(window);
+            for(var i=0;i<60;i++){clock.AdvanceBy(TimeSpan.FromMilliseconds(16));Flush(window);}
             Assert.Equal(new DateOnly(2024,3,1),picker.DisplayedMonth);
         }
         finally { window.Close(); }

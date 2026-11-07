@@ -16,6 +16,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation;
+using ComposeAnimation.TestSupport;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Typography;
 using Xunit;
@@ -326,24 +327,42 @@ public class PickerRegressionTests
     [AvaloniaFact]
     public void CalendarGapsAndEmptyCellsAcceptMonthWheelNavigation()
     {
+        using var frames = new ManualFrameSource(Dispatcher.UIThread.VerifyAccess);
+        var time = new ManualTimeProvider(Dispatcher.UIThread.VerifyAccess);
         var picker = new DatePicker { Width = 400, DisplayedMonth = new(2024, 2, 1), Culture = CultureInfo.GetCultureInfo("en-US") };
-        var window = Show(picker);
+        var window = new AnimationTestWindow(frames, time) { Width = 700, Height = 700 };
+        window.Styles.Add(new Avalonia.Themes.Fluent.FluentTheme());
+        window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
+        picker.HorizontalAlignment = HorizontalAlignment.Left;
+        picker.VerticalAlignment = VerticalAlignment.Top;
+        window.Content = picker;
+        window.Show();
         try
         {
             Draw(window);
+            frames.SendFrame(TimeSpan.Zero); Draw(window);
+            SettleWheel();
             var panel = picker.GetVisualDescendants().OfType<DateMonthPanel>().Single();
             var first = panel.GetVisualChildren().OfType<Button>().First();
             var next = panel.GetVisualChildren().OfType<Button>().Skip(1).First();
             var gap = new Point((first.Bounds.Right + next.Bounds.Left) / 2, first.Bounds.Center.Y);
-            window.MouseWheel(panel.TranslatePoint(gap, window)!.Value, new Vector(0, -1));
-            Draw(window);
+            window.MouseWheel(panel.TranslatePoint(gap, window)!.Value, new Vector(-12, 0));
+            SettleWheel();
             Assert.Equal(new DateOnly(2024, 3, 1), picker.DisplayedMonth);
             panel = picker.GetVisualDescendants().OfType<DateMonthPanel>().Single();
-            window.MouseWheel(panel.TranslatePoint(new Point(24, 24), window)!.Value, new Vector(0, 1));
-            Draw(window);
+            window.MouseWheel(panel.TranslatePoint(new Point(24, 24), window)!.Value, new Vector(12, 0));
+            SettleWheel();
             Assert.Equal(new DateOnly(2024, 2, 1), picker.DisplayedMonth);
         }
         finally { window.Close(); }
+        void SettleWheel()
+        {
+            for (var i = 0; i < 100; i++)
+            {
+                time.AdvanceBy(TimeSpan.FromMilliseconds(16)); Draw(window);
+                frames.AdvanceBy(TimeSpan.FromMilliseconds(16)); Draw(window);
+            }
+        }
     }
 
     private static MotionTestWindow Show(Control control)

@@ -1,0 +1,10 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:MaterialIcon}" TargetType="m3:MaterialIcon">
+      <Setter Property="DefaultSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </ControlTheme>
+  </Styles.Resources>
+</Styles>

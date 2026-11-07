@@ -11,6 +11,10 @@ public static partial class MaterialTokens
     {
         public static class Menu
         {
+            public static readonly MaterialTokenKey<Thickness> GroupLabelPadding = new("md.comp.menu.group-label-padding");
+            public static readonly MaterialTokenKey<double> GroupLabelMinHeight = new("md.comp.menu.group-label-min-height");
+            public static readonly MaterialTokenKey<Thickness> TrailingLabelPadding = new("md.comp.menu.trailing-label-padding");
+            public static readonly MaterialTokenKey<Thickness> PrecisionTrailingLabelPadding = new("md.comp.menu.precision-trailing-label-padding");
             public static readonly MaterialTokenKey<Thickness> SupportingItemMargin = new("md.comp.menu.supporting-item-margin");
             public static readonly MaterialTokenKey<double> BaselineContentSpacing = new("md.comp.menu.baseline-content-spacing");
             public static readonly MaterialTokenKey<double> VerticalContentSpacing = new("md.comp.menu.vertical-content-spacing");

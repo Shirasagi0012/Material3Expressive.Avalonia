@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.IconDemo" Title="Material image icons" Width="660" Height="460">
+  <Window.Resources>
+    <DrawingImage x:Key="ArrowArtwork">
+      <DrawingGroup>
+        <GeometryDrawing Brush="Crimson" Geometry="M 0,8 L 20,8 L 20,0 L 32,12 L 20,24 L 20,16 L 0,16 Z" />
+        <GeometryDrawing Brush="#800000FF" Geometry="M 4,18 L 14,18 L 14,24 L 4,24 Z" />
+      </DrawingGroup>
+    </DrawingImage>
+  </Window.Resources>
+  <StackPanel Margin="24" Spacing="20">
+    <TextBlock Text="Bitmap and vector icons" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="Source artwork keeps its intrinsic size. Foreground tints alpha; untinted icons preserve all source colors."
+               TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="24" TextElement.Foreground="Teal">
+      <m3:MaterialIcon Source="{StaticResource ArrowArtwork}" ContentDescription="Forward" />
+      <m3:MaterialIcon Source="{StaticResource ArrowArtwork}" IsTintEnabled="False" ContentDescription="Original artwork" />
+      <m3:MaterialIcon Source="{StaticResource ArrowArtwork}" Width="80" Height="48" ContentDescription="Scaled forward" />
+      <m3:MaterialIcon x:Name="BitmapIcon" Width="48" Height="48" ContentDescription="Bitmap source" />
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="16">
+      <CheckBox x:Name="TintSwitch" Content="Tint" IsChecked="True" />
+      <CheckBox x:Name="MirrorSwitch" Content="Mirror directional artwork" IsChecked="True" />
+      <Button Content="LTR / RTL" Click="OnDirection" />
+    </StackPanel>
+    <Border x:Name="DirectionHost" Padding="16" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SecondaryContainer}}">
+      <m3:MaterialIcon Source="{StaticResource ArrowArtwork}" Width="64" Height="48"
+                       Foreground="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSecondaryContainer}}"
+                       AutoMirror="{Binding #MirrorSwitch.IsChecked}" IsTintEnabled="{Binding #TintSwitch.IsChecked}"
+                       ContentDescription="Next page" />
+    </Border>
+    <Button Content="Image in a button" HorizontalAlignment="Left">
+      <m3:MaterialButton.Icon><m3:MaterialIcon Source="{StaticResource ArrowArtwork}" Width="20" Height="20" /></m3:MaterialButton.Icon>
+    </Button>
+  </StackPanel>
+</Window>

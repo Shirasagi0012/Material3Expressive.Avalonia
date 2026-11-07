@@ -16,6 +16,7 @@ Material3 路径为 `compose/material3/material3/src/commonMain/kotlin/androidx/
 | checkable / selectable item、leading AnimatedVisibility | 受控项目子类与 `DropdownMenuLeadingIcon` |
 | 原生菜单的表面及项目 | `Menu.axaml`、`MenuItemChrome`、`MenuThemeProperties` |
 | MenuDefaults 与 Menu / Standard / Vibrant / Segmented Token | `MenuTokenSource`、`Comp.Menu` 与主题绑定 |
+| `MenuDefaults.DropdownMenuGroupLabel` / `DropdownMenuItemTrailingLabel` | 两个同名 ContentControl、`DropdownMenuLabels.cs` 与主题 |
 
 ## 2. 关键机制与架构契约
 
@@ -42,7 +43,7 @@ Separator 按最终列宽 Stretch。小图标槽保留内容实际测量尺寸�
 `itemHorizontalArrangement` 间距 12 DIP、`DropdownMenuSelectableItemContentPadding` 为 16/12/10/12。
 既有 Padding 和 spacing 属性承载主题默认值，调用方样式/局部值优先，无新菜单状态或高度算法。
 原先默认关闭的理由仍成立：固定 Core 桌面监听为空，不能自动检测鼠标开启。
-Baseline 使用自身常量路径，不静默改写；原生 MenuItem 与专用 trailing label/default icon 辅助 API 仍未接入。
+Baseline 使用自身常量路径，不静默改写；原生 MenuItem 与专用 default icon 辅助 API 仍未接入。
 这次不改变尾部槽的 20 DIP 默认最小宽度，它直接来自固定 SegmentedMenuTokens，而非 precision 的推荐图标大小。
 新增行为测试覆盖继承、动态切换、样式/局部覆盖和 Token 更新；双端 `precision-menu-item` 覆盖首尾内容有无、RTL 和切换恢复。
 
@@ -102,6 +103,12 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 
 ## 3. 已确认决定与已知差异
 
+- 本轮剩余移植授权新增分组标题和尾部标签 ContentControl，直接消费固定两端 MenuDefaults.kt。
+  原生 Content/ContentTemplate 表达上游内容 lambda；LabelLarge 通过现有 MaterialText 合并，前景色继续继承。
+  GroupLabel 的 sizeIn 在测量中约束默认最小/最大尺寸，不能写为原生 MinWidth=112 而溢出窄父容器；
+  显式尺寸位于默认约束外，内容不继承最小尺寸。TrailingLabel 的 precision padding 为实时 getter，
+  通过主题优先级选择 Token；RTL 使用现有逻辑布局镜像。没有破坏性 API 迁移。
+
 - 维护者批准原生 MenuFlyout 采用 Vertical / Baseline 两套 ControlTheme，Standard / Vibrant 用附加属性切换，原生选择、定位、焦点和关闭行为保留。
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
@@ -111,6 +118,10 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
 ## 4. 验证入口
+
+- `MenuLabelTests` 覆盖真实主题尺寸、窄约束、显式尺寸、继承文字/颜色、模板及覆盖优先级；
+  `menu-label` 双端族覆盖两个标签、LTR/RTL、自定义留白、宽高边界和真实菜单组合的动态尺寸环境。
+  运行 `./tests/VisualParity/parity.ps1 self-test --family menu-label`；几何标记不证明真实文字栅格一致。
 
 - `DropdownMenuTests` 检查独立 Popup、受控输入、定位、滚动、反向、分组和选中图标生命周期。
 - 选中图标回归覆盖进入/退出途中添加普通内容或模板，随后移除、重进和卸载；静态分支不得再收到旧动画透明度写入。

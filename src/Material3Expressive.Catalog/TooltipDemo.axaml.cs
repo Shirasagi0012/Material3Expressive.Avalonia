@@ -12,6 +12,8 @@ public partial class TooltipDemo : Window
     {
         AnimationScope.Initialize(this);
         InitializeComponent();
+        CurvedTooltip.CaretShape = (_, _) => Avalonia.Media.PathGeometry.Parse(
+            "M -12,0 C -12,5 -4,12 0,12 C 4,12 12,5 12,0 Z");
         // Keep hover/focus requests from rejecting this programmatic demo's Default priority.
         Programmatic.State = new TooltipState(isPersistent: false, mutatorMutex: new());
         RichHelp.State = new TooltipState(isPersistent: true, mutatorMutex: new());

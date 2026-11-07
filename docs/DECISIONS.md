@@ -32,6 +32,7 @@
 - **原因与动机**：原有枚举、手动构建控件和缺少模板的入口难以一致使用；单一尺寸提示避免额外图标准备层或复杂呈现框架。
 - **适用范围与影响**：默认尺寸只被 `MaterialSymbol` 的测量消费，显式宽高优先；保留各组件的布局约束、交互区域及动画。数据模板在内容为空时亦能创建图标，控件模板可复用而控件实例不可共享。完整按钮等交互槽继续组合实际控件。2026-11-03 维护者确认将原 MaterialIcon 合并到 MaterialSymbol：默认尺寸仅由 MaterialSymbol 及其派生控件消费，因此附加属性与静态访问器归入 MaterialSymbol，移除 MaterialIcon 类型；旧调用迁移到 MaterialSymbol，尺寸继承与测量语义不变。
 - **确认依据**：2026-10-06 维护者批准统一槽与可继承默认尺寸设计；2026-11-03 维护者批准合并 MaterialIcon 到 MaterialSymbol。共享规则见 [架构说明](ARCHITECTURE.md#颜色图标与阴影)。
+- **2026-11-08 本轮授权补充**：历史合并消除了只供 MaterialSymbol 消费的默认尺寸中间层，这个理由仍成立。此次新增的 `MaterialIcon` 是固定上游 Icon 的 IImage 呈现控件，负责位图/矢量 Fit、着色和图片语义，并不恢复旧附加属性类。旧 `MaterialIcon.DefaultSize` 调用仍按原迁移方式使用 `MaterialSymbol.DefaultSize`；新的图片入口使用 `MaterialIcon.Source`，两者不互相替代。
 
 ---
 
@@ -352,6 +353,7 @@
 - **决定**：本轮依据用户扩大授权，MaterialSurface 增加内部 `SetContainerGeometry`，供 Tooltip 同时提供 Avalonia 几何与阴影路径快照；不增加公开 Shape 系统。Tooltip 的默认三角形与圆角容器做真实 Union，背景、内容裁剪及阴影使用相同外形。
 - **原限制与新依据**：原先只有圆角路径，Tooltip 因而暂缺 caret。阴影 tessellator 已具备直线、二次曲线、conic 与凹多边形能力，缺少的只是输入契约。`ComposeShadowShape.FromPath(SKPath)` 在调用点复制托管命令及 conic 权重，绘制时生成物理像素路径，调用者可立即释放原 SKPath。
 - **边界**：保留一个轮廓的原生 tessellation 分支；固定 Skia `1f14f1166a847cb0e148f981600bf1e3e6ca6e46` 的 SkShadowTessellator 在第二个 Move 返回失败，因此多轮廓整体走现有 blur fallback。不能分开画各轮廓阴影。三次曲线、透视等原有限制继续显式拒绝；不将默认三角形支持概括为完整任意 Shape。
+- **2026-11-08 本轮授权修订**：原先拒绝三次曲线是因路径快照与 tessellator 尚未移植该分支。自定义 Tooltip caret 现需要此能力：快照保留两个控制点和终点，固定 Skiko 的非 Ganesh `handleCubic` 按两个控制点、终点形成阴影多边形，spot clip 保留 t=5/16、11/16 采样；背景/裁剪仍使用完整三次曲线。多轮廓仍整体 fallback，透视等原限制不变。`CaretShape` 仅扩展 Tooltip，不引入通用 Surface Shape API；现有 CaretSize 调用无需迁移。
 - **影响**：现有圆角调用不变，无迁移。Surface 内部入口只用于无独立描边、波纹或焦点环的 Tooltip；公开任意形状仍须补齐这些职责。Tooltip 挂载生命周期和固定定位器语义见其 INTERNALS。
 
 ## 28. ExposedDropdownMenu 的字段焦点与同窗口弹层
@@ -404,4 +406,5 @@
 - **本轮授权与新决定（2026-11-08）**：使用 `MaterialPrecisionPointer.IsEnabled` 继承附加属性，默认 false，作用域由应用显式选择，允许局部关闭及运行时切换。它表达输入尺寸环境，不是通用密度倍率，也不改最小交互布局。维护者本轮已授权必要公共能力与历史待定事项决策，无需再次逐项确认。
 - **实施范围**：本批接入 Button 五种主题、ToggleButton 四种主题、AlertDialog 及独立 Expressive 菜单项；Small 普通按钮最小高 36 DIP，Toggle 仍为 40 DIP，二者 Small 竖向留白为 8 DIP、图标侧 12 DIP。AlertDialog 的容器/正文下留白为 20/16 DIP，标题合并 20/26 字号/行高覆盖。独立 Expressive 菜单项选择 12 DIP 内容间距与 16/12/10/12 留白，原有高度规则不变。依据固定两端 Button.kt、ToggleButton.kt、AlertDialog.kt、MenuDefaults.kt 与 Core PrecisionPointer.skiko.kt，未混入其他提交。
 - **默认值与覆盖**：precision 候选使用独立 Token，主题内部选择写到既有默认配置流程；普通样式、显式 Padding/MinHeight 和绑定优先。默认 false 以及其他尺寸的既有 Token 不变，没有破坏性迁移。
-- **剩余范围**：原生 MenuItem、菜单专用尾部辅助 API 与 ListItem 尚未消费此环境，当前不宣称已实现全库 precision 分支；后续复用同一个环境，不为各组件再建开关。真实指针设备监听也未实现。
+- **尾部标签接入（本轮剩余移植授权）**：`DropdownMenuItemTrailingLabel` 复用同一继承环境，选择固定 MenuDefaults 的末尾 6 DIP 留白；显式 Padding 优先，无公共 API 迁移。分组标签不使用 precision 分支。
+- **剩余范围**：原生 MenuItem、推荐尾部图标大小与 ListItem 尚未消费此环境，当前不宣称已实现全库 precision 分支；后续复用同一个环境，不为各组件再建开关。ListItem 的 ContentPadding 与对齐阈值是初始化值，并非实时 getter，不能直接套用动态选择。真实指针设备监听也未实现。

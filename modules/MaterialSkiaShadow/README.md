@@ -26,7 +26,7 @@ The general contour follows the locked Skiko artifact's non-Ganesh `handleQuad` 
 This is an artifact-specific source branch, not a choice to approximate curves or a claim that
 every raster backend lacks Ganesh. The analytic GPU branch above is separate.
 
-Multiple contours use the existing whole-path blur fallback: the pinned native tessellator rejects a second Move verb. Cubics, perspective, tilted Z planes, directional lights and non-Skia backends remain outside the supported contract. Path inputs are local DIP, just like rounded rectangles.
+Multiple contours use the existing whole-path blur fallback: the pinned native tessellator rejects a second Move verb. Cubic contours retain both controls and their endpoint. As with quadratics, the locked Skiko non-Ganesh branch uses control points followed by the endpoint for its shadow polygon; spot clipping uses the native 5/16 and 11/16 samples. Perspective, tilted Z planes, directional lights and non-Skia backends remain outside the supported contract. Path inputs are local DIP, just like rounded rectangles.
 
 ## Source and framework adaptation
 

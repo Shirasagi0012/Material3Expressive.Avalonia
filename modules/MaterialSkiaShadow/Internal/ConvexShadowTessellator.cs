@@ -6,7 +6,7 @@
  *
  * Managed, deliberately scoped adaptation of Skia m150 SkShadowTessellator.cpp,
  * SkPolyUtils.cpp. This implementation accepts one flat simple contour
- * containing lines, quadratics, and conics. Cubics, perspective, tilted Z planes, directional
+ * containing lines, quadratics, cubics, and conics. Perspective, tilted Z planes, directional
  * lights fail explicitly.
  */
 
@@ -1088,7 +1088,23 @@ internal static class ConvexShadowTessellator
                         HandleConic(pathTransform(points[0]), pathTransform(points[1]), pathTransform(points[2]), weight);
                         break;
                     case SKPathVerb.Cubic:
-                        throw new NotSupportedException("Cubic shadow contours are outside MaterialSkiaShadow's first-stage contract.");
+                        if (clipTransform is not null)
+                        {
+                            var first = clipTransform(points[0]); var one = clipTransform(points[1]);
+                            var two = clipTransform(points[2]); var last = clipTransform(points[3]);
+                            const float a = .32495117187f, b = .44311523437f, c = .20141601562f, d = .03051757812f;
+                            AddClip(new SKPoint(a * first.X + b * one.X + c * two.X + d * last.X,
+                                a * first.Y + b * one.Y + c * two.Y + d * last.Y));
+                            AddClip(new SKPoint(d * first.X + c * one.X + b * two.X + a * last.X,
+                                d * first.Y + c * one.Y + b * two.Y + a * last.Y));
+                            AddClip(last);
+                        }
+                        // Locked Skiko uses SkShadowTessellator's !SK_GANESH curve branch,
+                        // just as handleQuad above: control points, then endpoint.
+                        HandleLine(pathTransform(points[1]));
+                        HandleLine(pathTransform(points[2]));
+                        HandleLine(pathTransform(points[3]));
+                        break;
                     case SKPathVerb.Close:
                         sawClose = true;
                         break;

@@ -14,6 +14,10 @@ public sealed class MenuTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.Menu.GroupLabelPadding] = new Thickness(12, 0, 4, 0),
+        [Comp.Menu.GroupLabelMinHeight] = 32d,
+        [Comp.Menu.TrailingLabelPadding] = new Thickness(0),
+        [Comp.Menu.PrecisionTrailingLabelPadding] = new Thickness(0, 0, 6, 0),
         [Comp.Menu.SupportingItemMargin] = new Thickness(4, 2),
         [Comp.Menu.BaselineContentSpacing] = 12d,
         [Comp.Menu.VerticalContentSpacing] = 8d,

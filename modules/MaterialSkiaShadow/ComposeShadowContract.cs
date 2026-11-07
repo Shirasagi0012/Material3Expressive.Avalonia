@@ -55,9 +55,9 @@ public readonly record struct ComposeShadowShape(Rect Bounds, CornerRadius Corne
     // with a retained draw operation. Coordinates remain local DIP.
     internal PathSegment[]? PathData { get; private init; }
     internal SKPathFillType PathFillType { get; private init; }
-    internal readonly record struct PathSegment(SKPathVerb Verb, SKPoint First, SKPoint Second, float Weight);
+    internal readonly record struct PathSegment(SKPathVerb Verb, SKPoint First, SKPoint Second, float Weight, SKPoint Third = default);
 
-    /// <summary>Snapshots closed contours of lines, quadratics and conics in local DIP coordinates.</summary>
+    /// <summary>Snapshots closed contours of lines, quadratics, cubics and conics in local DIP coordinates.</summary>
     public static ComposeShadowShape FromPath(SKPath path)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -76,8 +76,9 @@ public readonly record struct ComposeShadowShape(Rect Bounds, CornerRadius Corne
                 SKPathVerb.Line => new(verb, points[1], default, 0),
                 SKPathVerb.Quad => new(verb, points[1], points[2], 0),
                 SKPathVerb.Conic => new(verb, points[1], points[2], iterator.ConicWeight()),
+                SKPathVerb.Cubic => new(verb, points[1], points[2], 0, points[3]),
                 SKPathVerb.Close => new(verb, default, default, 0),
-                _ => throw new NotSupportedException("MaterialSkiaShadow supports lines, quadratics and conics only.")
+                _ => throw new NotSupportedException($"Unsupported shadow path verb: {verb}.")
             });
         }
         if (data.Count == 0 || data[^1].Verb != SKPathVerb.Close)

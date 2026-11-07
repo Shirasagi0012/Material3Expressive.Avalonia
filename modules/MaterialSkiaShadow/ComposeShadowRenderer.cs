@@ -288,6 +288,7 @@ public static class ComposeShadowRenderer
                         case SKPathVerb.Line: path.LineTo(first); break;
                         case SKPathVerb.Quad: path.QuadTo(first, second); break;
                         case SKPathVerb.Conic: path.ConicTo(first, second, segment.Weight); break;
+                        case SKPathVerb.Cubic: path.CubicTo(first, second, new SKPoint(segment.Third.X * density, segment.Third.Y * density)); break;
                         case SKPathVerb.Close: path.Close(); break;
                     }
                 }

@@ -80,7 +80,7 @@
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
               MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">
-            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" m3:TooltipCaret.Size="{TemplateBinding CaretSize}"
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" m3:TooltipCaret.Size="{TemplateBinding CaretSize}" m3:TooltipCaret.Shape="{TemplateBinding CaretShape}"
                 CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}"
                 TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
               <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -112,7 +112,7 @@
               Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
               MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
               MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">
-            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" m3:TooltipCaret.Size="{TemplateBinding CaretSize}"
+            <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" m3:TooltipCaret.Size="{TemplateBinding CaretSize}" m3:TooltipCaret.Shape="{TemplateBinding CaretShape}"
                 CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}"
                 TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
               <m3:RichTooltipLayout

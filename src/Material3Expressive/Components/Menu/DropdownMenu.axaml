@@ -1,6 +1,43 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:DropdownMenuItemTrailingLabel}" TargetType="m3:DropdownMenuItemTrailingLabel">
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingLabelPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionTrailingLabelPadding}" />
+        </MultiBinding>
+      </Setter>
+      <Setter Property="Template"><ControlTemplate>
+        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate></Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:DropdownMenuGroupLabel}" TargetType="m3:DropdownMenuGroupLabel">
+      <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="DefaultMinWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}" />
+      <Setter Property="DefaultMaxWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}" />
+      <Setter Property="DefaultMinHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.GroupLabelMinHeight}}" />
+      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.GroupLabelPadding}}" />
+      <Setter Property="Template"><ControlTemplate>
+        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate></Setter>
+    </ControlTheme>
     <m3:MenuColorConverter x:Key="DropdownColorConverter" />
     <m3:MenuShapeConverter x:Key="DropdownShapeConverter" />
     <ControlTheme x:Key="{x:Type m3:DropdownMenuPopup}" TargetType="m3:DropdownMenuPopup">

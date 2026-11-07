@@ -3,6 +3,7 @@ package parity
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class TooltipBoxConfig(val position:String="Above",val x:Int=112,val y:Int=80,val rtl:Boolean=false,
     val dark:Boolean=false,val spacing:Double=4.0,val contentWidth:Double=64.0,val contentHeight:Double=8.0,
     val action:String="none",val persistent:Boolean=false,val enabled:Boolean=true,val hasAction:Boolean=false,val elevation:Double=0.0,
-    val anchorScale:Double=1.0,val rich:Boolean=false,val pointerKind:String="Touch",val longPressMilliseconds:Int=500,val caret:Boolean=false,val caretWidth:Double=16.0,val caretHeight:Double=8.0)
+    val anchorScale:Double=1.0,val rich:Boolean=false,val pointerKind:String="Touch",val longPressMilliseconds:Int=500,val caret:Boolean=false,val caretWidth:Double=16.0,val caretHeight:Double=8.0,val caretShape:String="none")
 @ParitySuite("tooltip-box") class TooltipBoxCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer,true)
@@ -136,7 +137,17 @@ import kotlinx.serialization.Serializable
                                     val color=LocalContentColor.current
                                     Canvas(content.modifier().size(contentWidth.toFloat().dp,config.contentHeight.toFloat().dp)){painted=color;drawRect(color)}
                                 }
-                                val caretShape=if(config.caret)TooltipDefaults.caretShape(DpSize(config.caretWidth.toFloat().dp,config.caretHeight.toFloat().dp))else null
+                                val caretShape=if(config.caretShape!="none") GenericShape { size,direction->
+                                    val d=ComposeHost.RenderScale.toFloat()
+                                    when(config.caretShape) {
+                                        "cubic"->{moveTo(-12*d,0f);cubicTo(-12*d,5*d,-4*d,12*d,0f,12*d);cubicTo(4*d,12*d,12*d,5*d,12*d,0f);close()}
+                                        "empty"->{}
+                                        "arc"->{moveTo(-10*d,0f);arcTo(androidx.compose.ui.geometry.Rect(-10*d,-10*d,10*d,10*d),180f,-180f,false);close()}
+                                        "hole"->{fillType=androidx.compose.ui.graphics.PathFillType.EvenOdd;moveTo(-14*d,0f);lineTo(0f,16*d);lineTo(14*d,0f);close();moveTo(-2*d,3*d);lineTo(2*d,3*d);lineTo(2*d,6*d);lineTo(-2*d,6*d);close()}
+                                        "notch"->{moveTo(-12*d,0f);lineTo(-12*d,8*d);lineTo(0f,4*d);lineTo(12*d,8*d);lineTo(12*d,0f);close()}
+                                        else->{moveTo(-size.width/4,0f);lineTo((if(direction==LayoutDirection.Rtl)-6 else 6)*d,12*d);lineTo(size.width/4,0f);close()}
+                                    }
+                                } else if(config.caret)TooltipDefaults.caretShape(DpSize(config.caretWidth.toFloat().dp,config.caretHeight.toFloat().dp))else null
                                 if(config.rich) RichTooltip(modifier=tooltip.modifier(),caretShape=caretShape,shadowElevation=config.elevation.toFloat().dp,
                                     title={val color=LocalContentColor.current;Canvas(Modifier.size(32.dp,10.dp)){drawRect(color)}},
                                     action={val color=LocalContentColor.current;Canvas(Modifier.size(24.dp,12.dp)){drawRect(color)}},text=body)

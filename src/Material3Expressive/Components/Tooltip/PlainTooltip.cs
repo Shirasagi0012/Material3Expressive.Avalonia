@@ -6,6 +6,10 @@ namespace Material3Expressive.Components;
 /// <summary>A Material plain tooltip surface. Content can be text or an arbitrary control.</summary>
 public class PlainTooltip : ContentControl
 {
+    /// <summary>Optional custom caret outline. Takes precedence over CaretSize.</summary>
+    public static readonly StyledProperty<TooltipCaretShape?> CaretShapeProperty =
+        AvaloniaProperty.Register<PlainTooltip, TooltipCaretShape?>(nameof(CaretShape));
+    public TooltipCaretShape? CaretShape { get => GetValue(CaretShapeProperty); set => SetValue(CaretShapeProperty, value); }
     /// <summary>Optional caret dimensions in DIP. Null omits the caret; 16,8 is the Material default size.</summary>
     public static readonly StyledProperty<Size?> CaretSizeProperty =
         AvaloniaProperty.Register<PlainTooltip, Size?>(nameof(CaretSize), validate: value => value is null

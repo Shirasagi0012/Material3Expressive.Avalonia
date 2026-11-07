@@ -139,15 +139,21 @@
                 </ItemsPanelTemplate>
             </m3:DropdownMenuPopup.ItemsPanel>
             <m3:DropdownMenuGroup x:Name="FirstGroup">
+                <m3:DropdownMenuGroupLabel Content="Document" />
                 <m3:CheckableDropdownMenuItem x:Name="ReadOnlyItem" Content="Read only"
                                               SupportingText="Keep the document unchanged"
                                               SelectedLeadingIcon="{m3:Symbol Check}"
                                               CheckedChangeRequested="OnCheckedChange" />
                 <m3:DropdownMenuItem x:Name="DetailsItem"
                                      Theme="{StaticResource MaterialExpressiveDropdownMenuItemTheme}" Content="Details"
-                                     LeadingIcon="{m3:Symbol Info}" TrailingContent="Ctrl+I" Click="OnDropdownAction" />
+                                     LeadingIcon="{m3:Symbol Info}" Click="OnDropdownAction">
+                    <m3:DropdownMenuItem.TrailingContent>
+                        <m3:DropdownMenuItemTrailingLabel Content="Ctrl+I" />
+                    </m3:DropdownMenuItem.TrailingContent>
+                </m3:DropdownMenuItem>
             </m3:DropdownMenuGroup>
             <m3:DropdownMenuGroup x:Name="LastGroup">
+                <m3:DropdownMenuGroupLabel Content="Sort order" />
                 <m3:SelectableDropdownMenuItem x:Name="NameItem" Content="Sort by name" IsSelected="True"
                                                SelectedLeadingIcon="{m3:Symbol Check}" Click="OnSelectName" />
                 <m3:SelectableDropdownMenuItem x:Name="DateItem" Content="Sort by date"

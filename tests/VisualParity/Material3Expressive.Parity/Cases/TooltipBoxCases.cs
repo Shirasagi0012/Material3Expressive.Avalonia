@@ -22,7 +22,7 @@ public sealed record TooltipBoxConfig(string Position = "Above", int X = 112, in
     bool Dark = false, double Spacing = 4, double ContentWidth = 64, double ContentHeight = 8,
     string Action = "none", bool Persistent = false, bool Enabled = true, bool HasAction = false, double Elevation = 0,
     double AnchorScale = 1, bool Rich = false, string PointerKind = "Touch", int LongPressMilliseconds = 500,
-    bool Caret = false, double CaretWidth = 16, double CaretHeight = 8);
+    bool Caret = false, double CaretWidth = 16, double CaretHeight = 8, string CaretShape = "none");
 
 [ParitySuite("tooltip-box")]
 public sealed class TooltipBoxCases
@@ -109,6 +109,15 @@ public sealed class TooltipBoxCases
             if (tooltip is PlainTooltip plain) plain.CaretSize = new(config.CaretWidth, config.CaretHeight);
             else ((RichTooltip)tooltip).CaretSize = new(config.CaretWidth, config.CaretHeight);
         }
+        if (config.CaretShape != "none")
+            tooltip.SetValue(PlainTooltip.CaretShapeProperty, new TooltipCaretShape((size, direction) => config.CaretShape switch {
+                "cubic" => PathGeometry.Parse("M -12,0 C -12,5 -4,12 0,12 C 4,12 12,5 12,0 Z"),
+                "empty" => new PathGeometry(),
+                "arc" => PathGeometry.Parse("M -10,0 A 10,10 0 0 0 10,0 Z"),
+                "hole" => PathGeometry.Parse("M -14,0 L 0,16 L 14,0 Z M -2,3 L 2,3 L 2,6 L -2,6 Z"),
+                "notch" => PathGeometry.Parse("M -12,0 L -12,8 L 0,4 L 12,8 L 12,0 Z"),
+                _ => PathGeometry.Parse(FormattableString.Invariant($"M {-size.Width/4},0 L {(direction==FlowDirection.RightToLeft?-6:6)},12 L {size.Width/4},0 Z"))
+            }));
         var box = new TooltipBox { Content = anchor, Tooltip = tooltip, State = state,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
             AnchorPosition = Enum.Parse<TooltipAnchorPosition>(config.Position), Spacing = config.Spacing,

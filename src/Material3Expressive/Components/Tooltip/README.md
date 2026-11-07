@@ -61,6 +61,18 @@ RichTooltip 的 Title / TitleTemplate、Content / ContentTemplate、Action / Act
 
 Background、CornerRadius、Padding 和 elevation 可定制表面。RichTooltip 的 Foreground、TitleForeground、ActionForeground 分别控制三个槽，默认文字角色为 BodyMedium、TitleSmall、LabelLarge。
 
+`PlainTooltip.CaretShape` / `RichTooltip.CaretShape` 可提供自定义轮廓，优先于 `CaretSize`：
+
+```csharp
+tooltip.CaretShape = (tooltipSize, direction) =>
+    Avalonia.Media.PathGeometry.Parse(
+        "M -12,0 C -12,5 -4,12 0,12 C 4,12 12,5 12,0 Z");
+```
+
+回调收到提示表面的 DIP 尺寸和布局方向，返回填充路径。原点是箭头与表面的连接点，正 Y 向外；Tooltip 自动旋转、定位并与表面合并。
+支持多轮廓、孔洞、曲线与路径 Transform；路径不增加布局尺寸，背景、内容裁剪和阴影共同使用该轮廓。
+返回值会被快照；捕获参数改变时赋予新的委托。设为 null 恢复 CaretSize，二者均为 null 时不绘制箭头。
+
 ```xml
 <m3:TooltipBox AnchorPosition="End" Spacing="8">
   <m3:TooltipBox.Tooltip>

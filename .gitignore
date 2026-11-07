@@ -432,6 +432,7 @@ test-results/
 
 # Icon must end with two \r
 Icon
+!src/Material3Expressive/Components/Icon/
 
 
 # Thumbnails

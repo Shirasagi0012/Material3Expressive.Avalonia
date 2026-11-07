@@ -60,9 +60,24 @@ API。光标和选区按插入的分隔符映射；分隔符旁的 Backspace/Del
 
 ## 已确认的适配
 
-月份横滑、滚轮换月和范围纵向列表使用 Avalonia `ScrollViewer`，范围列表用虚拟化堆叠并在滚动后更新 `DisplayedMonth`。
-TimeScroll 同样不移植通用 Pager。维护者于 2026-10-11 接受这项适配：补循环、分页位置和键盘，不承诺拖动与惯性等于 Compose
-Foundation。
+历史决定（2026-10-11）为缺少共享滚动能力时先提供可用入口，接受原生滚动和简化月份手势，不承诺拖动与惯性等于 Compose Foundation。
+2026-11-08 按本轮维护者明确授权修订单日月份部分：仓内已有 Float 动画、速度追踪和 SnapFling，固定 DatePicker 的月份是等宽 LazyRow，能够直接移植而不引入通用 Pager。范围纵向列表与年份列表仍保留原适配；TimeScroll 的后续实现见其自身文档。
+
+`DateMonthStrip` 按 firstVisibleItemIndex + 整数物理像素 offset 存放位置，保留 LazyList 的半像素累积；只实例化与视口相交的月份。视口外的日按钮不保留在控件树中。
+箭头和日期键盘跨月使用 `LazyLayoutScrollScope.animateScrollToItem` 的搜索/可见目标两阶段弹簧：目标首次可见时按整数 itemOffset 重启并保留速度/帧时间，最后精确定位。此内部入口只用于相邻月份，不提供通用远距离列表导航或预取协议。
+释放用固定 `DatePickerDefaults.rememberSnapFlingBehavior`：approach 恒为 0，DefaultEffects 弹簧，400 DIP/s 门槛，低速取最近月份，等距时选后者。复用 Foundation 的 SnapFling、VelocityTracker 和 MouseWheelScroll。
+Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择和 RTL 符号均保留；设备专用 trackpad 元数据仍受 Avalonia 事件限制。
+日期按钮会消费按住时的 PointerMoved，因此月份容器在隧道路由中判断横向阈值；超过阈值才捕获，日期按钮通过 capture lost 取消点击/波纹。坐标取事件的物理顶层坐标，再应用一次 RTL 符号。原始触摸测试覆盖实际日期按钮、LTR/RTL、1x/4x、快/慢释放，不只调用吸附算法；早期真实触摸未移动的失败报告保留在 `date-month-verified`。
+`DisplayedMonth` 回写第一个仍可见的月份，动画中不由该回写重新定位。外部空闲赋值和年份选择直接定位；卸载取消动画/捕获，禁用与方向变化结束当前手势。
+
+迁移：公开日期属性保持不变。依赖旧“竖向滚轮立即换月”或“鼠标左键横拖翻页”的应用应使用导航按钮、触摸或横向滚轮；依赖 Click 后同步读取新月份的调用方应观察 `DisplayedMonth`，其值现在随真实滚动变化。Catalog 与仓内断言已迁移。
+
+年份键盘路径按固定 `YearPicker` / `MonthsNavigation` 补齐：打开时定位当前年份，年份的 Shift+Tab 返回月份标题，Tab 通过 divider 之后的焦点位置离开网格；反向进入 divider 时回到当前年份。Avalonia 的 `Focus`、`TryMoveFocus` 与 `FindNextElementOptions.FocusedElement` 对应 FocusRequester / FocusManager，不给每个年份建立额外状态对象。初始滚动位置按 displayedYear - firstYear - 3 计算。
+日期首尾键盘规则按固定 `dayOnKeyEvent` 的 first/last selectable date 路径移植：先处理首日 Shift+Tab / 尾日 Tab，滚动期间吞掉其余首尾按键；左右移动跳过禁选项，跨月等待月份动画完成再聚焦。年份选择使用立即定位并取消旧月份动画，避免新年份被旧动画写回。
+`DateKeyboardTests` 覆盖 LTR/RTL 的年份进入、方向移动、正反 Tab、Enter 选择、禁选日期跳过和键盘跨月，以及年份选择取消尚未完成的月份动画。整月均不可选时的跨月焦点及年份列表超出视口的二维焦点搜索尚未逐项双端验证。
+
+2026-11-08 平台选择（本轮维护者明确授权）：年份方向键采用 AndroidX 的二维焦点导航意图，通过 Avalonia `TryMoveFocus` 实现。固定 Core `RootNodeOwner.skiko.kt.getFocusDirection` 只映射 Tab、DirectionCenter、Back，`YearPicker` 本身没有方向键处理，因此此路径与 Core 桌面执行结果不同；不把 AndroidX 与 Core 的实现拼成一个上游版本，也不宣称桌面年份方向键一致。
+`date-keyboard-verified` 的 2 个 LTR/RTL 用例重复稳定、零执行错误，但均 different：自动打开后的焦点、后续焦点/选择时间线及已有外观仍有差异。用例保留自动打开采样，再对真实年份节点调用 RequestFocus/Focus 来检查内部按键路径；没有改写参考组件。除上述明确选择的年份方向键平台差异外，其余失配仍未接受，也未全部定位。日期首尾键盘路径已有行为测试，尚未取得独立双端通过结论。
 
 `date-picker`
 视觉用例允许真实日期文字。这只放宽“用例不得含文字”的限制，不放宽比较容差，也不把失配收成已接受差异。见 [AUTHORING.md](../../../../tests/VisualParity/AUTHORING.md)。
@@ -71,11 +86,16 @@ Foundation。
 
 ## 尚未实现或未验证
 
-- 年份和月份列表没有 Compose LazyList 的吸附、甩动和键盘分页。
+- 范围月历与年份列表仍未移植 Compose LazyList 的完整滚动协议；单日月份没有跨组件 nested scroll、远距离 teleport/预取或平台 overscroll。
 - 标题日期使用 `ddd, MMM d`，未对照 `DatePickerFormatter` 的完整 skeleton。
-- 双端像素差异按维护者要求保留证据，不在本轮继续追修。
+- 真实 DatePicker 双端仍有标题本地化、文字/图标、日期网格与总高度 1 DIP 差异；本轮保留失败证据，不调整容差或将其视为已接受。
 - 无障碍遍历顺序、触摸滑动阈值和全部区域的输入格式未逐项对照上游测试。
 
 逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs`。
 双端用例是 `tests/VisualParity/Material3Expressive.Parity/Cases/DatePickerCases.cs` 与 reference 侧同名 Kotlin。
 命令是 `./tests/VisualParity/parity.ps1 list --family date-picker`，再对该 family 做 `prepare-reference` 和 `run`。
+
+本轮验证：`DateMonthScrollTests` + `DateTimeEntryTests` 覆盖速度门槛、等距吸附、首个可见月、反向中断、年份边界、桌面输入、外部赋值和卸载重挂。
+`date-month-motion` 的 24 个双端用例直接对照固定 Core LazyRow + DatePickerDefaults 的真实 fling，使用相同几何内容独立检查位移；`date-month-scroll` 的 8 个用例操作真实 DatePicker，保留完整截图和选中/显示月份。
+报告：`artifacts/visual-parity/runs/date-motion-verified` 24 例全部相等且重复稳定。真实控件最终证据为 `date-month-routed-verified` 的六个非 RTL 触摸用例，以及 `date-touch-rtl-fast-verified` / `date-touch-rtl-slow-verified`；后两者修正了 Avalonia 本地原点在 RTL 下位于右边缘、旧用例触点落到控件外的问题，使用与 Core 相同的物理左上角定位。
+这八组真实控件时间线的月份与选中日期读数全部一致，重复稳定且零执行错误；外观仍全部 different，包含已有标题、文字/图标、网格与高度差异。`date-month-first`、`date-month-verified` 等早期失败报告保留。精确月份运动通过不代表整个 DatePicker 外观已完成。

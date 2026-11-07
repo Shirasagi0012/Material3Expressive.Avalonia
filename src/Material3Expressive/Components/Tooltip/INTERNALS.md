@@ -112,7 +112,9 @@ Surface 内部几何入口将同一并集用于背景和内容裁剪，阴影模
 固定 AndroidX/Core 的 Tooltip.kt 相同。`remember { TooltipScopeImpl(..., positionProvider) }` 无 key，故本地也在挂载时记住
 箭头定位器类型；后续定位器更新只移动弹层。自定义 provider 沿默认上/下规则。RTL 的物理箭头坐标抵消内容树的镜像。
 模板、位置上下文、尺寸和圆角变化会刷新轮廓，清除 CaretSize 恢复圆角路径。没有新增公开任意 Surface Shape API。
-尚未实现任意自定义 CaretShape；三角形尺寸、背景、裁剪和阴影路径并集已实现。
+2026-11-08 本轮授权补齐自定义 CaretShape。PlainTooltip / RichTooltip 的委托接收表面 DIP 尺寸与 FlowDirection，返回 PathGeometry；大小、方向、定位或配置改变时重新求值。其公开 invariant 路径表示供 Skia 解析，FillRule 和 Transform 分别保留，不依赖 Avalonia 私有几何后端。调用方路径不会被改写，返回值作为快照；捕获参数改变需替换委托。
+自定义形状优先于 CaretSize，清除后恢复默认三角形；空路径等价于不增加轮廓。闭合路径、曲线和孔洞与表面做真实 union。阴影三次曲线按固定 Skiko 的非 Ganesh 分支及 spot clip 采样补齐；旧拒绝原因与授权记录见 DECISIONS §27。
+这不代表 Surface 的任意形状描边、波纹或焦点环已完成。
 BadgedBox 已通过共享读取器仅透传锚点基线，
 并由真实 RichTooltip 组合的双端用例验证；任意自定义容器的自动基线透传仍未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
@@ -159,3 +161,5 @@ TooltipLabelTests 与 TooltipAnchorTests 覆盖身份、重叠、换源、卸载
 （运行 `20261103-142626-64eb60bc`）。其中 34 个用例整体 equal；4 个旋转时间线因锚内容的
 float/double AABB 坐标约 10^-6 DIP 差异被精确比较标为 different，Popup 和内容几何仍相等。
 未对坐标取整或修改门禁。变换时间线包含缩放、平移、旋转、原位修改变换、内容变宽、布局移动、清除变换和重开。
+
+自定义形状验证：`TooltipCaretTests` 覆盖尺寸/方向回调、调用方路径不变、优先级与回退；阴影模块测试覆盖三次曲线快照。双端 `tooltip-shape` 66 例包含凹形、三次曲线、圆弧、孔洞、空路径、相对尺寸、四方向、RTL、Plain/Rich 与动态尺寸，使用固定 Core 的实际 GenericShape 与 Tooltip。`tooltip-shape-verified` 无超差、无执行错误，全部重复稳定；精确与容差内结果分别保留，不把容差内称为像素完全相等。
