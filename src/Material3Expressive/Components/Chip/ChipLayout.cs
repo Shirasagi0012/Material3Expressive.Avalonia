@@ -2,6 +2,7 @@ using Material3Expressive.Foundation.Interaction;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
 
@@ -54,16 +55,20 @@ internal sealed class ChipContentLayout : Panel
 {
     private ChipSpacing _spacing = new();
     public ChipSpacing Spacing { get => _spacing; set { _spacing = value; InvalidateMeasure(); } }
+    private ChipHorizontalArrangement? _horizontalArrangement;
+    public ChipHorizontalArrangement? HorizontalArrangement
+    { get => _horizontalArrangement; set { if (_horizontalArrangement == value) return; _horizontalArrangement = value; InvalidateMeasure(); } }
     private double _leading, _trailing, _label;
     protected override Size MeasureOverride(Size availableSize)
     {
         if (Children.Count != 3) return default;
         var scale = LayoutHelper.GetLayoutScale(this);
+        var spacing = HorizontalArrangement is null ? MathUtils.DipToPx((Spacing.Leading + Spacing.Trailing) / 2, scale) / scale : 0;
         Children[0].Measure(availableSize);
         Children[2].Measure(availableSize.WithWidth(Math.Max(0, availableSize.Width - Children[0].DesiredSize.Width
-            - MathUtils.DipToPx((Spacing.Leading + Spacing.Trailing) / 2, scale) / scale)));
+            - spacing)));
         _leading = Children[0].DesiredSize.Width; _trailing = Children[2].DesiredSize.Width;
-        var rowGap = 2 * MathUtils.DipToPx((Spacing.Leading + Spacing.Trailing) / 2, scale) / scale;
+        var rowGap = 2 * spacing;
         // RowMeasurePolicy reserves the arrangement's average spacing before measuring weight.
         Children[1].Measure(new Size(Math.Max(0, availableSize.Width - _leading - _trailing - rowGap), availableSize.Height));
         _label = Children[1].DesiredSize.Width;
@@ -77,6 +82,42 @@ internal sealed class ChipContentLayout : Panel
         var gap = MathUtils.DipToPx(_leading > 0 ? Spacing.Leading : Spacing.Trailing, scale) / scale;
         var positions = new[] { 0d, _leading + gap, finalSize.Width - _trailing };
         var sizes = new[] { _leading, _label, _trailing };
+        if (HorizontalArrangement is { } arrangement)
+        {
+            // ChipContent's label Row has weight(fill=true); AnimatingChipContent
+            // (Filter/Input) uses fill=false. Arrangement sees the slot, not its label.
+            if (TemplatedParent is Chip and not SelectableChip)
+                sizes[1] = Math.Max(0, finalSize.Width - _leading - _trailing);
+            // Arrangement.kt operates on Int pixel sizes but accumulates gaps in Float.
+            // Compute physical positions first, then undo the native RTL subtree mirror.
+            var pixels = sizes.Select(size => MathUtils.DipToPx(size, scale)).ToArray();
+            var total = MathUtils.DipToPx(finalSize.Width, scale);
+            var free = total - pixels.Sum();
+            var rtl = FlowDirection == FlowDirection.RightToLeft;
+            var step = arrangement switch
+            {
+                ChipHorizontalArrangement.SpaceBetween => free / 2f,
+                ChipHorizontalArrangement.SpaceAround => free / 3f,
+                ChipHorizontalArrangement.SpaceEvenly => free / 4f,
+                _ => 0f
+            };
+            var current = arrangement switch
+            {
+                ChipHorizontalArrangement.Start => rtl ? free : 0f,
+                ChipHorizontalArrangement.End => rtl ? 0f : free,
+                ChipHorizontalArrangement.Center => free / 2f,
+                ChipHorizontalArrangement.SpaceAround => step / 2f,
+                ChipHorizontalArrangement.SpaceEvenly => step,
+                _ => 0f
+            };
+            for (var slot = 0; slot < 3; slot++)
+            {
+                var index = rtl ? 2 - slot : slot;
+                var physical = MathUtils.RoundToInt(current);
+                positions[index] = (rtl ? total - physical - pixels[index] : physical) / scale;
+                current += pixels[index] + step;
+            }
+        }
         for (var i = 0; i < 3; i++)
         {
             var child = Children[i];

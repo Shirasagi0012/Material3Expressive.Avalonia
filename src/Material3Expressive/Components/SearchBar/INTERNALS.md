@@ -76,7 +76,7 @@
 
 
 - **授权范围**：本次任务明确授权上游语义内新增组件及非破坏性组件 API；没有新增公共共享框架或改动既有共享决定。
-- **尚未实现**：搜索顶栏自动 ScrollViewer / SmoothScroll 接入、任意 PopupProperties 与非圆角 Shape、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
+- **尚未实现**：搜索顶栏自动 ScrollViewer / SmoothScroll 接入、任意 PopupProperties、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
 - **未经验证**：触摸输入、复杂多弹层返回栈、屏幕阅读器遍历顺序及带间隙滑动的任意自定义 Keyframes 等规格；已双端验证的自定义规格为 tween、spring、snap 与独立内容淡入淡出。桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
 - **共享适配**：动画尺寸沿用 ComposeAnimation 的 DIP/double 计算，Compose 的 IntSize 中间帧可能在像素取整上不同；不将检测到的视觉差异登记为新批准的近似。
 
@@ -154,3 +154,40 @@ Windows Catalog 已实测自动聚焦、查询过滤、选择结果收起及焦�
 `state-search-batched-verified` 另补 3 例同次提交的文本增减、净增长和状态换源后增长，均稳定且无执行错误。
 展开值、目标、进度、实际焦点和文本长度全部相等；同步增删不再误触发展开，换状态时以提交后的文本作为新 collector 基线。
 这三个场景继续保留原生空行高度差异。完整 `SearchBarInputFieldTests` 当前 28 项通过。
+
+## 2026-11-08 路径形状增量
+
+依据本轮缺失 API 自主实施授权，SearchBar、AppBarWithSearch、DockedSearchBar、全部展开变体和
+SearchBarInputField 增加 Shape；gap 的 DropdownShape 独立注册，不与主 Shape 共用属性身份。
+原先仅 CornerRadius 的原因是当时尚无通用路径容器；现在复用 MaterialSurface 和本轮 TextField 的轮廓能力，
+不复制边框/阴影引擎。默认圆角路径与 Token 不变，没有既有调用迁移。
+
+固定 AndroidX/Core `FullScreenSearchBarLayout` 的 GenericShape 仅记住 density/fullScreenShape，
+所以 FullScreenSearchShape 捕获首次 collapsedShape；输入仍用当前绑定。包装路径强制 NonZero，
+保持 Path.addOutline 的填充规则，.5 前后直接切换轮廓，不对任意形状作近似 morph。离屏卸载释放
+捕获对象订阅和动画优先级贡献，重开按新形状重新创建。显式 RoundedCornerShape(50%) 不能替代
+上游 CircleShape 单例身份。默认 legacy CornerRadius 的既有行为继续保留。
+
+输入焦点环复用 TextFieldDecoration 当前几何；visual-only 环在显式 Shape 下同步 FlowDirection，使用与背景
+相同的本地路径坐标；legacy CornerRadius 保留物理角语义。装饰的标签缺口裁剪覆盖实际路径范围，
+不截掉超出容器的 Generic 焦点环。非圆角输入背景不裁剪原生编辑器；容器输入槽的 clip 仍由各搜索模板负责。
+
+原 `search-input-focus-ring` 19 例回归 `search-input-focus-ring-20261108-regression` 全部稳定、无执行错误，
+仍为只读 1 equal / 5 withinTolerance，以及 13 个有上述原生 caret 差异的可编辑场景。未改变旧圆角分支的比较结论。
+
+新增 `search-shape-20261108-final` 56 例全部稳定、无执行错误：21 equal、6 withinTolerance、29 different。
+30 个展开/顶栏静态场景的图像为 29 全等、1 容差内；其中 15 个 RTL 场景的 corners 读数按 Avalonia 镜像局部轴
+排列，与 Core 物理角点顺序不同，保留失败。普通 docked/full/contained 的开闭及反向 6 例全等；
+4 个形状替换场景在立即修改/开闭采样存在上述提交边界差异，下一显示帧的记忆/替换/重开形状一致。
+gap 开闭/反向的结果槽位置在退出阶段仍不同（如 1088ms 相差 2.5 DIP），该两例图像全等。
+旧 Docked 的 6 个形状动画场景保留 AnimatedVisibility 边界差异（如 208ms 容器高 219/230 DIP）。
+焦点环 6 例在容差内；RTL curve/hole 两例有 Generic 描边边缘/孔洞残留像素差异，已查看实际双端图像，
+尚未解决且未接受为语义偏离。不修改采样时刻、比较规则或参考实现以消除这些失败。
+
+随后补入 4 个 default-to-shape 场景（普通/contained，各含按需 getter 和预读 getter 对照），
+产物 `search-shape-default-*-20261108` 均稳定且无执行错误，但均 different：默认 Circle 打开后替换
+为切角，Core 在稳定的 32/64ms 帧更新外层路径，本地仍保留默认圆角，关闭重开后再次相同。
+固定两仓源码与发布 JAR 的 `FullScreenSearchBarLayout` 字节码均只以 density/fullScreenShape 作为 remember 键；
+预读默认 getter 的对照仍失败，故不能归因为该 getter 的条件调用。具体生命周期原因尚未解释，
+未加入仅凭用例特判的重建规则，也不把该差异记为已接受。原失败用例和对照用例均保留；
+新增行为测试只保证当前输入更新、重开捕获，不以本地断言证明运行中与 Core 一致。

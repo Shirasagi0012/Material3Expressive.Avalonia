@@ -32,7 +32,7 @@ LeadingIconColor/TrailingIconColor（IBrush?）。条件样式只更新内部默
 读取默认 Token。零值是完整配置本身，Material 的 Dragged=8、前后间距=8 等基线只来自 TokenSource。
 显式对象整组覆盖，ClearValue 后恢复当前主题默认。不可把一个局部对象中未写的字段重新补成 Material 默认。
 
-`ChipShapes` 是三个确定 CornerRadius 的完整 record，Filter/Input 的主题用 UnselectedShape、
+`ChipShapes` 是三个确定 MaterialShape 的完整 record，Filter/Input 的主题用 UnselectedShape、
 SelectedShape、PressedShape 动态组装；null 唯一表示关闭容器形变，之后使用有效 CornerRadius。
 省略 Shapes 时默认启用三形状，不设额外 expressive class。系统 shape 资源更新仍通过 TokenRef 传播，
 不同的三组圆角值会按原 key(shapes) 语义重置状态。
@@ -73,7 +73,7 @@ Filter/Input 的 Click、Command、automation Toggle 只发请求，不写 IsSel
 透明或非主题背景沿用外层内容环境；标签和两个图标分别解析自己的颜色 provider。
 因此只改背景、只改标签色或外层内容环境都需要检查反馈颜色，不可缓存初始化时的色值。
 
-Shapes=null 使用有效 CornerRadius，不进行选中/按压形变；非空采用未选中/选中/按压三个圆角及 FastSpatial。
+Shapes=null 使用有效 CornerRadius，不进行选中/按压形变；非空采用未选中/选中/按压三个形状，角族使用 FastSpatial，任意路径直接切换。
 配置按有效的三个圆角值比较：等值对象不重置动画，不同值对应上游 key(shapes) 重建。
 容器尺寸变化后必须重新计算轮廓，包括动画已经结束的选中状态。
 
@@ -134,8 +134,18 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 
 四类 Chip 已接入固定 `Shape`，共享 Surface 的路径、边框、阴影、波纹和焦点环。
 显式 Shape 抑制 `ChipShapes` 圆角播放器，清除后按当前选中/按压状态重新初始化；不改写公开 Shapes
-值，也不改变已确认的颜色/间距/图标 motion 独立策略。切角选择态之间的 ChipShapes 插值和通用
-Arrangement 尚未实现。文字栅格和真实辅助技术未经验证。
+值，也不改变已确认的颜色/间距/图标 motion 独立策略。通用 Arrangement 尚未实现。
+文字栅格和真实辅助技术未经验证。
+
+2026-11-08 依据本轮对缺失 API、职责调整及历史决定修订的授权，将历史仅圆角的 Shapes 扩为
+MaterialShape。原限制来自当时仅提供 CornerRadius 播放器，原固定/状态入口的独立配置理由继续有效。
+现在复用既有 CornerShape、AnimatedCornerRadius 和 Surface 外部轮廓能力，按固定两仓相同的
+`shapeByInteraction` 补齐全部 CornerBasedShape 分支与非 CornerBasedShape 直接切换分支。
+`Chip.Shape.cs` 负责配置快照、可变形状订阅、key(shapes) 重建与输出；角参数按值比较，自定义路径按身份。
+按压优先于选中，混合族采用上游中点切换，反向及第三目标由共享播放器处理。形状替换和 key 重建
+按上游重置 indication；颜色、高度、图标仍独立。动画层 Shape 贡献可释放，关闭/卸载后恢复模板绑定。
+公开属性类型改变及 XAML 迁移见 README；旧三 CornerRadius 构造保留，仓内调用已同步迁移。
+
 固定路径新增验证见 `MaterialShapeTests` 和双端 `material-shape.*.chip-*`，覆盖四族及三种 Elevated、
 百分比/逻辑切角、选择、按压和焦点；Catalog 主窗口提供 Fixed cut chips。
 
@@ -200,3 +210,27 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family chip
 ./tests/VisualParity/parity.ps1 self-test --family chip-focus
 ```
+
+2026-11-08 状态形状增量：`ChipShapeTests` 与既有 Chip/MaterialShape 回归 65 项通过，Catalog 构建通过。
+`chip-shape-20261108-v1` 双端 108 例无执行错误，28 equal、76 withinTolerance、4 different；
+四个 different 都是平面 Filter 的 source-replace 在新源 hover 后，400ms 高度 Core=1、本地=0 DIP，
+对应上述已确认的默认 hover 高度差异，未放宽或豁免门禁。新增切角、百分比圆角、圆切混合及任意路径
+覆盖三种可选外观、RTL、选择反向、重叠 Press、换源、尺寸变化及配置重建。
+其中 7 例重叠 Press 的参考端 extraImages 不稳定，实际端重复及额外截图稳定；图像容差内不代表这些用例严格通过。保留全部失败产物与原采样时刻。
+
+默认圆角配置另外回归原 `chip.dynamic.filter.morph.reverse-selection`、`chip.dynamic.filter.morph.shapes`，
+两例稳定且全等；原 `chip.dynamic.input.morph.source-press` 图像容差内，Core extraImages 仍不稳定，
+本地重复/额外截图稳定。对应产物为 `20261108-chip.dynamic.*`，没有删减该重叠 Press 场景。
+
+2026-11-08 进一步补齐六种标准 Arrangement：新增 nullable `HorizontalArrangement`，null 保留专用
+ChipSpacing；其余六种分别映射固定 Foundation `Arrangement.kt` 的 Start/End/Center/SpaceBetween/
+SpaceAround/SpaceEvenly。原“通用 Arrangement 未实现”的限制仍适用于自定义回调、SpacedBy 和绝对方向。
+依据本轮授权采用组件内枚举，当前无跨组件使用需求，不引入共享布局协议。三个槽含零宽图标槽始终
+参与排列；标准排列 spacing=0，测量不再预留专用平均间距。Assist/Suggestion 的 label Row 按上游
+weight(fill=true) 占满剩余槽宽，因此其标准排列通常没有剩余间隙；Filter/Input 保留 fill=false。排列先以 Int 像素
+尺寸和 Float 累加求物理位置，再抵消 Avalonia 的 RTL 镜像；不能简单镜像 LTR 的已舍入坐标。
+没有破坏性迁移，仓内新增 Catalog Chip slot arrangements 示例。
+
+`chip-arrangement-20261108-final` 108 例全部重复稳定、执行错误为零，66 equal、42 withinTolerance，
+无超差；包含四族/Elevated、六种排列、LTR/RTL、零宽槽、窄约束、图标反向与运行时切换/恢复默认。
+10 项行为测试覆盖实际模板的 fill 区别、配置恢复与 RTL 的半像素舍入；Catalog 展示全部六种排列。

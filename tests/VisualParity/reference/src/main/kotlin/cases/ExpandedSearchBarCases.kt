@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ExpandedSearchBarConfig(val expanded:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val hostWidth:Int=420,val hostHeight:Int=600,val contentHeight:Double=40.0,val inputWidth:Double=360.0,
     val inputHeight:Double=56.0,val custom:Boolean=false,val action:String="none",val motion:String="default",val anchor:Boolean=true,
-    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0,val gap:Boolean=false,val noScrim:Boolean=false,val fullScreen:Boolean=false,val insets:Boolean=false,val contained:Boolean=false,val filledInput:Boolean=false,val appBar:Boolean=false)
+    val tonalElevation:Double=0.0,val shadowElevation:Double=0.0,val gap:Boolean=false,val noScrim:Boolean=false,val fullScreen:Boolean=false,val insets:Boolean=false,val contained:Boolean=false,val filledInput:Boolean=false,val appBar:Boolean=false,val shape:String="none",val dropdownShape:String="none",val stableShapeDefaults:Boolean=false)
 
 @ParitySuite("expanded-search-bar")
 class ExpandedSearchBarCases {
@@ -40,6 +40,7 @@ class ExpandedSearchBarCases {
         var inputWidth by mutableStateOf(c.inputWidth)
         var contentHeight by mutableStateOf(c.contentHeight)
         var anchor by mutableStateOf(c.anchor)
+        var shapeKind by mutableStateOf(c.shape)
         val bar=Probe(); val popup=Probe(); val input=Probe(); val results=Probe()
         ComposeHost(writer,c.hostWidth,c.hostHeight,context).use { host ->
             val navigation=BackNavigationEventInput()
@@ -58,36 +59,41 @@ class ExpandedSearchBarCases {
                                 else->defaultState
                             } }
                             scope=rememberCoroutineScope()
+                            // Keep both producer forms as a diagnostic control. Pre-reading this
+                            // composable getter did not remove the default-to-custom lifetime gap.
+                            val defaultInputShape=if(c.stableShapeDefaults)SearchBarDefaults.inputFieldShape else null
+                            val customShape=if(shapeKind!="none")carouselTestShape(shapeKind)else null
                             val colors=if(c.custom)SearchBarDefaults.colors(containerColor=Color.Yellow,dividerColor=Color.Red)else SearchBarDefaults.colors()
                             Box(Modifier.fillMaxSize().background(Color.White)) {
                                 if(anchor)Box(Modifier.padding(start=x.dp,top=y.dp)) {
                                     if(c.appBar) AppBarWithSearch(
                                         state=state,inputField={ Marker(Modifier,inputWidth,c.inputHeight) },
+                                        shape=customShape ?: (defaultInputShape ?: SearchBarDefaults.inputFieldShape),
                                         navigationIcon={Box(Modifier.size(48.dp).background(Color.Red))},
                                         actions={Box(Modifier.size(48.dp).background(Color.Red))},windowInsets=WindowInsets(0)
                                     ) else SearchBar(state=state,inputField={ Marker(Modifier,inputWidth,c.inputHeight) },modifier=bar.modifier(),
-                                        shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=colors,
+                                        shape=customShape ?: if(c.custom)RoundedCornerShape(12.dp)else (defaultInputShape ?: SearchBarDefaults.inputFieldShape),colors=colors,
                                         tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp)
                                 }
                                 if(c.contained) ExpandedFullScreenContainedSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
-                                    collapsedShape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=if(c.custom)colors else SearchBarDefaults.containedColors(state),
+                                    collapsedShape=customShape ?: if(c.custom)RoundedCornerShape(12.dp)else (defaultInputShape ?: SearchBarDefaults.inputFieldShape),colors=if(c.custom)colors else SearchBarDefaults.containedColors(state),
                                     windowInsets={if(c.insets)WindowInsets(left=12.dp,top=20.dp,right=24.dp,bottom=16.dp)else WindowInsets(0)},
                                     tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
                                     Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
                                 } else if(c.fullScreen) ExpandedFullScreenSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
-                                    collapsedShape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.inputFieldShape,colors=colors,
+                                    collapsedShape=customShape ?: if(c.custom)RoundedCornerShape(12.dp)else (defaultInputShape ?: SearchBarDefaults.inputFieldShape),colors=colors,
                                     windowInsets={if(c.insets)WindowInsets(left=12.dp,top=20.dp,right=24.dp,bottom=16.dp)else WindowInsets(0)},
                                     tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
                                     Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
                                 } else if(c.gap) ExpandedDockedSearchBarWithGap(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
-                                    shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
-                                    dropdownShape=if(c.custom)RoundedCornerShape(4.dp)else SearchBarDefaults.dockedDropdownShape,
+                                    shape=customShape ?: if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
+                                    dropdownShape=if(c.dropdownShape!="none")carouselTestShape(c.dropdownShape)else if(c.custom)RoundedCornerShape(4.dp)else SearchBarDefaults.dockedDropdownShape,
                                     dropdownGapSize=if(c.custom)8.dp else SearchBarDefaults.dockedDropdownGapSize,
                                     dropdownScrimColor=if(c.custom)Color(0x400000FF)else if(c.noScrim)Color.Transparent else SearchBarDefaults.dockedDropdownScrimColor,
                                     tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
                                     Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
                                 } else ExpandedDockedSearchBar(state=state,inputField={ Marker(input.modifier(),c.inputWidth,c.inputHeight,c.filledInput) },modifier=popup.modifier(),
-                                    shape=if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
+                                    shape=customShape ?: if(c.custom)RoundedCornerShape(12.dp)else SearchBarDefaults.dockedShape,colors=colors,
                                     tonalElevation=c.tonalElevation.toFloat().dp,shadowElevation=c.shadowElevation.toFloat().dp) {
                                     Box(results.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
                                 }
@@ -123,6 +129,16 @@ class ExpandedSearchBarCases {
                 fun at(vararg times:Long){times.forEach{advance(it);host.draw();sample("time-$it")}}
                 sample("initial")
                 if(c.action=="none")return
+                if(c.action=="replace-shape") {
+                    change(1000,"partial"){scope.launch{state.snapTo(.25f)}};at(16000)
+                    change(17000,"replace-shape"){shapeKind="percent"};at(32000)
+                    change(33000,"half"){scope.launch{state.snapTo(.5f)}};at(48000)
+                    change(49000,"reverse"){scope.launch{state.snapTo(.25f)}};at(64000)
+                    change(65000,"close"){scope.launch{state.snapTo(0f)}};at(80000)
+                    change(81000,"reopen"){scope.launch{state.snapTo(.25f)}};at(96000)
+                    return
+                }
+
                 if(c.action=="anchor") {
                     change(1000,"move"){x=32;y=48};at(16000)
                     change(17000,"resize-input"){inputWidth=280.0};at(32000);return

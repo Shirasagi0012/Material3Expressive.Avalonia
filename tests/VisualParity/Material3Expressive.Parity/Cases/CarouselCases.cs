@@ -17,7 +17,7 @@ namespace Material3Expressive.Parity;
 public sealed record CarouselConfig(string Variant = "MultiBrowse", bool Rtl = false, int Count = 8,
     int Item = 0, double Width = 320, double ItemWidth = 160, double Spacing = 8,
     double Before = 0, double After = 0, double Radius = 16, string Action = "none", double Border = 0,
-    string Mode = "Default", double Velocity = 0, double Offset = 0, bool ObserveRealization = false, bool AutoHeight = false);
+    string Mode = "Default", double Velocity = 0, double Offset = 0, bool ObserveRealization = false, bool AutoHeight = false, string Shape = "none");
 
 [ParitySuite("carousel")]
 public sealed class CarouselCases
@@ -63,6 +63,7 @@ public sealed class CarouselCases
             ContentPadding = new(c.Before, 0, c.After, 0), HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         var items = Enumerable.Range(0, c.ObserveRealization ? 0 : c.Count).Select(i => new CarouselItem { CornerRadius = new(c.Radius), Content = new Marker(i) { Focusable = c.Action.StartsWith("key-") || c.Action.StartsWith("focus-") },
+            Shape = c.Shape == "none" ? null : MaterialShapeCases.CreateShape(c.Shape),
             BorderBrush = Brushes.Black, BorderThickness = new(c.Border) }).ToArray();
         if (c.ObserveRealization)
         {
@@ -232,6 +233,7 @@ public sealed class CarouselCases
         host.AdvanceTo(16000);
         if (c.Action == "jump") carousel.ScrollToItem(3);
         else if (c.Action == "shape") foreach (var item in items) item.CornerRadius = new(40);
+        else if (c.Action == "replace-shape") foreach (var item in items) item.Shape = MaterialShapeCases.CreateShape("percent");
         else if (c.Action == "fling") animation = carousel.FlingAsync(c.Velocity);
         else if (c.Action.StartsWith("semantics-"))
             ControlAutomationPeer.CreatePeerForElement(carousel)!.GetProvider<IScrollProvider>()?.Scroll(

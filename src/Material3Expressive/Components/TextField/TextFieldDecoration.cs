@@ -10,8 +10,14 @@ internal sealed class TextFieldDecoration : Control
     private readonly SurfaceOutline _outline = new() { IsHitTestVisible = false };
     private Rect _container;
     private InsetFocusRingPresenter? _searchFocusRing;
+    private CornerRadius _corners;
+    private PathGeometry? _shape;
+    private bool _logicalShape;
 
-    public TextFieldDecoration() => VisualChildren.Add(_outline);
+    public TextFieldDecoration()
+    {
+        VisualChildren.Add(_outline);
+    }
 
     internal void SetSearchFocusRing(SearchBarInputField? owner, MaterialInteractionSource? source)
     {
@@ -31,21 +37,39 @@ internal sealed class TextFieldDecoration : Control
                 InvalidateMeasure();
             }
             _searchFocusRing.Connect(owner, source);
-            _searchFocusRing.Corners = owner.CornerRadius;
+            _searchFocusRing.Corners = _corners;
+            _searchFocusRing.ShapePath = _shape;
+            _searchFocusRing.FlowDirection = _logicalShape ? FlowDirection : FlowDirection.LeftToRight;
         }
     }
 
     internal void Update(Rect container, Rect cutout, Size size, bool outlined, IBrush? indicator,
-        double thickness, CornerRadius radius)
+        double thickness, CornerRadius radius, PathGeometry? shape = null, bool logicalShape = false)
     {
         if (_container != container) { _container = container; InvalidateArrange(); }
         _outline.IsVisible = outlined;
         _outline.BorderBrush = indicator;
         _outline.BorderThickness = new Thickness(thickness);
         _outline.CornerRadius = radius;
-        if (_searchFocusRing is not null) _searchFocusRing.Corners = radius;
+        _outline.ShapePath = shape;
+        // Visual-only children do not inherit direction. Explicit Shape uses logical
+        // coordinates; legacy CornerRadius retains this component's physical corners.
+        _logicalShape = logicalShape;
+        _outline.FlowDirection = logicalShape ? FlowDirection : FlowDirection.LeftToRight;
+        _corners = radius; _shape = shape;
+        if (_searchFocusRing is not null)
+        {
+            _searchFocusRing.Corners = radius;
+            _searchFocusRing.ShapePath = shape;
+            _searchFocusRing.FlowDirection = _outline.FlowDirection;
+        }
         var clip = new GeometryGroup { FillRule = FillRule.EvenOdd };
-        clip.Children.Add(new RectangleGeometry(new Rect(size)));
+        // A Generic outline can extend beyond the container. The label cutout must
+        // not turn that drawing into a layout-bounds clip (notably for inset rings).
+        var paintBounds = new Rect(size);
+        if (shape is not null)
+            paintBounds = paintBounds.Union(shape.Bounds.Translate(container.Position));
+        clip.Children.Add(new RectangleGeometry(paintBounds));
         if (cutout.Width > 0) clip.Children.Add(new RectangleGeometry(cutout));
         Clip = clip;
         InvalidateVisual();

@@ -22,6 +22,10 @@ internal sealed class FullScreenSearchBarLayout : ExpandedSearchBarLayout
     public double InputTopPadding { get => GetValue(InputTopPaddingProperty); set => SetValue(InputTopPaddingProperty, value); }
     private Rect _surfaceBounds, _inputBounds, _contentBounds;
     private IDisposable? _shape, _alpha, _surfaceAlpha;
+    private IDisposable? _pathContribution;
+    private FullScreenSearchShape? _transitionShape;
+    private bool _shapeRemembered;
+    private double _shapeDensity;
     protected override bool BypassFlowDirectionPolicies => true;
     static FullScreenSearchBarLayout() => AffectsMeasure<FullScreenSearchBarLayout>(DefaultInputWidthProperty, DefaultInputHeightProperty, VerticalPaddingProperty, InputHorizontalPaddingProperty, InputTopPaddingProperty);
 
@@ -71,6 +75,17 @@ internal sealed class FullScreenSearchBarLayout : ExpandedSearchBarLayout
             (offsetY + topPadding) / scale, inputWidth / scale, collapsedHeight / scale);
         _contentBounds = new Rect(offsetX / scale, (offsetY + topPadding + collapsedHeight + bottomPadding) / scale,
             width / scale, content.DesiredSize.Height);
+        // remember(density, fullScreenShape) intentionally captures collapsedShape, while
+        // the input's separate template binding always uses the current collapsed shape.
+        if (!_shapeRemembered || _shapeDensity != scale)
+        {
+            _transitionShape?.Dispose();
+            _transitionShape = owner.Shape is { } collapsedShape ? new FullScreenSearchShape(collapsedShape) : null;
+            _shapeRemembered = true; _shapeDensity = scale;
+            _pathContribution?.Dispose();
+            _pathContribution = surface.SetValue(MaterialSurface.ShapeProperty, _transitionShape, BindingPriority.Animation);
+        }
+        if (_transitionShape is { } path) path.Expanded = Inputs.Progress >= .5f;
         // The default full shape is the repository's percentage-radius sentinel. Custom corners
         // switch at .5, as upstream only interpolates the identity CircleShape -> RectangleShape pair.
         var corners = owner.CornerRadius == new CornerRadius(1000)
@@ -92,6 +107,8 @@ internal sealed class FullScreenSearchBarLayout : ExpandedSearchBarLayout
     {
         _shape?.Dispose(); _shape = null; _alpha?.Dispose(); _alpha = null;
         _surfaceAlpha?.Dispose(); _surfaceAlpha = null;
+        _pathContribution?.Dispose(); _pathContribution = null;
+        _transitionShape?.Dispose(); _transitionShape = null; _shapeRemembered = false;
         base.OnDetachedFromVisualTree(e);
     }
 }

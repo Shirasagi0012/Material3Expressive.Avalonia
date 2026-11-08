@@ -369,6 +369,7 @@
 - **依据与授权**：本轮剩余移植任务明确授权必要共享能力。固定 AndroidX/Core 的 MultiAspectCarousel.MaskShape 总是产生 Outline.Generic，即使输入是圆角形状。Border.kt 的该分支采用离屏双宽描边，再稍微放大反向路径并清除外侧笔画；现有 SurfaceOutline 的圆角直接描边不能替代此算法。
 - **决定**：SurfaceOutline 增加内部显式 UsePathOutline，复用 Foundation/Rendering/PathBorderMask 生成物理像素 alpha 遮罩，纯色描边按上游方式着色并直接裁取位图，其他画笔通过 opacity mask 绘制。保留 BorderCache 对原始布局尺寸与路径尺寸的不同处理，缩小时复用较大缓冲区；缓存键包含实际/原始尺寸、圆角、描边、density、颜色和填充模式，卸载释放位图。PathLayoutSize 保留原始布局尺寸对描边上限的影响。
 - **范围与影响**：当前仅 Carousel 的圆角 MaskShape 开启此分支；普通 Surface 和其他调用方不改变默认路径、布局或公开 API，无仓内调用迁移。它不是任意 Shape API。颜色与画笔透明度只施加一次；复杂画笔及第三方渲染后端仍需专项验证。
+- **范围扩展（2026-11-08 本轮授权）**：原限制源于当时没有公共 MaterialShape，理由保留。两类 Carousel 现接入 §35 的既有形状入口，任意遮罩边框直接消费 SurfaceOutline.ShapePath，使用完整项目布局盒及平移后的路径，保留同一 Generic Border 算法，无共享绘制实现变更。传统 CornerRadius 分支继续有效，无破坏性迁移。形状记忆与 NonZero 组合规则属于组件，见 Carousel INTERNALS。
 - **验证**：真实双端边框用例原最大降采样通道差 48，新增上游路径后通过既有容差；没有更改基准或放宽门禁。
 
 

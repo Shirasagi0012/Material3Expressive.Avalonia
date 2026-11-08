@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -9,6 +10,10 @@ namespace Material3Expressive.Components;
 /// <summary>The collapsed search surface and anchor for an expanded search presentation.</summary>
 public class SearchBar : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<SearchBar>();
+    /// <summary>Explicit search outline; null uses CornerRadius. Full-screen variants use this as the collapsed shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<SearchBarState?> StateProperty = AvaloniaProperty.Register<SearchBar, SearchBarState?>(nameof(State));
     public static readonly StyledProperty<double> TonalElevationProperty = MaterialSurface.TonalElevationProperty.AddOwner<SearchBar>();
     public static readonly StyledProperty<double> ShadowElevationProperty = MaterialSurface.ShadowElevationProperty.AddOwner<SearchBar>();

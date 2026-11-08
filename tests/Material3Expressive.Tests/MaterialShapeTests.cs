@@ -43,7 +43,7 @@ public class MaterialShapeTests
             Assert.Equal(surface.Bounds.Height / 2, surface.EffectiveCornerRadius.TopLeft);
             chip.IsSelected = false;
             for (var i = 0; i < 30; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
-            Assert.Equal(chip.Shapes!.Shape.TopLeft, surface.EffectiveCornerRadius.TopLeft);
+            Assert.Equal(CornerShape.FromMaterialShape(chip.Shapes!.Shape)!.Resolve(surface.Bounds.Size).TopLeft, surface.EffectiveCornerRadius.TopLeft);
         }
         finally { window.Close(); }
         Assert.Equal(0, clock.PendingFrameCount);

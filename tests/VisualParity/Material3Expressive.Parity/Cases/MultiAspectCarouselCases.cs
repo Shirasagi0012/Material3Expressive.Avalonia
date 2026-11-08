@@ -12,7 +12,7 @@ namespace Material3Expressive.Parity;
 
 public sealed record MultiAspectCarouselConfig(bool Vertical = false, bool Rtl = false,
     double ItemSize = 120, double CrossSize = 90, double Offset = 40, double Radius = 16,
-    double Border = 0, string Action = "none", bool Grid = false);
+    double Border = 0, string Action = "none", bool Grid = false, string Shape = "none");
 
 [ParitySuite("multi-aspect-carousel")]
 public sealed class MultiAspectCarouselCases
@@ -53,7 +53,7 @@ public sealed class MultiAspectCarouselCases
     [ParityScenario("dynamic", Data = nameof(DynamicConfigurations))]
     public Task Dynamic(CaptureWriter writer) => Capture(writer);
 
-    private static async Task Capture(CaptureWriter writer)
+    internal static async Task Capture(CaptureWriter writer)
     {
         var config = writer.Metadata.ReadConfig<MultiAspectCarouselConfig>();
         await using var host = new AvaloniaHost(writer, 380, 380, new ManualTimeProvider());
@@ -64,6 +64,7 @@ public sealed class MultiAspectCarouselCases
             Orientation = config.Vertical ? Orientation.Vertical : Orientation.Horizontal,
             UseItemCrossAxisSize = config.Grid,
             CornerRadius = new(config.Radius), BorderBrush = Brushes.Black, BorderThickness = new(config.Border),
+            Shape = config.Shape == "none" ? null : MaterialShapeCases.CreateShape(config.Shape),
             Content = new Marker(index),
         }).ToArray();
         var stack = new StackPanel { Orientation = config.Vertical ? Orientation.Vertical : Orientation.Horizontal, Spacing = 8 };
@@ -83,6 +84,7 @@ public sealed class MultiAspectCarouselCases
         var cross = config.Grid ? config.CrossSize * 2 + 8 : config.CrossSize;
         var viewer = new ScrollViewer
         {
+            ClipToBounds = false,
             Width = config.Vertical ? cross : 300, Height = config.Vertical ? 300 : cross,
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
@@ -92,7 +94,10 @@ public sealed class MultiAspectCarouselCases
             // Native physical presenter: the component observes actual UI layout, not compositor-only offsets.
             Template = new FuncControlTemplate<ScrollViewer>((owner, scope) => new ScrollContentPresenter
             {
-                Name = "PART_ContentPresenter", Content = owner.Content, ClipToBounds = true,
+                // Foundation ClipScrollableContainer clips the scrolling axis and allows 30dp
+                // cross-axis elevation overflow. A rectangular clip hid oversized Shape paths.
+                Name = "PART_ContentPresenter", Content = owner.Content, ClipToBounds = false,
+                Clip = new RectangleGeometry(config.Vertical ? new Rect(-30, 0, cross + 60, 300) : new Rect(0, -30, 300, cross + 60)),
                 CanHorizontallyScroll = !config.Vertical, CanVerticallyScroll = config.Vertical,
                 [!ScrollContentPresenter.OffsetProperty] = owner[!ScrollViewer.OffsetProperty],
             }.RegisterInNameScope(scope)),
@@ -127,6 +132,7 @@ public sealed class MultiAspectCarouselCases
             if (config.Action == "resize") foreach (var item in items)
             { if (config.Vertical) item.Height = 100 + value; else item.Width = 100 + value; }
             if (config.Action == "shape") foreach (var item in items) item.CornerRadius = new(value / 2);
+            if (config.Action == "replace-shape") foreach (var item in items) item.Shape = MaterialShapeCases.CreateShape(value > 40 ? "round-percent" : "percent");
             host.Draw(); host.Frame(time); Sample($"time-{time}");
         }
     }

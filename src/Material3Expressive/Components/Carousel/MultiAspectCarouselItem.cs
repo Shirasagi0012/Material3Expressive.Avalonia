@@ -12,6 +12,9 @@ namespace Material3Expressive.Components;
 /// <summary>Clips and parallaxes content at a scrolling viewport's edges without changing its layout size.</summary>
 public class MultiAspectCarouselItem : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<MultiAspectCarouselItem>();
+    /// <summary>Optional logical mask shape. Null uses CornerRadius; an active border remembers its initial shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<Control?> ViewportProperty =
         AvaloniaProperty.Register<MultiAspectCarouselItem, Control?>(nameof(Viewport));
     public static readonly StyledProperty<Orientation> OrientationProperty =
@@ -38,12 +41,18 @@ public class MultiAspectCarouselItem : ContentControl
     private SurfaceOutline? _outline;
     private readonly TranslateTransform _translation = new();
     private ScrollViewer? _viewer;
-    private CornerRadius? _rememberedBorderCorners;
+    private readonly CarouselMaskShape _maskShape, _borderShape;
+
+    public MultiAspectCarouselItem()
+    {
+        _maskShape = new(UpdateMask);
+        _borderShape = new(UpdateMask);
+    }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
-        _rememberedBorderCorners = null;
+        _maskShape.Reset(); _borderShape.Reset();
         _mask = e.NameScope.Find<Border>("PART_Mask");
         _content = e.NameScope.Find<ContentPresenter>("PART_ContentPresenter");
         _outline = e.NameScope.Find<SurfaceOutline>("PART_Outline");
@@ -57,6 +66,7 @@ public class MultiAspectCarouselItem : ContentControl
         LayoutUpdated += LayoutChanged;
         _viewer = this.GetVisualAncestors().OfType<ScrollViewer>().FirstOrDefault();
         if (_viewer is not null) _viewer.ScrollChanged += ScrollChanged;
+        UpdateMask();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -64,7 +74,7 @@ public class MultiAspectCarouselItem : ContentControl
         LayoutUpdated -= LayoutChanged;
         if (_viewer is not null) _viewer.ScrollChanged -= ScrollChanged;
         _viewer = null;
-        _rememberedBorderCorners = null;
+        _maskShape.Reset(); _borderShape.Reset();
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -73,7 +83,7 @@ public class MultiAspectCarouselItem : ContentControl
         base.OnPropertyChanged(change);
         if (change.Property == ViewportProperty || change.Property == OrientationProperty ||
             change.Property == UseItemCrossAxisSizeProperty || change.Property == DrawInfoProperty ||
-            change.Property == CornerRadiusProperty || change.Property == FlowDirectionProperty ||
+            change.Property == CornerRadiusProperty || change.Property == ShapeProperty || change.Property == FlowDirectionProperty ||
             change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty)
             UpdateMask();
     }
@@ -83,7 +93,7 @@ public class MultiAspectCarouselItem : ContentControl
 
     private void UpdateMask()
     {
-        if (_mask is null || _content is null || _outline is null) return;
+        if (_mask is null || _content is null || _outline is null || !this.IsAttachedToVisualTree()) return;
         var horizontal = Orientation == Orientation.Horizontal;
         var viewport = Viewport ?? _viewer?.GetVisualDescendants().OfType<Control>()
             .FirstOrDefault(control => control.Name == "PART_ContentPresenter" && control.TemplatedParent == _viewer);
@@ -109,21 +119,26 @@ public class MultiAspectCarouselItem : ContentControl
             ? new Rect(ActualDrawInfo.MaskStart, 0, ActualDrawInfo.Size, size.Height)
             : new Rect(0, ActualDrawInfo.MaskStart, size.Width, ActualDrawInfo.Size);
         if (rect.Width < 0 || rect.Height < 0) return;
-        _mask.Clip = RoundedRectangleGeometry.Create(rect, CornerRadius);
+        var density = LayoutHelper.GetLayoutScale(this);
+        _maskShape.Configure(Shape, CornerRadius, remember: false);
+        _mask.Clip = _maskShape.Geometry(rect, FlowDirection, density, size);
         // MaskParallaxNode draws in physical coordinates even for a logical RTL lazy-list offset.
         // The mask bypasses automatic mirroring; content retains its inherited layout direction.
         _translation.X = horizontal ? ActualDrawInfo.Parallax : 0;
         _translation.Y = horizontal ? 0 : ActualDrawInfo.Parallax;
-        _outline.Width = rect.Width;
-        _outline.Height = rect.Height;
+        if (BorderBrush is null || BorderThickness == default) _borderShape.Reset();
+        else _borderShape.Configure(Shape, CornerRadius, remember: true);
+        if (_borderShape.HasShape && !BorderThickness.IsUniform)
+            throw new InvalidOperationException("MaterialShape borders require uniform BorderThickness.");
+        _outline.Width = _borderShape.HasShape ? size.Width : rect.Width;
+        _outline.Height = _borderShape.HasShape ? size.Height : rect.Height;
         _outline.PathLayoutSize = size;
         _outline.PathBounds = rect;
-        _outline.RenderTransform = new TranslateTransform(rect.X, rect.Y);
+        _outline.RenderTransform = _borderShape.HasShape ? null : new TranslateTransform(rect.X, rect.Y);
         // maskBorder remembers MaskShape without shape keys; maskClip updates its shape.
         // Preserve that distinction rather than silently fixing the fixed upstream behavior.
-        if (BorderBrush is null || BorderThickness == default) _rememberedBorderCorners = null;
-        else _rememberedBorderCorners ??= CornerRadius;
-        _outline.CornerRadius = _rememberedBorderCorners ?? CornerRadius;
+        _outline.ShapePath = _borderShape.HasShape ? _borderShape.Geometry(rect, FlowDirection, density, size) : null;
+        _outline.CornerRadius = _borderShape.Corners;
     }
 }
 

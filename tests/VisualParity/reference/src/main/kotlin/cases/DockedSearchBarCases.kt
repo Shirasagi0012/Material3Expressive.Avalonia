@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
 
 @Serializable data class DockedSearchBarConfig(val expanded:Boolean=false,val dark:Boolean=false,val rtl:Boolean=false,
-    val hostWidth:Int=420,val hostHeight:Int=600,val contentHeight:Double=40.0,val action:String="none")
+    val hostWidth:Int=420,val hostHeight:Int=600,val contentHeight:Double=40.0,val action:String="none",val shape:String="none")
 
 @ParitySuite("docked-search-bar")
 class DockedSearchBarCases {
@@ -46,7 +46,7 @@ class DockedSearchBarCases {
                                     Box(input.modifier().fillMaxWidth().height(56.dp),contentAlignment=Alignment.CenterStart) {
                                         Box(Modifier.padding(horizontal=16.dp).size(24.dp).background(Color.Magenta))
                                     }
-                                },expanded=expanded,onExpandedChange={requests++;expanded=it},modifier=bar.modifier()) {
+                                },expanded=expanded,onExpandedChange={requests++;expanded=it},modifier=bar.modifier(),shape=if(c.shape!="none")carouselTestShape(c.shape)else SearchBarDefaults.dockedShape) {
                                     Box(content.modifier().fillMaxWidth().height(contentHeight.toFloat().dp).background(Color.Blue))
                                 }
                             }

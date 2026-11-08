@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using System;
 using System.Linq;
 using Avalonia.Controls;
@@ -73,6 +74,18 @@ public partial class ExpandedSearchBarDemo : Window
         Status.Text = $"已选择：{name}"; Query.Text = name; _ = State.AnimateToCollapsedAsync();
     }
     private void SearchSubmitted(object? sender, RoutedEventArgs e) => Select(Query.Text ?? "");
+    private void ToggleShape(object? sender, RoutedEventArgs e)
+    {
+        MaterialShape? shape = CollapsedSearch.Shape is null ? new CutCornerShape { TopStart = new(20, Avalonia.RelativeUnit.Absolute), BottomEnd = new(20, Avalonia.RelativeUnit.Absolute) } : null;
+        CollapsedSearch.Shape = SearchAnchor.Shape = Query.Shape = shape;
+        foreach (var popup in Root.Children.OfType<ExpandedDockedSearchBar>())
+        {
+            popup.Shape = shape;
+            if (popup is ExpandedDockedSearchBarWithGap gap)
+                gap.DropdownShape = shape is null ? null : new CutCornerShape(12);
+        }
+        Status.Text = shape is null ? "已恢复默认形状" : "已设置切角；打开搜索可查看展开形状与焦点环";
+    }
     private void ToggleFocusFeedback(object? sender, RoutedEventArgs e) => MaterialInteraction.SetFocusFeedback(Root,
         MaterialInteraction.GetFocusFeedback(Root) == FocusFeedback.InsetRing ? FocusFeedback.Opacity : FocusFeedback.InsetRing);
     private void ToggleTheme(object? sender, RoutedEventArgs e) => RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;

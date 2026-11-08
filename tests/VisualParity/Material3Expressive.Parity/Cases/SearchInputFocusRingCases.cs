@@ -9,7 +9,7 @@ using Material3Expressive.Foundation.Interaction;
 namespace Material3Expressive.Parity;
 
 public sealed record SearchInputFocusRingConfig(bool Dark = false, bool Rtl = false, bool Asymmetric = false,
-    bool Custom = false, string Action = "focus", bool ReadOnly = false);
+    bool Custom = false, string Action = "focus", bool ReadOnly = false, string Shape = "none");
 
 [ParitySuite("search-input-focus-ring")]
 public sealed class SearchInputFocusRingCases
@@ -41,6 +41,7 @@ public sealed class SearchInputFocusRingCases
         var source = new MaterialInteractionSource();
         var field = new SearchBarInputField { State = new(), InteractionSource = source, IsReadOnly = c.ReadOnly, Width = 360, Height = 56,
             FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        if (c.Shape != "none") field.Shape = MaterialShapeCases.CreateShape(c.Shape);
         if (c.Asymmetric) field.CornerRadius = new(24, 8, 0, 16);
         MaterialInteraction.SetFocusFeedback(field, FocusFeedback.InsetRing);
         if (c.Custom)

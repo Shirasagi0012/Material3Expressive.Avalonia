@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
 data class CarouselConfig(val variant:String="MultiBrowse",val rtl:Boolean=false,val count:Int=8,
     val item:Int=0,val width:Double=320.0,val itemWidth:Double=160.0,val spacing:Double=8.0,
     val before:Double=0.0,val after:Double=0.0,val radius:Double=16.0,val action:String="none",val border:Double=0.0,
-    val mode:String="Default",val velocity:Double=0.0,val offset:Double=0.0,val observeRealization:Boolean=false,val autoHeight:Boolean=false)
+    val mode:String="Default",val velocity:Double=0.0,val offset:Double=0.0,val observeRealization:Boolean=false,val autoHeight:Boolean=false,val shape:String="none")
 
 @ParitySuite("carousel")
 class CarouselCases {
@@ -63,6 +63,7 @@ class CarouselCases {
             lateinit var scope:CoroutineScope
             lateinit var fling:TargetedFlingBehavior
             var radius by mutableStateOf(c.radius)
+            var shapeKind by mutableStateOf(c.shape)
             var viewportWidth by mutableStateOf(c.width)
             var enabled by mutableStateOf(c.action!="semantics-disabled" && c.action!="wheel-disabled" && c.action!="key-disabled" && c.action!="focus-disabled" && c.action!="focus-shrink-disabled")
             host.mount {
@@ -80,7 +81,7 @@ class CarouselCases {
                             val content:@Composable CarouselItemScope.(Int)->Unit = { index ->
                                 infos[index]=carouselItemDrawInfo
                                 DisposableEffect(index) { onDispose { infos.remove(index) } }
-                                val shape=RoundedCornerShape(radius.toFloat().dp)
+                                val shape=if(shapeKind=="none")RoundedCornerShape(radius.toFloat().dp) else carouselTestShape(shapeKind)
                                 var itemModifier=if(c.autoHeight)Modifier.fillMaxWidth().height(if(index<10)40.dp else 90.dp) else Modifier.fillMaxSize()
                                 if(c.action.startsWith("key-") || c.action.startsWith("focus-"))itemModifier=itemModifier.focusRequester(requesters[index]).focusable()
                                 if(c.action.startsWith("nav-") && (c.action!="nav-sparse" || index%3==0))
@@ -234,6 +235,7 @@ class CarouselCases {
             }
             host.advanceTo(16000)
             if(c.action=="shape")radius=40.0
+            else if(c.action=="replace-shape")shapeKind="percent"
             else if(c.action=="fling")scope.launch { state.scroll(MutatePriority.Default) { with(fling) { performFling((c.velocity*d).toFloat()) } } }
             else if(c.action.startsWith("semantics-"))paging()?.let { config ->
                 val action=if(c.action=="semantics-previous")SemanticsActions.PageLeft else SemanticsActions.PageRight

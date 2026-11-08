@@ -22,14 +22,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MultiAspectCarouselConfig(val vertical:Boolean=false,val rtl:Boolean=false,
     val itemSize:Double=120.0,val crossSize:Double=90.0,val offset:Double=40.0,val radius:Double=16.0,
-    val border:Double=0.0,val action:String="none",val grid:Boolean=false)
+    val border:Double=0.0,val action:String="none",val grid:Boolean=false,val shape:String="none")
 
 @ParitySuite("multi-aspect-carousel")
 class MultiAspectCarouselCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer)
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter)=capture(writer)
 
-    private suspend fun capture(writer:CaptureWriter) {
+    suspend fun capture(writer:CaptureWriter) {
         val config=writer.readConfig<MultiAspectCarouselConfig>()
         ComposeHost(writer,380,380).use { host ->
             val d=ComposeHost.RenderScale.toFloat()
@@ -39,13 +39,14 @@ class MultiAspectCarouselCases {
             val viewport=Probe()
             var main by mutableStateOf(config.itemSize)
             var radius by mutableStateOf(config.radius)
+            var shapeKind by mutableStateOf(config.shape)
             host.mount {
                 MaterialTheme {
                     Box(Modifier.fillMaxSize().background(Color.White).padding(24.dp)) {
                         CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                             MultiAspectCarouselScope {
                                 val itemContent:@Composable (Int)->Unit = { index ->
-                                        val shape=RoundedCornerShape(radius.toFloat().dp)
+                                        val shape=if(shapeKind=="none")RoundedCornerShape(radius.toFloat().dp) else carouselTestShape(shapeKind)
                                         var modifier=Modifier.size(
                                             (if(config.vertical)config.crossSize else main).toFloat().dp,
                                             (if(config.vertical)main else config.crossSize).toFloat().dp)
@@ -97,6 +98,7 @@ class MultiAspectCarouselCases {
             for((time,value) in listOf(16000L to 20.0,32000L to 80.0,48000L to 140.0,64000L to 40.0,80000L to 0.0)) {
                 host.advanceTo(time)
                 when(config.action) { "scroll" -> scroll(value); "resize" -> main=100+value; "shape" -> radius=value/2 }
+                if(config.action=="replace-shape")shapeKind=if(value>40)"round-percent" else "percent"
                 host.draw();host.frame(time);sample("time-$time")
             }
         }

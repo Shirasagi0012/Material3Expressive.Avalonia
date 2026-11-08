@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 // SearchBar.kt / ExpandedDockedSearchBarWithGap and DockedSearchBarLayout.
 // Copyright 2026 The Android Open Source Project; Apache-2.0.
 using Avalonia;
@@ -17,6 +18,8 @@ namespace Material3Expressive.Components;
 /// <summary>A docked search popup with separate input and results surfaces and an optional scrim.</summary>
 public class ExpandedDockedSearchBarWithGap : ExpandedDockedSearchBar
 {
+    public static readonly StyledProperty<MaterialShape?> DropdownShapeProperty = AvaloniaProperty.Register<ExpandedDockedSearchBarWithGap, MaterialShape?>(nameof(DropdownShape));
+    public MaterialShape? DropdownShape { get => GetValue(DropdownShapeProperty); set => SetValue(DropdownShapeProperty, value); }
     public static readonly StyledProperty<CornerRadius> DropdownCornerRadiusProperty =
         AvaloniaProperty.Register<ExpandedDockedSearchBarWithGap, CornerRadius>(nameof(DropdownCornerRadius));
     public static readonly StyledProperty<double> DropdownGapSizeProperty =

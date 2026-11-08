@@ -248,7 +248,7 @@ public class ChipTests
     {
         var fixture = (StackPanel)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive.Tests/Fixtures/ChipConfiguration.axaml"));
         var chip = Assert.IsType<FilterChip>(fixture.Children.Single());
-        Assert.Equal(new CornerRadius(16), chip.Shapes!.SelectedShape);
+        Assert.Equal(new CornerRadius(16), CornerShape.FromMaterialShape(chip.Shapes!.SelectedShape)!.Resolve(default));
         Assert.Equal(new ChipSpacing(4, 8), chip.Spacing);
         Assert.Equal(4, chip.Elevation!.Hovered);
         fixture.Children.Remove(chip);

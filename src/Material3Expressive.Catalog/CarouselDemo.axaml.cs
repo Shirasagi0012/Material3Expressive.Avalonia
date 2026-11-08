@@ -12,6 +12,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using ComposeAnimation;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Catalog;
 
@@ -31,6 +32,9 @@ public partial class CarouselDemo : Window
             carousel.Items.Add(new CarouselItem
             {
                 CornerRadius = new(24), Background = new[] { Brushes.CornflowerBlue, Brushes.Coral, Brushes.DarkSeaGreen, Brushes.Plum }[i % 4],
+                Shape = i % 3 == 0 ? new CutCornerShape { TopStart = new(40, RelativeUnit.Absolute), BottomEnd = new(24, RelativeUnit.Absolute) }
+                    : i % 3 == 1 ? new RoundedCornerShape(new RelativeScalar(.3, RelativeUnit.Relative)) : null,
+                BorderBrush = Brushes.Purple, BorderThickness = new(2),
                 Content = new StackPanel { Margin = new(24), Spacing = 12, Children =
                 {
                     new TextBlock { Text = $"Destination {i + 1}", FontSize = 24 },
@@ -73,6 +77,12 @@ public partial class CarouselDemo : Window
     {
         foreach (var item in HorizontalItems.Children.Concat(VerticalItems.Children).OfType<MultiAspectCarouselItem>())
             item.CornerRadius = item.CornerRadius.TopLeft == 0 ? new(24) : default;
+    }
+    private void TogglePathShape(object? sender, RoutedEventArgs e)
+    {
+        foreach (var item in HorizontalItems.Children.Concat(VerticalItems.Children).OfType<MultiAspectCarouselItem>())
+            item.Shape = item.Shape is CutCornerShape ? new RoundedCornerShape(new RelativeScalar(.5, RelativeUnit.Relative))
+                : new CutCornerShape { TopStart = new(.5, RelativeUnit.Relative), BottomEnd = new(.25, RelativeUnit.Relative) };
     }
     private async void PreviousClassic(object? sender, RoutedEventArgs e) => await MoveClassic(-1);
     private async void NextClassic(object? sender, RoutedEventArgs e) => await MoveClassic(1);

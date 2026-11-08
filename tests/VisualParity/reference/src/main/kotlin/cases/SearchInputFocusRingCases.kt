@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
 
 @Serializable data class SearchInputFocusRingConfig(val dark:Boolean=false,val rtl:Boolean=false,val asymmetric:Boolean=false,
-    val custom:Boolean=false,val action:String="focus",val readOnly:Boolean=false)
+    val custom:Boolean=false,val action:String="focus",val readOnly:Boolean=false,val shape:String="none")
 
 @ParitySuite("search-input-focus-ring")
 class SearchInputFocusRingCases {
@@ -35,7 +35,7 @@ class SearchInputFocusRingCases {
                         Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
                             SearchBarDefaults.InputField(textFieldState=remember{TextFieldState()},searchBarState=rememberSearchBarState(),onSearch={},
                                 modifier=input.modifier().size(360.dp,56.dp),interactionSource=source,readOnly=c.readOnly,
-                                shape=if(c.asymmetric)AbsoluteRoundedCornerShape(24.dp,8.dp,0.dp,16.dp)else SearchBarDefaults.inputFieldShape,
+                                shape=if(c.shape!="none")carouselTestShape(c.shape)else if(c.asymmetric)AbsoluteRoundedCornerShape(24.dp,8.dp,0.dp,16.dp)else SearchBarDefaults.inputFieldShape,
                                 placeholder={Box(Modifier.size(48.dp,16.dp).background(Color.Blue))})
                         }
                     }

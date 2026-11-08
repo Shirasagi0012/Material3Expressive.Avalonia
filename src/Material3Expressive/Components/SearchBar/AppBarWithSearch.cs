@@ -12,6 +12,10 @@ namespace Material3Expressive.Components;
 /// <summary>A top app bar containing a search surface, navigation slot and action row.</summary>
 public class AppBarWithSearch : ItemsControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<AppBarWithSearch>();
+    /// <summary>Explicit search outline; null uses CornerRadius. Full-screen variants use this as the collapsed shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<SearchBarState?> StateProperty = SearchBar.StateProperty.AddOwner<AppBarWithSearch>();
     public static readonly StyledProperty<object?> InputFieldProperty = DockedSearchBar.InputFieldProperty.AddOwner<AppBarWithSearch>();
     public static readonly StyledProperty<IDataTemplate?> InputFieldTemplateProperty = DockedSearchBar.InputFieldTemplateProperty.AddOwner<AppBarWithSearch>();

@@ -23,6 +23,7 @@
       <Button Content="开启／禁用用户滚动" Click="ToggleUserScrolling" />
     </StackPanel>
     <TextBlock Text="Multi-browse" />
+    <TextBlock Text="项目交替使用非对称切角、百分比圆角和传统圆角；遮罩缩小时轮廓随之重算。" TextWrapping="Wrap" />
     <m3:HorizontalCarousel x:Name="MultiBrowse" Height="160" ItemWidth="250" ItemSpacing="12" />
     <Slider Minimum="0" Maximum="{Binding MaximumScrollOffset, ElementName=MultiBrowse}"
             Value="{Binding ScrollOffset, ElementName=MultiBrowse, Mode=TwoWay}" />
@@ -49,7 +50,9 @@
     <StackPanel Orientation="Horizontal" Spacing="12">
       <Button Content="LTR / RTL" Click="ToggleDirection" />
       <Button Content="圆角 / 直角" Click="ToggleShape" />
+      <Button Content="切角 / 百分比圆角" Click="TogglePathShape" />
     </StackPanel>
+    <TextBlock Text="路径切换立即更新内容遮罩；已经显示的边框保留最初形状。经典轮播的遮罩也保留初始形状，重新挂载时更新。" TextWrapping="Wrap" />
     <ScrollViewer x:Name="HorizontalViewer" Height="160" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
       <StackPanel x:Name="HorizontalItems" Orientation="Horizontal" Spacing="12">
         <m3:MultiAspectCarouselItem Width="260" Height="160" CornerRadius="24" Background="CornflowerBlue">

@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 data class ChipConfig(val kind:String="assist", val morph:Boolean=false, val selected:Boolean=false,
     val enabled:Boolean=true, val dark:Boolean=false, val icons:String="none", val rtl:Boolean=false,
     val width:Double?=null, val height:Double?=null, val contentWidth:Double=32.0, val contentHeight:Double=16.0,
-    val custom:String="none", val action:String="none")
+    val custom:String="none", val action:String="none", val shapeSet:String="none", val arrangement:String="default")
 
 @ParitySuite("chip")
 class ChipCases {
@@ -109,6 +109,11 @@ class ChipCases {
                     if(config.action=="reverse-selection") mutate(65000,"unselected") { scene.selected=false }
                     times(80000,160000,400000,800000)
                 }
+                "arrangement" -> {
+                    mutate(1000,"end"){scene.arrangementKind="end"};times(16000,64000)
+                    mutate(65000,"space-around"){scene.arrangementKind="spacearound"};times(80000,160000)
+                    mutate(161000,"default"){scene.arrangementKind="default"};times(176000,400000)
+                }
                 "theme" -> { mutate(1000,"dark") { scene.dark=true }; times(16000,80000,400000) }
                 "hover" -> {
                     event(1000,"move",center); sample("hover"); times(16000,64000,160000)
@@ -144,6 +149,7 @@ class ChipCases {
         var icons by mutableStateOf(config.icons)
         var height by mutableStateOf(config.height)
         var customShapes by mutableStateOf<ChipShapes?>(null)
+        var arrangementKind by mutableStateOf(config.arrangement)
         var clicks=0
         val probe=Probe()
         val labelProbe=Probe()
@@ -166,7 +172,15 @@ class ChipCases {
                         val avatar:(@Composable ()->Unit)?=if(icons.startsWith("avatar")) { { Marker(24.0,24.0) } } else null
                         val label:@Composable ()->Unit={ Marker(config.contentWidth,config.contentHeight,labelProbe.modifier()) }
                         val click:()->Unit={ clicks++; if(config.kind in listOf("filter","elevated-filter","input") && config.action!="request-only") selected=!selected }
-                        val arrangement=if(config.custom=="spacing") AssistChipDefaults.horizontalArrangement(6.dp)
+                        val arrangement=when(arrangementKind) {
+                            "start"->Arrangement.Start
+                            "end"->Arrangement.End
+                            "center"->Arrangement.Center
+                            "spacebetween"->Arrangement.SpaceBetween
+                            "spacearound"->Arrangement.SpaceAround
+                            "spaceevenly"->Arrangement.SpaceEvenly
+                            else->null
+                        } ?: if(config.custom=="spacing") AssistChipDefaults.horizontalArrangement(6.dp)
                             else if(config.morph) FilterChipDefaults.horizontalArrangement(leading!=null || avatar!=null,trailing!=null)
                             else AssistChipDefaults.horizontalArrangement()
                         val padding=if(config.custom=="spacing") PaddingValues(start=5.dp,top=2.dp,end=11.dp,bottom=4.dp)
@@ -207,7 +221,7 @@ class ChipCases {
                         val selectableElevation=if(config.custom=="source-elevation") SelectableChipElevation(2.dp,3.dp,4.dp,5.dp,9.dp,1.dp)
                             else if(config.kind=="input") InputChipDefaults.inputChipElevation()
                             else if(elevated) FilterChipDefaults.elevatedFilterChipElevation() else FilterChipDefaults.filterChipElevation()
-                        val shapes=customShapes ?: if(config.kind=="input") InputChipDefaults.shapes() else FilterChipDefaults.shapes()
+                        val shapes=customShapes ?: if(config.shapeSet!="none") chipTestShapes(config.shapeSet) else if(config.kind=="input") InputChipDefaults.shapes() else FilterChipDefaults.shapes()
                         when(config.kind) {
                             "assist","elevated-assist" -> AssistChip(click,label,modifier,enabled,leading,trailing,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)
                             "suggestion","elevated-suggestion" -> SuggestionChip(click,label,modifier,enabled,leading,colors=basicColors,elevation=basicElevation,border=border,horizontalArrangement=arrangement,contentPadding=padding,interactionSource=source)

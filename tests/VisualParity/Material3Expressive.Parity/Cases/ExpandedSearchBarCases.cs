@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record ExpandedSearchBarConfig(bool Expanded = true, bool Dark = false, bool Rtl = false,
     int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, double InputWidth = 360,
     double InputHeight = 56, bool Custom = false, string Action = "none", string Motion = "default", bool Anchor = true,
-    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false, bool AppBar = false);
+    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false, bool AppBar = false, string Shape = "none", string DropdownShape = "none", bool StableShapeDefaults = false);
 
 [ParitySuite("expanded-search-bar")]
 public sealed class ExpandedSearchBarCases
@@ -79,6 +79,13 @@ public sealed class ExpandedSearchBarCases
             appBar.Items.Add(new Border { Width = 48, Height = 48, Background = Brushes.Red });
         }
         ExpandedDockedSearchBar popup = c.Contained ? new ExpandedFullScreenContainedSearchBar() : c.FullScreen ? new ExpandedFullScreenSearchBar() : c.Gap ? new ExpandedDockedSearchBarWithGap() : new ExpandedDockedSearchBar();
+        if (c.Shape != "none")
+        {
+            bar.Shape = popup.Shape = MaterialShapeCases.CreateShape(c.Shape);
+            if (appBar is not null) appBar.Shape = bar.Shape;
+        }
+        if (c.DropdownShape != "none" && popup is ExpandedDockedSearchBarWithGap shapedGap)
+            shapedGap.DropdownShape = MaterialShapeCases.CreateShape(c.DropdownShape);
         popup.State = state; popup.InputField = input; popup.Content = results;
         if (popup is ExpandedFullScreenSearchBar full && c.Insets) full.WindowInsets = new(12, 20, 24, 16);
         if (popup is ExpandedDockedSearchBarWithGap gap)
@@ -132,6 +139,15 @@ public sealed class ExpandedSearchBarCases
         void At(params long[] times) { foreach (var time in times) { Advance(time); host.Draw(); Sample($"time-{time}"); } }
         Sample("initial");
         if (c.Action == "none") return;
+        if (c.Action == "replace-shape")
+        {
+            Change(1000, "partial", () => _ = state.SnapToAsync(.25f)); At(16000);
+            Change(17000, "replace-shape", () => bar.Shape = popup.Shape = MaterialShapeCases.CreateShape("percent")); At(32000);
+            Change(33000, "half", () => _ = state.SnapToAsync(.5f)); At(48000);
+            Change(49000, "reverse", () => _ = state.SnapToAsync(.25f)); At(64000);
+            Change(65000, "close", () => _ = state.SnapToAsync(0)); At(80000);
+            Change(81000, "reopen", () => _ = state.SnapToAsync(.25f)); At(96000); return;
+        }
         if (c.Action == "anchor")
         {
             Change(1000, "move", () => bar.Margin = new(32, 48, 0, 0)); At(16000);

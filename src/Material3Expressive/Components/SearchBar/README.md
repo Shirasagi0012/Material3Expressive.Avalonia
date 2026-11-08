@@ -104,6 +104,28 @@ FullScreenSearch.State = state;
 
 ## 变体与属性
 
+各搜索容器的 `Shape` 接受 `RoundedCornerShape`、`CutCornerShape` 或自定义 `MaterialShape`；
+null 使用原有 `CornerRadius`。`AppBarWithSearch.Shape` 定义内部搜索表面，
+`ExpandedDockedSearchBarWithGap.DropdownShape` 单独定义结果区，null 使用 `DropdownCornerRadius`。
+`SearchBarInputField.Shape` 同时定义输入背景和键盘焦点环，可与外部搜索表面独立配置。
+
+```xml
+<m3:SearchBar>
+  <m3:SearchBar.Shape><m3:CutCornerShape TopStart="20" BottomEnd="20" /></m3:SearchBar.Shape>
+  <m3:SearchBarInputField PlaceholderText="搜索">
+    <m3:SearchBarInputField.Shape><m3:CutCornerShape TopStart="20" BottomEnd="20" /></m3:SearchBarInputField.Shape>
+  </m3:SearchBarInputField>
+</m3:SearchBar>
+```
+
+全屏两种变体把 `Shape` 作为收起形状：输入裁剪始终跟随当前 Shape，动画表面在进度小于 0.5
+使用本次打开时记住的 Shape，达到 0.5 切换为矩形。运行中替换 Shape 不更新这个已记住的表面；
+关闭重开或密度变化后重新捕获。即使显式设置 50% 圆角，也按自定义形状分支处理；
+只有默认 Full 形状按上游从 28 DIP 连续收为矩形。Catalog 各搜索弹层示例提供“切角 / 默认形状”切换。
+
+已知边界：打开期间从默认 Shape 切为自定义 Shape，固定 Core 的表面更新与上述本地记忆行为仍有差异；
+关闭后设置并重新打开可重新捕获。切角之间的替换已验证；此默认到自定义的运行中迁移尚未达到双端一致。
+
 `MaterialInteraction.FocusFeedback="InsetRing"` 为新版输入启用键盘内缩焦点环；可继承容器配置，圆角跟随输入的 `CornerRadius`，描边颜色和尺寸沿用共享焦点环配置。Catalog 搜索弹层示例可切换焦点反馈。
 
 新版输入通过 `State` 配合独立弹层：Tab 聚焦保留收起状态，文本长度增加或按 ↓ 展开；已展开时 ↓ 将焦点移到下方建议。点击释放也会展开已聚焦输入，指针聚焦则立即展开。键盘模式收起保留焦点，指针模式收起后等待 100ms 清焦；重新展开会取消清焦。`IsReadOnly` 保留展开与导航，`IsEnabled=false` 阻止原生输入。`SearchRequested` 仍由应用处理，不自动收起。
@@ -171,7 +193,7 @@ interactions.Interaction += interaction => Debug.WriteLine(interaction.GetType()
 
 `SearchBarInputField.State` 非空时直接控制共享状态；`IsExpanded` 和 `ExpansionRequested` 仅在 `State=null` 时生效。输入字段用于无标签、无错误状态的单行搜索。`AppBarWithSearch` 尚未自动连接普通 `ScrollViewer` / SmoothScroll；上述显式回调需要宿主按真实嵌套滚动顺序调用。
 
-独立弹层采用可聚焦的窗口内桌面弹层，形状通过 `CornerRadius` 配置；目前不提供移动端软键盘抑制、自动键盘避让和预测返回手势。一个状态应配对同一窗口内一个收起表面和一个展开弹层。仅移动已存在的收起表面不会立即重定位静止弹层；重新打开或进度/窗口尺寸更新时读取最新位置。结果模板在弹层移除时释放，业务状态应保存在视图模型中。
+独立弹层采用可聚焦的窗口内桌面弹层，形状通过 `Shape` 或 `CornerRadius` 配置；目前不提供移动端软键盘抑制、自动键盘避让和预测返回手势。一个状态应配对同一窗口内一个收起表面和一个展开弹层。仅移动已存在的收起表面不会立即重定位静止弹层；重新打开或进度/窗口尺寸更新时读取最新位置。结果模板在弹层移除时释放，业务状态应保存在视图模型中。
 
 同一窗口存在多个展开的布尔 `DockedSearchBar` 时，Escape 请求交给视觉树中最后一个可见的容器，其结果在退出动画完成后移出视觉树。独立弹层则由当前顶层弹层处理 Escape。
 

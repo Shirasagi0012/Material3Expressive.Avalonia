@@ -12,7 +12,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 为逻辑依据，Core `a9e4
 | `getMask` / `getParallax` / `getMinSize` / `getMaskIntensity` | `MultiAspectCarouselItemDrawInfo.Calculate` |
 | `Strategy.kt lerp`、UI util `MathHelpers.kt lerp` | 有界输入及 Float 插值 |
 | `MultiAspectCarouselItemDrawInfo(index, LazyListState/LazyGridState)` | 实际视口测量 / `UseItemCrossAxisSize` / 显式 `DrawInfo` |
-| `MaskParallaxNode` / `MaskShape` / `maskBorder` | `MultiAspectCarouselItem` / `Carousel.axaml`，复用圆角路径和 SurfaceOutline |
+| `MaskParallaxNode` / `MaskShape` / `maskBorder` | `MultiAspectCarouselItem` / `CarouselMaskShape` / `Carousel.axaml`，复用 MaterialShape 和 SurfaceOutline |
 | `Arrangement` / `multiBrowseKeylineList` / `uncontainedKeylineList` / `heroKeylineList` | `CarouselArrangement` / `CarouselKeylines` |
 | `KeylineList` / `Strategy` / `getSnapPositionOffset` | `CarouselKeylineList` / `CarouselStrategy` |
 | 三种 Horizontal Carousel / `carouselItem` | `HorizontalCarousel.Variant` / `CarouselPanel` / `CarouselItem` |
@@ -88,12 +88,19 @@ Pager 的绝对页坐标与实际视口 offset 分开计算边界；无法复用
 容器查询由“全量存在”变为“仅当前实现页存在”；调用方应先 ScrollIntoView 再访问远处容器，仓内 Catalog 和布局测试已迁移。
 仍保留原公开滚动 API 与索引。自动预取、程序式二维焦点搜索及通用可保存页状态尚未移植，不能把视口虚拟化称为完整 Foundation Pager。
 
-**尚未实现**：设备专用触控板 Pan/惯性、嵌套滚动；任意路径 Shape；SmoothScroll 合成线程遮罩接入。
+**显式形状（2026-11-08 本轮授权）**：此前只开放圆角，因为尚无公共任意 Shape；现有 MaterialShape 和 SurfaceOutline 已具备所需能力，两类项目新增 Shape，无破坏性迁移。CarouselMaskShape 只负责上游 mask 轮廓的记忆、可观察实例订阅及路径快照，不增加形状动画或新公共框架。经典 mask/border 按 density 与挂载生命周期记忆，MultiAspect clip 随参数更新、border 记忆首次实例；卸载/模板重建释放订阅。两类固定上游文件的 AndroidX/Core blob 相同。
+
+显式路径按遮罩尺寸生成、按真实 FlowDirection 解析逻辑角，再平移到 mask 起点；CarouselMask 本身绕过 Avalonia 镜像，不重复反转路径。边框以原始布局尺寸运行已有 Generic 分支，保留粗描边判定、路径原点、缓存尺寸和反向擦除。MaskShape 的 addOutline 不复制源的 EvenOdd 填充，使用新路径默认 NonZero；MultiAspect 空路径回退完整矩形，经典 GenericShape 保留空路径。不能把这些规则改成 Surface 的直接路径消费规则。
+
+**尚未实现**：设备专用触控板 Pan/惯性、嵌套滚动；SmoothScroll 合成线程遮罩接入。
 滚轮共享抽取与设备元数据限制依据本轮授权，见 [共享决定 §33](../../../../docs/DECISIONS.md#33-pager-组件的桌面滚轮算法复用)。此前没有滚轮入口的原因是组件尚未连接桌面协议；现有 ScrollField 已提供同一固定 Core 算法，故复用而不另建引擎。无破坏性 API 迁移。
 
 **未经验证**：实际触屏、精确滚轮／触控板硬件、辅助技术、跨平台栅格、非均匀/非纯色描边以及第三方虚拟化宿主的适配。双端失败如实保留，不修改基准或容差。
 
 ## 4. 验证入口
+
+形状增量的 `CarouselShapeTests` 与既有 Carousel 行为测试共 82 项通过，Catalog 构建通过。双端 `carousel-shape-final` 覆盖 84 例，全部执行成功且重复捕获稳定；12 equal、68 withinTolerance、4 different。剩余为 CenteredHero、MultiBrowse 的非对称圆角 LTR/RTL，缩小后最大通道差达到 24（原门禁 20）；差异尚未接受，未改容差或删除用例。场景包括两轴、RTL、粗描边、滚动动画、尺寸变化和形状替换生命周期。
+新增超出布局尺寸的路径场景还发现经典 ContentControl 默认 ClipToBounds 不符合上游 shouldClip，已关闭该默认裁剪；实际遮罩仍由 PART_Clip 处理。MultiAspect 的测试宿主按固定 Foundation `ClipScrollableContainer.kt` 修正为主轴裁剪、交叉轴允许 30 DIP，替代原有两轴矩形裁剪；这是 Lazy 布局宿主约束对齐，未改参考路径或比较规则。
 
 2026-11-08 虚拟页与 Tab 搜索增量：相关 Carousel 行为测试 75 项通过，解决方案构建通过（5 项既有警告）。`carousel-focus-search-delivery` 的 24 例 / 600 个采样全部全等，重复捕获稳定、错误为零，覆盖三种布局、LTR/RTL、连续 Tab、反向、稀疏可聚焦页与桌面方向键不移动。已查看稀疏焦点页的双端图像。`carousel-virtual-regression` 原有 78 例 / 558 个采样通过原门禁。
 
@@ -154,6 +161,10 @@ Catalog 实际窗口已核验经典布局、前后导航、RTL 和 fling；辅�
 本地按主体几何可见性枚举，故该项读数缺失。图像一致，宿主可见项定义的边界如实记录，不以补造读数消除差异。
 先前边框失败已定位并修正为保留上游路径原点、缓存分配及末缘采样，失败产物保留；未修改基准或容差。
 Catalog 实际窗口核验了滚动、边缘遮罩和视差，外层滚动容器保证较矮窗口中的完整网格可达。
+
+2026-11-08 Shape 接入后的原套件回归 `multi-aspect-carousel-20261108-regression`：62 例全部稳定、
+无执行错误，44 equal、17 withinTolerance、1 notCompared；所有图像通过原门禁。
+notCompared 仍为上述 offset-250 可见项边界，不补造读数。此轮采用离屏双端采集，未重新进行真实窗口验收。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~MultiAspectCarouselTests

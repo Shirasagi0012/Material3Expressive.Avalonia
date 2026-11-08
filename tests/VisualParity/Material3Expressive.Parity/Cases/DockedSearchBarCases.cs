@@ -10,7 +10,7 @@ using static Material3Expressive.Tokens.MaterialTokens;
 namespace Material3Expressive.Parity;
 
 public sealed record DockedSearchBarConfig(bool Expanded = false, bool Dark = false, bool Rtl = false,
-    int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, string Action = "none");
+    int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, string Action = "none", string Shape = "none");
 
 [ParitySuite("docked-search-bar")]
 public sealed class DockedSearchBarCases
@@ -43,6 +43,7 @@ public sealed class DockedSearchBarCases
         var requests = 0;
         bar.CollapseRequested += (_, _) => { requests++; bar.IsExpanded = false; };
         var root = new Grid { Children = { bar } };
+        if (c.Shape != "none") bar.Shape = MaterialShapeCases.CreateShape(c.Shape);
         host.Mount(root); host.Frame(0);
         void Sample(string id)
         {

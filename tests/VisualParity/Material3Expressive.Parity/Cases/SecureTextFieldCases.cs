@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record SecureTextFieldConfig(bool Outlined = false, string Position = "Inside", bool Minimized = false,
     bool Label = true, bool Slots = false, bool Enabled = true, bool Error = false, bool Dark = false,
     bool Rtl = false, string Alignment = "Start", double? Width = null, double? Height = null,
-    double LabelWidth = 40, double LabelHeight = 12, string Action = "none");
+    double LabelWidth = 40, double LabelHeight = 12, string Action = "none", string Shape = "none");
 
 [ParitySuite("secure-text-field")]
 public sealed class SecureTextFieldCases
@@ -142,6 +142,7 @@ public sealed class SecureTextFieldCases
             if (config.Width is { } w) Box.Width = w;
             if (config.Height is { } h) Box.Height = h;
             Box.FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            if (config.Shape != "none") MaterialTextField.SetShape(Box, MaterialShapeCases.CreateShape(config.Shape));
             MaterialTextField.SetLabelPosition(Box, Enum.Parse<TextFieldLabelPosition>(config.Position));
             MaterialTextField.SetAlwaysMinimizeLabel(Box, config.Minimized);
             MaterialTextField.SetExpandedLabelAlignment(Box, Enum.Parse<TextFieldLabelAlignment>(config.Alignment));

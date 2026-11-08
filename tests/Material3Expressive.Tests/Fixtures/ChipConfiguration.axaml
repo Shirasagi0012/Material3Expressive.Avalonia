@@ -1,7 +1,11 @@
 <StackPanel xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <m3:FilterChip Content="Filter" IsSelected="True">
-    <m3:FilterChip.Shapes><m3:ChipShapes Shape="10" SelectedShape="16" PressedShape="6" /></m3:FilterChip.Shapes>
+    <m3:FilterChip.Shapes><m3:ChipShapes>
+      <m3:ChipShapes.Shape><m3:RoundedCornerShape TopStart="10" TopEnd="10" BottomEnd="10" BottomStart="10" /></m3:ChipShapes.Shape>
+      <m3:ChipShapes.SelectedShape><m3:RoundedCornerShape TopStart="16" TopEnd="16" BottomEnd="16" BottomStart="16" /></m3:ChipShapes.SelectedShape>
+      <m3:ChipShapes.PressedShape><m3:RoundedCornerShape TopStart="6" TopEnd="6" BottomEnd="6" BottomStart="6" /></m3:ChipShapes.PressedShape>
+    </m3:ChipShapes></m3:FilterChip.Shapes>
     <m3:FilterChip.Resources>
       <Color x:Key="{x:Static m3:MaterialTokens+Comp+Chip.SelectedContainerColor}">#126E60</Color>
     </m3:FilterChip.Resources>

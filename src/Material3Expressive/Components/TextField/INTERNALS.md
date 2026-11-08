@@ -56,6 +56,15 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea`；Core
 - Outlined 的描边复用现有内部 `SurfaceOutline`，按固定 `Border.kt` 对物理像素线宽取 ceil、
   处理小圆角及非对称内轮廓；原浮点 Pen 绘制在动画中产生了双端可见差异。
   描边节点排列在实际 ContainerBounds 内，不贡献 Padding；装饰层的真实缺口同时裁剪背景和描边。
+- 2026-11-08 依据本轮 API 自主实施授权补齐 `MaterialTextField.Shape`。固定 `TextFieldDefaults.kt`
+  的 `textFieldBackground` 保留原 outline FillRule；`IndicatorLineNode` 则先 `Path.addOutline`
+  到默认 NonZero 路径，再与底部线宽矩形求交。这里分别缓存背景和指示线路径，不把偶奇孔洞
+  误用于指示线。Rounded/Rectangle 描边仍走共享的专门分支，Generic 使用 `ShapePath`。
+  工厂按实际 ContainerBounds、方向、密度求轮廓；物理路径抵消原生 RTL 镜像，visual-only 描边
+  在显式 Shape 下同步装饰层方向，legacy CornerRadius 保留物理角语义。装饰裁剪包含路径的实际
+  范围，避免截掉超出容器的路径边框/搜索焦点环，标签缺口仍然生效。原生编辑内容不裁剪，
+  形状替换/修改只使绘制失效；detach 解除形状订阅。
+  无公开 API 迁移；SecureTextField 共用此容器，不扩大其原生编辑和安全能力声明。
 - 无障碍名称/帮助文字以 Style 优先级投影到原生 Automation 属性，应用的显式值优先；owner 保留原生 Edit / IValueProvider peer，不声称构建了 Compose 的完整 semantics 树
 - 共用排版通过 BodyLarge / BodySmall 聚合 Token；运动使用 FastSpatial / FastEffects / SlowEffects。共享能力的原因和限制引用相应文档，不在此复制决定
 
@@ -228,3 +237,8 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 
 ExposedDropdownMenuBox 在其可聚焦弹层存活期间保留 primary 字段的既有 FocusInteraction，
 以对应 Core 独立 popup focus owner。普通文本框不启用该标记；范围和清理见 [DECISIONS §28](../../../../docs/DECISIONS.md#28-exposeddropdownmenu-的字段焦点与同窗口弹层)。
+
+本轮随后扩展 Generic 装饰裁剪范围并保留 legacy 物理圆角方向后，`text-field-shape-20261108-regression`
+重跑 74 例仍为 39 equal、35 withinTolerance，全部重复稳定、无执行错误。
+
+2026-11-08 Shape 增量：`TextFieldShapeTests` 覆盖原生编辑器保留、逻辑角、动态轮廓、缺口与订阅生命周期；TextField/SecureTextField/Carousel 相关行为测试合计 200 项通过。双端 `text-field-shape-final` 的 74 例全部重复稳定、无执行错误，39 equal、35 withinTolerance。覆盖 Filled/Outlined、三种标签位置、RTL、两种 Secure 外观、切角/圆角百分比、偏移/曲线/孔洞/空路径，及错误、明暗、形状替换和焦点反向。焦点反向场景沿用现有套件只比结构化读数（原生光标时钟未虚拟化），其余请求的图像均通过原门禁。未作真实 IME/桌面辅助技术验收。

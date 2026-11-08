@@ -20,7 +20,7 @@ using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.Animated
 namespace Material3Expressive.Components;
 
 /// <summary>Shared Chip.kt content and surface composition. Click/Command requests an action.</summary>
-public abstract class Chip : Button
+public abstract partial class Chip : Button
 {
     public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<Chip>();
     /// <summary>An explicit fixed outline. When set, it takes precedence over the selectable chip's Shapes.</summary>
@@ -40,6 +40,10 @@ public abstract class Chip : Button
     public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<ChipSpacing> SpacingProperty = AvaloniaProperty.Register<Chip, ChipSpacing>(nameof(Spacing), new ChipSpacing(), validate: value => value is not null);
     public ChipSpacing Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
+    public static readonly StyledProperty<ChipHorizontalArrangement?> HorizontalArrangementProperty =
+        AvaloniaProperty.Register<Chip, ChipHorizontalArrangement?>(nameof(HorizontalArrangement));
+    /// <summary>Standard slot arrangement. Null uses the dedicated leading/trailing Spacing policy.</summary>
+    public ChipHorizontalArrangement? HorizontalArrangement { get => GetValue(HorizontalArrangementProperty); set => SetValue(HorizontalArrangementProperty, value); }
 
     public static readonly StyledProperty<IBrush?> LeadingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(LeadingIconColor));
     public IBrush? LeadingIconColor { get => GetValue(LeadingIconColorProperty); set => SetValue(LeadingIconColorProperty, value); }
@@ -68,8 +72,6 @@ public abstract class Chip : Button
     private ChipIconSlot? _trailing;
     private AnimationChildScope? _attachScope;
     private Animatable<float>? _elevation;
-    private AnimatedCornerRadius? _shape;
-    private (CornerRadius Shape, CornerRadius Selected, CornerRadius Pressed)? _shapeConfiguration;
     private InteractionState _lastElevationInteraction;
     private bool _pending;
     private CancellationTokenSource? _shapeEffect;
@@ -140,7 +142,7 @@ public abstract class Chip : Button
         void OnSurfaceBoundsChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
         {
             if (change.Property == BoundsProperty && _shape is { } shape)
-            { shape.Size = surface.Bounds.Size; surface.SetAnimatedCorners(shape.Current); }
+            { PaintShape(); }
         }
         surface.PropertyChanged += OnSurfaceBoundsChanged;
         motion.Lifetime.Register(() => surface.PropertyChanged -= OnSurfaceBoundsChanged);
@@ -156,8 +158,7 @@ public abstract class Chip : Button
         _elevationEffect?.Cancel(); _elevationEffect = null; _elevationTask = null;
         _elevationBinding?.Dispose(); _elevationBinding = null;
         _compositionCommit?.Dispose(); _compositionCommit = null;
-        _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
-        _surface?.SetAnimatedCorners(null);
+        StopShape();
         _elevation = null; _pending = false;
     }
 
@@ -169,7 +170,7 @@ public abstract class Chip : Button
             || change.Property == LeadingIconTemplateProperty || change.Property == TrailingIconTemplateProperty
             || change.Property == LeadingIconColorProperty || change.Property == TrailingIconColorProperty
             || change.Property == ForegroundProperty || change.Property == DisabledAvatarOpacityProperty
-            || change.Property == ShapeProperty || change.Property == ShapeAnimationProperty || change.Property == ElevationProperty || change.Property == SpacingProperty
+            || change.Property == ShapeProperty || change.Property == ShapeAnimationProperty || change.Property == ElevationProperty || change.Property == SpacingProperty || change.Property == HorizontalArrangementProperty
             || change.Property == IsEffectivelyEnabledProperty || change.Property == CornerRadiusProperty
             || change.Property == SelectableChip.IsSelectedProperty || change.Property == SelectableChip.ShapesProperty
             || change.Property == AssistChip.IsElevatedProperty || change.Property == FilterChip.IsElevatedProperty
@@ -248,6 +249,8 @@ public abstract class Chip : Button
             this is SuggestionChip ? null : TrailingIconTemplate,
             this is SelectableChip, false, 1, TrailingIconColor, this);
         _content.Spacing = Spacing;
+        _content.HorizontalArrangement = HorizontalArrangement;
+        ObserveShapes();
         if (MorphShapes is null) _surface.CornerRadius = CornerRadius;
         QueueTargets();
     }
@@ -305,51 +308,7 @@ public abstract class Chip : Button
         });
     }
 
-    private void RefreshShape(bool initial)
-    {
-        if (_surface is null || !this.IsAttachedToVisualTree() || _attachScope is not { } motion
-            || motion.Lifetime.IsCancellationRequested) return;
-        var shapes = MorphShapes;
-        if (shapes is null)
-        {
-            _shapeEffect?.Cancel(); _shapeEffect = null;
-            _shape?.Dispose(); _shape = null; _shapeConfiguration = null;
-            _surface.SetAnimatedCorners(null);
-            _surface.CornerRadius = CornerRadius;
-            return;
-        }
-        var pressed = _sourcePressed;
-        // key(shapes) uses ChipShapes' structural equality, including resolved theme defaults.
-        var configuration = (Shape: shapes.Shape, Selected: shapes.SelectedShape, Pressed: shapes.PressedShape);
-        var target = pressed ? configuration.Pressed : Selected ? configuration.Selected : configuration.Shape;
-        if (ShapeAnimation is not { } spec) return; // A resource-scope move may temporarily withdraw the theme input.
-        if (initial || _shapeConfiguration != configuration || _shape is null)
-        {
-            _shapeEffect?.Cancel(); _shapeEffect = null;
-            _shape?.Dispose(); _shapeConfiguration = configuration;
-            _shape = new AnimatedCornerRadius(target, spec, motion, () =>
-            {
-                if (_shape is { } shape && _surface is { } surface)
-                { shape.Size = surface.Bounds.Size; surface.SetAnimatedCorners(shape.Current); }
-            }) { Size = _surface.Bounds.Size };
-            _surface.SetAnimatedCorners(_shape.Current);
-        }
-        if (_shape.Target == target) return;
-        _shapeEffect?.Cancel();
-        var previous = _shapeTask;
-        _shapeTask = motion.Launch(async ct =>
-        {
-            if (previous is not null) { try { await previous; } catch (OperationCanceledException) { } }
-            using var effect = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            _shapeEffect = effect;
-            try
-            {
-                if (_shape is { } shape)
-                { shape.Size = _surface.Bounds.Size; await shape.AnimateToAsync(target, spec, effect.Token); }
-            }
-            finally { if (ReferenceEquals(_shapeEffect, effect)) _shapeEffect = null; }
-        }, "Chip shape");
-    }
+
 }
 
 public sealed class AssistChip : Chip

@@ -97,7 +97,7 @@ Leading/trailing 先测量，标签使用剩余宽度；RTL 自动镜像布局�
 ```
 
 显式 `Shape` 优先于 `Shapes` 和 `CornerRadius`，选择/按压不改变这个固定轮廓；颜色、间距、
-图标进入退出动画继续独立工作。清除 Shape 后恢复当前 Shapes 的圆角变形，无需修改主题默认值。
+图标进入退出动画继续独立工作。清除 Shape 后恢复当前 Shapes 的状态形变，无需修改主题默认值。
 百分比切角按当前容器短边计算，逻辑四角支持 RTL；边框须均匀厚度。路径契约见
 [Surface](../Surface/README.md)。Catalog 主窗口 Chip 区提供四类实例。
 
@@ -116,7 +116,11 @@ Filter/Input 的主题默认将 `UnselectedShape` / `SelectedShape` / `PressedSh
 ```xml
 <m3:FilterChip Content="收藏" IsSelected="True">
   <m3:FilterChip.Shapes>
-    <m3:ChipShapes Shape="12" SelectedShape="20" PressedShape="8" />
+    <m3:ChipShapes>
+      <m3:ChipShapes.Shape><m3:CutCornerShape TopStart="12" BottomEnd="12" /></m3:ChipShapes.Shape>
+      <m3:ChipShapes.SelectedShape><m3:CutCornerShape TopStart="50%" BottomEnd="50%" /></m3:ChipShapes.SelectedShape>
+      <m3:ChipShapes.PressedShape><m3:CutCornerShape TopStart="4" BottomEnd="4" /></m3:ChipShapes.PressedShape>
+    </m3:ChipShapes>
   </m3:FilterChip.Shapes>
   <m3:FilterChip.LeadingIcon>
     <m3:MaterialSymbol Symbol="Check" />
@@ -124,10 +128,35 @@ Filter/Input 的主题默认将 `UnselectedShape` / `SelectedShape` / `PressedSh
 </m3:FilterChip>
 ```
 
+三个形状均为 `RoundedCornerShape` / `CutCornerShape` 时使用弹簧：同族连续插值，圆/切角混合时
+按动画进度中点切换形状族；百分比随容器尺寸重新求值。任一状态为自定义 `MaterialShape` 时，
+整组禁用插值，按当前状态直接切换路径。动态修改角参数会重置该组动画到当前状态，值相同的新配置
+保留正在运行的动画。Catalog 主窗口 **State shape chips** 可交互查看。
+
+迁移：`ChipShapes.Shape` / `SelectedShape` / `PressedShape` 现为 `MaterialShape`。
+旧 XAML 的 `Shape="12"` 改为上例的形状子元素（需要圆角时使用 `RoundedCornerShape`）；
+C# 的 `new ChipShapes(new CornerRadius(12), new CornerRadius(20), new CornerRadius(8))` 继续可用，
+其旧 Full=1000 转为 50%。读取属性时按实际形状类型访问逻辑角。也可直接用
+`new ChipShapes(new CutCornerShape(12), new RoundedCornerShape(8))`，两参数构造令按压态复用选中态。
+
 `Shapes` 只配置容器形变。设置、更换或清除它不会同时切换间距、颜色或图标进出动效；
 Filter/Input 的图标槽在 `Shapes=null` 时也保留进入/退出动画。
 图标动效可独立覆盖 `Comp.Chip.IconSizeEnterAnimation` / `IconSizeExitAnimation` 和
 `IconAlphaEnterAnimation` / `IconAlphaExitAnimation` Token；形状变化本身使用 `Comp.Chip.ShapeAnimation`。
+`HorizontalArrangement` 可选 `Start`、`End`、`Center`、`SpaceBetween`、`SpaceAround`、`SpaceEvenly`，
+用于显式宽度或父级分配剩余空间时安排三槽。例如：
+
+```xml
+<m3:FilterChip Width="180" Content="均匀分布" HorizontalArrangement="SpaceEvenly"
+               LeadingIcon="{m3:Symbol Check}" TrailingIcon="{m3:Symbol Close}" />
+```
+
+这些排列的间距为零，覆盖专用 `Spacing`；清除为 null 后恢复最新的 `Spacing`。空图标槽仍占一个
+排列位置，与上游三个始终存在的子项一致；因此 SpaceAround/SpaceEvenly 可能在空槽旁留下空隙。
+方向为逻辑 Start/End，RTL 使用上游物理像素舍入顺序。图标进入/退出时按当前动画尺寸重新布局。
+Assist/Suggestion 的标签槽填满剩余宽度，通常没有可供这些排列分配的空隙；Filter/Input 的标签槽按内容宽度布局。
+当前入口只提供这六种标准排列，不提供 SpacedBy、绝对方向或调用方自定义 Arrangement 回调。
+
 `Spacing` 是完整的 `ChipSpacing` 值，逻辑前/后间距默认均为 8 DIP，独立定制例如：
 
 ```xml
@@ -186,7 +215,7 @@ Catalog **Drag handle demo** 提供配置切换、启用开关及与 Card 共享
 ## 使用限制与注意事项
 
 Selectable Chip 默认最大宽度 1000 DIP，显式 Width / MinWidth 保留调用方约束。
-`Shapes` 配置圆角形变；固定 `Shape` 可使用切角或自定义路径。布局支持前后槽间距。
+`Shapes` 配置圆角/切角形变或路径状态切换；固定 `Shape` 也可使用自定义路径。布局支持前后槽间距与六种标准排列。
 共享焦点环可通过 `MaterialInteraction.FocusFeedback="InsetRing"` 启用。
 透明平面 Filter 恢复 1 DIP 悬浮阴影可能出现已知 GPU 灰环；当前双端验证范围见维护说明。
 四族、Elevated、头像和禁用组合见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。

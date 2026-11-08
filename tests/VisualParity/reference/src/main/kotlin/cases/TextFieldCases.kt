@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 data class TextFieldConfig(val outlined:Boolean=false, val position:String="Inside", val minimized:Boolean=false,
     val label:Boolean=true, val slots:Boolean=false, val enabled:Boolean=true, val error:Boolean=false, val dark:Boolean=false,
     val rtl:Boolean=false, val alignment:String="Start", val width:Double?=null, val height:Double?=null,
-    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none",val exposed:Boolean=false)
+    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none",val exposed:Boolean=false,val shape:String="none")
 
 @ParitySuite("text-field")
 class TextFieldCases {
@@ -40,13 +40,13 @@ class TextFieldCases {
             host.mount { scene.Content() }; host.frame(-1000); host.frame(0)
             // Focused native carets use unrelated platform clocks. Compare decoration geometry and
             // actual label progress here; static/state cases retain full, unmodified raster captures.
-            fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure(),image=config.action in listOf("error","theme")))
+            fun sample(id:String)=writer.submit(host.snapshot(id,id,scene.measure(),image=config.action in listOf("error","theme","shape")))
             var next=16000L
             fun advance(time:Long) { while(next<=time) { host.frame(next); next+=16000 }; host.advanceTo(time) }
             fun change(time:Long,id:String,action:()->Unit) { advance(time); action(); writer.record(time,"mutation",id); host.draw(); host.frame(time); sample(id) }
             sample("initial")
             change(1000,"start") {
-                when(config.action) { "error" -> scene.error=true; "theme" -> scene.dark=true; else -> scene.requester.requestFocus() }
+                when(config.action) { "error" -> scene.error=true; "theme" -> scene.dark=true; "shape" -> scene.shapeKind="percent"; else -> scene.requester.requestFocus() }
             }
             listOf(16000L,32000L,64000L).forEach { advance(it); sample("time-$it") }
             if(config.action=="reverse") change(65000,"reverse") { scene.focusManager.clearFocus() }
@@ -85,6 +85,7 @@ class TextFieldCases {
         var error by mutableStateOf(config.error)
         var dark by mutableStateOf(config.dark)
         var progress=0f
+        var shapeKind by mutableStateOf(config.shape)
         var interactions by mutableStateOf<MutableInteractionSource?>(null)
 
         @Composable fun Slot(name:String,width:Double,height:Double) {
@@ -120,16 +121,18 @@ class TextFieldCases {
                         val colors=if(config.exposed) {
                             if(config.outlined) ExposedDropdownMenuDefaults.outlinedTextFieldColors() else ExposedDropdownMenuDefaults.textFieldColors()
                         } else if(config.outlined) OutlinedTextFieldDefaults.colors() else TextFieldDefaults.colors()
+                        val shape=if(shapeKind!="none")carouselTestShape(shapeKind)
+                            else if(config.outlined)OutlinedTextFieldDefaults.shape else TextFieldDefaults.shape
                         if(legacy && config.outlined) OutlinedTextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
                         else if(legacy) TextField(value="",onValueChange={},modifier=modifier,enabled=enabled,isError=error,colors=colors,
                             label=legacyLabel,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,singleLine=true,interactionSource=interactions)
-                        else if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,
+                        else if(config.outlined) OutlinedTextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,shape=shape,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
-                        else TextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,
+                        else TextField(state=state,modifier=modifier,enabled=enabled,isError=error,colors=colors,shape=shape,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,lineLimits=TextFieldLineLimits.SingleLine,interactionSource=interactions)
                     }

@@ -78,6 +78,7 @@ internal sealed partial class TextFieldLayout : Panel
         _editor = (Border)Children.Single(c => c.Name == "Editor");
         _text = (TextPresenter)((ScrollViewer)_editor.Child!).Content!;
         _owner.PropertyChanged += OwnerChanged;
+        ObserveShape();
         _text.PropertyChanged += PresenterChanged;
         foreach (var slot in new[] { _leading, _trailing, _prefix, _suffix, _supporting, _placeholder })
             slot.PropertyChanged += SlotChanged;
@@ -125,6 +126,7 @@ internal sealed partial class TextFieldLayout : Panel
         _nameBinding?.Dispose(); _helpBinding?.Dispose();
         _nameBinding = _helpBinding = null;
         _owner = null;
+        ObserveShape();
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -140,6 +142,7 @@ internal sealed partial class TextFieldLayout : Panel
 
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == MaterialTextField.ShapeProperty) ObserveShape();
         if (e.Property == MaterialTextField.InteractionSourceProperty) ReplaceInteractionSource();
         if (e.Property == InputElement.IsEffectivelyEnabledProperty && _owner?.IsEffectivelyEnabled == false)
         {
@@ -283,8 +286,14 @@ internal sealed partial class TextFieldLayout : Panel
     private IBrush? PaintedIndicator => IndicatorBrush is ISolidColorBrush
         ? new SolidColorBrush(_indicatorColor?.Value ?? ColorOf(IndicatorBrush)) : IndicatorBrush;
 
-    private void InvalidateDecoration(Size? size = null) => _decoration?.Update(_containerBounds, _cutout, size ?? Bounds.Size,
-        Outlined, PaintedIndicator, Math.Max(0, IndicatorThickness), _owner?.CornerRadius ?? default);
+    private void InvalidateDecoration(Size? size = null)
+    {
+        UpdateShape();
+        _decoration?.Update(_containerBounds, _cutout, size ?? Bounds.Size,
+            Outlined, PaintedIndicator, Math.Max(0, IndicatorThickness), ShapeCorners,
+            _observedShape is Foundation.Rendering.RoundedCornerShape or Foundation.Rendering.CutCornerShape { IsRectangle: true }
+                ? null : _shapePath, logicalShape: _observedShape is not null);
+    }
     private static Color ColorOf(IBrush? brush) => (brush as ISolidColorBrush)?.Color ?? Colors.Transparent;
 
     private void Retarget()
@@ -502,6 +511,19 @@ internal sealed partial class TextFieldLayout : Panel
         var container = new RoundedRect(_containerBounds, radius);
         var background = ContainerBrush is ISolidColorBrush ? new SolidColorBrush(_containerColor?.Value ?? ColorOf(ContainerBrush)) : ContainerBrush;
         var width = Math.Max(0, IndicatorThickness);
+        if (_shapePath is { } shape)
+        {
+            using var translation = context.PushTransform(Matrix.CreateTranslation(_containerBounds.X, _containerBounds.Y));
+            context.DrawGeometry(background, null, shape);
+            if (!Outlined && width > 0)
+            {
+                // IndicatorLineNode constructs a NonZero shape path and intersects the bottom
+                // rectangle. This is decoration only; it must not clip the editor or content slots.
+                var line = new RectangleGeometry(new Rect(0, _containerBounds.Height - width, _containerBounds.Width, width));
+                context.DrawGeometry(PaintedIndicator, null, new CombinedGeometry(GeometryCombineMode.Intersect, line, _indicatorShapePath!));
+            }
+            return;
+        }
         context.DrawRectangle(background, null, container);
         if (Outlined || width == 0) return;
         using var containerClip = context.PushClip(container);

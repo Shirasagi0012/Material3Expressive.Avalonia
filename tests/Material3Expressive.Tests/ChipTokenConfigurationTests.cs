@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Interaction;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -26,7 +27,9 @@ public class ChipTokenConfigurationTests
         var window = Show(chip);
         try
         {
-            Assert.Equal(new ChipShapes(new CornerRadius(12), new CornerRadius(1000), new CornerRadius(8)), chip.Shapes);
+            Assert.Equal(new CornerRadius(12), CornerShape.FromMaterialShape(chip.Shapes!.Shape)!.Resolve(new Size(80, 32)));
+            Assert.Equal(new CornerRadius(16), CornerShape.FromMaterialShape(chip.Shapes.SelectedShape)!.Resolve(new Size(80, 32)));
+            Assert.Equal(new CornerRadius(8), CornerShape.FromMaterialShape(chip.Shapes.PressedShape)!.Resolve(new Size(80, 32)));
             Assert.Equal(new ChipSpacing(8, 8), chip.Spacing);
             var icon = chip.GetVisualDescendants().OfType<ChipIconSlot>().First();
             var color = chip.LeadingIconColor;
@@ -39,7 +42,7 @@ public class ChipTokenConfigurationTests
             Assert.Equal(enter, icon.AlphaEnterAnimation); Assert.Equal(exit, icon.AlphaExitAnimation);
             Assert.Equal(sizeEnter, icon.SizeEnterAnimation); Assert.Equal(sizeExit, icon.SizeExitAnimation);
             chip.Resources[Comp.Chip.UnselectedShape] = new CornerRadius(20); Flush(window); Assert.Null(chip.Shapes);
-            chip.ClearValue(SelectableChip.ShapesProperty); Flush(window); Assert.Equal(new CornerRadius(20), chip.Shapes!.Shape);
+            chip.ClearValue(SelectableChip.ShapesProperty); Flush(window); Assert.Equal(new CornerRadius(20), CornerShape.FromMaterialShape(chip.Shapes!.Shape)!.Resolve(default));
         }
         finally { window.Close(); }
     }
@@ -59,7 +62,7 @@ public class ChipTokenConfigurationTests
             Assert.Equal(configured, chip.Shapes);
             chip.Shapes = null; Flush(window); Assert.Null(chip.Shapes);
             chip.ClearValue(SelectableChip.ShapesProperty); Flush(window); Assert.Equal(configured, chip.Shapes);
-            chip.Styles.Remove(style); Flush(window); Assert.Equal(new CornerRadius(22), chip.Shapes!.SelectedShape);
+            chip.Styles.Remove(style); Flush(window); Assert.Equal(new CornerRadius(22), CornerShape.FromMaterialShape(chip.Shapes!.SelectedShape)!.Resolve(default));
 
             chip.Resources[Comp.Chip.FlatFilterHoverElevation] = 4d;
             chip.Resources[Comp.Chip.IconLabelSpace] = 10d; Flush(window);

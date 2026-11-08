@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
@@ -16,6 +17,9 @@ namespace Material3Expressive.Components;
 /// <remarks>Text, selection and editing remain native TextBox state. Applications handle requests.</remarks>
 public class SearchBarInputField : TextBox
 {
+    public static readonly AttachedProperty<MaterialShape?> ShapeProperty = MaterialTextField.ShapeProperty;
+    /// <summary>Container and keyboard focus-ring outline. Null uses CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> ExpandAnimationProperty = SearchBar.ExpandAnimationProperty.AddOwner<SearchBarInputField>();
     internal Foundation.Motion.SpringSpec? ExpandAnimation { get => GetValue(ExpandAnimationProperty); set => SetValue(ExpandAnimationProperty, value); }
     internal static readonly StyledProperty<Foundation.Motion.SpringSpec?> CollapseAnimationProperty = SearchBar.CollapseAnimationProperty.AddOwner<SearchBarInputField>();

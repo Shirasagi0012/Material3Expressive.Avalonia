@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -15,6 +16,10 @@ namespace Material3Expressive.Components;
 /// <remarks>The application owns the expanded state, query and search results.</remarks>
 public class DockedSearchBar : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<DockedSearchBar>();
+    /// <summary>Explicit search outline; null uses CornerRadius. Full-screen variants use this as the collapsed shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<object?> InputFieldProperty =
         AvaloniaProperty.Register<DockedSearchBar, object?>(nameof(InputField));
     public static readonly StyledProperty<IDataTemplate?> InputFieldTemplateProperty =

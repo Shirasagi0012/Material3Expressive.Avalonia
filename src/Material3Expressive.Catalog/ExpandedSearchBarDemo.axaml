@@ -14,6 +14,7 @@
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Button Content="明 / 暗" Click="ToggleTheme" />
         <Button Content="LTR / RTL" Click="ToggleDirection" />
+        <Button Content="切角 / 默认形状" Click="ToggleShape" />
         <Button Content="焦点环 / 常规" Click="ToggleFocusFeedback" />
       </StackPanel>
       <m3:SearchBar x:Name="CollapsedSearch" State="{StaticResource SearchState}">

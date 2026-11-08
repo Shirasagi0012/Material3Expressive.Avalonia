@@ -60,6 +60,7 @@ MultiAspect 不拥有滚动容器。在已加载 MaterialTheme 的应用中，�
 - `UserScrollEnabled` 控制手势和键盘分页；程序导航不受影响。`IsScrollInProgress` 包括拖动和动画。`InteractionSource` 发布配对的 `DragStart` / `DragStop` / `DragCancel`，结束事件引用原开始对象。
 - 辅助技术可通过原生滚动接口前后翻页或设置滚动百分比；`UserScrollEnabled="False"` 同时移除用户分页操作。Catalog 提供实际调用这一接口的前后翻页按钮。
 - `CarouselItem.DrawInfo` 发布当前遮罩尺寸、最小／最大尺寸和局部遮罩矩形，可绑定实现内容淡化等效果。
+- `CarouselItem.Shape` 和 `MultiAspectCarouselItem.Shape` 接收 `MaterialShape`，支持 `CutCornerShape`、`RoundedCornerShape` 及自定义路径；null 使用原 `CornerRadius`。逻辑角自动适配 RTL，百分比以当前遮罩的短边计算。
 
 `MultiAspectCarouselItem` 的属性：
 
@@ -95,6 +96,23 @@ MultiBrowse / CenteredHero 还保留可见分页两侧各两个项目，Uncontai
 
 `MultiAspectCarouselItem.Content` / `ContentTemplate` 可承载图片、文字和交互控件。`Background` 和内容一起产生视差，边框保持在遮罩上；子控件自己的变换与绑定不被替换。
 
+切角与百分比角可以直接在项目上声明；同样适用于 `CarouselItem.Shape`：
+
+```xml
+<m3:MultiAspectCarouselItem Width="240" Height="160" Background="SkyBlue"
+    BorderBrush="Navy" BorderThickness="2">
+  <m3:MultiAspectCarouselItem.Shape>
+    <m3:CutCornerShape TopStart="40%" TopEnd="8" BottomEnd="24" BottomStart="0" />
+  </m3:MultiAspectCarouselItem.Shape>
+  <TextBlock Text="Coast" Margin="24" />
+</m3:MultiAspectCarouselItem>
+```
+
+经典项目的遮罩和边框分别记住首次使用的形状实例，替换 `Shape` 在重新挂载后生效；修改该实例的可观察属性仍会更新轮廓。
+MultiAspect 替换 `Shape` 会立即改变内容遮罩，已存在的边框仍保留首次实例；移除描边再启用会采用新形状。
+自定义路径在当前遮罩尺寸中生成后平移到遮罩起点，不自动拉伸。显式形状要求均匀 `BorderThickness`。
+遮罩组合使用非零填充规则；自定义镂空应使用反向内轮廓，不能依赖奇偶填充。
+
 网格项目应明确启用自己的交叉轴尺寸，例如在横向滚动的 Grid 内：
 
 ```xml
@@ -128,6 +146,6 @@ item.DrawInfo = null;
 
 MultiAspect 自动测量针对 UI 布局坐标随滚动更新的视口。全局 Material ScrollViewer 使用合成线程平滑滚动，不能把其 UI 坐标当作逐帧最终显示坐标；当前使用上面的原生物理 presenter，或由自定义宿主显式提供同步的 `DrawInfo`。该组件不更改全局滚动主题。
 
-`MultiAspectCarouselItem` 不拥有滚动、吸附、惯性或分页状态；滚动和键盘焦点仍由宿主及内容处理。视口必须裁剪溢出内容，沿滚动轴提供有限尺寸。当前支持圆角矩形遮罩。
+`MultiAspectCarouselItem` 不拥有滚动、吸附、惯性或分页状态；滚动和键盘焦点仍由宿主及内容处理。视口必须裁剪溢出内容，沿滚动轴提供有限尺寸。
 
 Catalog 的 Carousel 窗口同时演示三种经典布局、10,000 项数据集合与远距离跳转，以及 MultiAspect 的两轴滚动、交互内容、RTL、圆角切换和边框。移植范围与验证见 [INTERNALS.md](INTERNALS.md)。

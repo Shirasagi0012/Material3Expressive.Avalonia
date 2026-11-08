@@ -199,6 +199,37 @@
                         <m3:InputChip.Shape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:InputChip.Shape>
                     </m3:InputChip>
                 </WrapPanel>
+                <TextBlock Text="State shape chips" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <TextBlock Text="Click to select; hold to press. Cut corners interpolate, mixed families switch at the spring midpoint." TextWrapping="Wrap" />
+                <WrapPanel>
+                    <m3:FilterChip Content="Cut morph" Click="OnChipClick" Margin="0,0,12,0">
+                        <m3:FilterChip.Shapes>
+                            <m3:ChipShapes>
+                                <m3:ChipShapes.Shape><m3:CutCornerShape TopStart="12" TopEnd="4" BottomEnd="8" BottomStart="2" /></m3:ChipShapes.Shape>
+                                <m3:ChipShapes.SelectedShape><m3:CutCornerShape TopStart="50%" TopEnd="50%" BottomEnd="50%" BottomStart="50%" /></m3:ChipShapes.SelectedShape>
+                                <m3:ChipShapes.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:ChipShapes.PressedShape>
+                            </m3:ChipShapes>
+                        </m3:FilterChip.Shapes>
+                    </m3:FilterChip>
+                    <m3:InputChip Content="Cut / round" Click="OnChipClick" TrailingIcon="{m3:Symbol Close}">
+                        <m3:InputChip.Shapes>
+                            <m3:ChipShapes>
+                                <m3:ChipShapes.Shape><m3:CutCornerShape TopStart="12" TopEnd="12" BottomEnd="12" BottomStart="12" /></m3:ChipShapes.Shape>
+                                <m3:ChipShapes.SelectedShape><m3:RoundedCornerShape TopStart="50%" TopEnd="50%" BottomEnd="50%" BottomStart="50%" /></m3:ChipShapes.SelectedShape>
+                                <m3:ChipShapes.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:ChipShapes.PressedShape>
+                            </m3:ChipShapes>
+                        </m3:InputChip.Shapes>
+                    </m3:InputChip>
+                </WrapPanel>
+                <TextBlock Text="Chip slot arrangements" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <WrapPanel>
+                    <m3:FilterChip Width="180" Content="Start" HorizontalArrangement="Start" Click="OnChipClick" LeadingIcon="{m3:Symbol Check}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:FilterChip Width="180" Content="Centered" HorizontalArrangement="Center" Click="OnChipClick" LeadingIcon="{m3:Symbol Check}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:FilterChip Width="180" Content="End" HorizontalArrangement="End" Click="OnChipClick" LeadingIcon="{m3:Symbol Check}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:InputChip Width="180" Content="Space between" HorizontalArrangement="SpaceBetween" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:InputChip Width="180" Content="Space around" HorizontalArrangement="SpaceAround" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:InputChip Width="180" Content="Space evenly" HorizontalArrangement="SpaceEvenly" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                </WrapPanel>
                 <TextBlock Text="Icon button widths" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <m3:IconButton Symbol="Remove" WidthOption="Narrow" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Narrow" />

@@ -6,6 +6,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Input;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -241,17 +242,25 @@ public partial class HorizontalCarousel : ItemsControl
 /// <summary>Current keyline mask, in DIP. The item's content retains its full layout size.</summary>
 public readonly record struct CarouselItemDrawInfo(double Size, double MinSize, double MaxSize, Rect MaskRect);
 
-/// <summary>A carousel item with an optional rounded mask and border.</summary>
+/// <summary>A carousel item with an optional shape mask and border.</summary>
 public class CarouselItem : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<CarouselItem>();
+    /// <summary>Optional logical shape. Null uses CornerRadius. The mounted mask remembers its initial shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly DirectProperty<CarouselItem, CarouselItemDrawInfo> DrawInfoProperty =
         AvaloniaProperty.RegisterDirect<CarouselItem, CarouselItemDrawInfo>(nameof(DrawInfo), o => o.DrawInfo);
     private CarouselItemDrawInfo _drawInfo;
     public CarouselItemDrawInfo DrawInfo => _drawInfo;
     private CarouselMask? _mask, _clip;
     private SurfaceOutline? _outline;
-    private CornerRadius? _borderCorners, _maskCorners;
+    private readonly CarouselMaskShape _borderShape, _maskShape;
     private double _shapeDensity;
+    public CarouselItem()
+    {
+        _borderShape = new(UpdateMask);
+        _maskShape = new(UpdateMask);
+    }
     internal void UpdateDrawInfo(CarouselItemDrawInfo info)
     {
         SetAndRaise(DrawInfoProperty, ref _drawInfo, info);
@@ -263,41 +272,52 @@ public class CarouselItem : ContentControl
         _mask = e.NameScope.Find<CarouselMask>("PART_Mask");
         _clip = e.NameScope.Find<CarouselMask>("PART_Clip");
         _outline = e.NameScope.Find<SurfaceOutline>("PART_Outline");
-        _borderCorners = null;
-        _maskCorners = null;
+        _borderShape.Reset();
+        _maskShape.Reset();
         UpdateMask();
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == CornerRadiusProperty || change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty)
+        if (change.Property == CornerRadiusProperty || change.Property == ShapeProperty || change.Property == FlowDirectionProperty ||
+            change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty)
             UpdateMask();
     }
     private void UpdateMask()
     {
-        if (_mask is null || _outline is null) return;
+        if (_mask is null || _outline is null || !this.IsAttachedToVisualTree()) return;
         // carouselItem's outer graphics layer clips both user content and maskBorder
         // to the rectangular keyline bounds. maskClip is the separate rounded inner shape.
         if (_clip is not null) _clip.Clip = DrawInfo.MaskRect == new Rect(Bounds.Size) ? null : new RectangleGeometry(DrawInfo.MaskRect);
         var rect = DrawInfo.MaskRect.Intersect(new Rect(Bounds.Size));
         if (rect.Width < 0 || rect.Height < 0) return;
         var density = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
-        if (_shapeDensity != density) { _shapeDensity = density; _maskCorners = null; _borderCorners = null; }
+        if (_shapeDensity != density) { _shapeDensity = density; _maskShape.Reset(); _borderShape.Reset(); }
         // CarouselItemScope.rememberMaskShape keys on draw-info identity and density, not shape.
-        _maskCorners ??= CornerRadius;
-        _mask.Clip = Foundation.Rendering.RoundedRectangleGeometry.Create(rect, _maskCorners.Value);
-        _outline.Width = rect.Width;
-        _outline.Height = rect.Height;
+        _maskShape.Configure(Shape, CornerRadius, remember: true);
+        _mask.Clip = _maskShape.Geometry(rect, FlowDirection, density);
+        if (BorderBrush is null || BorderThickness == default) _borderShape.Reset();
+        else _borderShape.Configure(Shape, CornerRadius, remember: true);
+        if (_borderShape.HasShape && !BorderThickness.IsUniform)
+            throw new InvalidOperationException("MaterialShape borders require uniform BorderThickness.");
+        // Generic paths retain the translated mask origin and original layout size, just as
+        // Foundation border does. SurfaceOutline's path branch owns the ceil-sized cache.
+        _outline.Width = _borderShape.HasShape ? Bounds.Width : rect.Width;
+        _outline.Height = _borderShape.HasShape ? Bounds.Height : rect.Height;
         _outline.PathLayoutSize = Bounds.Size;
         _outline.PathBounds = rect;
-        _outline.RenderTransform = new TranslateTransform(rect.X, rect.Y);
-        if (BorderBrush is null || BorderThickness == default) _borderCorners = null;
-        else _borderCorners ??= CornerRadius;
-        _outline.CornerRadius = _borderCorners ?? CornerRadius;
+        _outline.RenderTransform = _borderShape.HasShape ? null : new TranslateTransform(rect.X, rect.Y);
+        _outline.ShapePath = _borderShape.HasShape ? _borderShape.Geometry(rect, FlowDirection, density) : null;
+        _outline.CornerRadius = _borderShape.Corners;
+    }
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        UpdateMask();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _maskCorners = null; _borderCorners = null;
+        _maskShape.Reset(); _borderShape.Reset();
         base.OnDetachedFromVisualTree(e);
     }
 }

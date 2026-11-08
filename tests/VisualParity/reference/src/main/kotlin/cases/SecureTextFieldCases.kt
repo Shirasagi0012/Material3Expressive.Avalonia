@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
 data class SecureTextFieldConfig(val outlined:Boolean=false, val position:String="Inside", val minimized:Boolean=false,
     val label:Boolean=true, val slots:Boolean=false, val enabled:Boolean=true, val error:Boolean=false, val dark:Boolean=false,
     val rtl:Boolean=false, val alignment:String="Start", val width:Double?=null, val height:Double?=null,
-    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none")
+    val labelWidth:Double=40.0, val labelHeight:Double=12.0, val action:String="none",val shape:String="none")
 
 @ParitySuite("secure-text-field")
 class SecureTextFieldCases {
@@ -114,10 +114,12 @@ class SecureTextFieldCases {
                         val suffix:(@Composable ()->Unit)?=if(config.slots) ({ Slot("suffix",20.0,12.0) }) else null
                         val placeholder:(@Composable ()->Unit)?=if(config.slots) ({ Slot("placeholder",48.0,16.0) }) else null
                         val state=rememberTextFieldState()
-                        if(config.outlined) OutlinedSecureTextField(state=state,modifier=modifier,enabled=enabled,isError=error,
+                        val shape=if(config.shape!="none")carouselTestShape(config.shape)
+                            else if(config.outlined)OutlinedTextFieldDefaults.shape else TextFieldDefaults.shape
+                        if(config.outlined) OutlinedSecureTextField(state=state,modifier=modifier,enabled=enabled,isError=error,shape=shape,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,textObfuscationMode=TextObfuscationMode.Hidden)
-                        else SecureTextField(state=state,modifier=modifier,enabled=enabled,isError=error,
+                        else SecureTextField(state=state,modifier=modifier,enabled=enabled,isError=error,shape=shape,
                             labelPosition=position,label=label,leadingIcon=leading,trailingIcon=trailing,supportingText=supporting,
                             prefix=prefix,suffix=suffix,placeholder=placeholder,textObfuscationMode=TextObfuscationMode.Hidden)
                     }

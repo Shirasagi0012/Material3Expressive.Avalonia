@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 namespace Material3Expressive.Components;
 
 /// <summary>Material decoration for a native TextBox. Editing, selection and IME remain native.</summary>
@@ -13,6 +14,12 @@ namespace Material3Expressive.Components;
 /// </remarks>
 public static class MaterialTextField
 {
+    /// <summary>Optional container shape for filled and outlined fields. Null uses the native CornerRadius.</summary>
+    public static readonly AttachedProperty<MaterialShape?> ShapeProperty =
+        AvaloniaProperty.RegisterAttached<TextBox, MaterialShape?>("Shape", typeof(MaterialTextField));
+    public static MaterialShape? GetShape(TextBox owner) => owner.GetValue(ShapeProperty);
+    public static void SetShape(TextBox owner, MaterialShape? value) => owner.SetValue(ShapeProperty, value);
+
     /// <summary>Observes native editing interactions and drives the Material decoration.
     /// Null uses a private source. External focus events do not move keyboard focus.</summary>
     public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =

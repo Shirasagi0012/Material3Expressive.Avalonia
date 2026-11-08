@@ -30,7 +30,7 @@
                 <ContentPresenter Content="{TemplateBinding NavigationIcon}" ContentTemplate="{TemplateBinding NavigationIconTemplate}"
                                   Foreground="{TemplateBinding NavigationIconContentColor, Converter={x:Static m3:AppBarWithSearchRow.Brush}}" />
                 <m3:SearchBar Name="PART_SearchBar" State="{TemplateBinding State}" Content="{TemplateBinding InputField}"
-                              ContentTemplate="{TemplateBinding InputFieldTemplate}" CornerRadius="{TemplateBinding CornerRadius}" />
+                              ContentTemplate="{TemplateBinding InputFieldTemplate}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" />
                 <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"
                                 TextElement.Foreground="{TemplateBinding ActionIconContentColor, Converter={x:Static m3:AppBarWithSearchRow.Brush}}" />
               </m3:AppBarWithSearchRow>
@@ -53,7 +53,7 @@
       <Setter Property="CollapseAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.CollapseAnimation}}" />
       <Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="Template"><ControlTemplate>
-        <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+        <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                             TextElement.Foreground="{TemplateBinding Foreground}" TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
           <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
@@ -75,7 +75,7 @@
       <Setter Property="Template"><ControlTemplate>
         <Grid Name="PART_Root">
           <m3:SearchBarPopupPresenter Name="PART_Presentation" IsVisible="False">
-            <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+            <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                                 TextElement.Foreground="{TemplateBinding Foreground}" TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}"
                                 Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
                                 MaxWidth="{TemplateBinding MaxWidth}" MaxHeight="{TemplateBinding MaxHeight}">
@@ -140,7 +140,7 @@
               <m3:ExpandedSearchBarLayout Name="PART_Layout"
                   MinimumResultsHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.MinimumResultsHeight}}"
                   MaximumWindowHeightFraction="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DropdownMaximumWindowHeightFraction}}">
-                <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" ApplyTonalElevation="False">
+                <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" ApplyTonalElevation="False">
                 <ContentPresenter Name="PART_InputField"
                                   HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" >
                   <ContentPresenter.Content><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
@@ -154,7 +154,7 @@
                 </ContentPresenter>
                 </m3:MaterialSurface>
                 <Border Padding="{TemplateBinding DropdownGapSize, Converter={x:Static m3:SearchBarMotion.GapPadding}}">
-                  <m3:MaterialSurface Name="PART_Dropdown" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding DropdownCornerRadius}" ApplyTonalElevation="False">
+                  <m3:MaterialSurface Name="PART_Dropdown" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding DropdownCornerRadius}" Shape="{TemplateBinding DropdownShape}" ApplyTonalElevation="False">
                     <ca:AnimatedVisibility Name="PART_Results">
                       <ca:AnimatedVisibility.Visible><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.ResultsVisible}">
                         <Binding Path="State.Progress" RelativeSource="{RelativeSource TemplatedParent}" />
@@ -198,7 +198,7 @@
               <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}"
                                   TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}" />
               <Border>
-              <m3:MaterialSurface Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" ApplyTonalElevation="False">
+              <m3:MaterialSurface Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TextElement.Foreground="{TemplateBinding Foreground}" ApplyTonalElevation="False">
                 <ContentPresenter Name="PART_InputField"
                                   HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" >
                   <ContentPresenter.Content><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
@@ -251,7 +251,7 @@
               <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}"
                                   TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}" />
               <Border>
-              <m3:MaterialSurface Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}" ApplyTonalElevation="False">
+              <m3:MaterialSurface Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TextElement.Foreground="{TemplateBinding Foreground}" ApplyTonalElevation="False">
                 <ContentPresenter Name="PART_InputField"
                                   HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" >
                   <ContentPresenter.Content><MultiBinding Priority="Template" Converter="{x:Static m3:SearchBarMotion.Present}">
@@ -332,7 +332,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface Name="PART_Surface" Background="{TemplateBinding Background}"
-                              CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+                              CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TextElement.Foreground="{TemplateBinding Foreground}"
                               TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}">
             <m3:DockedSearchBarLayout Width="{TemplateBinding Width}" MinWidth="{TemplateBinding MinWidth}"
                 DefaultWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+SearchBar.DefaultWidth}}">

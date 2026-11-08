@@ -15,7 +15,7 @@ namespace Material3Expressive.Parity;
 public sealed record TextFieldConfig(bool Outlined = false, string Position = "Inside", bool Minimized = false,
     bool Label = true, bool Slots = false, bool Enabled = true, bool Error = false, bool Dark = false,
     bool Rtl = false, string Alignment = "Start", double? Width = null, double? Height = null,
-    double LabelWidth = 40, double LabelHeight = 12, string Action = "none", bool Exposed = false);
+    double LabelWidth = 40, double LabelHeight = 12, string Action = "none", bool Exposed = false, string Shape = "none");
 
 [ParitySuite("text-field")]
 public sealed class TextFieldCases
@@ -104,7 +104,7 @@ public sealed class TextFieldCases
         host.Mount(scene.Root); host.Frame(-1000); host.Frame(0);
         // Native caret blink uses the platform timer, not the decoration clock. Focus cases observe
         // actual slot geometry/progress; raster is covered by unfocused appearance/state cases.
-        void Sample(string id) => writer.Submit(host.Snapshot(id, id, scene.Measure(), image: config.Action is "error" or "theme"));
+        void Sample(string id) => writer.Submit(host.Snapshot(id, id, scene.Measure(), image: config.Action is "error" or "theme" or "shape"));
         long next = 16000;
         void Advance(long time) { while (next <= time) { host.Frame(next); next += 16000; } host.AdvanceTo(time); }
         void Change(long time, string id, Action change) { Advance(time); change(); writer.Record(time, "mutation", id); host.Draw(); host.Frame(time); Sample(id); }
@@ -113,6 +113,7 @@ public sealed class TextFieldCases
         {
             if (config.Action == "error") MaterialTextField.SetIsError(scene.Box, true);
             else if (config.Action == "theme") scene.Theme(true);
+            else if (config.Action == "shape") MaterialTextField.SetShape(scene.Box, MaterialShapeCases.CreateShape("percent"));
             else scene.Box.Focus();
         });
         foreach (var time in new long[] { 16000, 32000, 64000 }) { Advance(time); Sample($"time-{time}"); }
@@ -142,6 +143,7 @@ public sealed class TextFieldCases
             if (config.Width is { } w) Box.Width = w;
             if (config.Height is { } h) Box.Height = h;
             Box.FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            if (config.Shape != "none") MaterialTextField.SetShape(Box, MaterialShapeCases.CreateShape(config.Shape));
             MaterialTextField.SetLabelPosition(Box, Enum.Parse<TextFieldLabelPosition>(config.Position));
             MaterialTextField.SetAlwaysMinimizeLabel(Box, config.Minimized);
             MaterialTextField.SetExpandedLabelAlignment(Box, Enum.Parse<TextFieldLabelAlignment>(config.Alignment));

@@ -17,7 +17,7 @@ namespace Material3Expressive.Parity;
 public sealed record ChipConfig(string Kind = "assist", bool Morph = false, bool Selected = false,
     bool Enabled = true, bool Dark = false, string Icons = "none", bool Rtl = false,
     double? Width = null, double? Height = null, double ContentWidth = 32, double ContentHeight = 16,
-    string Custom = "none", string Action = "none");
+    string Custom = "none", string Action = "none", string ShapeSet = "none", string Arrangement = "default");
 
 [ParitySuite("chip")]
 public sealed class ChipCases
@@ -163,12 +163,10 @@ public sealed class ChipCases
                 Mutate(961000, "shorter", () => chip.Height = 24); Times(976000, 1200000); break;
             case "shapes":
                 Mutate(1000, "selected", () => ((SelectableChip)chip).IsSelected = true); Times(16000, 32000, 64000);
-                Mutate(65000, "shapes", () => ((SelectableChip)chip).Shapes = new ChipShapes
-                    { Shape = new CornerRadius(6), SelectedShape = new CornerRadius(14), PressedShape = new CornerRadius(4) });
+                Mutate(65000, "shapes", () => ((SelectableChip)chip).Shapes = new ChipShapes(new CornerRadius(6), new CornerRadius(14), new CornerRadius(4)));
                 Times(80000, 160000);
                 Mutate(161000, "unselected", () => ((SelectableChip)chip).IsSelected = false); Times(176000, 240000);
-                Mutate(241000, "equal-shapes", () => ((SelectableChip)chip).Shapes = new ChipShapes
-                    { Shape = new CornerRadius(6), SelectedShape = new CornerRadius(14), PressedShape = new CornerRadius(4) });
+                Mutate(241000, "equal-shapes", () => ((SelectableChip)chip).Shapes = new ChipShapes(new CornerRadius(6), new CornerRadius(14), new CornerRadius(4)));
                 Times(256000, 400000); break;
             case "icons": case "reverse-icons":
                 Mutate(1000, "icons-enter", () => scene.SetIcons("both")); Times(16000, 32000, 64000);
@@ -181,6 +179,10 @@ public sealed class ChipCases
                 Mutate(1000, "selected", () => ((SelectableChip)chip).IsSelected = true); Times(16000, 32000, 64000);
                 if (config.Action == "reverse-selection") Mutate(65000, "unselected", () => ((SelectableChip)chip).IsSelected = false);
                 Times(80000, 160000, 400000, 800000); break;
+            case "arrangement":
+                Mutate(1000, "end", () => chip.HorizontalArrangement = ChipHorizontalArrangement.End); Times(16000, 64000);
+                Mutate(65000, "space-around", () => chip.HorizontalArrangement = ChipHorizontalArrangement.SpaceAround); Times(80000, 160000);
+                Mutate(161000, "default", () => chip.HorizontalArrangement = null); Times(176000, 400000); break;
             case "theme":
                 Mutate(1000, "dark", () => CaseDefaults.SetThemeColors(host, true)); Times(16000, 80000, 400000); break;
             case "hover":
@@ -237,6 +239,8 @@ public sealed class ChipCases
                 Chip.Resources[Comp.Chip.IconAlphaEnterAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault);
                 Chip.Resources[Comp.Chip.IconAlphaExitAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault);
             }
+            if (config.ShapeSet != "none" && Chip is SelectableChip shaped) shaped.Shapes = ChipShapeCases.Shapes(config.ShapeSet);
+            if (config.Arrangement != "default") Chip.HorizontalArrangement = Enum.Parse<ChipHorizontalArrangement>(config.Arrangement, true);
             Chip.IsEnabled = config.Enabled;
             Chip.Content = label = new Marker(new Size(config.ContentWidth, config.ContentHeight));
             if (config.Width is { } width) Chip.Width = width;

@@ -41,6 +41,19 @@
                m3:MaterialTextField.SupportingText="Focus this field or toggle the focus preview below" />
       <Button Content="Toggle focus preview" Click="TogglePreviewFocus" />
       <TextBlock Name="InteractionStatus" Text="No interaction" />
+      <TextBlock Text="Container shapes" FontSize="20" />
+      <TextBox Theme="{StaticResource MaterialFilledTextFieldTheme}" m3:MaterialTextField.Label="Cut filled container"
+               m3:MaterialTextField.SupportingText="The focus indicator follows the shape; text remains editable.">
+        <m3:MaterialTextField.Shape><m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="12" BottomStart="4" /></m3:MaterialTextField.Shape>
+      </TextBox>
+      <TextBox Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="Rounded outline"
+               m3:MaterialTextField.SupportingText="Try focus and RTL to inspect the label cutout and logical corners.">
+        <m3:MaterialTextField.Shape><m3:RoundedCornerShape TopStart="40%" TopEnd="8" BottomEnd="40%" BottomStart="8" /></m3:MaterialTextField.Shape>
+      </TextBox>
+      <TextBox Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}" m3:MaterialTextField.Label="Cut secure field"
+               Text="password" m3:MaterialTextField.SupportingText="The same container API also applies to secure fields.">
+        <m3:MaterialTextField.Shape><m3:CutCornerShape TopStart="12" BottomEnd="12" /></m3:MaterialTextField.Shape>
+      </TextBox>
       <StackPanel Orientation="Horizontal" Spacing="12">
         <Button Content="Toggle light / dark" Click="ToggleTheme" />
         <Button Content="Toggle RTL" Click="ToggleDirection" />

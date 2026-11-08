@@ -136,6 +136,22 @@ leading / trailing，会跟随 RTL。图标默认尺寸为 24 DIP，两个槽仍
 
 ## 尺寸与定制
 
+`MaterialTextField.Shape` 接受 `RoundedCornerShape`、`CutCornerShape` 或自定义 `MaterialShape`，
+适用于 Filled、Outlined 和两种 SecureTextField。逻辑四角跟随 RTL，百分比按容器较短边计算。
+非 null 时优先于 `CornerRadius`；清除后恢复现有圆角与主题默认值。
+
+```xml
+<TextBox Theme="{StaticResource MaterialOutlinedTextFieldTheme}" m3:MaterialTextField.Label="名称">
+  <m3:MaterialTextField.Shape>
+    <m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="16" BottomStart="4" />
+  </m3:MaterialTextField.Shape>
+</TextBox>
+```
+
+Shape 只定义容器背景、Filled 底部指示线和 Outlined 描边；不会裁剪编辑文字或图标，
+不会改变 Padding。Outlined 标签仍从背景与描边中切出缺口。替换或修改形状会立即更新轮廓，
+不重建编辑器，也不增加形状插值；已有焦点、颜色、线宽与标签动画继续运行。
+
 - 默认最小尺寸计算以宽 280、高 56 DIP 为起点，并遵守父级约束；Above 标签、辅助文字、多行及 Cutout 顶部留白会影响总高度，不应把 56 当作固定高度
 - 原生 `Width` / `Height` / `MinWidth` / `MinHeight` 可约束布局；默认 Padding 为 16 DIP，Inside 且有标签时上下为 8 DIP，显式 `Padding` 优先
 - `CornerRadius`、`Background`、`Foreground`、`BorderBrush`、`CaretBrush` 与 `SelectionBrush` 可通过普通样式、绑定或局部值覆盖；此处 `BorderBrush` 是指示线/描边颜色，线宽由组件的焦点状态控制

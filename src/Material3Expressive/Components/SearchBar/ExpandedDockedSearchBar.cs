@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
@@ -19,6 +20,10 @@ namespace Material3Expressive.Components;
 /// <remarks>The declaration takes no layout space. Escape and outside presses animate the shared state to collapsed.</remarks>
 public class ExpandedDockedSearchBar : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<ExpandedDockedSearchBar>();
+    /// <summary>Explicit search outline; null uses CornerRadius. Full-screen variants use this as the collapsed shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<SearchBarState?> StateProperty = SearchBar.StateProperty.AddOwner<ExpandedDockedSearchBar>();
     public static readonly StyledProperty<object?> InputFieldProperty = DockedSearchBar.InputFieldProperty.AddOwner<ExpandedDockedSearchBar>();
     public static readonly StyledProperty<IDataTemplate?> InputFieldTemplateProperty = DockedSearchBar.InputFieldTemplateProperty.AddOwner<ExpandedDockedSearchBar>();
