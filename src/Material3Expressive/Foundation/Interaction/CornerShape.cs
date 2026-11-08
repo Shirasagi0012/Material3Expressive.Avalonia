@@ -10,6 +10,13 @@ internal abstract record CornerShape
     public abstract CornerRadius Resolve(Size size);
     internal virtual bool IsCut => false;
 
+    internal static CornerShape? FromMaterialShape(MaterialShape? shape) => shape switch
+    {
+        CutCornerShape cut => Cut.From(cut),
+        RoundedCornerShape round => Rounded.From(round),
+        _ => null
+    };
+
     // Interpolatable.lerp falls back to the nearer endpoint for different shape families.
     // Keep the endpoint itself so a later reversal retains upstream shape equality.
     internal static CornerShape Interpolate(CornerShape from, CornerShape to, float progress) =>
@@ -44,6 +51,19 @@ internal abstract record CornerShape
     {
         internal override bool IsCut => true;
         internal static Cut From(CutCornerShape shape) => new(shape.TopStart, shape.TopEnd, shape.BottomEnd, shape.BottomStart);
+        public override CornerRadius Resolve(Size size)
+        {
+            float Resolve(RelativeScalar corner) => corner.Unit == RelativeUnit.Relative
+                ? (float)Math.Min(size.Width, size.Height) * (((float)corner.Scalar * 100f) / 100f)
+                : (float)corner.Scalar;
+            return new(Resolve(TopStart), Resolve(TopEnd), Resolve(BottomEnd), Resolve(BottomStart));
+        }
+    }
+
+    internal sealed record Rounded(RelativeScalar TopStart, RelativeScalar TopEnd,
+        RelativeScalar BottomEnd, RelativeScalar BottomStart) : CornerShape
+    {
+        internal static Rounded From(RoundedCornerShape shape) => new(shape.TopStart, shape.TopEnd, shape.BottomEnd, shape.BottomStart);
         public override CornerRadius Resolve(Size size)
         {
             float Resolve(RelativeScalar corner) => corner.Unit == RelativeUnit.Relative

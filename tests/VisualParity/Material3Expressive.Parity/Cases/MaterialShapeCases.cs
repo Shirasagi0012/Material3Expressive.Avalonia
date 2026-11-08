@@ -15,7 +15,7 @@ using Material3Expressive.Foundation.Rendering;
 namespace Material3Expressive.Parity;
 
 public sealed record MaterialShapeConfig(string Kind = "surface", string Shape = "cut", bool Rtl = false,
-    bool Content = false, double Border = 1.1, double Elevation = 0, bool Clickable = false, string Action = "none", string PressedShape = "none", bool Gradient = false, string GradientType = "linear");
+    bool Content = false, double Border = 1.1, double Elevation = 0, bool Clickable = false, string Action = "none", string PressedShape = "none", bool Gradient = false, string GradientType = "linear", string CheckedShape = "none");
 
 [ParitySuite("material-shape")]
 public sealed class MaterialShapeCases
@@ -106,7 +106,7 @@ public sealed class MaterialShapeCases
         CaseDefaults.SetThemeColors(host, false);
         var source = new MaterialInteractionSource();
         var shape = CreateShape(c.Shape);
-        Control? content = c.Content ? new Border { Background = Brushes.Blue } : null;
+        Control? content = c.Content ? new FilledContent() : null;
         var color = Color.Parse(c.Kind.StartsWith("chip-", StringComparison.Ordinal) ? "#BBDDCC" : "#EADDFF");
         Control control;
         var clicks = 0;
@@ -126,7 +126,7 @@ public sealed class MaterialShapeCases
             button.Theme = (ControlTheme)host.Window.FindResource($"Material{theme}ToggleButtonTheme")!;
             MaterialButton.SetShape(button, shape);
             MaterialButton.SetPressedShape(button, c.PressedShape == "none" ? null : CreateShape(c.PressedShape));
-            ToggleButtonAppearance.SetCheckedShape(button, c.PressedShape == "none" ? null : new CutCornerShape(8));
+            ToggleButtonAppearance.SetCheckedShape(button, c.CheckedShape != "none" ? CreateShape(c.CheckedShape) : c.PressedShape == "none" ? null : new CutCornerShape(8));
             MaterialButton.SetInteractionSource(button, source); MaterialButton.SetElevation(button, new());
             button.Click += (_, _) => clicks++; control = button;
         }
@@ -134,6 +134,7 @@ public sealed class MaterialShapeCases
         {
             var toggle = c.Kind.Contains("toggle");
             IconButton button = toggle ? new IconToggleButton() : new IconButton();
+            button.Content = content;
             var theme = c.Kind.Replace("icon-toggle-", "", StringComparison.Ordinal).Replace("icon-", "", StringComparison.Ordinal) switch {
                 "filled" => "Filled", "tonal" => "Tonal", "outlined" => "Outlined", "vibrant" => "Vibrant", "outlined-vibrant" => "OutlinedVibrant", _ => "Standard" };
             button.Theme = (ControlTheme)host.Window.FindResource($"Material{theme}Icon{(toggle ? "Toggle" : "")}ButtonTheme")!;
@@ -141,7 +142,7 @@ public sealed class MaterialShapeCases
             button.BorderBrush = Brushes.Red; button.BorderThickness = new(c.Border); button.InteractionSource = source;
             MaterialButton.SetShape(button, shape);
             MaterialButton.SetPressedShape(button, c.PressedShape == "none" ? null : CreateShape(c.PressedShape));
-            if (button is IconToggleButton selected) selected.CheckedShape = c.PressedShape == "none" ? null : new CutCornerShape(8);
+            if (button is IconToggleButton selected) selected.CheckedShape = c.CheckedShape != "none" ? CreateShape(c.CheckedShape) : c.PressedShape == "none" ? null : new CutCornerShape(8);
             button.Click += (_, _) => clicks++; control = button;
         }
         else if (c.Kind.StartsWith("chip-", StringComparison.Ordinal))
@@ -279,6 +280,9 @@ public sealed class MaterialShapeCases
 
     internal static MaterialShape CreateShape(string kind) => kind switch
     {
+        "rounded" => new RoundedCornerShape { TopStart = new(40, RelativeUnit.Absolute), TopEnd = new(8, RelativeUnit.Absolute), BottomEnd = new(24, RelativeUnit.Absolute), BottomStart = new(48, RelativeUnit.Absolute) },
+        "round-percent" => new RoundedCornerShape(new RelativeScalar(.5, RelativeUnit.Relative)),
+        "round-small" => new RoundedCornerShape(8),
         "zero" => new CutCornerShape(),
         "asymmetric" => new CutCornerShape { TopStart = new(40, RelativeUnit.Absolute), TopEnd = new(8, RelativeUnit.Absolute),
             BottomEnd = new(24, RelativeUnit.Absolute), BottomStart = new(48, RelativeUnit.Absolute) },
@@ -286,6 +290,14 @@ public sealed class MaterialShapeCases
         "concave" or "offset" or "curve" or "hole" => new CustomShape(kind),
         _ => new CutCornerShape(20)
     };
+
+    // Corresponds to the reference content's fillMaxSize(), including finite parent constraints.
+    private sealed class FilledContent : Control
+    {
+        protected override Size MeasureOverride(Size availableSize) => new(double.IsFinite(availableSize.Width) ? availableSize.Width : 0,
+            double.IsFinite(availableSize.Height) ? availableSize.Height : 0);
+        public override void Render(DrawingContext context) => context.DrawRectangle(Brushes.Blue, null, new Rect(Bounds.Size));
+    }
 
     private sealed class CustomShape(string kind) : MaterialShape
     {

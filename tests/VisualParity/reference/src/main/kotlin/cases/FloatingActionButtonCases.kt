@@ -3,6 +3,10 @@ package parity
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,7 +26,7 @@ data class FloatingActionButtonConfig(val kind:String="icon",val size:String="de
     val checked:Boolean=false,val dark:Boolean=false,val rtl:Boolean=false,val alignment:String="end",val count:Int=3,
     val iconWidth:Double=24.0,val iconHeight:Double=24.0,val labelWidth:Double=48.0,val labelHeight:Double=16.0,
     val width:Double?=null,val height:Double?=null,val color:String="default",val elevation:String="default",
-    val visible:Boolean=true,val action:String="none",val animatedIcon:Boolean=false)
+    val visible:Boolean=true,val action:String="none",val animatedIcon:Boolean=false,val shape:String="default")
 
 @ParitySuite("floating-action-button")
 class FloatingActionButtonCases {
@@ -134,6 +138,25 @@ class FloatingActionButtonCases {
             val elevation=sourceElevations?.let {FloatingActionButtonDefaults.elevation(it[0].dp,it[1].dp,it[2].dp,it[3].dp)} ?: if(replacedElevation)FloatingActionButtonDefaults.elevation(2.dp,3.dp,4.dp,5.dp)else when(config.elevation) {
                 "lowered"->FloatingActionButtonDefaults.loweredElevation();"flat"->FloatingActionButtonDefaults.bottomAppBarFabElevation();"custom"->FloatingActionButtonDefaults.elevation(2.dp,4.dp,6.dp,9.dp);else->FloatingActionButtonDefaults.elevation()
             }
+            val shape:Shape = when(config.shape) {
+                "cut" -> CutCornerShape(16.dp,4.dp,12.dp,8.dp)
+                "percent" -> CutCornerShape(CornerSize(50),CornerSize(10),CornerSize(25),CornerSize(10))
+                "generic" -> GenericShape { size,_ ->
+                    moveTo(0f,size.height/2f); lineTo(size.width/3f,0f); lineTo(size.width,0f)
+                    lineTo(size.width*2f/3f,size.height); lineTo(0f,size.height); close()
+                }
+                else -> if(config.kind in listOf("content","extended")) when(config.size) {
+                    "small" -> FloatingActionButtonDefaults.smallExtendedFabShape
+                    "medium" -> FloatingActionButtonDefaults.mediumExtendedFabShape
+                    "large" -> FloatingActionButtonDefaults.largeExtendedFabShape
+                    else -> FloatingActionButtonDefaults.extendedFabShape
+                } else when(config.size) {
+                    "small" -> FloatingActionButtonDefaults.smallShape
+                    "medium" -> FloatingActionButtonDefaults.mediumShape
+                    "large" -> FloatingActionButtonDefaults.largeShape
+                    else -> FloatingActionButtonDefaults.shape
+                }
+            }
             val icon:@Composable ()->Unit={glyph(config.iconWidth,config.iconHeight)}
             val text:@Composable ()->Unit={glyph(config.labelWidth,config.labelHeight)}
             when(config.kind) {
@@ -160,22 +183,22 @@ class FloatingActionButtonCases {
                     }
                 }
                 "extended" -> when(config.size) {
-                    "small"->SmallExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
-                    "medium"->MediumExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
-                    "large"->LargeExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
-                    else->ExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    "small"->SmallExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    "medium"->MediumExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    "large"->LargeExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions)
+                    else->ExtendedFloatingActionButton(text,icon,{clicks++},modifier,expanded,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions)
                 }
                 "content" -> when(config.size) {
-                    "small"->SmallExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
-                    "medium"->MediumExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
-                    "large"->LargeExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
-                    else->ExtendedFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    "small"->SmallExtendedFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    "medium"->MediumExtendedFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    "large"->LargeExtendedFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
+                    else->ExtendedFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions){text()}
                 }
                 else -> when(config.size) {
-                    "small"->SmallFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
-                    "medium"->MediumFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
-                    "large"->LargeFloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
-                    else->FloatingActionButton({clicks++},modifier,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    "small"->SmallFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    "medium"->MediumFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    "large"->LargeFloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
+                    else->FloatingActionButton({clicks++},modifier,shape=shape,containerColor=container,elevation=elevation,interactionSource=interactions,content=icon)
                 }
             }
         }

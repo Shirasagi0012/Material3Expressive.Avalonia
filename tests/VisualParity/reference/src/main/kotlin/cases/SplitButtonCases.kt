@@ -5,6 +5,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -25,7 +30,7 @@ import kotlinx.serialization.Serializable
 data class SplitButtonConfig(val style:String="filled",val size:String="small",val checked:Boolean=false,
     val toggle:Boolean=true,val enabled:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val width:Double?=null,val height:Double?=null,val spacing:Double=2.0,val contentHeight:Double=16.0,
-    val action:String="none",val part:String="trailing")
+    val action:String="none",val part:String="trailing",val shape:String="default")
 
 @ParitySuite("split-button")
 class SplitButtonCases {
@@ -103,7 +108,7 @@ class SplitButtonCases {
                                 val colors=when(c.style) { "tonal"->ButtonDefaults.filledTonalButtonColors(); "elevated"->ButtonDefaults.elevatedButtonColors(); "outlined"->ButtonDefaults.outlinedButtonColors(); else->ButtonDefaults.buttonColors() }
                                 val elevation=when(c.style) { "tonal"->ButtonDefaults.filledTonalButtonElevation(); "elevated"->ButtonDefaults.elevatedButtonElevation(); "outlined"->null; else->ButtonDefaults.buttonElevation() }
                                 SplitButtonDefaults.LeadingButton(onClick={ leadingClicks++ },modifier=leading.modifier().focusRequester(leadingFocus).heightIn(min=height),enabled=leadingEnabled,
-                                    shapes=SplitButtonDefaults.leadingButtonShapesFor(height),colors=colors,elevation=elevation,
+                                    shapes=if(c.shape=="default") SplitButtonDefaults.leadingButtonShapesFor(height) else customShapes(),colors=colors,elevation=elevation,
                                     border=if(c.style=="outlined") ButtonDefaults.outlinedButtonBorder(leadingEnabled) else null,
                                     contentPadding=SplitButtonDefaults.leadingButtonContentPaddingFor(height),interactionSource=leadingSource) {
                                     Box(leadingContent.modifier().size(32.dp,c.contentHeight.toFloat().dp).background(LocalContentColor.current))
@@ -111,7 +116,7 @@ class SplitButtonCases {
                             },trailingButton={
                                 val colors=when(c.style) { "tonal"->ButtonDefaults.filledTonalButtonColors(); "elevated"->ButtonDefaults.elevatedButtonColors(); "outlined"->ButtonDefaults.outlinedButtonColors(); else->ButtonDefaults.buttonColors() }
                                 val elevation=when(c.style) { "tonal"->ButtonDefaults.filledTonalButtonElevation(); "elevated"->ButtonDefaults.elevatedButtonElevation(); "outlined"->null; else->ButtonDefaults.buttonElevation() }
-                                val shapes=SplitButtonDefaults.trailingButtonShapesFor(height).let { if(customRestShape) SplitButtonShapes(RoundedCornerShape(8.dp),it.pressedShape,it.checkedShape) else it }
+                                val shapes=(if(c.shape=="default") SplitButtonDefaults.trailingButtonShapesFor(height) else customShapes()).let { if(customRestShape) SplitButtonShapes(if(c.shape=="default") RoundedCornerShape(8.dp) else CutCornerShape(8.dp),it.pressedShape,it.checkedShape) else it }
                                 val trailingModifier=trailing.modifier().focusRequester(trailingFocus).heightIn(min=height)
                                 val border=if(c.style=="outlined") ButtonDefaults.outlinedButtonBorder(trailingEnabled) else null
                                 val padding=SplitButtonDefaults.trailingButtonContentPaddingFor(height)
@@ -122,6 +127,12 @@ class SplitButtonCases {
                     }
                 }
             }
+        }
+        fun customShapes():SplitButtonShapes {
+            val rest=if(c.shape=="rounded") RoundedCornerShape(CornerSize(75),CornerSize(12),CornerSize(25),CornerSize(50)) else if(c.shape=="percent") CutCornerShape(CornerSize(75),CornerSize(12),CornerSize(25),CornerSize(50))
+                else CutCornerShape(24.dp,4.dp,8.dp,20.dp)
+            val pressed=when(c.shape) { "null-pressed"->null; "generic"->SplitPathShape; "rounded"->RoundedCornerShape(2.dp); else->CutCornerShape(2.dp) }
+            return SplitButtonShapes(rest,pressed,if(c.shape=="rounded" || c.shape=="mixed") RoundedCornerShape(10.dp) else CutCornerShape(10.dp))
         }
         fun measure():List<ProbePoint> {
             fun bounds(probe:Probe,c:LayoutCoordinates=checkNotNull(probe.coordinates))=probe.geometry(c).filter { it.name=="box" || it.name=="size" }
@@ -136,6 +147,7 @@ class SplitButtonCases {
                 var coordinator:Any?=checkNotNull(probe.coordinates)
                 while(coordinator!=null) { field(coordinator,"layer")?.let { layers+=(coordinator as LayoutCoordinates) to it }; coordinator=field(coordinator,"wrapped") }
                 val clipped=layers.single { (_,layer) -> val graphics=checkNotNull(field(layer,"graphicsLayer")); graphics.javaClass.methods.single { it.name=="getClip" && it.parameterCount==0 }.invoke(graphics)==true }
+                if(c.shape!="default") return ProbePoint("$id-container","container",id,bounds(probe,clipped.first))
                 // A zero-width constrained leading area really paints Outline.Rectangle, not Rounded.
                 val outline=field(clipped.second,"outline") as Outline
                 val corners=when(outline) {
@@ -150,4 +162,11 @@ class SplitButtonCases {
                 ProbePoint("leading-content","content","leading-container",bounds(leadingContent)),ProbePoint("trailing-content","content","trailing-container",bounds(trailingContent)))
         }
     }
+}
+
+private object SplitPathShape:Shape {
+    override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline = Outline.Generic(Path().apply {
+        moveTo(0f,size.height/2f); lineTo(size.width/3f,0f); lineTo(size.width,0f)
+        lineTo(size.width*2f/3f,size.height); lineTo(0f,size.height); close()
+    })
 }

@@ -5,7 +5,7 @@ namespace Material3Expressive.Foundation.Rendering;
 
 internal static class RoundedRectangleGeometry
 {
-    internal static StreamGeometry Create(Rect bounds, CornerRadius corners)
+    internal static PathGeometry Create(Rect bounds, CornerRadius corners)
     {
         // Skia's addRoundRect/SetRectRadii scales overlapping radii together before
         // adding arcs. StreamGeometry requires that fit to be explicit on each path.
@@ -21,7 +21,7 @@ internal static class RoundedRectangleGeometry
         if (fit < 1)
             corners = new((float)(corners.TopLeft * fit), (float)(corners.TopRight * fit),
                 (float)(corners.BottomRight * fit), (float)(corners.BottomLeft * fit));
-        var geometry = new StreamGeometry();
+        var geometry = new PathGeometry();
         using var path = geometry.Open();
         path.BeginFigure(new Point(bounds.Left + corners.TopLeft, bounds.Top), true);
         path.LineTo(new Point(bounds.Right - corners.TopRight, bounds.Top));

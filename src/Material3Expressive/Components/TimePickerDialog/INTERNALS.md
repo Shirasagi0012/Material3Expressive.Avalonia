@@ -76,3 +76,42 @@ withinTolerance 不等于严格像素相等，未测文字不视为匹配。
 额外场景分别显式设置 `CompositionLocalProvider(LocalContentColor provides Color(0xFF448855))` 与
 外层 `Grid TextElement.Foreground="#448855"`，独立检查同一环境下的回退；原失败用例未删除或替换。
 推荐应用显式提供环境色；是否统一两个平台的根环境默认值影响整个主题，需维护者决定，未获批准、未实施。
+
+## Defaults 辅助组件（2026-11-08 本轮授权）
+
+早期授权只包含 Dialog 容器，故曾延后 Defaults 的标题与带提示模式按钮；本轮明确授权剩余组件后补齐。
+固定 AndroidX/Core TimePickerDialog.kt 全文核对一致。TimePickerDialogTitle 读取仓内固定 Core 字符串，
+LabelMedium/20 DIP bottom padding 对应 Title；TimePickerDisplayModeToggle 与 TimeScrollDisplayModeToggle
+分别对应 DisplayModeToggle/ScrollDisplayModeToggle。分支保持原等值比较，额外模式仍走上游 else，
+不推断目标、不自动写回应用 DisplayMode。公开 Click 别名直接监听内部 IconButton 的原生冒泡事件，
+Command 绑定至实际按钮，不复制执行或 CanExecute 逻辑，自动化暴露实际按钮。
+
+原模板只接受 Symbol 无法承载固定图标，故配套新增 IconButton Content 入口（决定 §35）。
+Keyboard/Schedule/SwipeVertical 从固定 internal/Icons.kt Filled 路径逐命令转换，保留 24×24 viewport、
+非零填充和不自动镜像；不是字体图标近似。TooltipBox/PlainTooltip 保留 Above 定位、非持续状态、
+独立生命周期和本地化描述。Culture 显式更新即时刷新；不新增全局语言服务或每组件计时器。
+
+TimePickerDialogDefaultsTests 覆盖本地化、Token/显式文字、native Click/Command、CanExecute、
+状态不写回、焦点提示、卸载重挂；time-dialog-defaults 双端调用真实 Defaults，对比三模式、两方向、
+明暗主题、英法中文、状态变化、按压、悬停、焦点/Escape 和提示反向，包含真实文字和固定矢量。
+平台根内容色不同的原始诊断用例单独保留，匹配环境用例显式提供相同黑色内容环境和 Tooltip 配色。
+文字像素仍以报告为准，不能由标签/排版读数相等推定完全一致。
+
+`time-dialog-defaults-verified2` 的 41 例完成且全部重复/额外截图稳定、执行错误为零。
+图标/描述/点击及模式变化已实测；标题几何与实际排版参数也直接读取。标题和提示的文字栅格仍有差异，
+平台默认根内容色诊断同样保留 different，不放宽 raster 门禁。
+复核 clock.press 的 160ms 实际截图，差异集中于提示文字；按钮区域仅 22 个 4x 像素有不超过 5 的通道差，
+未把整幅图像的失败简单归为模式图标或波纹。初次夹具漏设 inverse 调色盘与反向样本
+重名造成的失败产物保留；随后修正等价输入和唯一采样名，时刻、截图和参考输出不改。
+
+## 显式 Shape 接入（2026-11-08）
+
+固定 AndroidX 对应 Dialog 源码公开 shape；本地普通样式属性直接传给现有 Surface，
+共用其圆角、路径、内容 clip 与轮廓生命周期。未新增弹窗动画、布局或形状缓存。
+日期弹窗继续按固定 Core DatePickerDialog.skiko 的既有动作布局决定执行。
+默认 null 兼容 CornerRadius，不需要迁移；BasicAlertDialog 的自定义外观职责不变。
+
+`DialogShapeTests` 覆盖四类弹窗的原生动作、配置观察、退出中重开和关闭后重开。
+双端 `dialog-shape` 51 项覆盖切角/圆角/百分比、RTL、约束、进退/中断、主题、槽和模式替换。
+`dialog-shape-verified` 的 51 例全部 equal/withinTolerance，零执行错误、重复截图全部稳定；
+已查看日期弹窗非对称圆角的实际双端图像。未据此扩展真实桌面验收范围。

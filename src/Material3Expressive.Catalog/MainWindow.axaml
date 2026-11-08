@@ -36,7 +36,11 @@
                     <m3:FloatingActionButton Size="Large" Icon="{m3:Symbol Add}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="16">
-                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create" Icon="{m3:Symbol Add}" />
+                    <m3:ExtendedFloatingActionButton x:Name="DemoExtendedFab" Content="Create" Icon="{m3:Symbol Add}">
+                        <m3:ExtendedFloatingActionButton.Shape>
+                            <m3:CutCornerShape TopStart="25%" TopEnd="8" BottomEnd="25%" BottomStart="8" />
+                        </m3:ExtendedFloatingActionButton.Shape>
+                    </m3:ExtendedFloatingActionButton>
                     <Button Content="Expand / collapse" Click="OnToggleExtendedFab" />
                     <Button Content="Show / hide" Click="OnToggleFabVisibility" />
                 </StackPanel>
@@ -102,7 +106,7 @@
                     <ToggleButton Content="Pin" m3:MaterialButton.Icon="{m3:Symbol PushPin}" Margin="0,0,12,0" />
                     <ToggleButton Content="Cut toggle" Theme="{StaticResource MaterialOutlinedToggleButtonTheme}" Margin="0,0,12,0">
                         <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="16" BottomEnd="16" /></m3:MaterialButton.Shape>
-                        <m3:ToggleButtonAppearance.CheckedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:ToggleButtonAppearance.CheckedShape>
+                        <m3:ToggleButtonAppearance.CheckedShape><m3:RoundedCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:ToggleButtonAppearance.CheckedShape>
                         <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:MaterialButton.PressedShape>
                     </ToggleButton>
                     <Button Content="Medium" Classes="medium" Margin="0,0,12,0" />
@@ -200,6 +204,12 @@
                     <m3:IconButton Symbol="Remove" WidthOption="Narrow" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Narrow" />
                     <m3:IconButton Symbol="Home" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Uniform" />
                     <m3:IconButton Symbol="Add" WidthOption="Wide" Theme="{StaticResource MaterialFilledIconButtonTheme}" AutomationProperties.Name="Wide" />
+                    <m3:IconButton AutomationProperties.Name="Notifications with unread indicator">
+                        <Grid Width="24" Height="24">
+                            <m3:MaterialSymbol Symbol="Notifications" />
+                            <Ellipse Width="6" Height="6" Fill="Red" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                        </Grid>
+                    </m3:IconButton>
                     <m3:IconButton Symbol="Favorite" WidthOption="Wide" Classes="medium" Theme="{StaticResource MaterialTonalIconButtonTheme}" AutomationProperties.Name="Medium wide" />
                 </StackPanel>
                 <TextBlock Text="Cut icon button morphs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
@@ -282,6 +292,21 @@
                         <m3:SplitButton.TrailingButton><ToggleButton Content="…" Theme="{StaticResource MaterialOutlinedSplitButtonTrailingTheme}" /></m3:SplitButton.TrailingButton>
                     </m3:SplitButton>
                 </StackPanel>
+                <m3:SplitButton HorizontalAlignment="Left">
+                    <m3:SplitButton.LeadingButton>
+                        <Button Content="Save with cut corners" Theme="{StaticResource MaterialTonalSplitButtonLeadingTheme}">
+                            <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="18" BottomStart="18" TopEnd="4" BottomEnd="4" /></m3:MaterialButton.Shape>
+                            <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="8" BottomStart="8" TopEnd="2" BottomEnd="2" /></m3:MaterialButton.PressedShape>
+                        </Button>
+                    </m3:SplitButton.LeadingButton>
+                    <m3:SplitButton.TrailingButton>
+                        <ToggleButton Theme="{StaticResource MaterialTonalSplitButtonTrailingTheme}" m3:MaterialButton.Icon="{m3:Symbol KeyboardArrowDown}" AutomationProperties.Name="Save options">
+                            <m3:MaterialButton.Shape><m3:CutCornerShape TopStart="4" BottomStart="4" TopEnd="18" BottomEnd="18" /></m3:MaterialButton.Shape>
+                            <m3:MaterialButton.PressedShape><m3:CutCornerShape TopStart="2" BottomStart="2" TopEnd="8" BottomEnd="8" /></m3:MaterialButton.PressedShape>
+                            <m3:ToggleButtonAppearance.CheckedShape><m3:RoundedCornerShape TopStart="50%" BottomStart="50%" TopEnd="50%" BottomEnd="50%" /></m3:ToggleButtonAppearance.CheckedShape>
+                        </ToggleButton>
+                    </m3:SplitButton.TrailingButton>
+                </m3:SplitButton>
                 <TextBlock Text="RadioButton" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <RadioButton GroupName="CatalogRadio" Content="First" IsChecked="True" />

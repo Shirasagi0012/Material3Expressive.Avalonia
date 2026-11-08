@@ -41,7 +41,7 @@
                   Background="Transparent" RenderTransformOrigin="50%,50%">
                 <Border x:Name="PART_DialogContent">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-                      CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
+                      CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TonalElevation="{TemplateBinding TonalElevation}">
                     <m3:AlertDialogColumn>
                       <m3:AlertDialogColumn.Margin>
                         <MultiBinding Priority="Template" Converter="{x:Static m3:AlertDialogThemeConverters.ContentPadding}">

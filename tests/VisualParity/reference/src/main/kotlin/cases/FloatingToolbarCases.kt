@@ -5,6 +5,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -20,7 +22,7 @@ import kotlinx.serialization.Serializable
 data class FloatingToolbarConfig(val horizontal:Boolean=true,val fab:String="none",val expanded:Boolean=true,
     val vibrant:Boolean=false,val dark:Boolean=false,val rtl:Boolean=false,val leading:Boolean=true,val trailing:Boolean=true,
     val contentWidth:Double=48.0,val contentHeight:Double=48.0,val maxWidth:Double?=null,val maxHeight:Double?=null,
-    val content:String="glyph",val custom:String="none",val action:String="none",val exit:String="bottom",val fabTemplateOnly:Boolean=false)
+    val content:String="glyph",val custom:String="none",val action:String="none",val exit:String="bottom",val fabTemplateOnly:Boolean=false,val shape:String="default",val fabShape:String="default")
 
 @ParitySuite("floating-toolbar")
 class FloatingToolbarCases {
@@ -93,7 +95,15 @@ class FloatingToolbarCases {
             val colors=if(config.custom=="colors")FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor=Color(0xFF000080),toolbarContentColor=Color(0xFF00FF00))
                 else if(config.vibrant)FloatingToolbarDefaults.vibrantFloatingToolbarColors() else FloatingToolbarDefaults.standardFloatingToolbarColors()
             val padding=if(config.custom=="padding")PaddingValues(start=4.dp,top=12.dp,end=16.dp,bottom=8.dp) else FloatingToolbarDefaults.ContentPadding
-            val shape=if(config.custom=="shape")RoundedCornerShape(8.dp) else FloatingToolbarDefaults.ContainerShape
+            fun customShape(kind:String):Shape=when(kind) {
+                "asymmetric" -> CutCornerShape(40.dp,8.dp,24.dp,48.dp)
+                "rounded" -> RoundedCornerShape(40.dp,8.dp,24.dp,48.dp)
+                "percent" -> CutCornerShape(50)
+                "round-percent" -> RoundedCornerShape(50)
+                else -> CutCornerShape(20.dp)
+            }
+            val shape=if(config.shape!="default")customShape(config.shape) else if(config.custom=="shape")RoundedCornerShape(8.dp) else FloatingToolbarDefaults.ContainerShape
+            val fabShape=if(config.fabShape!="default")customShape(config.fabShape) else FloatingActionButtonDefaults.shape
             val expandedElevation=if(config.custom=="elevation")3.dp else if(config.fab=="none")FloatingToolbarDefaults.ContainerExpandedElevation else FloatingToolbarDefaults.ContainerExpandedElevationWithFab
             val collapsedElevation=if(config.custom=="elevation")1.dp else 0.dp
             if(config.action in listOf("scroll","snap","fling")) {
@@ -102,8 +112,8 @@ class FloatingToolbarCases {
                 scope=rememberCoroutineScope()
             }
             val button:@Composable ()->Unit={
-                if(config.vibrant)FloatingToolbarDefaults.VibrantFloatingActionButton({},fab.modifier()){glyph(24.0,24.0)}
-                else FloatingToolbarDefaults.StandardFloatingActionButton({},fab.modifier()){glyph(24.0,24.0)}
+                if(config.vibrant)FloatingToolbarDefaults.VibrantFloatingActionButton({},fab.modifier(),shape=fabShape){glyph(24.0,24.0)}
+                else FloatingToolbarDefaults.StandardFloatingActionButton({},fab.modifier(),shape=fabShape){glyph(24.0,24.0)}
             }
             if(config.horizontal) {
                 if(config.fab=="none")HorizontalFloatingToolbar(expanded,modifier,colors,padding,behavior,shape,

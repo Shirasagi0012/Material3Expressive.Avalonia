@@ -115,6 +115,20 @@ AnimateAsState 取消并重启，不能用保留速度的普通 retarget 代替�
 
 Button 命令、焦点与 activation 复用框架；[Enter 的共享适配](../../../../docs/DECISIONS.md#共享交互反馈与键盘激活职责)不改变本组件受控状态所有权。
 
+## 显式容器形状
+
+2026-11-08 本轮维护者授权补齐剩余 API 与必要共享能力。固定 AndroidX/Core FloatingActionButton.kt
+一致，普通四尺寸及 Extended 的纯内容/图标文字重载均公开 shape；本地新增 FloatingActionButton.Shape，
+Extended 继承，两个模板直接传至共享 Surface（决定 §35）。此前 CornerRadius 仅能表达圆角，
+现有路径绘制、阴影、裁剪与 indication 能力已足够接入，不引入额外渲染层。默认 null 保留原 API，
+无调用方迁移，不更改高度 collector、可见性或 Expanded 动画。切角是固定参数，展开过程中随实际
+容器尺寸求值，不另加形状插值。固定 Toggle FAB 与菜单项没有公开 shape 参数，不扩大到这两种入口。
+
+`FabShapeTests` 覆盖所有尺寸和普通/Extended、布局保持、真实激活、可观察形状修改、清除恢复、
+百分比尺寸和卸载重挂；`fab-shape` 双端套件覆盖三种内容入口×四尺寸×三种形状，另测 RTL、约束、
+暗色 tonal、收起、展开/反向、按压/取消、悬停与显隐反向。运行：
+`./tests/VisualParity/parity.ps1 self-test -NoRestore --family fab-shape`。
+
 ## 已接受暂缺与历史依赖问题
 
 维护者于 2026-10-04 确认 IconSize / IconColor 绑定入口。Toggle FAB 单独提供 Icon / IconTemplate，
@@ -180,3 +194,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 附加 `button.dynamic.hover.elevated` 的 Double/Float elevation 精确读数仍有差异，不能算该 Button 用例通过。
 Raster withinTolerance 不等于原始像素相同；几何内容不评价文字栅格，headless 不替代真实桌面验收。
 结果解释见 [VisualParity](../../../../tests/VisualParity/README.md)。
+
+本轮新增 `fab-shape` 69 例（44 静态、25 动态）的双端自检记录在
+`artifacts/visual-parity/runs/fab-shape-verified`：全部执行无错、重复捕获稳定；43 个静态形状在原门槛内，Extended 受限 32×32 场景仍有图像差异。Extended 的 RTL 反向动画与 content/extended 显隐反向的各一帧仍 different，
+属于尚未消除的差异，不视为已接受；原始采样及门槛保持不变。

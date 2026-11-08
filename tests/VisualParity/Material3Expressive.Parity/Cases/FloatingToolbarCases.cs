@@ -14,7 +14,7 @@ namespace Material3Expressive.Parity;
 public sealed record FloatingToolbarConfig(bool Horizontal = true, string Fab = "none", bool Expanded = true,
     bool Vibrant = false, bool Dark = false, bool Rtl = false, bool Leading = true, bool Trailing = true,
     double ContentWidth = 48, double ContentHeight = 48, double? MaxWidth = null, double? MaxHeight = null,
-    string Content = "glyph", string Custom = "none", string Action = "none", string Exit = "bottom", bool FabTemplateOnly = false);
+    string Content = "glyph", string Custom = "none", string Action = "none", string Exit = "bottom", bool FabTemplateOnly = false, string Shape = "default", string FabShape = "default");
 
 [ParitySuite("floating-toolbar")]
 public sealed class FloatingToolbarCases
@@ -122,6 +122,7 @@ public sealed class FloatingToolbarCases
             Toolbar = config.Horizontal ? new HorizontalFloatingToolbar { FloatingActionButtonPosition = config.Fab == "start" ? FloatingToolbarHorizontalFabPosition.Start : FloatingToolbarHorizontalFabPosition.End }
                 : new VerticalFloatingToolbar { FloatingActionButtonPosition = config.Fab == "start" ? FloatingToolbarVerticalFabPosition.Top : FloatingToolbarVerticalFabPosition.Bottom };
             Toolbar.Expanded = config.Expanded;
+            if (config.Shape != "default") Toolbar.Shape = MaterialShapeCases.CreateShape(config.Shape);
             if (config.Vibrant) Toolbar.Classes.Add("vibrant");
             content = config.Content switch { "empty" => new Panel(), "button" => new Button { Content = new Panel() }, _ => Glyph(config.ContentWidth, config.ContentHeight) };
             Toolbar.Content = content;
@@ -133,6 +134,7 @@ public sealed class FloatingToolbarCases
             else
             {
                 fab = new FloatingActionButton { Content = Glyph(24, 24) };
+                if (config.FabShape != "default") fab.Shape = MaterialShapeCases.CreateShape(config.FabShape);
                 fab.Theme = (ControlTheme)host.Window.FindResource(config.Vibrant ? "MaterialVibrantFloatingToolbarFabTheme" : "MaterialStandardFloatingToolbarFabTheme")!;
                 if (config.FabTemplateOnly) Toolbar.FloatingActionButtonTemplate = new FuncDataTemplate<object?>((_, _) => fab);
                 else Toolbar.FloatingActionButton = fab;

@@ -79,6 +79,8 @@ public class IconButton : Button
             UpdateShapeCollection();
         base.OnPropertyChanged(change);
         if (change.Property == InteractionSourceProperty) ConnectSource();
+        if (change.Property == ContentProperty || change.Property == ContentTemplateProperty)
+            PseudoClasses.Set(":has-custom-content", Content is not null || ContentTemplate is not null);
     }
 
     private void ConnectSource()

@@ -6,6 +6,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -14,6 +15,9 @@ public enum FloatingActionButtonSize { Default, Small, Medium, Large }
 /// <summary>A Material FAB. Content is centered without imposing an icon size.</summary>
 public class FloatingActionButton : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<FloatingActionButton>();
+    /// <summary>Optional container outline; null uses CornerRadius. Extended FAB inherits this shape.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
         AvaloniaProperty.Register<FloatingActionButton, MaterialInteractionSource?>(nameof(InteractionSource));
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<FloatingActionButton, object?>(nameof(Icon));

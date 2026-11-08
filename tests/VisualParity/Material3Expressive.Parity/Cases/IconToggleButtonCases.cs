@@ -96,7 +96,8 @@ public sealed class IconToggleButtonCases
         var vector = new VectorSymbol { Symbol = symbol.Symbol, HorizontalAlignment = symbol.HorizontalAlignment, VerticalAlignment = symbol.VerticalAlignment };
         typeof(StyledElement).GetProperty(nameof(StyledElement.TemplatedParent))!.SetValue(vector, symbol.TemplatedParent);
         vector.SetValue(MaterialSymbol.DefaultSizeProperty, MaterialSymbol.GetDefaultSize(symbol), BindingPriority.Template);
-        surface.Child = vector; host.Draw();
+        var content = (Grid)surface.Child!;
+        content.Children.Remove(symbol); content.Children.Insert(0, vector); host.Draw();
         void Sample(string id) => writer.Submit(host.Snapshot(id, id,
             [new("button", "container", null, AvaloniaMeasurements.Geometry(button, host.Window).Where(m => m.Name is "box" or "size").ToArray()),
              new("state", "state", null, [Measurement.Flag("checked", button.IsChecked, definition: "icon-toggle.checked"),

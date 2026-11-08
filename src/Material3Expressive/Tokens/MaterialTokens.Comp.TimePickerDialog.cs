@@ -9,6 +9,7 @@ public static partial class MaterialTokens
     {
         public static class TimePickerDialog
         {
+            public static readonly MaterialTokenKey<Avalonia.Thickness> TitlePadding = new("md.comp.timepickerdialog.title-padding");
             public static readonly MaterialTokenKey<double> VibrantHorizontalPadding = new("md.comp.timepickerdialog.vibrant-horizontal-padding");
             public static readonly MaterialTokenKey<double> VibrantVerticalPadding = new("md.comp.timepickerdialog.vibrant-vertical-padding");
             public static readonly MaterialTokenKey<double> VibrantLandscapeAdditionalHeight = new("md.comp.timepickerdialog.vibrant-landscape-additional-height");

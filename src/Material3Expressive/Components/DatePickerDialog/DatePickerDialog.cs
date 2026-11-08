@@ -1,4 +1,5 @@
 using Avalonia;
+using Material3Expressive.Foundation.Rendering;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.LogicalTree;
@@ -8,6 +9,9 @@ namespace Material3Expressive.Components;
 /// <summary>A date-picker dialog container. Content and action handling belong to the caller.</summary>
 public class DatePickerDialog : BasicAlertDialog
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<DatePickerDialog>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<object?> ConfirmButtonProperty = AvaloniaProperty.Register<DatePickerDialog, object?>(nameof(ConfirmButton));
     public static readonly StyledProperty<object?> DismissButtonProperty = AvaloniaProperty.Register<DatePickerDialog, object?>(nameof(DismissButton));
     public static readonly StyledProperty<IDataTemplate?> ConfirmButtonTemplateProperty = AvaloniaProperty.Register<DatePickerDialog, IDataTemplate?>(nameof(ConfirmButtonTemplate));

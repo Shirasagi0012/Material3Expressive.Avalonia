@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using Split = Material3Expressive.Components.SplitButton;
 
 namespace Material3Expressive.Parity;
@@ -17,7 +18,7 @@ namespace Material3Expressive.Parity;
 public sealed record SplitButtonConfig(string Style = "filled", string Size = "small", bool Checked = false,
     bool Toggle = true, bool Enabled = true, bool Dark = false, bool Rtl = false,
     double? Width = null, double? Height = null, double Spacing = 2, double ContentHeight = 16,
-    string Action = "none", string Part = "trailing");
+    string Action = "none", string Part = "trailing", string Shape = "default");
 
 [ParitySuite("split-button")]
 public sealed class SplitButtonCases
@@ -95,7 +96,7 @@ public sealed class SplitButtonCases
             case "selection": case "reverse": case "shape":
                 Mutate(1000, "selected", () => ((ToggleButton)scene.Trailing).IsChecked = true); Times(16000, 32000, 64000);
                 if (config.Action == "reverse") Mutate(65000, "reverse", () => ((ToggleButton)scene.Trailing).IsChecked = false);
-                if (config.Action == "shape") Mutate(65000, "shape-change", () => scene.Trailing.CornerRadius = new CornerRadius(8));
+                if (config.Action == "shape") Mutate(65000, "shape-change", () => scene.ChangeRestShape());
                 Times(80000, 160000, 400000); break;
             case "theme": Mutate(1000, "dark", () => CaseDefaults.SetThemeColors(host, true)); Times(16000, 400000); break;
             case "space": case "enter":
@@ -135,10 +136,30 @@ public sealed class SplitButtonCases
             Leading.Content = leadingContent = new Marker { PreferredSize = new(32, config.ContentHeight) };
             var iconSize = config.Size switch { "xsmall" or "small" => 22, "medium" => 26, "large" => 38, "xlarge" => 50, _ => throw new InvalidOperationException() };
             Trailing.Content = trailingContent = new Marker { PreferredSize = new(iconSize, iconSize) };
+            if (config.Shape != "default")
+            {
+                foreach (var button in new[] { Leading, Trailing })
+                {
+                    MaterialButton.SetShape(button, RestShape(config.Shape));
+                    MaterialButton.SetPressedShape(button, config.Shape == "null-pressed" ? null
+                        : config.Shape == "generic" ? new SplitPathShape() : config.Shape == "rounded" ? new RoundedCornerShape(2) : new CutCornerShape(2));
+                }
+                if (Trailing is ToggleButton toggle) ToggleButtonAppearance.SetCheckedShape(toggle, config.Shape is "rounded" or "mixed" ? new RoundedCornerShape(10) : new CutCornerShape(10));
+            }
             Leading.Click += (_, _) => leadingClicks++; Trailing.Click += (_, _) => trailingClicks++;
             Split = new Split { LeadingButton = Leading, TrailingButton = Trailing, Width = config.Width ?? double.NaN, Height = config.Height ?? double.NaN,
                 Spacing = config.Spacing, FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
+        public void ChangeRestShape()
+        {
+            if (config.Shape == "default") Trailing.CornerRadius = new CornerRadius(8);
+            else MaterialButton.SetShape(Trailing, new CutCornerShape(8));
+        }
+        internal static MaterialShape RestShape(string shape) => shape == "rounded" ? new RoundedCornerShape { TopStart = new(.75, RelativeUnit.Relative), BottomStart = new(.5, RelativeUnit.Relative), TopEnd = new(.12, RelativeUnit.Relative), BottomEnd = new(.25, RelativeUnit.Relative) } : shape == "percent"
+            ? new CutCornerShape { TopStart = new(.75, RelativeUnit.Relative), BottomStart = new(.5, RelativeUnit.Relative),
+                TopEnd = new(.12, RelativeUnit.Relative), BottomEnd = new(.25, RelativeUnit.Relative) }
+            : new CutCornerShape { TopStart = new(24, RelativeUnit.Absolute), BottomStart = new(20, RelativeUnit.Absolute),
+                TopEnd = new(4, RelativeUnit.Absolute), BottomEnd = new(8, RelativeUnit.Absolute) };
         public ProbePoint[] Measure()
         {
             ProbePoint ButtonPoint(Button button, string id, int clicks) => new(id, "button", "split", [.. Layout(button),
@@ -153,6 +174,7 @@ public sealed class SplitButtonCases
                     : new[] { corners.TopLeft, corners.TopRight, corners.BottomRight, corners.BottomLeft };
                 // Full is a sentinel on Avalonia; a degenerate painted box normalizes it to zero.
                 var maximum = Math.Min(surface.Bounds.Width, surface.Bounds.Height) / 2;
+                if (config.Shape != "default") return new(id + "-container", "container", id, Layout(surface));
                 return new(id + "-container", "container", id, [.. Layout(surface), Measurement.Vector("radii", "rect", radii.Select(r => Math.Clamp(r, 0, maximum)).ToArray(), "dip", "container", "motion", "split-button.visual-corner-radii", components: ["topLeft", "topRight", "bottomRight", "bottomLeft"]), Measurement.Numeric("shadowElevation", surface.ShadowElevation, category: "motion", definition: "button.shadow-elevation")]);
             }
             return [new("split", "split-button", null, Layout(Split)), ButtonPoint(Leading, "leading", leadingClicks), ButtonPoint(Trailing, "trailing", trailingClicks),
@@ -160,6 +182,19 @@ public sealed class SplitButtonCases
                 new("leading-content", "content", "leading-container", Layout(leadingContent)), new("trailing-content", "content", "trailing-container", Layout(trailingContent))];
         }
         Measurement[] Layout(Control control) => AvaloniaMeasurements.Geometry(control, host.Window).Where(m => m.Name is "box" or "size").ToArray();
+    }
+    internal sealed class SplitPathShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry();
+            using var context = path.Open();
+            context.BeginFigure(new Point(0, size.Height / 2), true);
+            context.LineTo(new Point(size.Width / 3, 0)); context.LineTo(new Point(size.Width, 0));
+            context.LineTo(new Point(size.Width * 2 / 3, size.Height)); context.LineTo(new Point(0, size.Height));
+            context.EndFigure(true);
+            return path;
+        }
     }
     sealed class Marker : Control
     {

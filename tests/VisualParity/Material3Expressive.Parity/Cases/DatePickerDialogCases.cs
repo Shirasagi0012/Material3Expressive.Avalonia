@@ -18,7 +18,7 @@ namespace Material3Expressive.Parity;
 public sealed record PickerDialogConfig(bool Date = false, bool Dismiss = true, bool Toggle = true,
     bool Dark = false, bool Rtl = false, bool PlatformWidth = false, double? Width = null, double? Height = null,
     int HostWidth = 640, int HostHeight = 640, double ContentWidth = 256, double ContentHeight = 300,
-    double ButtonWidth = 80, string Colors = "default", string Action = "none", bool AllowDismiss = true, bool Vibrant = false, string? Ambient = null);
+    double ButtonWidth = 80, string Colors = "default", string Action = "none", bool AllowDismiss = true, bool Vibrant = false, string? Ambient = null, string Shape = "default");
 
 [ParitySuite("date-picker-dialog")]
 public sealed class DatePickerDialogCases

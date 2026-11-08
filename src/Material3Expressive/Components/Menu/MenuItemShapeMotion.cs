@@ -52,7 +52,7 @@ internal sealed class MenuItemShapeMotion : IDisposable
     {
         if (_owner.ShapeAnimation is not { } spec) return;
         Entry Resolve(MaterialShape? path, CornerRadius corners) => new(path,
-            path is CutCornerShape cut ? CornerShape.Cut.From(cut) : path is null ? new CornerShape.Defined(corners) : null);
+            path is null ? new CornerShape.Defined(corners) : CornerShape.FromMaterialShape(path));
         var normal = Resolve(_owner.Shape, _owner.CornerRadius);
         var selected = Resolve(_owner.SelectedShape, _owner.SelectedCornerRadius);
         var configuration = (normal, selected, spec);

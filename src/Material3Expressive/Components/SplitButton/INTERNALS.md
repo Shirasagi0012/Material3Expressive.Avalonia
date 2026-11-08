@@ -82,8 +82,18 @@ Leading 外侧全圆、内侧小角，Trailing 镜像；按压改变内侧角，
 
 ## 一致性边界
 
-尚未实现任意 Compose Shape。静止/按压使用圆角矩形，
-尾部选中使用默认圆形，不存在完整 Shape 对象移植。
+原先仅提供圆角，原因是 Surface 尚无可复用路径和切角播放器；这个限制由共享决定 §35 的能力补齐。
+2026-11-08 本轮维护者明确授权自主补齐 API、共享能力与修订历史决定，现将四组主题的两槽接入
+MaterialButton.Shape / PressedShape 和 ToggleButtonAppearance.CheckedShape，无破坏性迁移。
+AndroidX/Core 固定 SplitButton.kt 内容相同。保持 shapes 的默认→pressed→checked 选择：pressed 为 null
+时直接回退默认形状，不能穿透到 checked。圆角/切角配置进入 AnimatedShape，即使其两个可选状态都是 null；
+它也保留光学校正的逐角半高 clamp。含任意路径时直接切换：切角状态用未 clamp 的 CornerBasedShape
+光学值，任意路径没有光学校正。选中覆盖层直接绘制同一动画路径，不绘制外接矩形。
+形状配置变化仅在动画规格或 corner/generic 入口改变时重建，其他配置保持当前运动；修改非活动目标
+不取消当前动画。该规则属于 Split，未扩大普通 Button/ToggleButton 的配置重置决定。
+
+本轮补入公开 RoundedCornerShape，与切角同族逐角插值、不同族按 Interpolatable.lerp 的中点切换。
+配置变更仍保留 Split 自己的 remember/effect 规则；原 CornerRadius 入口继续有效。
 
 旧 4× headless 静态场景在既定容差内；动态仍保留原生 Enter 和属性/主题/禁用当帧时机差异。
 两个 hover 场景在 64ms 的 elevation 约有 0.0000003–0.0000006 DIP 残差，旧记录未将其认定为已接受；
@@ -102,6 +112,18 @@ remembered bool、elevation 的 remembered 列表和 indication 分开。替换�
 覆盖四种外观、重叠、源替换及原生按压中的替换。真实差异以该 suite 的新捕获结果为准，不将旧 suite 结果扩大到此入口。
 
 ## 验证入口
+
+`SplitButtonShapeTests` 覆盖四种外观、独立槽、真实键盘激活、原生先切换后回调、null pressed、清除形状、
+非活动配置改变保持动画、活动可观察形状修改及动画作用域清理。`split-button-shape` 双端套件覆盖
+四外观×五尺寸×选中、百分比/RTL/受限布局/禁用/普通副区，以及按压、选中、反向、取消、禁用和配置中断。
+执行入口：`./tests/VisualParity/parity.ps1 self-test -NoRestore --family split-button-shape`。
+当前 `split-shape-verified` 74 例 / 321 个采样全部执行成功且重复/额外截图稳定；静态 49 例全部
+在原门禁内。动态实际路径与光学位置在后续动画帧对齐；仍保留原生选中/禁用更新当帧与 Compose
+重组提交的差异。generic 按压路径也在输入当帧提前切换，下一帧一致；此项尚未接受，不能以稳态相等
+声称完整时序一致。首轮 `split-shape-initial` 保留百分比夹具 Float CornerSize 误选物理像素重载及
+旧选中矩形覆盖层的失败证据；随后两端统一为整数 12% 定义，绘制改用实际路径，未修改门禁。
+
+
 
 Surface 视觉子层方向修正后的 `split-button` 107 例、405 个采样复测完成：50 equal、31 withinTolerance、
 26 different，执行错误为零，重复捕获与额外被动截图稳定（`20261105-042829-b96dfc3b`）。

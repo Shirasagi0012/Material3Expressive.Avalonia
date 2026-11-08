@@ -104,7 +104,8 @@ public sealed class MenuCases
             {
                 dropdown.Shape = new CutCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
                     BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) };
-                dropdown.SelectedShape = config.Path == "cut" ? new CutCornerShape(new RelativeScalar(.35, RelativeUnit.Relative))
+                if (config.Path == "rounded") dropdown.Shape = new RoundedCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute), BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) };
+                dropdown.SelectedShape = config.Path is "rounded" or "round-cut" ? new RoundedCornerShape(new RelativeScalar(.35, RelativeUnit.Relative)) : config.Path == "cut" ? new CutCornerShape(new RelativeScalar(.35, RelativeUnit.Relative))
                     : config.Path == "generic" ? new MenuNotchedShape() : null;
             }
             dropdown.TrailingContent = config.Trailing ? trailing : null;

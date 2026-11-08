@@ -126,3 +126,7 @@ Padding 和形状，选中/禁用或尺寸变化不会替换这些设置；需�
 模板内部 Surface 裁剪背景、内容与反馈；替换模板需自行保留这些接入。
 当前无字形回归不能证明真实字体、屏幕阅读器或桌面体验一致。
 四种外观和尺寸见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+
+形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
+它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
+清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。

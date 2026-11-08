@@ -91,7 +91,7 @@ Button/RadioButton/CheckBox 角色；请给自定义内容设置有意义的 `Au
 支持四角不等圆角并跟随当前形变，不增加 Padding 或期望尺寸。默认仍为 Opacity。
 配置与组件接入边界见 [交互反馈](../../Foundation/Interaction/README.md)。
 
-`Shape` 可设置 `CutCornerShape`，覆盖背景、内容裁剪、均匀描边、阴影、波纹和焦点环的外形；
+`Shape` 可设置 `CutCornerShape` 或 `RoundedCornerShape`，覆盖背景、内容裁剪、均匀描边、阴影、波纹和焦点环的外形；
 静态与三种交互 Surface 都支持。四角按逻辑 Start/End 定义，随 RTL 交换；百分比以短边为基准：
 
 ```xml
@@ -101,6 +101,10 @@ Button/RadioButton/CheckBox 角色；请给自定义内容设置有意义的 `Au
   </m3:ClickableSurface.Shape>
 </m3:ClickableSurface>
 ```
+
+将示例中的 `CutCornerShape` 换为 `RoundedCornerShape` 即可使用带独立百分比的圆角。
+例如 `new RoundedCornerShape(new RelativeScalar(.5, RelativeUnit.Relative))` 是短边半径；
+`new RoundedCornerShape(1000)` 则是真正的 1000 DIP，不使用旧 Full 哨兵。
 
 形状是可共享的 Avalonia 对象，四角可绑定并在运行时修改。清除 `Shape` 恢复 `CornerRadius`。
 自定义轮廓可派生 `MaterialShape`，实现 `CreateOutline(Size, FlowDirection, double density)`，

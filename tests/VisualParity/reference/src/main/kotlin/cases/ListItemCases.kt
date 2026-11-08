@@ -167,11 +167,11 @@ class ListItemCases {
                             val defaults=if(changedShapes) ListItemDefaults.shapes(shape=RoundedCornerShape(2.dp),selectedShape=RoundedCornerShape(8.dp),pressedShape=RoundedCornerShape(24.dp),focusedShape=RoundedCornerShape(8.dp),hoveredShape=RoundedCornerShape(6.dp),draggedShape=RoundedCornerShape(8.dp))
                                 else if(config.segmented) ListItemDefaults.segmentedShapes(index,count) else ListItemDefaults.shapes()
                             val shapes=if(path=="none")defaults else ListItemShapes(
-                                shape=if(path=="generic")NotchedShape else CutCornerShape(20.dp,4.dp,8.dp,2.dp),
-                                selectedShape=if(path=="mixed")defaults.selectedShape else CutCornerShape(12.dp),
-                                pressedShape=if(path=="mixed")defaults.pressedShape else CutCornerShape(10),
-                                focusedShape=CutCornerShape(8.dp),hoveredShape=CutCornerShape(4.dp),
-                                draggedShape=if(path=="generic")NotchedShape else CutCornerShape(25))
+                                shape=if(path=="generic")NotchedShape else if(path=="rounded" || path=="round-cut") RoundedCornerShape(20.dp,4.dp,8.dp,2.dp) else CutCornerShape(20.dp,4.dp,8.dp,2.dp),
+                                selectedShape=if(path=="rounded" || path=="round-cut") RoundedCornerShape(25) else if(path=="mixed")defaults.selectedShape else CutCornerShape(12.dp),
+                                pressedShape=if(path=="rounded") RoundedCornerShape(10) else if(path=="mixed")defaults.pressedShape else CutCornerShape(10),
+                                focusedShape=if(path=="rounded") RoundedCornerShape(8.dp) else CutCornerShape(8.dp),hoveredShape=if(path=="rounded") RoundedCornerShape(4.dp) else CutCornerShape(4.dp),
+                                draggedShape=if(path=="rounded") RoundedCornerShape(25) else if(path=="generic")NotchedShape else CutCornerShape(25))
                             val longClick:(()->Unit)?=if(config.action in listOf("long","key-long")) {{longClicks++}} else null
                             if(!config.segmented) when(config.mode) {
                                 "none"->ListItem(modifier=modifier,enabled=enabled,leadingContent=leading,trailingContent=trailing,overlineContent=overline,supportingContent=supporting,verticalAlignment=alignment,shapes=shapes,contentPadding=padding,content=content)

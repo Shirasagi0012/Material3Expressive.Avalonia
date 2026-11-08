@@ -47,7 +47,15 @@ class 和资源恢复。ButtonLayout 的共享 48 DIP 留白来自 `Comp.Button.
 
 Vibrant Standard 持有完整模板和原有颜色 Token 配置，普通 Standard 派生后改用 ambient；
 Filled/Tonal 及两种 Outlined 入口以 BasedOn 修改颜色/描边，隐式主题为普通 Standard。
-模板为 ButtonLayout → MaterialSurface#PART_Container → IconButtonSymbol，没有 ContentPresenter。
+原模板为 ButtonLayout → MaterialSurface#PART_Container → IconButtonSymbol，仅提供 Symbol 便利入口。
+2026-11-08 本轮授权补齐上游 content lambda：Surface 子层同时保留 Symbol 与原生 ContentPresenter，
+非空 Content/ContentTemplate 选择自定义内容。采用原生逻辑内容管理和自然尺寸测量，不额外缩放自定义图标。
+此行为修订源于时间默认模式按钮需要精确上游矢量，旧限制会令其内容消失；原 Symbol 的字体便利性保留。
+仓内 VectorSymbol 夹具改为替换 Grid 内的 Symbol，不再丢弃内容层；旧调用若依赖忽略 Content，应清除两项。
+`IconButtonContentTests` 验证十种主题的动态内容/模板优先级、恢复 Symbol、尺寸和原生键盘动作。
+双端 `icon-button-content-verified2` 使用真实内容填充与剪裁，覆盖 40 静态和 20 按压/变形缩放用例；
+60 例全部通过原门禁（4 equal、56 withinTolerance）、零错误且重复稳定；已查看从切角到圆角的按压截图。原夹具创建但漏赋 Content 的失败报告保留，补齐两端同等输入后重跑，
+未改参考、采样时刻或容差。
 内部 IconButtonSymbol 继承 MaterialSymbol 的绘制及 StyleKey；它局部对应 Compose `size(iconSize)` 的两轴独立约束，
 使用 MaterialSymbol.DefaultSize 而不是会溢出父约束的原生 Width/Height，不改变通用 MaterialSymbol 的正方形测量约定。
 Symbol=None 保留真实模板与测量，不应通过删除部件模拟空图标。

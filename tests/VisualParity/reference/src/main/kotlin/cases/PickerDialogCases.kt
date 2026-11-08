@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -24,7 +25,7 @@ data class PickerDialogConfig(val date:Boolean=false,val dismiss:Boolean=true,va
     val dark:Boolean=false,val rtl:Boolean=false,val platformWidth:Boolean=false,
     val width:Double?=null,val height:Double?=null,val hostWidth:Int=640,val hostHeight:Int=640,
     val contentWidth:Double=256.0,val contentHeight:Double=300.0,val buttonWidth:Double=80.0,
-    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val vibrant:Boolean=false,val ambient:String?=null)
+    val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val vibrant:Boolean=false,val ambient:String?=null,val shape:String="default")
 
 @ParitySuite("date-picker-dialog")
 class DatePickerDialogCases {
@@ -156,7 +157,7 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
                             dismissButton=if(dismiss) ({Marker("dismiss",config.buttonWidth,40.0)}) else null,
                             modifier=modifier, properties=properties,
                             colors=DatePickerDefaults.colors(containerColor=color),
-                            shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else DatePickerDefaults.shape,
+                            shape=if(config.shape=="asymmetric") CutCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.shape=="percent") CutCornerShape(50) else if(config.shape=="rounded") RoundedCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.colors=="custom") RoundedCornerShape(12.dp) else DatePickerDefaults.shape,
                             tonalElevation=if(config.colors=="surface") 6.dp else DatePickerDefaults.TonalElevation) {
                             Marker("content",config.contentWidth,contentHeight)
                         }
@@ -165,7 +166,7 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
                             dismissButton=if(dismiss) ({Marker("dismiss",config.buttonWidth,40.0)}) else null,
                             modeToggleButton=if(toggle) ({Marker("toggle",40.0,48.0)}) else null,
                             modifier=modifier, properties=properties, containerColor=color,
-                            shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else TimePickerDialogDefaults.vibrantShape) {
+                            shape=if(config.shape=="asymmetric") CutCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.shape=="percent") CutCornerShape(50) else if(config.shape=="rounded") RoundedCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.colors=="custom") RoundedCornerShape(12.dp) else TimePickerDialogDefaults.vibrantShape) {
                             Marker("content",config.contentWidth,contentHeight)
                         }
                     } else {
@@ -174,7 +175,7 @@ private class PickerDialogScene(val config:PickerDialogConfig) {
                             dismissButton=if(dismiss) ({Marker("dismiss",config.buttonWidth,40.0)}) else null,
                             modeToggleButton=if(toggle) ({Marker("toggle",40.0,48.0)}) else null,
                             modifier=modifier, properties=properties,containerColor=color,
-                            shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else TimePickerDialogDefaults.shape) {
+                            shape=if(config.shape=="asymmetric") CutCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.shape=="percent") CutCornerShape(50) else if(config.shape=="rounded") RoundedCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.colors=="custom") RoundedCornerShape(12.dp) else TimePickerDialogDefaults.shape) {
                             Marker("content",config.contentWidth,contentHeight)
                         }
                     }

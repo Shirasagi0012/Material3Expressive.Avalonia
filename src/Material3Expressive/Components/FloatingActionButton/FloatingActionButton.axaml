@@ -187,7 +187,7 @@
                   <m3:Token Key="{x:Static m3:MaterialTokens+Comp+FabLarge.ContainerHeight}"/>
                 </MultiBinding>
               </m3:FabLayout.ContainerMinSize>
-              <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" StateLayerBrush="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TonalElevation="{Binding Elevation.Default, RelativeSource={RelativeSource TemplatedParent}}">
+              <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" StateLayerBrush="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TonalElevation="{Binding Elevation.Default, RelativeSource={RelativeSource TemplatedParent}}">
                 <m3:FabIconContentLayout x:Name="PART_IconContentLayout">
                   <ContentPresenter x:Name="PART_Icon" Content="{TemplateBinding Icon}" ContentTemplate="{TemplateBinding IconTemplate}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                     <m3:MaterialSymbol.DefaultSize>
@@ -231,7 +231,7 @@
         <ControlTemplate>
           <m3:FabVisibilityLayout>
             <m3:FabLayout Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}" ContainerMinSize="0">
-              <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" StateLayerBrush="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TonalElevation="{Binding Elevation.Default, RelativeSource={RelativeSource TemplatedParent}}">
+              <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" StateLayerBrush="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" TonalElevation="{Binding Elevation.Default, RelativeSource={RelativeSource TemplatedParent}}">
                 <m3:ExtendedFabLayout x:Name="PART_ContentLayout">
                   <m3:ExtendedFabLayout.MinimumSize>
                     <MultiBinding Priority="Template" Converter="{x:Static m3:FabSizeDefaultConverter.Instance}">

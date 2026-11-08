@@ -125,3 +125,7 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 [Catalog 示例](../../../Material3Expressive.Catalog/ListItemDemo.axaml)包含普通、分组、选择与焦点反馈。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。
+
+形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
+它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
+清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。

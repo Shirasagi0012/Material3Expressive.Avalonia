@@ -194,10 +194,16 @@ public sealed class ListItemCases
             Item.SelectedShape=new CutCornerShape(12);Item.FocusedShape=new CutCornerShape(8);
             Item.HoveredShape=new CutCornerShape(4);Item.DraggedShape=new CutCornerShape(new RelativeScalar(.25,RelativeUnit.Relative));
             if(path=="mixed") {Item.SelectedShape=null;Item.PressedShape=null;}
+            if(path is "rounded" or "round-cut")
+            {
+                Item.Shape = new RoundedCornerShape { TopStart=new(20,RelativeUnit.Absolute),TopEnd=new(4,RelativeUnit.Absolute),BottomEnd=new(8,RelativeUnit.Absolute),BottomStart=new(2,RelativeUnit.Absolute) };
+                Item.SelectedShape=new RoundedCornerShape(new RelativeScalar(.25,RelativeUnit.Relative));
+                if(path=="rounded") {Item.PressedShape=new RoundedCornerShape(new RelativeScalar(.1,RelativeUnit.Relative));Item.FocusedShape=new RoundedCornerShape(8);Item.HoveredShape=new RoundedCornerShape(4);Item.DraggedShape=new RoundedCornerShape(new RelativeScalar(.25,RelativeUnit.Relative));}
+            }
             if(path=="generic") {Item.Shape=Item.DraggedShape=new NotchedShape();}
         }
         public ProbePoint[] Measure()=>[new("item","list-item",null,[..AvaloniaMeasurements.Geometry(Item,host.Window).Where(m=>m.Name is "box" or "size"),
-            Measurement.Numeric("corner",Item.Surface!.EffectiveCornerRadius.TopLeft,"dip",category:"motion",definition:"list-item.top-left-outline-radius"),
+            Measurement.Numeric("corner",c.Rtl ? Item.Surface!.EffectiveCornerRadius.TopRight : Item.Surface!.EffectiveCornerRadius.TopLeft,"dip",category:"motion",definition:"list-item.top-left-outline-radius"),
             ..c.Path!="none" ? new[] {Measurement.Text("outlineKind",Item.Surface.ContainerGeometry is not null?"generic":"rounded",definition:"list-item.rendered-outline-kind"),
                 Measurement.Numeric("pathStartY",Item.Surface.ContainerGeometry is PathGeometry geometry?geometry.Figures![0].StartPoint.Y:0,"dip",category:"motion",definition:"list-item.generic-outline-first-move-y-or-zero")} : [],
             Measurement.Numeric("shadow",Item.Surface!.ShadowElevation,"dip",category:"motion",definition:"list-item.shadow-elevation"),

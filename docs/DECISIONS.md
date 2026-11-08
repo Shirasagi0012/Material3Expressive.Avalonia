@@ -430,3 +430,14 @@
 - **RTL 首次键盘波纹**：Core AbstractClickableNode 的 centerOffset 在首次 pointer bounds 更新前为物理零点；Avalonia RTL 呈现层本地坐标镜像，键盘起点需使用其本地右上角后映射回 owner。只修正无 pointer 历史且无自定义 PressPositionMapper 的初始点，pointer 更新后的中心及导航项映射不变。
 - **Snackbar 容器路径（同轮授权）**：槽和 Data 入口新增 Shape，按固定 Snackbar.kt 传至 Surface；Host 通过 SnackbarTemplate 复用，不增加 Host 形状代理、不改变 FIFO、计时、基线布局或进出动画。null 保留 CornerRadius，无调用迁移。
 - **Snackbar Host 完成条件与 RTL 槽（同轮授权）**：本轮路径 Host 用例发现 §32 的显式取消结果尚未在 opacity 完成回调检查，入场中断会提前移除退出层；现在仅 Finished 且 token 未取消才调用移除，恢复固定 LaunchedEffect 取消时不执行后续代码的语义。RTL presenter 已由 Avalonia 镜像，原 Right 对齐在宽约束槽内重复反转，改为保留逻辑起点 Left。原物理 SnackbarLayout 排列与动画参数不变，无公开迁移。
+
+- **SplitButton 路径与状态形状（2026-11-08 本轮授权）**：四组主副主题接入既有 MaterialButton.Shape/PressedShape、ToggleButtonAppearance.CheckedShape；不创建第二套公共配置，也不改变原生子按钮 owner。保留 Split 按 spec 记忆、按选中目标启动 effect 的规则，corner/generic 入口改变才重建。Surface 为纯切角的固定形状保留 AnimatedShape 光学 clamp，任意路径不做光学校正；选中覆盖层直接绘制当前轮廓。null pressed 优先回退 rest，不穿透 checked。无公共迁移，其他组件原重置策略保留。
+- **普通与 Extended FAB 容器形状（同轮授权）**：FloatingActionButton.Shape 由 Extended 继承，对应固定 FloatingActionButton.kt 各尺寸/内容重载的 shape；两个模板直接复用 Surface，不改变原有测量、内容宽度过渡、可见性或 elevation 生命周期。Toggle FAB 和 FAB 菜单项没有相应上游公开参数，不增加便利代理。默认 null 保留 CornerRadius，无调用迁移。
+
+- **公开逻辑圆角形状（2026-11-08 本轮授权）**：此前只公开 CutCornerShape，圆角通过 CornerRadius 兼容接口表达；这保留了旧调用，但不能表达独立百分比角和圆/切角状态组合。本轮新增 RoundedCornerShape，与 CutCornerShape 同用逻辑四角与 RelativeScalar，百分比按短边解析，实际 DIP 1000 不再被当作 Full。CornerShape 仅增加值快照入口，复用已有同族插值、异族过半切换和各组件配置 key 规则。Surface 对已知圆角保持原 RoundRect 描边/阴影/反馈分支，避免降为 Generic path；独立 CreateOutline 仍返回闭合 PathGeometry。Button/Icon/Toggle/Split/ListItem/Menu 状态消费同一类型。保留原 CornerRadius API 与 Full 适配，无破坏性迁移；自定义任意路径之间仍不插值。
+
+- **FloatingToolbar 容器形状（同轮授权）**：固定横/纵、普通/FAB 重载均公开 shape；新增 FloatingToolbar.Shape 并传入两套 Surface 模板，专用 Standard/Vibrant FAB 模板传递已有 FAB.Shape。保留工具栏与 FAB 独立轮廓、现有尺寸/占位/展开/滚动协议，不建立新形状动画，无破坏性迁移。
+
+- **IconButton 自定义内容（2026-11-08 本轮授权修订）**：原默认模板只消费 Symbol，原因是以仓内字体图标便利入口承接图标按钮，README 曾明确 Content 被忽略。时间默认模式按钮的固定 Filled 矢量不能用近似字体替换，因此本轮补齐上游 content lambda。非空 Content 或 ContentTemplate 优先，清除后恢复 Symbol；内容使用原生 presenter、自然尺寸居中，无新公共属性。行为迁移：依赖旧忽略行为的调用方须清除 Content/ContentTemplate；仓内图标捕获夹具保留新内容层，Catalog 增加组合图标。点击、命令、automation 与状态 owner 不变。
+
+- **四类 Dialog 容器形状（同轮授权）**：固定 AlertDialog、DatePickerDialog、TimePickerDialog、VibrantTimePickerDialog 均提供 shape。四个类分别 AddOwner 同一 Surface.Shape，模板只转发；BasicAlertDialog 不自带表面，保持组合职责。退出冻结和再次打开复用现有 presentation 生命周期，日期布局仍按固定 Core 分支，无公开迁移。

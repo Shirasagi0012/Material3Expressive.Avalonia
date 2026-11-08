@@ -125,7 +125,7 @@ public class DropdownMenuGroup : ItemsControl
     private (ShapeEntry Normal, ShapeEntry Inactive, MaterialSpring Spec) Configuration(MaterialSpring spec)
     {
         ShapeEntry Resolve(MaterialShape? path, CornerRadius corners) => new(path,
-            path is CutCornerShape cut ? CornerShape.Cut.From(cut) : path is null ? new CornerShape.Defined(corners) : null);
+            path is null ? new CornerShape.Defined(corners) : CornerShape.FromMaterialShape(path));
         return (Resolve(Shape, CornerRadius), Resolve(InactiveShape, InactiveCornerRadius), spec);
     }
     private void ResetShape((ShapeEntry Normal, ShapeEntry Inactive, MaterialSpring Spec) configuration)

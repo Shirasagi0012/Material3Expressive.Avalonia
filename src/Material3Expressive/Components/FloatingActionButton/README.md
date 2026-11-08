@@ -49,6 +49,21 @@ Icon / IconTemplate 均支持普通数据和模板。字符串采用相应尺寸
 `Background`、`Foreground`、`CornerRadius`、`Command` / `CommandParameter`、Click 和 IsEnabled
 使用按钮入口。绑定 Command 时 DataContext 需提供相应 ICommand；事件需在视图中实现处理器。
 
+普通和 Extended FAB 可通过 `Shape` 设置切角或自定义 `MaterialShape`，默认 null 沿用 `CornerRadius`。
+同一个形状用于背景、内容裁剪、阴影和交互反馈；百分比随展开中的实际尺寸重新计算。
+
+```xml
+<m3:ExtendedFloatingActionButton Content="Create" Icon="{m3:Symbol Add}">
+  <m3:ExtendedFloatingActionButton.Shape>
+    <m3:CutCornerShape TopStart="25%" TopEnd="8" BottomEnd="25%" BottomStart="8" />
+  </m3:ExtendedFloatingActionButton.Shape>
+</m3:ExtendedFloatingActionButton>
+```
+
+`Shape` 不改变外部测量或 Expanded 的含义。自定义路径描边需要均匀 BorderThickness；
+调用 `fab.ClearValue(FloatingActionButton.ShapeProperty)` 恢复主题形状配置。
+Toggle FAB 的容器仍使用 `ContainerCornerRadius` 函数；FAB 菜单项保持自身默认形状。
+
 ## 显隐与 elevation
 
 用 `AnimatedVisible` 控制带缩放/透明度的显示，适用于普通和 Extended FAB；直接 IsVisible 不执行此过渡。

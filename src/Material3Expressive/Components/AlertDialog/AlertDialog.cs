@@ -1,4 +1,5 @@
 using Avalonia;
+using Material3Expressive.Foundation.Rendering;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Media;
@@ -10,6 +11,9 @@ namespace Material3Expressive.Components;
 /// requests remain application-owned and never implicitly change IsOpen.</summary>
 public class AlertDialog : BasicAlertDialog
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<AlertDialog>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<object?> IconProperty = AvaloniaProperty.Register<AlertDialog, object?>(nameof(Icon));
     public static readonly StyledProperty<object?> TitleProperty = AvaloniaProperty.Register<AlertDialog, object?>(nameof(Title));
     public static readonly StyledProperty<object?> ConfirmButtonProperty = AvaloniaProperty.Register<AlertDialog, object?>(nameof(ConfirmButton));

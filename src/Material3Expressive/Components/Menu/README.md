@@ -185,3 +185,7 @@ DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
 [MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml)展示独立和原生菜单，[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml)展示菜单栏。
 内部机制、已确认适配和验证范围见 [INTERNALS.md](INTERNALS.md)。
+
+形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
+它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
+清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。

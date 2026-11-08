@@ -61,7 +61,7 @@ public partial class PickerDialogDemo : Window
         _vibrantTimeInput = !_vibrantTimeInput;
         VibrantDraftDial.IsVisible = !_vibrantTimeInput;
         VibrantDraftInput.IsVisible = _vibrantTimeInput;
-        VibrantTimeModeButton.Content = _vibrantTimeInput ? "Clock" : "Keyboard";
+        VibrantTimeModeButton.DisplayMode = _vibrantTimeInput ? TimePickerDisplayMode.Input : TimePickerDisplayMode.Picker;
     }
 
     private void OnConfirmDate(object? sender, RoutedEventArgs e)
@@ -94,8 +94,8 @@ public partial class PickerDialogDemo : Window
         _timeInput = !_timeInput;
         DraftDial.IsVisible = !_timeInput;
         DraftInput.IsVisible = _timeInput;
-        TimeModeButton.Content = _timeInput ? "Clock" : "Keyboard";
-        TimeTitle.Text = _timeInput ? "Enter time" : "Select time";
+        TimeModeButton.DisplayMode = _timeInput ? TimePickerDisplayMode.Input : TimePickerDisplayMode.Picker;
+        TimeTitle.DisplayMode = TimeModeButton.DisplayMode;
     }
 
     private void OnDismissRequested(object? sender, DismissRequestedEventArgs e)

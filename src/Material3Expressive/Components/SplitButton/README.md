@@ -84,7 +84,28 @@ Trailing 为 22/22/26/38/50 DIP（XS/S/M/L/XL）；XS 标签间距为 4 DIP，�
 颜色、描边、`Padding` 可使用原生属性或 [Token 覆盖](../../../../docs/GETTING_STARTED.md)。
 
 静止圆角用 `CornerRadius`，按压目标用 `MaterialButton.PressedCornerRadius`；默认主区外侧全圆、内侧小角，
-副区镜像。可切换副区选中后变为圆形，并显示 contentColor×0.10 覆盖层，禁用时该选中层仍存在。
+副区镜像。也可以为两区分别设置 `MaterialButton.Shape` / `PressedShape`，为尾部 ToggleButton 设置
+`ToggleButtonAppearance.CheckedShape`；显式 Shape 生效时，这三个形状入口优先于圆角配置。
+未提供按压/选中形状时回退到默认 Shape。清除 Shape 恢复既有圆角配置。
+
+```xml
+<ToggleButton Theme="{StaticResource MaterialTonalSplitButtonTrailingTheme}"
+              m3:MaterialButton.Icon="{m3:Symbol KeyboardArrowDown}">
+  <m3:MaterialButton.Shape>
+    <m3:CutCornerShape TopStart="4" BottomStart="4" TopEnd="18" BottomEnd="18" />
+  </m3:MaterialButton.Shape>
+  <m3:MaterialButton.PressedShape>
+    <m3:CutCornerShape TopStart="2" BottomStart="2" TopEnd="8" BottomEnd="8" />
+  </m3:MaterialButton.PressedShape>
+  <m3:ToggleButtonAppearance.CheckedShape>
+    <m3:CutCornerShape TopStart="25%" BottomStart="25%" TopEnd="25%" BottomEnd="25%" />
+  </m3:ToggleButtonAppearance.CheckedShape>
+</ToggleButton>
+```
+
+切角之间保留按压/选中形变，百分比随实际尺寸变化；自定义 `MaterialShape` 路径直接切换。
+尾部内容随切角做光学校正，自定义任意路径不偏移内容。形状不改变按钮布局或命令。
+默认圆角入口的可切换副区选中后变为圆形，并显示 contentColor×0.10 覆盖层，禁用时该选中层仍存在。
 
 普通用户 Style、局部值或绑定设置的子按钮颜色、描边、Padding 和圆角优先于主题的禁用与尺寸默认值；
 父级 `Spacing` 也使用同样的 Avalonia 覆盖规则。移除局部值后恢复剩余样式或当前主题/尺寸下的实时默认值，
@@ -102,6 +123,10 @@ SplitButton 的 LeadingButton 与 TrailingButton 分别设置，可用独立源�
 
 Trailing 优先获得宽度，两区使用共同高度，主区消费剩余空间；极窄宽度下 Trailing 可能溢出，容器不裁剪。
 自定义 Control 槽需要正确实现 Measure/DesiredSize；任意自定义内容的 intrinsic 等价性尚未全面验证。
-不提供任意 Compose `Shape` 映射；真实文字、桌面手工操作和屏幕阅读器体验
+显式路径描边要求均匀 BorderThickness。真实文字、桌面手工操作和屏幕阅读器体验
 未由无字形 headless 场景证明。
 四种配对和普通/切换副区见 [Catalog MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+
+`Shape`、`PressedShape`、`CheckedShape` 也接受 `RoundedCornerShape`，四角同样支持 DIP 和百分比。
+例如保持默认切角，将选中形状设为四角 `50%` 的 RoundedCornerShape，即可得到切角到圆角的选中转换。
+同族逐角插值；圆角与切角混合时按上游在动画中点切换形状族。

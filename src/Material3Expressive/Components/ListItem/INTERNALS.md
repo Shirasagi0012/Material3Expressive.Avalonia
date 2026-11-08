@@ -96,3 +96,8 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 键盘按压初值使用物理左上角；新增行为测试和双端 space 样本核实该映射。任意路径拖动态的初始
 测试输入曾误用两个实例（Core 同一对象）；现两端统一对象身份。外部 Press 的 RTL 坐标也按各框架
 的实际本地坐标约定映射，未改产品行为来迁就用例。
+
+显式状态形状现同样识别 `RoundedCornerShape`，保存逻辑 DIP/百分比的值快照，
+复用既有状态 owner、配置重置与 CornerShape 混合族中点切换，不以 Generic path 近似圆角。
+验证见 `rounded-shape-final`：列表圆角与圆/切角状态组合的 12 例中 8 例通过原门禁；4 个 space 场景仍有焦点反馈差异。
+固定来源与共享入口决定见 Surface INTERNALS / DECISIONS §35，不代表所有交互完全一致。

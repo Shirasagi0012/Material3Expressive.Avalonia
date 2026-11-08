@@ -40,6 +40,13 @@ internal sealed class PickerDialogScene
         });
         mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
         Dialog = config.Date ? new DatePickerDialog() : config.Vibrant ? new VibrantTimePickerDialog() : new TimePickerDialog();
+        if (config.Shape != "default")
+        {
+            var shape = MaterialShapeCases.CreateShape(config.Shape);
+            switch (Dialog) { case DatePickerDialog dateShape: dateShape.Shape = shape; break;
+                case TimePickerDialog timeShape: timeShape.Shape = shape; break;
+                case VibrantTimePickerDialog vibrantShape: vibrantShape.Shape = shape; break; }
+        }
         Dialog.AnimateTransition = config.Action is "transition" or "interrupt" or "immediate";
         Dialog.IsOpen = !Dialog.AnimateTransition;
         Dialog.UsePlatformDefaultWidth = config.PlatformWidth;

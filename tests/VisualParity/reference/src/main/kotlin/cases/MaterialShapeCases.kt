@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,7 +25,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MaterialShapeConfig(val kind:String="surface",val shape:String="cut",val rtl:Boolean=false,
-    val content:Boolean=false,val border:Double=1.1,val elevation:Double=0.0,val clickable:Boolean=false,val action:String="none",val pressedShape:String="none",val gradient:Boolean=false,val gradientType:String="linear")
+    val content:Boolean=false,val border:Double=1.1,val elevation:Double=0.0,val clickable:Boolean=false,val action:String="none",val pressedShape:String="none",val gradient:Boolean=false,val gradientType:String="linear",val checkedShape:String="none")
 
 @ParitySuite("material-shape")
 class MaterialShapeCases {
@@ -47,6 +48,9 @@ class MaterialShapeCases {
                         LocalRippleConfiguration provides RippleConfiguration(focus=RippleConfiguration.Focus.InsetRing(Color.Red,Color.Blue))) {
                         Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
                             val shape:Shape=when(c.shape) {
+                                "rounded" -> RoundedCornerShape(40.dp,8.dp,24.dp,48.dp)
+                                "round-percent" -> RoundedCornerShape(50)
+                                "round-small" -> RoundedCornerShape(8.dp)
                                 "zero" -> CutCornerShape(0.dp)
                                 "asymmetric" -> CutCornerShape(if(changed) CornerSize(75) else CornerSize(40.dp),CornerSize(8.dp),CornerSize(24.dp),CornerSize(48.dp))
                                 "percent" -> CutCornerShape(50)
@@ -67,6 +71,8 @@ class MaterialShapeCases {
                                 }
                                 else -> CutCornerShape(20.dp)
                             }
+                            val customPressed:Shape=if(c.pressedShape=="round-percent") RoundedCornerShape(50) else CutCornerShape(50)
+                            val customChecked:Shape=if(c.checkedShape=="round-small") RoundedCornerShape(8.dp) else if(c.checkedShape=="round-percent") RoundedCornerShape(50) else CutCornerShape(8.dp)
                             val modifier=probe.modifier().focusRequester(requester).size(width.dp,height.dp)
                             val color=if(c.kind.startsWith("chip-")) Color(0xFFBBDDCC) else Color(0xFFEADDFF)
                             val density=androidx.compose.ui.platform.LocalDensity.current.density
@@ -84,7 +90,7 @@ class MaterialShapeCases {
                             else if(c.kind=="click") Surface(onClick={clicks++},modifier=modifier,shape=shape,color=color,contentColor=Color.Black,
                                 border=border,shadowElevation=e,interactionSource=source,content=content)
                             else if(c.kind.startsWith("toggle-")) {
-                                val shapes=ToggleButtonShapes(shape,if(c.pressedShape=="none")shape else CutCornerShape(50),if(c.pressedShape=="none")shape else CutCornerShape(8.dp))
+                                val shapes=ToggleButtonShapes(shape,if(c.pressedShape=="none")shape else customPressed,if(c.pressedShape=="none")shape else customChecked)
                                 val colors=ToggleButtonColors(color,Color.Black,color,Color.Black,color,Color.Black)
                                 val change:(Boolean)->Unit={selected=it;clicks++}
                                 val buttonContent:@Composable RowScope.()->Unit={content()}
@@ -98,9 +104,9 @@ class MaterialShapeCases {
                             }
                             else if(c.kind.startsWith("icon-")) {
                                 val iconColors=IconButtonDefaults.iconButtonColors(containerColor=color,contentColor=Color.Black)
-                                val pressedShape=if(c.pressedShape=="none") shape else CutCornerShape(50)
+                                val pressedShape=if(c.pressedShape=="none") shape else customPressed
                                 if(c.kind.contains("toggle")) {
-                                    val shapes=IconToggleButtonShapes(shape,pressedShape,if(c.pressedShape=="none")shape else CutCornerShape(8.dp))
+                                    val shapes=IconToggleButtonShapes(shape,pressedShape,if(c.pressedShape=="none")shape else customChecked)
                                     val colors=IconToggleButtonColors(color,Color.Black,color,Color.Black,color,Color.Black)
                                     when(c.kind) {
                                         "icon-toggle-filled" -> FilledIconToggleButton(checked=selected,onCheckedChange={clicks++},shapes=shapes,modifier=modifier,colors=colors,interactionSource=source,content=content)
@@ -136,7 +142,7 @@ class MaterialShapeCases {
                                 val pressedShape:Shape=if(c.pressedShape=="concave") object:Shape {
                                     override fun createOutline(size:androidx.compose.ui.geometry.Size,layoutDirection:LayoutDirection,density:Density):Outline =
                                         Outline.Generic(Path().apply {moveTo(0f,0f);lineTo(120f,0f);lineTo(120f,64f);lineTo(60f,40f);lineTo(0f,64f);close();transform(Matrix().apply{scale(density.density,density.density)})})
-                                } else CutCornerShape(50)
+                                } else customPressed
                                 val shapes=ButtonShapes(shape,if(c.pressedShape=="none") shape else pressedShape)
                                 val buttonContent:@Composable RowScope.()->Unit={content()}
                                 when(c.kind) {

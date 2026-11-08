@@ -34,6 +34,9 @@
           <m3:Token Key="{x:Static m3:MaterialTokens+Comp+IconButtonSmall.WideTrailingSpace}" />
         </MultiBinding>
       </Setter>
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="IsVisible" Value="False" /></Style>
+      <Style Selector="^:has-custom-content /template/ m3|MaterialSymbol"><Setter Property="IsVisible" Value="False" /></Style>
+      <Style Selector="^:has-custom-content /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="IsVisible" Value="True" /></Style>
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="Width" Value="{Binding Path=(m3:ButtonThemeProperties.Width), RelativeSource={RelativeSource Self}}" />
       <Setter Property="Height" Value="{Binding Path=(m3:ButtonThemeProperties.Height), RelativeSource={RelativeSource Self}}" />
@@ -68,10 +71,13 @@
                               PressedShape="{TemplateBinding m3:MaterialButton.PressedShape}"
                               m3:ButtonSurfaceState.IsPressed="{TemplateBinding SourceIsPressed}"
                               PressedCornerRadius="{TemplateBinding m3:MaterialButton.PressedCornerRadius}">
-            <m3:IconButtonSymbol Symbol="{TemplateBinding Symbol}"
-                               m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+            <Grid>
+              <m3:IconButtonSymbol Symbol="{TemplateBinding Symbol}"
+                                 m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+IconButtonSmall.IconSize}}"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
           </m3:MaterialSurface>
           </m3:ButtonLayout>
         </ControlTemplate>

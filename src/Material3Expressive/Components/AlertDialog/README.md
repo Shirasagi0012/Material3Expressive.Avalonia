@@ -113,6 +113,23 @@ AlertDialog 默认自带 24 DIP 容器留白。图标居中；有图标时标题
 `TonalElevation` 默认 0；标准 AlertDialog 不自动添加阴影。
 统一外观优先使用[主题与 Token 接入](../../../../docs/GETTING_STARTED.md#主题与定制)。
 
+### 显式容器形状
+
+`AlertDialog.Shape` 支持 `RoundedCornerShape`、`CutCornerShape` 和自定义 `MaterialShape`；
+非 null 时覆盖 CornerRadius，清除后恢复圆角 Token/显式 CornerRadius。逻辑四角随 RTL 映射，
+百分比相对容器短边，打开时修改形状对象会更新背景、内容裁剪和轮廓。
+
+```xml
+<m3:AlertDialog IsOpen="{Binding IsDialogOpen}">
+  <m3:AlertDialog.Shape>
+    <m3:CutCornerShape TopStart="40" TopEnd="8" BottomEnd="24" BottomStart="8" />
+  </m3:AlertDialog.Shape>
+  <!-- 内容、确认与取消槽沿用上面的示例 -->
+</m3:AlertDialog>
+```
+
+`BasicAlertDialog` 不添加默认表面，继续由内容自行组合 Surface。
+
 ## 使用边界
 
 系统/IME inset 和平台安全窗口选项尚未实现；正文不会自动避让软键盘。

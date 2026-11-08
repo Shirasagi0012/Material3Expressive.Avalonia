@@ -11,6 +11,7 @@
       <TextBlock x:Name="Result" Text="Choose an action" />
     </StackPanel>
     <m3:AlertDialog x:Name="Alert" Title="Delete this record?" Icon="{m3:Symbol Delete}" DismissRequested="OnDismissRequested">
+      <m3:AlertDialog.Shape><m3:CutCornerShape TopStart="40" TopEnd="8" BottomEnd="24" BottomStart="8" /></m3:AlertDialog.Shape>
       <TextBlock Text="The selected record will be removed. You can cancel to keep it." TextWrapping="Wrap" />
       <m3:AlertDialog.ConfirmButton><Button Content="Delete" Click="OnConfirm" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.ConfirmButton>
       <m3:AlertDialog.DismissButton><Button Content="Cancel" Click="OnCancel" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:AlertDialog.DismissButton>

@@ -77,8 +77,56 @@ ModeToggleButton 及对应 Template。它没有 Title 槽，使用 SurfaceContai
 有限宿主高度下填满高度，不采用普通变体在 384 DIP 高度处的动作上移。
 `Comp.TimePickerDialog.Vibrant*` Token 可局部覆盖布局和容器色。Catalog 提供独立的打开入口。
 
+### 显式容器形状
+
+`TimePickerDialog.Shape` 支持 `RoundedCornerShape`、`CutCornerShape` 和自定义 `MaterialShape`；
+非 null 时覆盖 CornerRadius，清除后恢复圆角 Token/显式 CornerRadius。逻辑四角随 RTL 映射，
+百分比相对容器短边，打开时修改形状对象会更新背景、内容裁剪和轮廓。
+
+```xml
+<m3:TimePickerDialog IsOpen="{Binding IsDialogOpen}">
+  <m3:TimePickerDialog.Shape>
+    <m3:CutCornerShape TopStart="40" TopEnd="8" BottomEnd="24" BottomStart="8" />
+  </m3:TimePickerDialog.Shape>
+  <!-- 内容、确认与取消槽沿用上面的示例 -->
+</m3:TimePickerDialog>
+```
+
+`VibrantTimePickerDialog.Shape` 用法相同。
+
+### 默认标题与模式切换
+
+`TimePickerDialogTitle` 按 `DisplayMode` 选择本地化标题，采用 LabelMedium
+和底部 20 DIP 留白。`Culture` 可显式指定；null 在配置更新时使用 CurrentUICulture。
+`Comp.TimePickerDialog.TitlePadding` 可覆盖默认留白，普通 Text/字体局部设置仍优先。
+
+`TimePickerDisplayModeToggle` 表达时钟/输入切换，`TimeScrollDisplayModeToggle` 表达滚轮/输入切换。
+二者带默认上方 PlainTooltip、准确矢量图标和自动化名称，复用 TooltipBox 的悬停、焦点、长按及退出动画。
+点击触发原生 `Click` 和 `Command`/`CommandParameter`，**不修改 DisplayMode**；应用决定何时切换编辑器。
+继承 IsEnabled 控制按钮，可显式设置 Culture。滚轮变体默认 DisplayMode=Scroll，其余默认 Picker。
+
+```xml
+<m3:TimePickerDialogTitle x:Name="ModeTitle" DisplayMode="Picker" />
+<m3:TimePickerDisplayModeToggle x:Name="ModeButton" DisplayMode="Picker" Click="ChangeMode" />
+```
+
+```csharp
+private void ChangeMode(object? sender, RoutedEventArgs e)
+{
+    var next = ModeButton.DisplayMode == TimePickerDisplayMode.Picker
+        ? TimePickerDisplayMode.Input : TimePickerDisplayMode.Picker;
+    ModeTitle.DisplayMode = ModeButton.DisplayMode = next;
+    DraftDial.IsVisible = next == TimePickerDisplayMode.Picker;
+    DraftInput.IsVisible = next == TimePickerDisplayMode.Input;
+}
+```
+
+将标题与按钮分别放进 Dialog.Title、Dialog.ModeToggleButton 槽。绑定应用模式属性也可；
+两个编辑器用同一 SelectedTime。Catalog 的 Picker dialogs 已使用该组合，Date/time pickers 的
+非包含式输入/滚轮例展示 TimeScrollDisplayModeToggle。替换已有手写标题时去掉重复的底部 Margin。
+
 ## 使用边界
 
-Defaults 中独立的标题/带 Tooltip 切换按钮辅助组件尚未提供。
+默认标题与两种模式切换辅助组件见上文。
 系统/IME inset 和平台安全窗口选项尚未实现；文字像素、真实输入法、屏幕阅读器模态隔离、
 触屏及多显示器 DPI 切换未经桌面验收。离屏几何结果不证明这些能力。

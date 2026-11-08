@@ -199,3 +199,19 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 零执行错误。8 个 different 均为 card/click/elevated/outlined 的 LTR/RTL resize；独立工作树
 fb5605d 的 `shape-consumers-baseline` 复现完全相同的失败用例和比较分类数量，不将其归为本轮新增。
 当前运行还记录 9 个 Core 重复性不稳定项，保留原始 self-test 结果；不以跨端容差内替代重复性通过。
+
+## 公开逻辑圆角与混合形状（2026-11-08）
+
+RoundedCornerShape 按固定 Foundation RoundedCornerShape.kt/CornerBasedShape.kt 保留逻辑 DIP/百分比，
+不会经过旧 Full=1000 转换。Surface 识别圆角分支并维持 RoundRect 绘制；同族/异族动画由既有
+CornerShape 与 AnimatedCornerRadius 处理，ListItem/Menu 同样保存值快照。原先只公开切角的原因及
+本轮扩展授权见 DECISIONS §35；没有破坏性迁移。默认/显式圆角均不降为 Generic path。
+`RoundedShapeTests` 与形状/Tooltip/InsetRing 相关回归共 277 项通过。
+`rounded-shape-verified` 完成 155 个双端用例，执行错误为零；按钮混合形状的实际双端截图已检查。
+保留 Split 选中事件当帧、列表键盘焦点环等残余差异；反向按压部分 Compose 重复截图不稳定，
+不能把单次匹配声称为重复稳定。首轮错误的图标额外描边输入已改为两端等价配置，旧报告保留。
+RTL 列表新增非对称圆角暴露旧探针读取逻辑 TopLeft 而定义是物理左角；已按实际方向选择对应角。
+最终 `rounded-shape-final` 155 例为 44 equal、77 withinTolerance、34 different，执行错误为零；
+51 静态用例全部通过原门禁。列表 8/12、菜单 9/12、按钮动态 53/60 通过；Split 动态 20 例均仍有差异。
+8 个反向场景仍有 Compose.repeat 在 160ms 的 raster 变化，Avalonia repeat/extraImages 稳定。
+四个原先仅因 RTL 探针失败的列表用例已通过；未更改容差、参考输出或采样时刻。

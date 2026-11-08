@@ -148,7 +148,7 @@ internal sealed class ListItemMotion : IDisposable
     {
         var rounds = _owner.ResolveShapes();
         ShapeTarget Resolve(MaterialShape? path, CornerRadius corners) => new(path,
-            path is CutCornerShape cut ? CornerShape.Cut.From(cut) : path is null ? new CornerShape.Defined(corners) : null);
+            path is null ? new CornerShape.Defined(corners) : CornerShape.FromMaterialShape(path));
         ShapeTarget[] shapes = [Resolve(_owner.Shape, rounds.Shape), Resolve(_owner.SelectedShape, rounds.SelectedShape),
             Resolve(_owner.PressedShape, rounds.PressedShape), Resolve(_owner.FocusedShape, rounds.FocusedShape),
             Resolve(_owner.HoveredShape, rounds.HoveredShape), Resolve(_owner.DraggedShape, rounds.DraggedShape)];

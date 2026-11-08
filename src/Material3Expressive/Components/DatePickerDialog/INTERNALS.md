@@ -39,7 +39,7 @@ Content 由实际 presenter 持有逻辑关系，使其继承 Surface 环境。
 ## 验证与范围
 
 原始移植授权限定为两个同名 Dialog 容器入口，不包括编辑器本体、Vibrant 变体或 Defaults 辅助组件。
-后续新增的 VibrantTimePickerDialog 由 [TimePickerDialog](../TimePickerDialog/INTERNALS.md) 维护；Defaults 标题/带 Tooltip 模式按钮仍未提供。
+后续新增的 VibrantTimePickerDialog 由 [TimePickerDialog](../TimePickerDialog/INTERNALS.md) 维护；Defaults 标题/带 Tooltip 模式按钮已在后续移植中补齐，见同一维护说明。
 
 - [PickerDialogTests](../../../../tests/Material3Expressive.Tests/PickerDialogTests.cs)：内容分配、按钮间距、
   槽模板、Token 更新、文字环境、真实点击、关闭请求、重开和卸载。
@@ -58,3 +58,15 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 self-test 新采集真实双端、重复捕获与额外被动截图，按命令输出路径读取 summary/overview/sample。
 withinTolerance 不是严格像素相同。文字排版/像素、真实 OS IME、屏幕阅读器模态隔离、触屏、
 多显示器 DPI 和跨平台桌面效果未经验证；Foundation 的系统/IME inset、平台安全窗口缺口继续存在。
+
+## 显式 Shape 接入（2026-11-08）
+
+固定 AndroidX 对应 Dialog 源码公开 shape；本地普通样式属性直接传给现有 Surface，
+共用其圆角、路径、内容 clip 与轮廓生命周期。未新增弹窗动画、布局或形状缓存。
+日期弹窗继续按固定 Core DatePickerDialog.skiko 的既有动作布局决定执行。
+默认 null 兼容 CornerRadius，不需要迁移；BasicAlertDialog 的自定义外观职责不变。
+
+`DialogShapeTests` 覆盖四类弹窗的原生动作、配置观察、退出中重开和关闭后重开。
+双端 `dialog-shape` 51 项覆盖切角/圆角/百分比、RTL、约束、进退/中断、主题、槽和模式替换。
+`dialog-shape-verified` 的 51 例全部 equal/withinTolerance，零执行错误、重复截图全部稳定；
+已查看日期弹窗非对称圆角的实际双端图像。未据此扩展真实桌面验收范围。

@@ -296,7 +296,8 @@ public sealed class IconButtonCases
             // to the replacement painter. Avalonia 12.1.2 exposes an internal setter here.
             typeof(StyledElement).GetProperty(nameof(StyledElement.TemplatedParent))!.SetValue(vector, symbol.TemplatedParent);
             vector.SetValue(MaterialSymbol.DefaultSizeProperty, MaterialSymbol.GetDefaultSize(symbol), BindingPriority.Template);
-            Surface.Child = vector;
+            var content = (Grid)Surface.Child!;
+            content.Children.Remove(symbol); content.Children.Insert(0, vector);
             SetSize(config.Size);
         }
 

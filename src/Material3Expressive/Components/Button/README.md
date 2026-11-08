@@ -304,3 +304,7 @@ C# 使用 `MaterialButton.SetPressedCornerRadius(button, new CornerRadius(8))`
 - 精确指针分支由 `MaterialPrecisionPointer.IsEnabled` 显式启用；真实设备自动监听尚未实现
 - 替换整个 `Template` 后，不保证保留 Material 的布局、形状动画或交互反馈接入
 - 当前实现不是完整视觉一致性承诺；未决差异、验证入口及已接受适配见 [INTERNALS.md](INTERNALS.md#一致性边界与验证)
+
+形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
+它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
+清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。

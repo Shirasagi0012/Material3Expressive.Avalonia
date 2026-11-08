@@ -22,7 +22,7 @@ public sealed record AlertDialogConfig(bool Basic = false, bool Icon = true, boo
     double? Width = null, double? Height = null, int HostWidth = 520, int HostHeight = 360,
     double ContentWidth = 160, double ContentHeight = 40, double ButtonWidth = 80,
     string Colors = "default", string Action = "none", bool AllowDismiss = true, double? MinimumInteractiveSize = null,
-    bool Precision = false, bool ObserveTypography = false);
+    bool Precision = false, bool ObserveTypography = false, string Shape = "default");
 
 [ParitySuite("precision-alert-dialog")]
 public sealed class PrecisionAlertDialogCases
@@ -146,6 +146,7 @@ internal sealed class AlertDialogScene
         });
         mouse = (IMouseDevice)host.Window.PlatformImpl!.GetType().GetProperty("MouseDevice")!.GetValue(host.Window.PlatformImpl)!;
         Dialog = config.Basic ? new BasicAlertDialog() : new AlertDialog();
+        if (Dialog is AlertDialog shaped && config.Shape != "default") shaped.Shape = MaterialShapeCases.CreateShape(config.Shape);
         MaterialInteractiveSize.SetMinimum(Dialog, config.MinimumInteractiveSize);
         MaterialPrecisionPointer.SetIsEnabled(Dialog, config.Precision);
         Dialog.AnimateTransition = config.Action is "transition" or "interrupt" or "immediate";

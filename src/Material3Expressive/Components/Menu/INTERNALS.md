@@ -198,3 +198,8 @@ DropdownMenuItem 不公开该参数；已由本轮自主 API 授权采纳，Base
 `menu-item-paths` 的 90 例双端 self-test 全部通过（86 equal、4 withinTolerance），执行错误 0、
 重复稳定；包含原有 Baseline/Standard/Vibrant 场景以及新增切角、混合角形、任意路径、RTL、按压、
 hover、选中与快速反向。已查看菜单分组反向与真实凹路径容器的双端截图。
+
+显式状态形状现同样识别 `RoundedCornerShape`，保存逻辑 DIP/百分比的值快照，
+复用既有状态 owner、配置重置与 CornerShape 混合族中点切换，不以 Generic path 近似圆角。
+验证见 `rounded-shape-final`：菜单圆角与圆/切角状态组合的 12 例中 9 例通过原门禁，3 例仍保留状态切换差异。
+固定来源与共享入口决定见 Surface INTERNALS / DECISIONS §35，不代表所有交互完全一致。

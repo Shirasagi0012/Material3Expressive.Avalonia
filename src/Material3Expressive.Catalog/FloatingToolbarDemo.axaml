@@ -11,10 +11,13 @@
       <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
     </m3:HorizontalFloatingToolbar>
     <m3:HorizontalFloatingToolbar Classes="vibrant" Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
+      <m3:HorizontalFloatingToolbar.Shape><m3:CutCornerShape TopStart="20%" TopEnd="8" BottomEnd="20%" BottomStart="8" /></m3:HorizontalFloatingToolbar.Shape>
       <m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
         <DataTemplate>
           <m3:FloatingActionButton Theme="{StaticResource MaterialVibrantFloatingToolbarFabTheme}"
-                                   Icon="{m3:Symbol Add}" AutomationProperties.Name="New item" />
+                                   Icon="{m3:Symbol Add}" AutomationProperties.Name="New item">
+            <m3:FloatingActionButton.Shape><m3:RoundedCornerShape TopStart="40%" TopEnd="8" BottomEnd="40%" BottomStart="8" /></m3:FloatingActionButton.Shape>
+          </m3:FloatingActionButton>
         </DataTemplate>
       </m3:HorizontalFloatingToolbar.FloatingActionButtonTemplate>
       <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /><m3:IconButton Symbol="Delete" /></StackPanel>

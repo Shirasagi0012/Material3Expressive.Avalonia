@@ -9,6 +9,7 @@ public sealed class TimePickerDialogTokenSource : ITokenSource
 {
     private static readonly FrozenDictionary<MaterialTokenKey, object> Values = new Dictionary<MaterialTokenKey, object>
     {
+        [Comp.TimePickerDialog.TitlePadding] = new Avalonia.Thickness(0, 0, 0, 20),
         [Comp.TimePickerDialog.VibrantHorizontalPadding] = 12d,
         [Comp.TimePickerDialog.VibrantVerticalPadding] = 12d,
         [Comp.TimePickerDialog.VibrantLandscapeAdditionalHeight] = 32d,

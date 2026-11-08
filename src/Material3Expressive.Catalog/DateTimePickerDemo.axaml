@@ -42,12 +42,12 @@
         <TextBlock Text="Use the side button to switch text / scroll entry. Only the selected text field is editable. Try an invalid value (99), then select the other field to inspect the retained draft." TextWrapping="Wrap" />
         <m3:TimeInput Name="Uncontained" Variant="Vibrant" TouchExplorationEnabled="{Binding #TouchExploration.IsChecked}" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
           <m3:TimeInput.ToggleTemplate><DataTemplate>
-            <m3:IconButton Symbol="Schedule" AutomationProperties.Name="Switch to scroll entry" ToolTip.Tip="Scroll entry" Click="ToggleEntryMode" />
+            <m3:TimeScrollDisplayModeToggle DisplayMode="Input" Click="ToggleEntryMode" />
           </DataTemplate></m3:TimeInput.ToggleTemplate>
         </m3:TimeInput>
         <m3:TimeScroll Name="UncontainedScroll" IsVisible="False" SelectedTime="{Binding #Dial.SelectedTime, Mode=TwoWay}" Is24Hour="{Binding #Dial.Is24Hour}">
           <m3:TimeScroll.ToggleTemplate><DataTemplate>
-            <m3:IconButton Symbol="Keyboard" AutomationProperties.Name="Switch to text entry" ToolTip.Tip="Text entry" Click="ToggleEntryMode" />
+            <m3:TimeScrollDisplayModeToggle DisplayMode="Scroll" Click="ToggleEntryMode" />
           </DataTemplate></m3:TimeScroll.ToggleTemplate>
         </m3:TimeScroll>
         <TextBlock Text="Avalonia native controls — original API and flyout behavior" FontSize="20" />

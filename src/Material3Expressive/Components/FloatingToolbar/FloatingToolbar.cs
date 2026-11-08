@@ -8,6 +8,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 using ComposeAnimation.Runtime;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -26,6 +27,8 @@ public abstract class FloatingToolbar : ContentControl
     internal IControlTemplate? DefaultTemplate { get => GetValue(DefaultTemplateProperty); set => SetValue(DefaultTemplateProperty, value); }
     internal static readonly StyledProperty<Foundation.Motion.SpringSpec> ScrollSnapAnimationProperty = AvaloniaProperty.Register<FloatingToolbar, Foundation.Motion.SpringSpec>(nameof(ScrollSnapAnimation));
     internal Foundation.Motion.SpringSpec ScrollSnapAnimation { get => GetValue(ScrollSnapAnimationProperty); set => SetValue(ScrollSnapAnimationProperty, value); }
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<FloatingToolbar>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<bool> ExpandedProperty = AvaloniaProperty.Register<FloatingToolbar, bool>(nameof(Expanded), true);
     public static readonly StyledProperty<object?> LeadingContentProperty = AvaloniaProperty.Register<FloatingToolbar, object?>(nameof(LeadingContent));
     public static readonly StyledProperty<IDataTemplate?> LeadingContentTemplateProperty = AvaloniaProperty.Register<FloatingToolbar, IDataTemplate?>(nameof(LeadingContentTemplate));

@@ -17,8 +17,11 @@
 ```
 
 默认 Standard / Small；图标按钮应提供有意义的自动化名称。后续片段使用相同命名空间。
-`Symbol` 默认 None，保留布局但不画图标。默认模板只消费 `Symbol`，不显示继承的 `Content`/`ContentTemplate`；
-需要任意图形或自定义组合时可用普通[Button](../Button/README.md)组合内容，或自行替换模板。
+`Symbol` 默认 None，保留布局但不画图标。提供 `Content` 或 `ContentTemplate` 时改为显示自定义内容，
+两者均清除后恢复 Symbol；模板-only 内容也有效。自定义内容按自然尺寸居中，调用方决定图标大小，
+不会套用 Symbol 的尺寸表。Click、Command、切换状态与交互反馈保持原有语义。
+
+迁移注意：过去被默认模板忽略的 Content 现在会显示；如果仍需 Symbol，清除 Content/ContentTemplate。
 
 ## 外观、尺寸与动作
 
@@ -253,3 +256,16 @@ tooltipLabel.InteractionSource = source;
 仅设置 Shape 得到固定轮廓；清除后恢复 CornerRadius / PressedCornerRadius / CheckedCornerRadius。
 百分比按当前短边计算，逻辑四角支持 RTL。显式路径要求均匀边框；自定义契约见 [Surface](../Surface/README.md)。
 Catalog 主窗口提供切角动作与三状态收藏按钮。
+
+形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
+它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
+清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。
+
+```xml
+<m3:IconButton AutomationProperties.Name="通知">
+  <Grid Width="24" Height="24">
+    <m3:MaterialSymbol Symbol="Notifications" />
+    <Ellipse Width="6" Height="6" Fill="Red" HorizontalAlignment="Right" VerticalAlignment="Top" />
+  </Grid>
+</m3:IconButton>
+```

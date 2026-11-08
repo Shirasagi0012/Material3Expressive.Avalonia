@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -25,7 +26,7 @@ data class AlertDialogConfig(val basic:Boolean=false,val icon:Boolean=true,val t
     val width:Double?=null,val height:Double?=null,val hostWidth:Int=520,val hostHeight:Int=360,
     val contentWidth:Double=160.0,val contentHeight:Double=40.0,val buttonWidth:Double=80.0,
     val colors:String="default",val action:String="none",val allowDismiss:Boolean=true,val minimumInteractiveSize:Double?=null,
-    val precision:Boolean=false,val observeTypography:Boolean=false)
+    val precision:Boolean=false,val observeTypography:Boolean=false,val shape:String="default")
 
 @ParitySuite("precision-alert-dialog")
 class PrecisionAlertDialogCases {
@@ -179,7 +180,7 @@ private class AlertDialogScene(val config:AlertDialogConfig) {
                             title=if(title) ({Marker("title",100.0,24.0)}) else null,
                             text=if(config.text) ({Marker("text",config.contentWidth,config.contentHeight)}) else null,
                             modifier=modifier,properties=properties,containerColor=color,
-                            shape=if(config.colors=="custom") RoundedCornerShape(12.dp) else AlertDialogDefaults.shape,
+                            shape=if(config.shape=="asymmetric") CutCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.shape=="percent") CutCornerShape(50) else if(config.shape=="rounded") RoundedCornerShape(40.dp,8.dp,24.dp,48.dp) else if(config.colors=="custom") RoundedCornerShape(12.dp) else AlertDialogDefaults.shape,
                             iconContentColor=if(config.colors=="custom") Color.Blue else AlertDialogDefaults.iconContentColor,
                             titleContentColor=if(config.colors=="custom") Color.Red else AlertDialogDefaults.titleContentColor,
                             textContentColor=if(config.colors=="custom") Color(0xFF008000) else AlertDialogDefaults.textContentColor,

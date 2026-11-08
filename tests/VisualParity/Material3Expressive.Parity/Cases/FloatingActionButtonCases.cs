@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -13,7 +14,7 @@ public sealed record FloatingActionButtonConfig(string Kind = "icon", string Siz
     bool Checked = false, bool Dark = false, bool Rtl = false, string Alignment = "end", int Count = 3,
     double IconWidth = 24, double IconHeight = 24, double LabelWidth = 48, double LabelHeight = 16,
     double? Width = null, double? Height = null, string Color = "default", string Elevation = "default",
-    bool Visible = true, string Action = "none", bool AnimatedIcon = false);
+    bool Visible = true, string Action = "none", bool AnimatedIcon = false, string Shape = "default");
 
 [ParitySuite("floating-action-button")]
 public sealed class FloatingActionButtonCases
@@ -179,6 +180,7 @@ public sealed class FloatingActionButtonCases
                     Icon = config.Kind == "extended" ? Glyph(config.IconWidth, config.IconHeight) : null,
                     Content = Glyph(config.LabelWidth, config.LabelHeight), Expanded = config.Expanded
                 } : new FloatingActionButton { Content = Glyph(config.IconWidth, config.IconHeight) };
+                if (config.Shape != "default") Fab.Shape = Shape(config.Shape);
                 Fab.Size = size; Fab.AnimatedVisible = config.Visible;
                 Fab.Click += (_, _) => clicks++;
                 if (config.Elevation != "default") Fab.Elevation = config.Elevation switch
@@ -193,6 +195,11 @@ public sealed class FloatingActionButtonCases
             TextElement.SetForeground(parent, new SolidColorBrush(Color.Parse("#EE7700")));
             Root = new FabSceneCenter { Child = parent };
         }
+        internal static MaterialShape Shape(string kind) => kind == "generic" ? new SplitButtonCases.SplitPathShape()
+            : kind == "percent" ? new CutCornerShape { TopStart = new(.5, RelativeUnit.Relative), TopEnd = new(.1, RelativeUnit.Relative),
+                BottomEnd = new(.25, RelativeUnit.Relative), BottomStart = new(.1, RelativeUnit.Relative) }
+            : new CutCornerShape { TopStart = new(16, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+                BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(8, RelativeUnit.Absolute) };
         public FloatingActionButtonMenuItem NewItem(int index = 3)
         {
             var item = new FloatingActionButtonMenuItem { Icon = Glyph(24, 24), Content = Glyph(config.LabelWidth + index * 8, config.LabelHeight) };

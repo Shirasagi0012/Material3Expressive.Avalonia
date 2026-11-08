@@ -12,6 +12,7 @@
       <TextBlock x:Name="Result" TextWrapping="Wrap" />
     </StackPanel>
     <m3:DatePickerDialog x:Name="DateDialog" DismissRequested="OnDismissRequested">
+      <m3:DatePickerDialog.Shape><m3:RoundedCornerShape TopStart="40" TopEnd="12" BottomEnd="40" BottomStart="12" /></m3:DatePickerDialog.Shape>
       <m3:DatePicker x:Name="DraftDate" Background="{Binding #DateDialog.Background}" />
       <m3:DatePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmDate" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.ConfirmButton>
       <m3:DatePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelDate" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.DismissButton>
@@ -22,8 +23,9 @@
       <m3:DatePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelRange" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:DatePickerDialog.DismissButton>
     </m3:DatePickerDialog>
     <m3:TimePickerDialog x:Name="TimeDialog" DismissRequested="OnDismissRequested">
+      <m3:TimePickerDialog.Shape><m3:CutCornerShape TopStart="32" TopEnd="8" BottomEnd="32" BottomStart="8" /></m3:TimePickerDialog.Shape>
       <m3:TimePickerDialog.Title>
-        <TextBlock x:Name="TimeTitle" Text="Select time" Margin="0,0,0,20" m3:MaterialText.Style="{m3:Typography LabelMedium}" />
+        <m3:TimePickerDialogTitle x:Name="TimeTitle" />
       </m3:TimePickerDialog.Title>
       <Grid>
         <m3:TimePicker x:Name="DraftDial" Layout="Vertical" />
@@ -32,12 +34,13 @@
                       Is24Hour="{Binding #DraftDial.Is24Hour, Mode=TwoWay}" />
       </Grid>
       <m3:TimePickerDialog.ModeToggleButton>
-        <Button x:Name="TimeModeButton" Content="Keyboard" Click="OnToggleTimeMode" Theme="{StaticResource MaterialTextButtonTheme}" />
+        <m3:TimePickerDisplayModeToggle x:Name="TimeModeButton" Click="OnToggleTimeMode" />
       </m3:TimePickerDialog.ModeToggleButton>
       <m3:TimePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.ConfirmButton>
       <m3:TimePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:TimePickerDialog.DismissButton>
     </m3:TimePickerDialog>
     <m3:VibrantTimePickerDialog x:Name="VibrantTimeDialog" DismissRequested="OnDismissRequested">
+      <m3:VibrantTimePickerDialog.Shape><m3:RoundedCornerShape TopStart="48" TopEnd="12" BottomEnd="48" BottomStart="12" /></m3:VibrantTimePickerDialog.Shape>
       <Grid>
         <m3:TimePicker x:Name="VibrantDraftDial" Layout="Vertical" />
         <m3:TimeInput x:Name="VibrantDraftInput" IsVisible="False"
@@ -45,7 +48,7 @@
                       Is24Hour="{Binding #VibrantDraftDial.Is24Hour, Mode=TwoWay}" />
       </Grid>
       <m3:VibrantTimePickerDialog.ModeToggleButton>
-        <Button x:Name="VibrantTimeModeButton" Content="Keyboard" Click="OnToggleVibrantTimeMode" Theme="{StaticResource MaterialTextButtonTheme}" />
+        <m3:TimePickerDisplayModeToggle x:Name="VibrantTimeModeButton" Click="OnToggleVibrantTimeMode" />
       </m3:VibrantTimePickerDialog.ModeToggleButton>
       <m3:VibrantTimePickerDialog.ConfirmButton><Button Content="OK" Click="OnConfirmVibrantTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:VibrantTimePickerDialog.ConfirmButton>
       <m3:VibrantTimePickerDialog.DismissButton><Button Content="Cancel" Click="OnCancelVibrantTime" Theme="{StaticResource MaterialTextButtonTheme}" /></m3:VibrantTimePickerDialog.DismissButton>

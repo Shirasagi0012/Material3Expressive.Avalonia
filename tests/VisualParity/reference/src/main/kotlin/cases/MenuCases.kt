@@ -4,6 +4,7 @@ package parity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.internal.Icons
@@ -121,8 +122,8 @@ class MenuCases {
                             }
                             else SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,
                                 trailingContent=if(config.trailing)({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
-                                shapes=if(config.path=="none")MenuDefaults.itemShapes() else MenuItemShapes(CutCornerShape(20.dp,4.dp,12.dp,2.dp),
-                                    when(config.path){"cut"->CutCornerShape(35);"generic"->NotchedShape;else->MenuDefaults.itemShapes().selectedShape}),
+                                shapes=if(config.path=="none")MenuDefaults.itemShapes() else MenuItemShapes(if(config.path=="rounded") RoundedCornerShape(20.dp,4.dp,12.dp,2.dp) else CutCornerShape(20.dp,4.dp,12.dp,2.dp),
+                                    when(config.path){"rounded","round-cut"->RoundedCornerShape(35);"cut"->CutCornerShape(35);"generic"->NotchedShape;else->MenuDefaults.itemShapes().selectedShape}),
                                 modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
                                 contentPadding=if(config.comboItem) ExposedDropdownMenuDefaults.ItemContentPadding else MenuDefaults.DropdownMenuSelectableItemContentPadding,
                                 selectedLeadingIcon=if(config.nativeCheck) ({Icon(Icons.Filled.Check,null,Modifier.size(20.dp))}) else if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,

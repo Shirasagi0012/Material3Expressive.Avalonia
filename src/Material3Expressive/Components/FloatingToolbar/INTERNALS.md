@@ -99,3 +99,16 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 工具栏内容环境不覆盖子控件显式颜色；IconButton 的 ambient 色/描边等未对齐事实仍见
 [其维护说明](../IconButton/INTERNALS.md)。实体触屏惯性、宿主辅助技术及字体排版尚未经上述回归证明。
 报告比较与稳定性的含义见 [VisualParity](../../../../tests/VisualParity/README.md)。
+
+## 显式容器形状
+
+2026-11-08 本轮授权新增 Shape。固定 AndroidX/Core 的 FloatingToolbar.kt 已逐份核对相同：
+四个工具栏重载的 shape 参与 graphicsLayer 裁剪/阴影与背景，Standard/Vibrant FAB helper 各有独立 shape。
+普通/FAB 两套工具栏模板把 Shape 传至既有 Surface；专用 FAB 模板传递 FloatingActionButton.Shape。
+没有新播放器、布局代理或破坏性迁移，null 继续使用 CornerRadius。
+`ToolbarShapeTests` 验证两轴收起尺寸、百分比重算、切换到直接/模板 FAB、独立形状与重挂；
+`toolbar-shape` 双端套件覆盖两轴/三个位置、圆角/切角/百分比、RTL、受限模板、展开/收起/反向和滚动。
+
+`toolbar-shape-verified` 完成 60 例，零执行错误、全部重复和额外截图稳定。40 个静态用例均通过
+原有 raster 门槛，动态仍保留两轴普通反向的差异；这些不因新增形状被接受。
+具体结构化事实与图像记录保留在对应 case 报告，不放宽门槛。

@@ -124,3 +124,15 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj -c 
 2026-11-05 当前实现的 `dialog-interactive-spacing` 完整 self-test：71 例，63 equal、8 withinTolerance，
 零执行错误，全部重复/额外截图稳定。新增 0/40/44/48/64 DIP × LTR/RTL 和动态 40→44→64→清除场景均 equal；
 真实按钮与继承/局部环境行为测试也通过。已检查双端 40 DIP 堆叠按钮图像及对应间距读数。
+
+## 显式 Shape 接入（2026-11-08）
+
+固定 AndroidX 对应 Dialog 源码公开 shape；本地普通样式属性直接传给现有 Surface，
+共用其圆角、路径、内容 clip 与轮廓生命周期。未新增弹窗动画、布局或形状缓存。
+日期弹窗继续按固定 Core DatePickerDialog.skiko 的既有动作布局决定执行。
+默认 null 兼容 CornerRadius，不需要迁移；BasicAlertDialog 的自定义外观职责不变。
+
+`DialogShapeTests` 覆盖四类弹窗的原生动作、配置观察、退出中重开和关闭后重开。
+双端 `dialog-shape` 51 项覆盖切角/圆角/百分比、RTL、约束、进退/中断、主题、槽和模式替换。
+`dialog-shape-verified` 的 51 例全部 equal/withinTolerance，零执行错误、重复截图全部稳定；
+已查看日期弹窗非对称圆角的实际双端图像。未据此扩展真实桌面验收范围。

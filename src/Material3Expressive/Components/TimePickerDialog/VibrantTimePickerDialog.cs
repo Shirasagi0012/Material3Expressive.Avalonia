@@ -1,4 +1,5 @@
 using Avalonia;
+using Material3Expressive.Foundation.Rendering;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.LogicalTree;
@@ -9,6 +10,9 @@ namespace Material3Expressive.Components;
 /// <summary>A time-picker dialog container. The caller supplies editor and actions; this variant has no title slot.</summary>
 public class VibrantTimePickerDialog : Dialog
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<VibrantTimePickerDialog>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<object?> ConfirmButtonProperty = AvaloniaProperty.Register<VibrantTimePickerDialog, object?>(nameof(ConfirmButton));
     public static readonly StyledProperty<object?> DismissButtonProperty = AvaloniaProperty.Register<VibrantTimePickerDialog, object?>(nameof(DismissButton));
     public static readonly StyledProperty<object?> ModeToggleButtonProperty = AvaloniaProperty.Register<VibrantTimePickerDialog, object?>(nameof(ModeToggleButton));

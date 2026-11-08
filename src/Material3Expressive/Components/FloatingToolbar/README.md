@@ -72,7 +72,7 @@ FAB 可以只提供模板，不必另设内容对象：
 
 默认 Standard 背景为 SurfaceContainer，`vibrant` class 改为 PrimaryContainer；Foreground
 通过内容色角色提供默认环境，子控件显式选色仍优先。常用入口是 Background、Foreground、Padding、
-CornerRadius、ExpandedShadowElevation 和 CollapsedShadowElevation。
+CornerRadius、Shape、ExpandedShadowElevation 和 CollapsedShadowElevation。
 
 默认 Padding 为 8 DIP，交叉轴最小尺寸为 64 DIP；屏幕边缘 16 DIP 偏移由调用者 Margin/布局表达，
 不会自动添加。ExpandedShadowElevation 的主题默认值为普通入口 0、FAB 入口 1 DIP，收起默认 0。
@@ -131,3 +131,20 @@ Expanded=false 且未启用探索时展开。普通入口 Offset 非零时后代
 真实触屏惯性、辅助技术服务和字体排版尚需桌面验收。几何双端测试不证明实际图标/文字相同；
 旧依赖动画问题的当前范围见 [INTERNALS](INTERNALS.md#历史问题与验证入口)。
 完整组合见 [FloatingToolbarDemo](../../../Material3Expressive.Catalog/FloatingToolbarDemo.axaml)。
+
+## 容器形状
+
+横向和纵向工具栏的 `Shape` 接受 `CutCornerShape`、`RoundedCornerShape` 或自定义 `MaterialShape`。
+它控制背景、裁剪和阴影，展开/收起时按当前容器尺寸重新求值，清除后恢复 `CornerRadius`。
+工具栏与 FAB 的形状独立配置；专用 Standard/Vibrant FAB 主题也保留 FAB.Shape。
+
+```xml
+<m3:HorizontalFloatingToolbar>
+  <m3:HorizontalFloatingToolbar.Shape>
+    <m3:CutCornerShape TopStart="20%" TopEnd="8" BottomEnd="20%" BottomStart="8" />
+  </m3:HorizontalFloatingToolbar.Shape>
+  <m3:IconButton Symbol="Edit" AutomationProperties.Name="编辑" />
+</m3:HorizontalFloatingToolbar>
+```
+
+Catalog 的 Floating toolbar 窗口展示独立工具栏切角与 FAB 百分比圆角，可切换 Expanded 观察。

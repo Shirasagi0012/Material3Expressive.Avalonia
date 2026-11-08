@@ -70,5 +70,20 @@ DatePicker 年份视图覆盖在保留的月视图上；将它的 Background 设
 颜色、圆角和尺寸来自 DatePickerModal Token。对话框没有单独的 DatePickerColors 类型。
 内容的局部字体、Width/Height 等继续按 Avalonia 属性语义执行。
 
+### 显式容器形状
+
+`DatePickerDialog.Shape` 支持 `RoundedCornerShape`、`CutCornerShape` 和自定义 `MaterialShape`；
+非 null 时覆盖 CornerRadius，清除后恢复圆角 Token/显式 CornerRadius。逻辑四角随 RTL 映射，
+百分比相对容器短边，打开时修改形状对象会更新背景、内容裁剪和轮廓。
+
+```xml
+<m3:DatePickerDialog IsOpen="{Binding IsDialogOpen}">
+  <m3:DatePickerDialog.Shape>
+    <m3:CutCornerShape TopStart="40" TopEnd="8" BottomEnd="24" BottomStart="8" />
+  </m3:DatePickerDialog.Shape>
+  <!-- 内容、确认与取消槽沿用上面的示例 -->
+</m3:DatePickerDialog>
+```
+
 系统/IME inset 和平台安全窗口选项尚未实现；文字像素、真实输入法、屏幕阅读器模态隔离、
 触屏及多显示器 DPI 切换尚未经桌面验收。具体证据边界见 INTERNALS。

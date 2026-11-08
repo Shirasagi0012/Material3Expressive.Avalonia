@@ -21,7 +21,7 @@
                     ContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerWidth}}"
                     ContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ContainerHeight}}">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-                      TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" TonalElevation="{TemplateBinding TonalElevation}">
+                      TextElement.Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TonalElevation="{TemplateBinding TonalElevation}">
                     <m3:DatePickerDialogColumn ActionEndPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionEndPadding}}"
                         ActionBottomPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerDialog.ActionBottomPadding}}">
                       <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" />

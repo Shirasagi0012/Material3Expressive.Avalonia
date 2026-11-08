@@ -1,4 +1,5 @@
 using Avalonia;
+using Material3Expressive.Foundation.Rendering;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.LogicalTree;
@@ -9,6 +10,9 @@ namespace Material3Expressive.Components;
 /// <summary>A time-picker dialog container. The caller supplies title, editor and actions.</summary>
 public class TimePickerDialog : Dialog
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<TimePickerDialog>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<object?> ConfirmButtonProperty = AvaloniaProperty.Register<TimePickerDialog, object?>(nameof(ConfirmButton));
     public static readonly StyledProperty<object?> DismissButtonProperty = AvaloniaProperty.Register<TimePickerDialog, object?>(nameof(DismissButton));
     public static readonly StyledProperty<object?> TitleProperty = AvaloniaProperty.Register<TimePickerDialog, object?>(nameof(Title));

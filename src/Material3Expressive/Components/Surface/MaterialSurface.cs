@@ -145,7 +145,7 @@ public sealed class MaterialSurface : Control
     private CornerRadius _shapeRest;
     private CornerRadius? _shapePressed;
     private CornerRadius? _shapeChecked;
-    private Border? _checkedOverlay;
+    private CheckedOverlay? _checkedOverlay;
     private AnimatedButtonBorder? _animatedBorder;
     private SpringSpec _shapeSpec;
     private bool _shapeConfigurationInitialized;
@@ -166,22 +166,26 @@ public sealed class MaterialSurface : Control
     private MaterialShape? _pathRest;
     private MaterialShape? _pathPressed;
     private MaterialShape? _pathChecked;
-    private CornerShape.Cut? _cutRest;
-    private CornerShape.Cut? _cutPressed;
-    private CornerShape.Cut? _cutChecked;
+    private CornerShape? _cornerRest;
+    private CornerShape? _cornerPressed;
+    private CornerShape? _cornerChecked;
     private MaterialShape? _indicationPath;
+    private bool _shapeUsesCorners;
     private PathGeometry? _shapeGeometry;
     private ComposeShadowShape? _shapeShadow;
     private Geometry? EffectiveGeometry => _shapeGeometry ?? _containerGeometry;
-    private bool CanMorphCuts => Shape is CutCornerShape && (PressedShape is not null || CheckedShape is not null)
-        && (PressedShape is null or CutCornerShape) && (CheckedShape is null or CutCornerShape);
+    private bool CanMorphCorners => Shape is CutCornerShape or RoundedCornerShape
+        && (PressedShape is not null || CheckedShape is not null || ButtonSurfaceState.GetSplitOuterCorners(this))
+        && (PressedShape is null or CutCornerShape or RoundedCornerShape) && (CheckedShape is null or CutCornerShape or RoundedCornerShape);
     private MaterialShape? SelectedPath => Shape is null ? null
         : (ButtonSurfaceState.GetIsPressed(this) ?? _interactionController?.Interaction.HasFlag(InteractionState.Pressed)) == true
-            && PressedShape is { } pressed ? pressed
+            ? PressedShape ?? Shape
             : ButtonSurfaceState.GetIsChecked(this) == true && CheckedShape is { } selected ? selected : Shape;
+    private bool UsesRoundOutline => Shape is not null && (CanMorphCorners && _shapeMorph is { } morph
+        ? !morph.CurrentIsCut : SelectedPath is RoundedCornerShape);
     private PathGeometry? GenericShapePath => SelectedPath is CutCornerShape
         && (_animatedCorners is { } externalCorners ? externalCorners == default : ((CutCornerShape)SelectedPath).IsRectangle)
-        && (!CanMorphCuts || _shapeMorph is null || _shapeMorph.Current == default) ? null : _shapeGeometry;
+        && (!CanMorphCorners || _shapeMorph is null || _shapeMorph.Current == default) ? null : _shapeGeometry;
 
     private void ObserveShape()
     {
@@ -204,7 +208,7 @@ public sealed class MaterialSurface : Control
 
     private void UpdateShape()
     {
-        if (SelectedPath is { } shape && _shapeSize.Width > 0 && _shapeSize.Height > 0)
+        if (!UsesRoundOutline && SelectedPath is { } shape && _shapeSize.Width > 0 && _shapeSize.Height > 0)
         {
             if (!BorderThickness.IsUniform)
                 throw new InvalidOperationException("MaterialShape borders require uniform BorderThickness.");
@@ -212,7 +216,7 @@ public sealed class MaterialSurface : Control
             var direction = ShapeLayoutDirection ?? FlowDirection;
             var geometry = shape is CutCornerShape && _animatedCorners is { } externalCorners
                 ? CutCornerShape.CreateOutline(_shapeSize, direction, density, externalCorners)
-                : CanMorphCuts && _shapeMorph is { } morph
+                : CanMorphCorners && _shapeMorph is { } morph
                 ? CutCornerShape.CreateOutline(_shapeSize, direction, density, morph.Current)
                 : shape.CreateOutline(_shapeSize, direction, density);
             _shapeGeometry = PathGeometry.Parse(geometry.ToString());
@@ -231,6 +235,11 @@ public sealed class MaterialSurface : Control
         _outline.ShapePath = GenericShapePath;
         _chrome.ClipToBounds = EffectiveGeometry is null;
         _chrome.Clip = EffectiveGeometry;
+        if (_checkedOverlay is { } overlay)
+        {
+            overlay.Shape = EffectiveGeometry;
+            overlay.InvalidateVisual();
+        }
         _interactionOverlay.InvalidateVisual();
         UpdateFocusRingGeometry();
         InvalidateVisual();
@@ -361,6 +370,14 @@ public sealed class MaterialSurface : Control
     {
         get
         {
+            // A generic Shape has no optical centering contract. If any configured state
+            // is generic, Split uses CornerBasedShape directly for its remaining cut states
+            // (without AnimatedShape's per-corner height clamp).
+            if (SelectedPath is { } path)
+            {
+                if (CornerShape.FromMaterialShape(path) is not { } configuredCorners) return default;
+                if (!CanMorphCorners) return configuredCorners.Resolve(_shapeSize);
+            }
             // AnimatedShape.offset uses unnormalized corners, also when no morph is running.
             var corners = CurrentCornerRadius;
             var maximum = _shapeSize.Height / 2;
@@ -373,7 +390,7 @@ public sealed class MaterialSurface : Control
     {
         get
         {
-            if (CanMorphCuts) return CornerShape.Cut.From((CutCornerShape)SelectedPath!);
+            if (CornerShape.FromMaterialShape(SelectedPath) is { } cornerShape) return cornerShape;
             var fullFraction = ButtonSurfaceState.GetSplitOuterCorners(this) ? 1f : .5f;
             if ((ButtonSurfaceState.GetIsPressed(this) ?? _interactionController?.Interaction.HasFlag(InteractionState.Pressed)) == true
                 && PressedCornerRadius is { } pressed)
@@ -410,7 +427,7 @@ public sealed class MaterialSurface : Control
         var bounds = new Rect(Bounds.Size);
         if (ShadowElevation <= 0 || bounds.Width <= 0 || bounds.Height <= 0 || TopLevel.GetTopLevel(this) is null)
             return;
-        if (Shape is not null && _shapeShadow is null) return;
+        if (Shape is not null && !UsesRoundOutline && _shapeShadow is null) return;
 
         ComposeShadowRenderer.Draw(
             context,
@@ -587,9 +604,10 @@ public sealed class MaterialSurface : Control
         var opacity = ButtonSurfaceState.GetIsChecked(this) == true ? ButtonSurfaceState.GetCheckedOverlayOpacity(this) : 0;
         if (_checkedOverlay is null && opacity > 0)
         {
-            _checkedOverlay = new Border
+            _checkedOverlay = new CheckedOverlay
             {
                 IsHitTestVisible = false,
+                Shape = EffectiveGeometry,
                 [!FlowDirectionProperty] = this[!FlowDirectionProperty],
             };
             VisualChildren.Add(_checkedOverlay);
@@ -667,7 +685,7 @@ public sealed class MaterialSurface : Control
 
     private void UpdateInteractionVisuals()
     {
-        if (Shape is not null && (PressedShape is not null || CheckedShape is not null)) UpdateShape();
+        if (_observedShape is not null && (PressedShape is not null || CheckedShape is not null || _shapeMorph is not null)) UpdateShape();
         UpdateCornerRadius();
         _interactionOverlay.InvalidateVisual();
         UpdateFocusRingGeometry();
@@ -707,7 +725,9 @@ public sealed class MaterialSurface : Control
 
     private bool UpdateCornerRadius()
     {
-        var cornerRadius = Shape is null ? CornerShape.Normalize(CurrentCornerRadius, _shapeSize) : default;
+        var cornerRadius = Shape is null || UsesRoundOutline ? CornerShape.Normalize(CurrentCornerRadius, _shapeSize) : default;
+        if (UsesRoundOutline && ShapeLayoutDirection is { } direction && direction != FlowDirection)
+            cornerRadius = new(cornerRadius.TopRight, cornerRadius.TopLeft, cornerRadius.BottomLeft, cornerRadius.BottomRight);
         // Optical centering consumes unnormalized corners: they can change even while the
         // painted outline remains at its size limit.
         if (Child is SplitButtonOpticalLayout optical) optical.InvalidateArrange();
@@ -733,7 +753,7 @@ public sealed class MaterialSurface : Control
         // Do not create a zero-stiffness spring or replace an effect's captured valid spec.
         if (!TryGetShapeMorphSpec(out var initialSpec))
             return;
-        if (_shapeMorph is null && (CanMorphCuts || Shape is null
+        if (_shapeMorph is null && (CanMorphCorners || Shape is null
             && (PressedCornerRadius is not null || ButtonSurfaceState.GetCheckedCornerRadius(this) is not null)))
             RecreateShapeMorph(motion, initialSpec);
         if (_shapeCommitPending)
@@ -755,7 +775,7 @@ public sealed class MaterialSurface : Control
             if (!TryGetShapeMorphSpec(out var spec))
                 return;
             var target = SelectedShape;
-            if (Shape is not null && !CanMorphCuts && !ReferenceEquals(_indicationPath, SelectedPath))
+            if (Shape is not null && !CanMorphCorners && !ReferenceEquals(_indicationPath, SelectedPath))
             {
                 // Core Surface passes the selected Shape into ripple(focusRingShape). A
                 // direct path switch replaces that indication node; active presses are not replayed.
@@ -766,15 +786,20 @@ public sealed class MaterialSurface : Control
             var configurationChanged = _shapeRest != CornerRadius || _shapePressed != PressedCornerRadius
                 || _shapeChecked != ButtonSurfaceState.GetCheckedCornerRadius(this) || !_shapeSpec.Equals(spec)
                 || _pathRest != Shape || _pathPressed != PressedShape || _pathChecked != CheckedShape
-                || _cutRest != (Shape is CutCornerShape rest ? CornerShape.Cut.From(rest) : null)
-                || _cutPressed != (PressedShape is CutCornerShape pressed ? CornerShape.Cut.From(pressed) : null)
-                || _cutChecked != (CheckedShape is CutCornerShape selected ? CornerShape.Cut.From(selected) : null);
-            var recreate = configurationChanged && (ButtonSurfaceState.GetResetOnShapeChange(this) || !_shapeSpec.Equals(spec));
+                || _cornerRest != CornerShape.FromMaterialShape(Shape)
+                || _cornerPressed != CornerShape.FromMaterialShape(PressedShape)
+                || _cornerChecked != CornerShape.FromMaterialShape(CheckedShape);
+            var recreate = configurationChanged && (ButtonSurfaceState.GetResetOnShapeChange(this) || !_shapeSpec.Equals(spec)
+                || _shapeUsesCorners != CanMorphCorners || (_pathRest is null) != (Shape is null));
             if (configurationChanged && !recreate)
             {
                 _shapeRest = CornerRadius;
                 _shapePressed = PressedCornerRadius;
                 _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
+                _pathRest = Shape; _pathPressed = PressedShape; _pathChecked = CheckedShape;
+                _cornerRest = CornerShape.FromMaterialShape(Shape);
+                _cornerPressed = CornerShape.FromMaterialShape(PressedShape);
+                _cornerChecked = CornerShape.FromMaterialShape(CheckedShape);
             }
             // SplitButton remembers by spec and keys its effect by the selected shape.
             // Changing an inactive shape must not cancel an animation to the same target.
@@ -827,12 +852,13 @@ public sealed class MaterialSurface : Control
         _shapePressed = PressedCornerRadius;
         _shapeChecked = ButtonSurfaceState.GetCheckedCornerRadius(this);
         _pathRest = Shape; _pathPressed = PressedShape; _pathChecked = CheckedShape;
+        _shapeUsesCorners = CanMorphCorners;
         _indicationPath = SelectedPath;
-        _cutRest = Shape is CutCornerShape rest ? CornerShape.Cut.From(rest) : null;
-        _cutPressed = PressedShape is CutCornerShape pressed ? CornerShape.Cut.From(pressed) : null;
-        _cutChecked = CheckedShape is CutCornerShape selected ? CornerShape.Cut.From(selected) : null;
+        _cornerRest = CornerShape.FromMaterialShape(Shape);
+        _cornerPressed = CornerShape.FromMaterialShape(PressedShape);
+        _cornerChecked = CornerShape.FromMaterialShape(CheckedShape);
         _shapeSpec = spec;
-        _shapeMorph = Shape is not null ? CanMorphCuts
+        _shapeMorph = Shape is not null ? CanMorphCorners
             ? new AnimatedCornerRadius(SelectedShape, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size } : null
             : PressedCornerRadius is null && _shapeChecked is null ? null
             : new AnimatedCornerRadius(SelectedShape, spec, motion, UpdateInteractionVisuals) { Size = Bounds.Size };
@@ -894,6 +920,22 @@ public sealed class MaterialSurface : Control
         ((4.5 * Math.Log(elevation + 1)) + 2) / 100;
 
     /// <summary>Visual-only layer that paints interaction feedback above the content.</summary>
+    // Split's checked drawOutline follows the actual animated path, above its content.
+    private sealed class CheckedOverlay : Control
+    {
+        public static readonly StyledProperty<IBrush?> BackgroundProperty = Border.BackgroundProperty.AddOwner<CheckedOverlay>();
+        public static readonly StyledProperty<CornerRadius> CornerRadiusProperty = Border.CornerRadiusProperty.AddOwner<CheckedOverlay>();
+        public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
+        public CornerRadius CornerRadius { get => GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
+        static CheckedOverlay() => AffectsRender<CheckedOverlay>(BackgroundProperty, CornerRadiusProperty);
+        internal Geometry? Shape { get; set; }
+        public override void Render(DrawingContext context)
+        {
+            if (Shape is { } shape) context.DrawGeometry(Background, null, shape);
+            else context.DrawRectangle(Background, null, new RoundedRect(new Rect(Bounds.Size), CornerRadius));
+        }
+    }
+
     private sealed class InteractionOverlay : Control
     {
         private readonly MaterialSurface _owner;
