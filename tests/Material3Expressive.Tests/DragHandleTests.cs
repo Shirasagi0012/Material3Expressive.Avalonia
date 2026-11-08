@@ -9,6 +9,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 using Xunit;
 
@@ -16,6 +17,94 @@ namespace Material3Expressive.Tests;
 
 public class DragHandleTests
 {
+    [AvaloniaFact]
+    public void ChangingClipShapePreservesTheExistingRippleAndHover()
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource();
+        var handle = new VerticalDragHandle { InteractionSource = source, Shape = new CutCornerShape(1) };
+        var window = DialogTests.Show(new Grid { Children = { handle } });
+        try
+        {
+            var controller = MaterialInteraction.GetOrCreate(Part(handle));
+            source.Emit(new MaterialInteractionEvent.HoverEnter());
+            var press = new MaterialInteractionEvent.Press(new Point(2, 24)); source.Emit(press);
+            for (var i = 0; i < 10; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(1, controller.RippleCount); Assert.True(controller.StateLayerOpacity > 0);
+            handle.Shape = new CutCornerShape(2);
+            for (var i = 0; i < 10; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Equal(1, controller.RippleCount); Assert.True(controller.StateLayerOpacity > 0);
+            source.Emit(new MaterialInteractionEvent.Release(press));
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void ExplicitPathsFollowDragPressPriorityAndRestoreConfiguredCorners()
+    {
+        using var clock = new MotionTestClockScope();
+        var source = new MaterialInteractionSource();
+        var normal = new CutCornerShape(1);
+        var pressed = new CutCornerShape(3);
+        var dragged = new CutCornerShape(5);
+        var handle = new VerticalDragHandle { InteractionSource = source, Shape = normal,
+            PressedShape = pressed, DraggedShape = dragged };
+        var window = DialogTests.Show(new Grid { Children = { handle } });
+        try
+        {
+            var part = Part(handle);
+            var surface = part.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            Assert.Same(normal, surface.Shape);
+            var point = part.TranslatePoint(new Point(2, 24), window)!.Value;
+            window.MouseDown(point, MouseButton.Left); window.UpdateLayout();
+            Assert.Same(pressed, surface.Shape);
+            var drag = new MaterialInteractionEvent.DragStart(); source.Emit(drag); window.UpdateLayout();
+            Assert.Same(dragged, surface.Shape);
+            var outline = surface.ContainerGeometry!.ToString();
+            dragged.TopStart = new RelativeScalar(.5, RelativeUnit.Relative);
+            Assert.NotEqual(outline, surface.ContainerGeometry!.ToString());
+            source.Emit(new MaterialInteractionEvent.DragCancel(drag)); window.UpdateLayout();
+            Assert.Same(pressed, surface.Shape);
+            handle.PressedShape = null;
+            Assert.Null(surface.Shape);
+            Assert.Equal(handle.Shapes!.PressedShape, surface.CornerRadius);
+            window.MouseUp(point, MouseButton.Left); window.UpdateLayout();
+            Assert.Same(normal, surface.Shape);
+            handle.Shape = null;
+            Assert.Null(surface.ContainerGeometry);
+            Assert.Equal(handle.Shapes.Shape, surface.CornerRadius);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
+    public void PathConfigurationSurvivesTemplateReplacementAndReattachment()
+    {
+        using var clock = new MotionTestClockScope();
+        var shape = new CutCornerShape(1);
+        var handle = new VerticalDragHandle { Shape = shape };
+        var root = new Grid { Children = { handle } };
+        var window = DialogTests.Show(root);
+        try
+        {
+            var old = Part(handle).GetVisualDescendants().OfType<MaterialSurface>().Single();
+            var template = handle.Template;
+            handle.Template = null; window.UpdateLayout();
+            handle.Template = template; window.UpdateLayout();
+            var current = Part(handle).GetVisualDescendants().OfType<MaterialSurface>().Single();
+            Assert.NotSame(old, current); Assert.Same(shape, current.Shape);
+            root.Children.Remove(handle);
+            shape.TopStart = new RelativeScalar(.5, RelativeUnit.Relative);
+            root.Children.Add(handle); window.UpdateLayout();
+            Assert.Same(shape, Part(handle).CurrentShape);
+            Assert.NotNull(current.ContainerGeometry);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void CompiledXaml_ProvidesCompleteThreeStateConfiguration()
     {

@@ -3,16 +3,23 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Parity;
 
-public sealed record MenuGroupSourceConfig(string Action = "overlap");
+public sealed record MenuGroupSourceConfig(string Action = "overlap", string Path = "none", bool Rtl = false);
 [ParitySuite("menu-group-source")]
 public sealed class MenuGroupSourceCases
 {
-    public static IEnumerable<CaseData<MenuGroupSourceConfig>> Configurations() =>
-        new[] { "overlap", "replace", "transient", "reattach", "reverse", "native" }
-            .Select(action => new CaseData<MenuGroupSourceConfig>(action, action, new(action)));
+    public static IEnumerable<CaseData<MenuGroupSourceConfig>> Configurations()
+    {
+        foreach (var action in new[] { "overlap", "replace", "transient", "reattach", "reverse", "native" })
+            yield return new(action, action, new(action));
+        foreach (var path in new[] { "cut", "mixed", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "overlap", "replace", "transient", "reattach", "reverse", "native", "resize", "configure" })
+            yield return new($"path.{path}.{rtl}.{action}".ToLowerInvariant(), $"{path} {rtl} {action}", new(action, path, rtl));
+    }
     [ParityScenario("behavior", Data = nameof(Configurations))]
     public async Task Behavior(CaptureWriter writer)
     {
@@ -20,9 +27,18 @@ public sealed class MenuGroupSourceCases
         await using var host = new AvaloniaHost(writer, 240, 160);
         MenuCases.SetColors(host, false);
         var source = new MaterialInteractionSource();
+        var body = new Grid { Width = 180, Height = 64, Children = {
+                new Border { Width = 32, Height = 16, Background = Brushes.Blue } } };
         var group = new DropdownMenuGroup { InteractionSource = source, ShadowElevation = 0,
-            Items = { new Grid { Width = 180, Height = 64, Children = {
-                new Border { Width = 32, Height = 16, Background = Brushes.Blue } } } } };
+            FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, Items = { body } };
+        void SetPath(string path)
+        {
+            group.Shape = path == "none" ? null : new CutCornerShape { TopStart = new(24, RelativeUnit.Absolute),
+                TopEnd = new(4, RelativeUnit.Absolute), BottomEnd = new(16, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) };
+            group.InactiveShape = path == "cut" ? new CutCornerShape(new RelativeScalar(.15, RelativeUnit.Relative))
+                : path == "generic" ? new NotchedShape() : null;
+        }
+        SetPath(c.Path);
         var content = CaseDefaults.Center(group);
         var root = new Border { Background = Brushes.White, Child = content };
         host.Mount(root); host.Frame(-1000); host.Frame(0);
@@ -45,6 +61,16 @@ public sealed class MenuGroupSourceCases
         Times(16000, 64000);
         switch (c.Action)
         {
+            case "resize":
+                Mutate(65000, "exit", () => source.Emit(new MaterialInteractionEvent.HoverExit(first))); Times(80000, 96000);
+                Mutate(97000, "grow", () => body.Height = 96); Times(112000, 160000);
+                Mutate(161000, "shrink", () => body.Height = 40); break;
+            case "configure":
+                Mutate(65000, "exit", () => source.Emit(new MaterialInteractionEvent.HoverExit(first))); Times(80000, 96000);
+                Mutate(97000, "mixed", () => SetPath("mixed")); Times(112000);
+                Mutate(113000, "generic", () => SetPath("generic")); Times(128000);
+                Mutate(129000, "cut", () => SetPath("cut")); Times(144000);
+                Mutate(145000, "clear", () => SetPath("none")); break;
             case "replace":
                 var old = source; source = new(); source.Emit(second);
                 Mutate(65000, "replace", () => group.InteractionSource = source); Times(80000, 160000);
@@ -65,5 +91,15 @@ public sealed class MenuGroupSourceCases
                 Mutate(161000, "exit-again", () => source.Emit(new MaterialInteractionEvent.HoverExit(second))); break;
         }
         Times(256000, 320000, 400000, 800000);
+    }
+    private sealed class NotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry(); using var context = path.Open();
+            context.BeginFigure(default, true); context.LineTo(new(size.Width, 0));
+            context.LineTo(new(size.Width - 12, size.Height / 2)); context.LineTo(new(size.Width, size.Height));
+            context.LineTo(new(0, size.Height)); context.EndFigure(true); return path;
+        }
     }
 }

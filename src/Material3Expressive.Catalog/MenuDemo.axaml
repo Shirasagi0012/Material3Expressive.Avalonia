@@ -121,6 +121,7 @@
         <StackPanel Orientation="Horizontal" Spacing="16">
             <Button x:Name="DropdownAnchor" Content="Dropdown" Click="OnDropdown" />
             <CheckBox x:Name="PrecisionMenu" Content="Precision sizing" />
+            <CheckBox Content="Cut container" Click="OnContainerShape" />
             <Button x:Name="GroupedAnchor" Content="Grouped / selectable" Click="OnGrouped" />
         </StackPanel>
         <m3:DropdownMenu x:Name="Dropdown" PlacementTarget="{Binding #DropdownAnchor}"
@@ -169,9 +170,17 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="12">
             <m3:SelectableDropdownMenuItem x:Name="IconPreview" Content="Selection icon" Width="220"
-                SelectedLeadingIcon="{m3:Symbol Check}" Click="OnIconSelection" />
+                SelectedLeadingIcon="{m3:Symbol Check}" Click="OnIconSelection">
+                <m3:SelectableDropdownMenuItem.Shape><m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="16" BottomStart="4" /></m3:SelectableDropdownMenuItem.Shape>
+                <m3:SelectableDropdownMenuItem.SelectedShape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:SelectableDropdownMenuItem.SelectedShape>
+            </m3:SelectableDropdownMenuItem>
             <Button Content="Add / remove regular icon" Click="OnRegularIcon" />
         </StackPanel>
+        <m3:DropdownMenuGroup ShadowElevation="0" Width="280" HorizontalAlignment="Left">
+            <m3:DropdownMenuGroup.Shape><m3:CutCornerShape TopStart="24" TopEnd="4" BottomEnd="24" BottomStart="4" /></m3:DropdownMenuGroup.Shape>
+            <m3:DropdownMenuGroup.InactiveShape><m3:CutCornerShape TopStart="8%" TopEnd="8%" BottomEnd="8%" BottomStart="8%" /></m3:DropdownMenuGroup.InactiveShape>
+            <TextBlock Text="Hover, then leave: cut-corner group" Margin="16" TextWrapping="Wrap" />
+        </m3:DropdownMenuGroup>
         <TextBlock Text="Select the item, then switch its regular icon while the selection animates." TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="12">
             <Button Content="Light / dark" Click="OnTheme" />

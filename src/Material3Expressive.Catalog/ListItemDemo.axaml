@@ -22,6 +22,16 @@
       <m3:ListItem Content="Custom rounded shapes" InteractionMode="Click" Click="OnClick">
         <m3:ListItem.Shapes><m3:ListItemShapes Shape="2" HoveredShape="8" PressedShape="24" SelectedShape="16" FocusedShape="16" DraggedShape="16" /></m3:ListItem.Shapes>
       </m3:ListItem>
+      <m3:ListItem Content="Animated cut corners" SupportingContent="Hover, focus, press or toggle selection"
+                   InteractionMode="MultipleSelection" CheckedChangeRequested="OnCheckedChange"
+                   m3:MaterialInteraction.FocusFeedback="InsetRing">
+        <m3:ListItem.Shape><m3:CutCornerShape TopStart="20" TopEnd="4" BottomEnd="8" BottomStart="2" /></m3:ListItem.Shape>
+        <m3:ListItem.SelectedShape><m3:CutCornerShape TopStart="16" TopEnd="16" BottomEnd="16" BottomStart="16" /></m3:ListItem.SelectedShape>
+        <m3:ListItem.PressedShape><m3:CutCornerShape TopStart="10%" TopEnd="10%" BottomEnd="10%" BottomStart="10%" /></m3:ListItem.PressedShape>
+        <m3:ListItem.FocusedShape><m3:CutCornerShape TopStart="8" TopEnd="8" BottomEnd="8" BottomStart="8" /></m3:ListItem.FocusedShape>
+        <m3:ListItem.HoveredShape><m3:CutCornerShape TopStart="4" TopEnd="4" BottomEnd="4" BottomStart="4" /></m3:ListItem.HoveredShape>
+        <m3:ListItem.DraggedShape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:ListItem.DraggedShape>
+      </m3:ListItem>
       <StackPanel Spacing="2" m3:MaterialInteraction.FocusFeedback="InsetRing">
         <TextBlock Text="Keyboard focus · use Tab" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
         <m3:ListItem Content="Animated focus outline" InteractionMode="Click" Click="OnClick" />

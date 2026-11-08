@@ -17,6 +17,7 @@ using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Rendering;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
@@ -409,6 +410,9 @@ public class DropdownMenuPopup : ItemsControl
 /// <summary>Baseline Material dropdown: surface, intrinsic-width column and vertical scrolling.</summary>
 public class DropdownMenu : DropdownMenuPopup
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<DropdownMenu, MaterialShape?>(nameof(Shape));
+    /// <summary>Container outline; null preserves CornerRadius and the current theme.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<double> TonalElevationProperty = AvaloniaProperty.Register<DropdownMenu, double>(nameof(TonalElevation));
     public static readonly StyledProperty<double> ShadowElevationProperty = AvaloniaProperty.Register<DropdownMenu, double>(nameof(ShadowElevation));
     public static readonly StyledProperty<Vector> ScrollOffsetProperty = AvaloniaProperty.Register<DropdownMenu, Vector>(nameof(ScrollOffset), defaultBindingMode: BindingMode.TwoWay);

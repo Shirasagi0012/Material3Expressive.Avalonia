@@ -23,10 +23,21 @@ public sealed class PrecisionMenuItemCases
 [ParitySuite("dropdown-menu-item")]
 public sealed class DropdownMenuItemCases
 {
-    public static IEnumerable<CaseData<MenuConfig>> StaticConfigurations() => MenuCases.StaticConfigurations();
+    public static IEnumerable<CaseData<MenuConfig>> StaticConfigurations()
+    {
+        foreach (var existing in MenuCases.StaticConfigurations()) yield return existing;
+        foreach (var path in new[] { "cut", "mixed", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var selected in new[] { false, true })
+            yield return new($"static.path.{path}.{rtl}.{selected}".ToLowerInvariant(), "Menu item path", new(Rtl: rtl, Selected: selected, Path: path));
+    }
     public static IEnumerable<CaseData<MenuConfig>> DynamicConfigurations()
     {
         foreach (var existing in MenuCases.DynamicConfigurations()) yield return existing;
+        foreach (var path in new[] { "cut", "mixed", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "selection", "reverse", "press", "hover" })
+            yield return new($"dynamic.path.{path}.{rtl}.{action}".ToLowerInvariant(), "Menu shape and interaction", new(Rtl: rtl, Path: path, Action: action));
         foreach (var exiting in new[] { false, true })
         foreach (var rtl in new[] { false, true })
         {

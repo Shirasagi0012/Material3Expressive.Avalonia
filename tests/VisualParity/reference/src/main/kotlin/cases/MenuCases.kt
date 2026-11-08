@@ -4,6 +4,7 @@ package parity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.internal.Icons
 import androidx.compose.runtime.*
@@ -11,6 +12,9 @@ import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
@@ -19,7 +23,7 @@ import kotlinx.serialization.Serializable
 data class MenuConfig(val variant:String="standard", val selected:Boolean=false, val enabled:Boolean=true,
     val dark:Boolean=false, val rtl:Boolean=false, val icon:Boolean=true, val width:Double=200.0,
     val contentWidth:Double=48.0, val contentHeight:Double=16.0, val action:String="none", val selectedIcon:Boolean=false, val nativeCheck:Boolean=false, val autoWidth:Boolean=false, val comboItem:Boolean=false,
-    val precision:Boolean=false,val trailing:Boolean=false)
+    val precision:Boolean=false,val trailing:Boolean=false,val path:String="none")
 
 @ParitySuite("menu")
 class MenuCases {
@@ -80,6 +84,12 @@ class MenuCases {
         }
         } finally { precision.value=previous }
     }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline=Outline.Generic(Path().apply {
+            val inset=with(density){12.dp.toPx()};moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width-inset,size.height/2)
+            lineTo(size.width,size.height);lineTo(0f,size.height);close()
+        })
+    }
     private class Scene(val config:MenuConfig) {
         var selected by mutableStateOf(config.selected)
         var hasIcon by mutableStateOf(config.icon)
@@ -111,7 +121,9 @@ class MenuCases {
                             }
                             else SelectableDropdownMenuItem(selected=selected,onClick={clicks++},text=content,
                                 trailingContent=if(config.trailing)({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
-                                shapes=MenuDefaults.itemShapes(),modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
+                                shapes=if(config.path=="none")MenuDefaults.itemShapes() else MenuItemShapes(CutCornerShape(20.dp,4.dp,12.dp,2.dp),
+                                    when(config.path){"cut"->CutCornerShape(35);"generic"->NotchedShape;else->MenuDefaults.itemShapes().selectedShape}),
+                                modifier=itemProbe.modifier(),leadingIcon=icon,enabled=config.enabled,
                                 contentPadding=if(config.comboItem) ExposedDropdownMenuDefaults.ItemContentPadding else MenuDefaults.DropdownMenuSelectableItemContentPadding,
                                 selectedLeadingIcon=if(config.nativeCheck) ({Icon(Icons.Filled.Check,null,Modifier.size(20.dp))}) else if(config.selectedIcon) ({Box(Modifier.size(20.dp).background(LocalContentColor.current))}) else null,
                                 colors=if(config.variant=="vibrant") MenuDefaults.selectableItemVibrantColors() else MenuDefaults.selectableItemColors())
@@ -146,7 +158,8 @@ class MenuCases {
                 if(layer!=null) {
                     val graphics=checkNotNull(field(layer,"graphicsLayer"))
                     if(graphics.javaClass.methods.single { it.name=="getClip" && it.parameterCount==0 }.invoke(graphics)==true) {
-                        val outline=field(layer,"outline") as? Outline.Rounded ?: error("Missing rounded Surface outline")
+                        val outline=field(layer,"outline") as? Outline ?: error("Missing Surface outline")
+                        if(outline !is Outline.Rounded)return 0.0
                         check(radius==null)
                         radius=outline.roundRect.topLeftCornerRadius.x.toDouble()/ComposeHost.RenderScale
                     }

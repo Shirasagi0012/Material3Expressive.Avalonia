@@ -40,7 +40,7 @@ internal sealed class InsetRingBorder
             if (_mask is null || _pathKey != pathKey)
             {
                 _mask?.Dispose();
-                _mask = _maskCache.Update(path, stroke, scale, false, size, color, inset);
+                _mask = _maskCache.Update(path, stroke, scale, false, size, color, inset, eraseInset: true);
                 _pathKey = pathKey;
             }
             context.DrawImage(_mask, new Rect(0, 0, MathF.Ceiling(bounds.Width), MathF.Ceiling(bounds.Height)),

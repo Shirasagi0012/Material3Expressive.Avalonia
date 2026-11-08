@@ -142,3 +142,31 @@ TemplatedControl 默认 ClipToBounds=true，Compose Canvas 无裁剪。固定 Av
 上下边缘像素证明该输入差异；对齐为不裁剪后 `snackbar-host-unclipped` 全部 16 equal。
 完成生产属性绑定迁移后的 `snackbar-host-bound` 仍为 16 equal，全部重复/额外截图稳定，零执行错误。
 没有放宽 raster 容差、改变动画、增加帧或裁掉内容；原来缺失的抗锯齿边缘像素现与参考一致。
+
+## 显式容器路径（2026-11-08 本轮授权）
+
+固定 AndroidX 与 Core 的槽/Data 两个 Snackbar 重载都接受 shape 并交给 Surface；本地原先只公开
+CornerRadius，现补齐 `Snackbar.Shape`，直接 TemplateBinding 到已有 MaterialSurface，null 保留旧圆角。
+原先缺口为组件入口未接入已存在的路径能力，无需新建绘制层、改变布局或迁移现有调用。
+背景、阴影、内容裁剪使用同一实际轮廓，Host 的缩放/透明度、队列结果与计时语义不变。
+Catalog 的自定义消息展示切角；行为测试覆盖 live 角值、清除回退、尺寸不变及重挂。
+双端 snackbar 增加切角/百分比/凹路径、深色、RTL、动作换行造成的尺寸变化、换路径与清除。
+
+Host 的 shaped 模板另覆盖 LTR/RTL、退出和入场中断。验证同时修复两处实际问题：
+运行时现在以 AnimationEndReason 返回普通取消，Host 必须检查 Finished 才执行退出移除，
+否则被取消的入场也会提前移除当前退出层；这遵循共享决定 §32，不修改弹簧或等待时序。
+SnackbarLayout 已物理放置槽，内部 ContentPresenter 仍使用 Avalonia RTL 镜像；原 Right 对齐
+会在显式宽度引起的宽槽中再次反转，现保留逻辑起点 Left。新增测试检查真实内容位置和中断层保留。
+
+`snackbar-host-paths-final` 20 例：16 equal、2 withinTolerance、2 different，全部重复稳定、零执行错误。
+原有 16 例全部 equal（包括早退、重新挂载后超时）；新增两个普通 shaped 退出例在容差内。
+两个 shaped interrupt 例只在 224000µs 的阴影栅格超差，结构化几何、层数、alpha/scale 全部相等；
+当时仅保留第二层，alpha=0.9813839793205261、scale=0.9979384541511536。
+实际图像检查显示差异集中在外部阴影，1x 最大通道差 23，现有阈值 20；尚未解决、未接受为兼容，
+没有改动画、关闭阴影、放宽容差或删除用例。固定上游的两例缺基线 Int32 溢出差异也继续保留；
+本轮开始前提交 fb5605d 的独立工作树已复现 `snackbar.dynamic.baseline.false.false`。
+
+最终 `snackbar-paths-final` 77 例为 6 equal、69 withinTolerance、上述 2 个缺基线 different，
+全部重复稳定、零执行错误；新增 14 个形状用例全部相等或容差内。Snackbar 相关行为测试 52 项通过。
+最终整仓构建成功（5 个既有警告），控件库全量测试 2559 项全部通过，结果保留在
+`artifacts/test-results/full-complete.trx`；未将之前 Headless 隔离清理的线程错误当作已通过结果。

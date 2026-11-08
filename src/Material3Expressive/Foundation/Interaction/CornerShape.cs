@@ -8,6 +8,12 @@ namespace Material3Expressive.Foundation.Interaction;
 internal abstract record CornerShape
 {
     public abstract CornerRadius Resolve(Size size);
+    internal virtual bool IsCut => false;
+
+    // Interpolatable.lerp falls back to the nearer endpoint for different shape families.
+    // Keep the endpoint itself so a later reversal retains upstream shape equality.
+    internal static CornerShape Interpolate(CornerShape from, CornerShape to, float progress) =>
+        from == to || from.IsCut != to.IsCut ? progress < .5f ? from : to : new Blend(from, to, progress);
 
     internal sealed record Defined(CornerRadius Corners, float FullFraction = .5f) : CornerShape
     {
@@ -26,6 +32,7 @@ internal abstract record CornerShape
 
     internal sealed record Blend(CornerShape From, CornerShape To, float Progress) : CornerShape
     {
+        internal override bool IsCut => From.IsCut;
         public override CornerRadius Resolve(Size size) =>
             AnimatedCornerRadius.Lerp(From.Resolve(size), To.Resolve(size), Progress);
     }
@@ -35,6 +42,7 @@ internal abstract record CornerShape
     internal sealed record Cut(RelativeScalar TopStart, RelativeScalar TopEnd,
         RelativeScalar BottomEnd, RelativeScalar BottomStart) : CornerShape
     {
+        internal override bool IsCut => true;
         internal static Cut From(CutCornerShape shape) => new(shape.TopStart, shape.TopEnd, shape.BottomEnd, shape.BottomStart);
         public override CornerRadius Resolve(Size size)
         {

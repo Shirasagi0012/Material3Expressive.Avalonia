@@ -48,6 +48,7 @@ private void OnChoose(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 
 只读字段同时设置 `TextBox.IsReadOnly=true` 和 `AnchorType=PrimaryNotEditable`。
 下拉菜单沿用 `DropdownMenu` 的表面、滚动、项目、开闭动画及外观属性。
+可用继承的 `Shape` 设置 `CutCornerShape` 或自定义路径，null 保留 `CornerRadius`；用法见 [Menu](../Menu/README.md)。
 显式 Width/Height/MinHeight 是调用方约束，可以覆盖默认锚点宽度或可用高度。
 
 字段可选 `MaterialFilledExposedDropdownTextFieldTheme` 或 `MaterialOutlinedExposedDropdownTextFieldTheme`，

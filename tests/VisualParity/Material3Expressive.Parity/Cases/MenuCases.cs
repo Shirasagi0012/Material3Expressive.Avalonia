@@ -8,6 +8,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -15,7 +16,7 @@ namespace Material3Expressive.Parity;
 public sealed record MenuConfig(string Variant = "standard", bool Selected = false, bool Enabled = true,
     bool Dark = false, bool Rtl = false, bool Icon = true, double Width = 200,
     double ContentWidth = 48, double ContentHeight = 16, string Action = "none", bool SelectedIcon = false, bool NativeCheck = false, bool AutoWidth = false, bool ComboItem = false,
-    bool Precision = false, bool Trailing = false);
+    bool Precision = false, bool Trailing = false, string Path = "none");
 
 [ParitySuite("menu")]
 public sealed class MenuCases
@@ -99,6 +100,13 @@ public sealed class MenuCases
             DropdownMenuItem dropdown = config.Variant == "baseline" ? new DropdownMenuItem()
                 : new SelectableDropdownMenuItem { IsSelected = config.Selected };
             dropdown.Content = marker; dropdown.LeadingIcon = config.Icon ? icon : null;
+            if (config.Path != "none")
+            {
+                dropdown.Shape = new CutCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+                    BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) };
+                dropdown.SelectedShape = config.Path == "cut" ? new CutCornerShape(new RelativeScalar(.35, RelativeUnit.Relative))
+                    : config.Path == "generic" ? new MenuNotchedShape() : null;
+            }
             dropdown.TrailingContent = config.Trailing ? trailing : null;
             if (config.SelectedIcon) dropdown.SelectedLeadingIcon = new MenuMarker(new Size(iconSize, iconSize));
             dropdown.Click += (_, _) => clicks++;
@@ -200,6 +208,16 @@ public sealed class MenuCases
         host.Window.Resources[Sys.Color.TertiaryContainer] = Color.Parse(dark ? "#633B48" : "#FFD8E4");
         host.Window.Resources[Sys.Color.OnTertiaryContainer] = Color.Parse(dark ? "#FFD8E4" : "#31111D");
         host.Window.Resources[Sys.Color.SurfaceContainer] = Color.Parse(dark ? "#211F26" : "#F3EDF7");
+    }
+    private sealed class MenuNotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry(); using var context = path.Open();
+            context.BeginFigure(default, true); context.LineTo(new(size.Width, 0));
+            context.LineTo(new(size.Width - 12, size.Height / 2)); context.LineTo(new(size.Width, size.Height));
+            context.LineTo(new(0, size.Height)); context.EndFigure(true); return path;
+        }
     }
     private sealed class MenuMarker(Size desiredSize) : Control
     {

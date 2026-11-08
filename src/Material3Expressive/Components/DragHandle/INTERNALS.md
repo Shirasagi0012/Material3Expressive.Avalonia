@@ -24,13 +24,15 @@
 ## 3. 已确认决定与已知差异
 
 - 新组件与共享交互源入口依据剩余组件移植任务授权，记录于引入提交 `e89f5fc8`。通用输入和最小布局环境遵循[共享决定](../../../../docs/DECISIONS.md)。
-- 尚未实现任意路径 Shape，当前配置采用圆角。扩展形状需要全库形状与裁剪契约。
+- 原先仅有圆角配置，因缺少全库形状与裁剪契约而延期任意 Shape。2026-11-08 本轮维护者授权新增 API 与修订历史边界，现复用[共享形状能力 §35](../../../../docs/DECISIONS.md#35-surface-与-card-的显式路径形状)：Shape / PressedShape / DraggedShape 独立覆盖三态圆角，null 回到 Shapes。没有破坏性迁移。
+- 固定两端 DragHandle.kt 在 graphicsLayer 直接选形状并裁剪整个 drawRect / indication；没有形变动画，也不以 shape 作为 ripple factory 的 key。本地仅更新 Surface.Shape，不重建源或取消已有波纹。形状属性变化、尺寸、RTL、模板与卸载沿用 Surface 契约；手柄仍不接管宿主拖动。
 - 双端用例覆盖明暗、RTL、分数尺寸、约束、配置切换及重叠交互。Windows Catalog 已检查鼠标拖动和共享源联动，触屏、笔及真实辅助技术未经验证。
 
 ## 4. 验证入口
 
 - `tests/Material3Expressive.Tests/DragHandleTests.cs` 检查布局、合成鼠标输入、配对、替换、卸载及 Token 更新。
 - 双端用例为 `DragHandleCases.cs` / `DragHandleCases.kt`，族名 `drag-handle`。
+- 路径接入验证：`drag-handle-paths-verified` 65 例，10 equal / 55 withinTolerance，零执行错误、两端重复及额外截图稳定。实际检查释放后悬停图像；10 项行为测试通过。首轮路径反馈生命周期失败保留于 `drag-handle-paths`，参考夹具 Float CornerSize 原为像素输入，现使用整数百分比与 Avalonia 相同输入；未改比较门禁。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~DragHandleTests

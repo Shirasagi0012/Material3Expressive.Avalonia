@@ -5,12 +5,18 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -24,7 +30,7 @@ import kotlinx.serialization.Serializable
 data class SegmentedButtonConfig(val multi:Boolean=false,val selected:Boolean=false,val enabled:Boolean=true,
     val icon:String="check",val dark:Boolean=false,val rtl:Boolean=false,val count:Int=3,val varied:Boolean=false,
     val width:Double?=null,val height:Double?=null,val labelHeight:Double=16.0,val iconWidth:Double=18.0,
-    val padding:Double?=null,val border:Double=1.0,val radius:Double?=null,val customColors:Boolean=false,val action:String="none")
+    val padding:Double?=null,val border:Double=1.0,val radius:Double?=null,val customColors:Boolean=false,val action:String="none",val path:String="none")
 
 @ParitySuite("segmented-button")
 class SegmentedButtonCases {
@@ -51,6 +57,13 @@ class SegmentedButtonCases {
             val center=coord.localToRoot(Offset(coord.size.width/2f,coord.size.height/2f))/ComposeHost.RenderScale.toFloat()
             val outside=Offset(515f,203f); sample("initial")
             when(c.action) {
+                "path-change" -> {
+                    input(1000,"move",center);input(2000,"down",center);sample("press");times(16000,64000)
+                    mutate(65000,"notch"){s.path="notch"};times(80000,160000)
+                    input(161000,"up",center);sample("release");times(176000,400000)
+                    mutate(401000,"percent"){s.path="percent"};times(416000)
+                    mutate(417000,"restore-corners"){s.path="none"};times(432000,800000)
+                }
                 "selection","reverse" -> {
                     mutate(1000,"selected") { s.selected[0]=true }; times(16000,32000,64000)
                     if(c.action=="reverse") mutate(65000,"reverse") { s.selected[0]=false }
@@ -91,6 +104,7 @@ class SegmentedButtonCases {
         val selected=mutableStateListOf<Boolean>().apply { repeat(c.count) { add(it==0 && c.selected) } }
         val enabled=mutableStateListOf<Boolean>().apply { repeat(c.count) { add(c.enabled) } }; var dark by mutableStateOf(c.dark)
         var grown by mutableStateOf(false); var radius by mutableStateOf(c.radius); var extraIcon by mutableStateOf(false)
+        var path by mutableStateOf(c.path)
         val clicks=IntArray(c.count); val row=Probe(); val items=List(c.count) { Probe() }; val labels=List(c.count) { Probe() }; val focus=FocusRequester()
         fun clicked(index:Int) {
             clicks[index]++
@@ -124,14 +138,24 @@ class SegmentedButtonCases {
                         fun itemModifier(index:Int):Modifier=items[index].modifier().let { if(index==0) it.focusRequester(focus) else it }
                         val padding=c.padding?.let { PaddingValues(it.toFloat().dp) } ?: SegmentedButtonDefaults.ContentPadding
                         val shape=radius?.let { RoundedCornerShape(it.toFloat().dp) } ?: SegmentedButtonDefaults.baseShape
+                        val paths=List(c.count) { i ->
+                            when(path) {
+                                "notch" -> NotchedShape
+                                "cut","percent" -> {
+                                    fun corner(outer:Boolean,dip:Int,percent:Int):CornerSize = if(!outer) CornerSize(0.dp) else if(path=="percent") CornerSize(percent) else CornerSize(dip.dp)
+                                    CutCornerShape(corner(i==0,14,40),corner(i==c.count-1,8,25),corner(i==c.count-1,16,50),corner(i==0,6,20))
+                                }
+                                else -> SegmentedButtonDefaults.itemShape(i,c.count,shape)
+                            }
+                        }
                         if(c.multi) MultiChoiceSegmentedButtonRow(modifier,c.border.toFloat().dp) {
-                            repeat(c.count) { i -> SegmentedButton(checked=selected[i],onCheckedChange={ clicked(i) },shape=SegmentedButtonDefaults.itemShape(i,c.count,shape),
+                            repeat(c.count) { i -> SegmentedButton(checked=selected[i],onCheckedChange={ clicked(i) },shape=paths[i],
                                 modifier=itemModifier(i),enabled=enabled[i],colors=colors,contentPadding=padding,
                                 interactionSource=if(c.action.startsWith("source-"))sources[i] else null,
                                 border=SegmentedButtonDefaults.borderStroke(if(!enabled[i]) { if(selected[i]) colors.disabledActiveBorderColor else colors.disabledInactiveBorderColor } else { if(selected[i]) colors.activeBorderColor else colors.inactiveBorderColor },c.border.toFloat().dp),
                                 icon={ Icon(i) },label={ Label(i) }) }
                         } else SingleChoiceSegmentedButtonRow(modifier,c.border.toFloat().dp) {
-                            repeat(c.count) { i -> SegmentedButton(selected=selected[i],onClick={ clicked(i) },shape=SegmentedButtonDefaults.itemShape(i,c.count,shape),
+                            repeat(c.count) { i -> SegmentedButton(selected=selected[i],onClick={ clicked(i) },shape=paths[i],
                                 modifier=itemModifier(i),enabled=enabled[i],colors=colors,contentPadding=padding,
                                 interactionSource=if(c.action.startsWith("source-"))sources[i] else null,
                                 border=SegmentedButtonDefaults.borderStroke(if(!enabled[i]) { if(selected[i]) colors.disabledActiveBorderColor else colors.disabledInactiveBorderColor } else { if(selected[i]) colors.activeBorderColor else colors.inactiveBorderColor },c.border.toFloat().dp),
@@ -166,5 +190,12 @@ class SegmentedButtonCases {
             }
             return result
         }
+    }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline = Outline.Generic(Path().apply {
+            val inset=with(density){8.dp.toPx()}
+            moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width-inset,size.height/2)
+            lineTo(size.width,size.height);lineTo(0f,size.height);lineTo(inset,size.height/2);close()
+        })
     }
 }

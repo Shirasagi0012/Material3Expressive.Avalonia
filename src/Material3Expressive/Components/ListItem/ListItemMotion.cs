@@ -3,6 +3,7 @@ using Avalonia.Media;
 using ComposeAnimation;
 using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 using AnimatedCornerRadius = Material3Expressive.Foundation.Interaction.AnimatedCornerRadius;
 
@@ -21,7 +22,18 @@ internal sealed class ListItemMotion : IDisposable
     private CancellationTokenSource? _elevationEffect;
     private Task? _elevationRun;
     private AnimatedCornerRadius? _shape;
-    private ListItemShapes? _shapes;
+    private ShapeTarget[] _shapes = [];
+    private MaterialShape[] _observedShapes = [];
+    private readonly CutCornerShape _cutOutline = new();
+    private ShapeTarget? _staticShape;
+    private sealed record ShapeTarget(MaterialShape? Path, CornerShape? Corners)
+    {
+        // Compose's corner shapes use value equality for key(shapes). Avalonia paths are
+        // mutable objects; compare their immutable corner snapshots, not object identity.
+        public bool Equals(ShapeTarget? other) => other is not null && (Corners is not null
+            ? Corners == other.Corners : other.Corners is null && ReferenceEquals(Path, other.Path));
+        public override int GetHashCode() => Corners?.GetHashCode() ?? Path?.GetHashCode() ?? 0;
+    }
     private MaterialSpring _shapeSpec;
     private bool _pending;
     private bool _deferShape;
@@ -53,6 +65,7 @@ internal sealed class ListItemMotion : IDisposable
         _elevationTarget = TargetElevation;
         _elevation = new(new FloatConverter(), _elevationTarget, 0.1f, "List elevation");
         _scope.BindAnimatedValue(owner, ListItem.AnimatedElevationProperty, _elevation);
+        ObserveShapes();
         UpdateShape();
     }
     private float TargetElevation => (float)(State.Dragged ? _owner.DraggedElevation : _owner.Elevation);
@@ -73,6 +86,7 @@ internal sealed class ListItemMotion : IDisposable
     internal void Refresh()
     {
         if (_scope.Lifetime.IsCancellationRequested) return;
+        ObserveShapes();
         PaintShape();
         if (_pending) return;
         _pending = true;
@@ -132,23 +146,37 @@ internal sealed class ListItemMotion : IDisposable
     }
     private void UpdateShape()
     {
-        var shapes = _owner.ResolveShapes();
+        var rounds = _owner.ResolveShapes();
+        ShapeTarget Resolve(MaterialShape? path, CornerRadius corners) => new(path,
+            path is CutCornerShape cut ? CornerShape.Cut.From(cut) : path is null ? new CornerShape.Defined(corners) : null);
+        ShapeTarget[] shapes = [Resolve(_owner.Shape, rounds.Shape), Resolve(_owner.SelectedShape, rounds.SelectedShape),
+            Resolve(_owner.PressedShape, rounds.PressedShape), Resolve(_owner.FocusedShape, rounds.FocusedShape),
+            Resolve(_owner.HoveredShape, rounds.HoveredShape), Resolve(_owner.DraggedShape, rounds.DraggedShape)];
         var flags = _owner.Interactions;
-        var target = flags.HasFlag(InteractionState.Pressed) ? shapes.PressedShape
-            : flags.HasFlag(InteractionState.Dragged) ? shapes.DraggedShape
-            : _owner.Selected ? shapes.SelectedShape
-            : flags.HasFlag(InteractionState.Focused) ? shapes.FocusedShape
-            : flags.HasFlag(InteractionState.Hovered) ? shapes.HoveredShape : shapes.Shape;
-        if (_shape is null || _shapes != shapes || _shapeSpec != _owner.ShapeAnimation)
+        var target = shapes[flags.HasFlag(InteractionState.Pressed) ? 2
+            : flags.HasFlag(InteractionState.Dragged) ? 5 : _owner.Selected ? 1
+            : flags.HasFlag(InteractionState.Focused) ? 3 : flags.HasFlag(InteractionState.Hovered) ? 4 : 0];
+        if (shapes.Any(shape => shape.Corners is null))
         {
-            if (_shape is not null) _owner.ResetIndication();
+            // ListItemShapes only animates when all six entries are CornerBasedShape.
+            // In the generic branch ripple's shape identity follows the selected entry.
+            if (_shape is not null || _staticShape is not null && _staticShape != target) _owner.ResetIndication();
+            _shapeEffect?.Cancel(); _shape?.Dispose(); _shape = null;
+            _shapes = shapes; _staticShape = target;
+            PaintShape();
+            return;
+        }
+        if (_shape is null || !_shapes.SequenceEqual(shapes) || _shapeSpec != _owner.ShapeAnimation)
+        {
+            if (_shape is not null || _staticShape is not null) _owner.ResetIndication();
             _shapeEffect?.Cancel();
             _shape?.Dispose();
             _shapeSpec = _owner.ShapeAnimation;
             _shapes = shapes;
-            _shape = new(target, FloatShapeSpec(), _scope, PaintShape);
+            _staticShape = null;
+            _shape = new(target.Corners!, FloatShapeSpec(), _scope, PaintShape);
         }
-        else if (_shape.Target != target)
+        else if (_shape.TargetShape != target.Corners)
         {
             _shapeEffect?.Cancel();
             var previous = _shapeRun;
@@ -158,25 +186,47 @@ internal sealed class ListItemMotion : IDisposable
                 if (previous is not null) { try { await previous; } catch (OperationCanceledException) { } }
                 using var effect = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 _shapeEffect = effect;
-                try { await shape.AnimateToAsync(target, FloatShapeSpec(), effect.Token); }
+                try { await shape.AnimateToAsync(target.Corners!, FloatShapeSpec(), effect.Token); }
                 finally { if (ReferenceEquals(_shapeEffect, effect)) _shapeEffect = null; }
             }, "List shape");
         }
         PaintShape();
     }
+
+    private void ObserveShapes()
+    {
+        MaterialShape?[] candidates = [_owner.Shape, _owner.SelectedShape, _owner.PressedShape,
+            _owner.FocusedShape, _owner.HoveredShape, _owner.DraggedShape];
+        var shapes = candidates.OfType<MaterialShape>().Distinct().ToArray();
+        if (_observedShapes.SequenceEqual(shapes)) return;
+        foreach (var shape in _observedShapes) shape.PropertyChanged -= ShapeChanged;
+        _observedShapes = shapes;
+        foreach (var shape in shapes) shape.PropertyChanged += ShapeChanged;
+    }
+    private void ShapeChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => Refresh();
     // Compose's spring parameters are Float before the solver widens them to Double.
     private MaterialSpring FloatShapeSpec() => new((float)_shapeSpec.DampingRatio,
         (float)_shapeSpec.Stiffness, (float)_shapeSpec.VisibilityThreshold);
     internal void PaintShape()
     {
-        if (_shape is null || _owner.Surface is not { } surface) return;
+        if (_owner.Surface is not { } surface) return;
+        if (_shape is null)
+        {
+            if (_staticShape is not { } target) return;
+            surface.Shape = target.Path;
+            surface.SetAnimatedCorners(target.Path is null ? target.Corners?.Resolve(surface.Bounds.Size) : null);
+            return;
+        }
         _shape.Size = surface.Bounds.Size;
         var progress = _shape.Progress;
+        surface.Shape = _shape.CurrentIsCut ? _cutOutline : null;
         surface.SetAnimatedCorners(_shape.Current, shapeStateChanged: _paintedShapeProgress != progress);
         _paintedShapeProgress = progress;
     }
     public void Dispose()
     {
+        foreach (var shape in _observedShapes) shape.PropertyChanged -= ShapeChanged;
+        _observedShapes = [];
         _shapeEffect?.Cancel();
         _colorEffect?.Cancel();
         _shape?.Dispose();
@@ -186,5 +236,6 @@ internal sealed class ListItemMotion : IDisposable
         _scope.Dispose();
         _colorEffect?.Dispose();
         _owner.Surface?.SetAnimatedCorners(null);
+        if (_owner.Surface is { } surface) surface.Shape = null;
     }
 }

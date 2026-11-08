@@ -86,6 +86,18 @@ Snackbar 也可独立使用，其 `Content`、`Action`、`DismissAction` 各有�
 
 `Background` / `Foreground`、`ActionForeground`、`DismissActionForeground`、`CornerRadius`
 用于局部定制；`DataActionForeground` 只控制 Data 创建的默认动作按钮。
+`Shape` 可用 `CutCornerShape` 或自定义 `MaterialShape` 覆盖容器轮廓，null 恢复 `CornerRadius`。
+槽入口和 Data 入口均适用，Host 使用时在 `SnackbarTemplate` 的 Snackbar 上设置：
+
+```xml
+<m3:Snackbar Content="连接失败">
+  <m3:Snackbar.Shape>
+    <m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="16" BottomStart="4" />
+  </m3:Snackbar.Shape>
+</m3:Snackbar>
+```
+
+百分比角随容器较短边重算；形状改变不影响消息基线、动作布局和 Host 的队列/计时。
 各槽提供文字/颜色环境，子控件的主题或局部前景可覆盖它；上例显式绑定动作颜色。
 默认消息为 BodyMedium、动作为 LabelLarge，标准关闭图标使用固定 Core 的 Close 路径。
 全局调整见[主题与 Token 接入](../../../../docs/GETTING_STARTED.md#主题与定制)。

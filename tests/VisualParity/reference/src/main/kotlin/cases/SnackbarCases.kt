@@ -6,12 +6,17 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.internal.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.AlignmentLine
@@ -25,7 +30,7 @@ import kotlinx.serialization.Serializable
     val dark:Boolean=false,val rtl:Boolean=false,val buttons:Boolean=false,val contentWidth:Double=64.0,val contentHeight:Double=12.0,
     val dismissWidth:Double=24.0,val hostWidth:Int=720,val width:Double?=null,val height:Double?=null,
     val minimumWidth:Double=0.0,val colors:String="default",val mutation:String="none",
-    val firstBaseline:Double?=null,val lastBaseline:Double?=null,val actionBaseline:Double?=null,val lastOnlyWrapper:Boolean=false)
+    val firstBaseline:Double?=null,val lastBaseline:Double?=null,val actionBaseline:Double?=null,val lastOnlyWrapper:Boolean=false,val path:String="none")
 
 @ParitySuite("snackbar") class SnackbarCases {
     @ParityScenario("static") suspend fun static(writer:CaptureWriter)=capture(writer,false)
@@ -41,6 +46,7 @@ import kotlinx.serialization.Serializable
             fun change(time:Long,id:String,action:()->Unit) {advance(time);action();writer.record(time,"mutation",id);host.frame(time);host.draw();sample(id)}
             fun times(vararg times:Long) {times.forEach {advance(it);host.draw();sample("time-$it")}}
             when(config.mutation) {
+                "shape"->{change(1000,"percent"){s.path="percent"};change(2000,"new-line"){s.newLine=true};change(3000,"generic"){s.path="generic"};change(4000,"clear"){s.path="none"}}
                 "baseline" -> {change(1000,"first") {s.firstBaseline=14.0};change(2000,"single-line") {s.lastBaseline=14.0};change(3000,"clear") {s.firstBaseline=null;s.lastBaseline=null}}
                 "slots" -> {change(1000,"dismiss-only") {s.hasAction=false;s.hasDismiss=true};change(2000,"both") {s.hasAction=true};change(3000,"none") {s.hasAction=false;s.hasDismiss=false}}
                 "new-line" -> {change(1000,"new-line") {s.newLine=true};change(2000,"row") {s.newLine=false}}
@@ -57,7 +63,14 @@ import kotlinx.serialization.Serializable
             }
         }
     }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline=Outline.Generic(Path().apply {
+            val inset=with(density){12.dp.toPx()};moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width-inset,size.height/2)
+            lineTo(size.width,size.height);lineTo(0f,size.height);close()
+        })
+    }
     private class Scene(val config:SnackbarConfig) {
+        var path by mutableStateOf(config.path)
         var hasAction by mutableStateOf(config.hasAction);var hasDismiss by mutableStateOf(config.hasDismiss)
         var newLine by mutableStateOf(config.newLine);var dark by mutableStateOf(config.dark)
         var width by mutableStateOf(config.contentWidth);var height by mutableStateOf(config.contentHeight)
@@ -99,7 +112,7 @@ import kotlinx.serialization.Serializable
                         Snackbar(modifier=modifier,action=actionSlot,dismissAction=dismissSlot,actionOnNewLine=newLine,
                             containerColor=background,contentColor=if(colors=="custom") Color.Red else SnackbarDefaults.contentColor,
                             actionContentColor=actionColor,dismissActionContentColor=dismissColor,
-                            shape=if(colors=="custom") RoundedCornerShape(12.dp) else SnackbarDefaults.shape) {
+                            shape=when(path){"cut"->CutCornerShape(16.dp,4.dp,12.dp,2.dp);"percent"->CutCornerShape(25);"generic"->NotchedShape;else->if(colors=="custom") RoundedCornerShape(12.dp) else SnackbarDefaults.shape}) {
                             if(config.lastOnlyWrapper) {
                                 Box(Modifier.padding(top=3.dp).layout {measurable,constraints ->
                                     val child=measurable.measure(constraints)

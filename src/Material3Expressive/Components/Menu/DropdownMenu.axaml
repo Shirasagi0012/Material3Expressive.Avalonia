@@ -69,7 +69,7 @@
         <Grid x:Name="PART_Root" ClipToBounds="False">
           <m3:DropdownMenuPresenter x:Name="PART_Presentation" ClipToBounds="False" FocusAdorner="{x:Null}">
             <m3:MaterialSurface x:Name="PART_MenuLayer" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" MinWidth="{TemplateBinding MinWidth}" MaxWidth="{TemplateBinding MaxWidth}" MinHeight="{TemplateBinding MinHeight}" MaxHeight="{TemplateBinding MaxHeight}"
-                TextElement.Foreground="{TemplateBinding Foreground}" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+                TextElement.Foreground="{TemplateBinding Foreground}" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                 ShadowElevation="{TemplateBinding ShadowElevation}" TonalElevation="{TemplateBinding TonalElevation}" Padding="{TemplateBinding Padding}">
               <m3:MenuIntrinsicWidth>
@@ -108,6 +108,7 @@
       </ControlTemplate></Setter>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:DropdownMenuItem}" TargetType="m3:DropdownMenuItem">
+      <Setter Property="ShapeAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" />
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
@@ -156,7 +157,7 @@
             MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemHeight}}" MinimumInteractiveHeight="0" TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
           <m3:MaterialSurface x:Name="PART_ItemSurface" Background="{Binding PaintedBrush, RelativeSource={RelativeSource AncestorType=m3:MenuItemChrome}}"
               CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}" StateLayerBrush="{Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:DropdownMenuItem}}}"
-              ShadowElevation="0" TonalElevation="0" m3:ButtonSurfaceState.IsChecked="{TemplateBinding Selected}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}">
+              ShadowElevation="0" TonalElevation="0" ResetIndicationOnShapeChange="False">
             <m3:DropdownMenuItemLayout x:Name="PART_Layout">
               <m3:DropdownMenuLeadingIcon x:Name="PART_Leading" ClipToBounds="True" SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
                 <m3:DropdownMenuSlotPresenter x:Name="PART_LeadingPresenter" HorizontalContentAlignment="Left" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" Foreground="{TemplateBinding LeadingIconColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineIconSize}}" />
@@ -173,6 +174,10 @@
       </ControlTemplate></Setter>
     </ControlTheme>
     <ControlTheme x:Key="MaterialExpressiveDropdownMenuItemTheme" TargetType="m3:DropdownMenuItem">
+      <Setter Property="ShapeAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" />
+      <Setter Property="SelectedCornerRadius"><Setter.Value><MultiBinding Converter="{StaticResource DropdownShapeConverter}" ConverterParameter="Selected">
+        <Binding Path="Shapes" RelativeSource="{RelativeSource Self}" /><m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}" />
+      </MultiBinding></Setter.Value></Setter>
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
@@ -251,10 +256,7 @@
             MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}" MinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
           <m3:MaterialSurface x:Name="PART_ItemSurface" Background="{Binding PaintedBrush, RelativeSource={RelativeSource AncestorType=m3:MenuItemChrome}}"
               CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}" StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:DropdownMenuItem}}}}"
-              ShadowElevation="0" TonalElevation="0" m3:ButtonSurfaceState.IsChecked="{TemplateBinding Selected}" m3:ButtonSurfaceState.ShapeSpec="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}">
-            <m3:ButtonSurfaceState.CheckedCornerRadius><MultiBinding Converter="{StaticResource DropdownShapeConverter}" ConverterParameter="Selected" Priority="Template">
-              <Binding Path="Shapes" RelativeSource="{RelativeSource TemplatedParent}" /><m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}" />
-            </MultiBinding></m3:ButtonSurfaceState.CheckedCornerRadius>
+              ShadowElevation="0" TonalElevation="0" ResetIndicationOnShapeChange="False">
             <m3:DropdownMenuItemLayout x:Name="PART_Layout">
               <m3:DropdownMenuLeadingIcon x:Name="PART_Leading" ClipToBounds="True" SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
                 <m3:DropdownMenuSlotPresenter x:Name="PART_LeadingPresenter" HorizontalContentAlignment="Left" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding LeadingIconColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />

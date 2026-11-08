@@ -6,6 +6,7 @@ using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -13,6 +14,9 @@ namespace Material3Expressive.Components;
 /// slots. Data supplies the standard message and buttons when those slots are not overridden.</summary>
 public class Snackbar : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<Snackbar, MaterialShape?>(nameof(Shape));
+    /// <summary>Container outline for both slot and Data presentations; null preserves CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<ISnackbarData?> DataProperty = AvaloniaProperty.Register<Snackbar, ISnackbarData?>(nameof(Data));
     public static readonly StyledProperty<object?> ActionProperty = AvaloniaProperty.Register<Snackbar, object?>(nameof(Action));
     public static readonly StyledProperty<IDataTemplate?> ActionTemplateProperty = AvaloniaProperty.Register<Snackbar, IDataTemplate?>(nameof(ActionTemplate));

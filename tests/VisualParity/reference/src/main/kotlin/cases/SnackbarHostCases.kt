@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 
-@Serializable data class SnackbarHostConfig(val action:String,val rtl:Boolean=false,val overlap:Boolean=false)
+@Serializable data class SnackbarHostConfig(val action:String,val rtl:Boolean=false,val overlap:Boolean=false,val shaped:Boolean=false)
 
 @ParitySuite("snackbar-host") class SnackbarHostCases {
     @ParityScenario("dynamic") suspend fun dynamic(writer:CaptureWriter) {
@@ -107,7 +107,12 @@ import kotlinx.serialization.Serializable
                         if(showHost) SnackbarHost(state,Modifier.absoluteOffset(16.dp,16.dp)) {data ->
                             val probe=remember(data) {Probe()}
                             DisposableEffect(data) {layers[data]=probe;onDispose {layers.remove(data)}}
-                            Canvas(probe.modifier().size(width.dp,48.dp).pointerInput(data) {detectTapGestures {data.performAction()}}) {
+                            if(config.shaped) Box(probe.modifier()) {
+                                Snackbar(modifier=Modifier.size(width.dp,48.dp),shape=androidx.compose.foundation.shape.CutCornerShape(12.dp),
+                                    containerColor=if(data.visuals.message=="second")Color.Blue else Color.Red) {
+                                    Box(Modifier.size(32.dp,16.dp).background(Color.White))
+                                }
+                            } else Canvas(probe.modifier().size(width.dp,48.dp).pointerInput(data) {detectTapGestures {data.performAction()}}) {
                                 drawRect(if(data.visuals.message=="second")Color.Blue else Color.Red)
                                 if(config.overlap) drawRect(Color.Blue,Offset((size.width-40.dp.toPx())/2,12.dp.toPx()),androidx.compose.ui.geometry.Size(40.dp.toPx(),24.dp.toPx()))
                             }

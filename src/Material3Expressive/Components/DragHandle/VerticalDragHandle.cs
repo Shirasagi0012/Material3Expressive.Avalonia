@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -32,6 +33,16 @@ public class VerticalDragHandle : TemplatedControl
     public DragHandleColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
     public DragHandleShapes? Shapes { get => GetValue(ShapesProperty); set => SetValue(ShapesProperty, value); }
     public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<VerticalDragHandle, MaterialShape?>(nameof(Shape));
+    public static readonly StyledProperty<MaterialShape?> PressedShapeProperty = AvaloniaProperty.Register<VerticalDragHandle, MaterialShape?>(nameof(PressedShape));
+    public static readonly StyledProperty<MaterialShape?> DraggedShapeProperty = AvaloniaProperty.Register<VerticalDragHandle, MaterialShape?>(nameof(DraggedShape));
+    /// <summary>The normal outline; null uses the corresponding corner radius in Shapes.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+    /// <summary>The pressed outline; null uses the corresponding corner radius in Shapes.</summary>
+    public MaterialShape? PressedShape { get => GetValue(PressedShapeProperty); set => SetValue(PressedShapeProperty, value); }
+    /// <summary>The dragged outline; null uses the corresponding corner radius in Shapes.</summary>
+    public MaterialShape? DraggedShape { get => GetValue(DraggedShapeProperty); set => SetValue(DraggedShapeProperty, value); }
 
     private readonly MaterialInteractionSource _localSource = new();
     private readonly List<MaterialInteractionEvent.DragStart> _drags = [];

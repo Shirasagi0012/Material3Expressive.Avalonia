@@ -189,3 +189,13 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family interactive-surface
 ./tests/VisualParity/parity.ps1 self-test --family surface-focus
 ```
+
+2026-11-08 补充：ListItem 的单一 indication 在 clip(shape) 内，独立 Surface 焦点 indication 在外。
+焦点呈现器现依据既有 HasSeparateFocusIndication 保留该顺序并绑定正确方向。Ripple Border.kt 在 inset=0
+仍发出 Clear hairline；仅焦点 PathBorderMask 开启 eraseInset，普通边框不受影响。外部 SetAnimatedCorners
+也可为 ListItem/Menu 的切角提供已求值四角，绘制复用同一路径管线；不增加任意多边形插值。
+
+共享回归 `shape-consumers-regression` 共 309 例：33 equal、268 withinTolerance、8 different，
+零执行错误。8 个 different 均为 card/click/elevated/outlined 的 LTR/RTL resize；独立工作树
+fb5605d 的 `shape-consumers-baseline` 复现完全相同的失败用例和比较分类数量，不将其归为本轮新增。
+当前运行还记录 9 个 Core 重复性不稳定项，保留原始 self-test 结果；不以跨端容差内替代重复性通过。

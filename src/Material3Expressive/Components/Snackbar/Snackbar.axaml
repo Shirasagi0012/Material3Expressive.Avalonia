@@ -18,7 +18,7 @@
           <Border Padding="{TemplateBinding Padding}">
             <Border x:Name="PART_DataInset">
               <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-                  CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+                  CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TextElement.Foreground="{TemplateBinding Foreground}"
                   ShadowElevation="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContainerElevation}}">
                 <m3:SnackbarLayout ContentMaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.MaxWidth}}"
                     ContentStartPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+Snackbar.ContentStartPadding}}"
@@ -73,9 +73,8 @@
       <Style Selector="^:custom-dismiss /template/ ContentPresenter#PART_CustomDismiss"><Setter Property="IsVisible" Value="True" /></Style>
       <Style Selector="^:data-action /template/ Button#PART_DataAction"><Setter Property="IsVisible" Value="True" /></Style>
       <Style Selector="^:data-dismiss /template/ m3|TooltipBox#PART_DismissTooltip"><Setter Property="IsVisible" Value="True" /></Style>
-      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
-      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_CustomAction"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
-      <Style Selector="^[FlowDirection=RightToLeft] /template/ ContentPresenter#PART_CustomDismiss"><Setter Property="HorizontalContentAlignment" Value="Right" /></Style>
+      <!-- Presenters use Avalonia's RTL mirror inside the physical SnackbarLayout slots.
+           Left therefore means logical start; selecting Right would mirror alignment twice. -->
     </ControlTheme>
     <!-- The data overload uses the simple TextButton overload's 12/8 padding. -->
     <ControlTheme x:Key="MaterialSnackbarActionButtonTheme" TargetType="Button"

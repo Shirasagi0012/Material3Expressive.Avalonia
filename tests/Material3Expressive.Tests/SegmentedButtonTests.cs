@@ -15,6 +15,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Tokens;
+using Material3Expressive.Foundation.Rendering;
 using CommunityToolkit.Mvvm.Input;
 using Xunit;
 
@@ -22,6 +23,41 @@ namespace Material3Expressive.Tests;
 
 public class SegmentedButtonTests
 {
+    [AvaloniaTheory]
+    [InlineData(false)] [InlineData(true)]
+    public void ExplicitShapeUsesLogicalDirectionWithoutChangingPhysicalContentLayout(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var shape = new CutCornerShape { TopStart = new(12, RelativeUnit.Absolute), BottomEnd = new(4, RelativeUnit.Absolute) };
+        var row = new SingleChoiceSegmentedButtonRow { FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        var first = Item(); first.Shape = shape;
+        var second = Item(); row.Items.Add(first); row.Items.Add(second);
+        var window = Show(row);
+        try
+        {
+            var surface = Part<MaterialSurface>(first, "PART_Container");
+            Assert.Same(shape, surface.Shape);
+            Assert.Equal(FlowDirection.LeftToRight, surface.FlowDirection);
+            Assert.Equal(row.FlowDirection, surface.ShapeLayoutDirection);
+            Assert.Equal(shape.CreateOutline(surface.Bounds.Size, row.FlowDirection, 1).ToString(), surface.ContainerGeometry!.ToString());
+            var width = row.Bounds.Width;
+            var original = surface.ContainerGeometry.ToString();
+            shape.TopStart = new(18, RelativeUnit.Absolute);
+            Assert.NotEqual(original, surface.ContainerGeometry.ToString());
+            first.IsSelected = true;
+            for (var i = 0; i < 60; i++) clock.AdvanceBy(TimeSpan.FromMilliseconds(16));
+            Assert.Same(shape, surface.Shape); Assert.Equal(width, row.Bounds.Width);
+            first.Shape = null; window.UpdateLayout();
+            Assert.Null(surface.ContainerGeometry);
+            Assert.NotEqual(default, surface.EffectiveCornerRadius);
+            row.FlowDirection = rtl ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
+            first.Shape = shape; window.UpdateLayout();
+            Assert.Equal(shape.CreateOutline(surface.Bounds.Size, row.FlowDirection, 1).ToString(), surface.ContainerGeometry!.ToString());
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
+
     [AvaloniaFact]
     public void ResourcesAndRtl_UpdateDimensionsMotionAndContentDirection()
     {

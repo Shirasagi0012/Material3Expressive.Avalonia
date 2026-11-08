@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -20,6 +21,14 @@ internal sealed class DragHandlePresenter : TemplatedControl
     public DragHandleColors? Colors { get => GetValue(ColorsProperty); set => SetValue(ColorsProperty, value); }
     public DragHandleShapes? Shapes { get => GetValue(ShapesProperty); set => SetValue(ShapesProperty, value); }
     public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = VerticalDragHandle.ShapeProperty.AddOwner<DragHandlePresenter>();
+    public static readonly StyledProperty<MaterialShape?> PressedShapeProperty = VerticalDragHandle.PressedShapeProperty.AddOwner<DragHandlePresenter>();
+    public static readonly StyledProperty<MaterialShape?> DraggedShapeProperty = VerticalDragHandle.DraggedShapeProperty.AddOwner<DragHandlePresenter>();
+    public static readonly StyledProperty<MaterialShape?> CurrentShapeProperty = AvaloniaProperty.Register<DragHandlePresenter, MaterialShape?>(nameof(CurrentShape));
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+    public MaterialShape? PressedShape { get => GetValue(PressedShapeProperty); set => SetValue(PressedShapeProperty, value); }
+    public MaterialShape? DraggedShape { get => GetValue(DraggedShapeProperty); set => SetValue(DraggedShapeProperty, value); }
+    public MaterialShape? CurrentShape { get => GetValue(CurrentShapeProperty); private set => SetValue(CurrentShapeProperty, value); }
     private readonly MaterialInteractionController _interaction;
     private VerticalDragHandle? _owner;
     private MaterialInteractionSource? _connectedSource;
@@ -65,7 +74,8 @@ internal sealed class DragHandlePresenter : TemplatedControl
     {
         base.OnPropertyChanged(change);
         if (change.Property == InteractionSourceProperty && _topLevel is not null) ConnectSource();
-        if (change.Property == SizesProperty || change.Property == ColorsProperty || change.Property == ShapesProperty) Refresh();
+        if (change.Property == SizesProperty || change.Property == ColorsProperty || change.Property == ShapesProperty
+            || change.Property == ShapeProperty || change.Property == PressedShapeProperty || change.Property == DraggedShapeProperty) Refresh();
         if (change.Property == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) Release();
     }
 
@@ -105,5 +115,6 @@ internal sealed class DragHandlePresenter : TemplatedControl
         }
         if (Colors is { } colors) Background = new SolidColorBrush(IsDragged ? colors.DraggedColor : IsPressed ? colors.PressedColor : colors.Color);
         if (Shapes is { } shapes) CornerRadius = IsDragged ? shapes.DraggedShape : IsPressed ? shapes.PressedShape : shapes.Shape;
+        CurrentShape = IsDragged ? DraggedShape : IsPressed ? PressedShape : Shape;
     }
 }

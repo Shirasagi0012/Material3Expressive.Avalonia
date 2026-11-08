@@ -100,7 +100,23 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 ```
 
 可用 `MaterialInteraction.FocusRingMetrics` 调整描边和内缩，详见[交互反馈](../../Foundation/Interaction/README.md)。
-切换 Opacity / InsetRing 保留正在进行的波纹和交互收集。任意路径/切角 Shape 仍不支持。
+切换 Opacity / InsetRing 保留正在进行的波纹和交互收集。
+
+`Shape`、`SelectedShape`、`PressedShape`、`FocusedShape`、`HoveredShape`、`DraggedShape` 可分别覆盖六状态轮廓，
+支持 `CutCornerShape` 和自定义 `MaterialShape`；未设置的状态使用 `Shapes` 中对应圆角。
+切角采用逻辑起止角，随 RTL 调整，百分比随容器实际尺寸重算。例：
+
+```xml
+<m3:ListItem Content="切角列表项" InteractionMode="Click">
+  <m3:ListItem.Shape><m3:CutCornerShape TopStart="20" BottomEnd="20" /></m3:ListItem.Shape>
+  <m3:ListItem.PressedShape><m3:CutCornerShape TopStart="10%" BottomEnd="10%" /></m3:ListItem.PressedShape>
+  <m3:ListItem.HoveredShape><m3:CutCornerShape TopStart="8" BottomEnd="8" /></m3:ListItem.HoveredShape>
+</m3:ListItem>
+```
+
+全部状态使用圆角或切角时，同族角尺寸连续形变并支持反向及第三目标；跨圆角/切角切换在动画中点发生。
+任一状态配置任意路径时，六状态整体直接切换轮廓。形状配置改变会重建形状动画，颜色和高度仍保持各自的过渡。
+优先级为按下、拖动、选中、焦点、悬停、正常。显式 Shape 不受分组端点圆角控制。
 
 ## 使用限制与注意事项
 

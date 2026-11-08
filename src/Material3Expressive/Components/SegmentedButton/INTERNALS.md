@@ -81,7 +81,11 @@ Space/Enter 释放激活，失焦/禁用清理待激活键；共享控制器仍�
 2026-10-04，维护者确认行/按钮 API、外部选择职责、十二槽颜色、原生属性覆盖及组件内部 intrinsic 测量适配。
 十二槽的当前入口按上面的 2026-10-05 配置确认迁到状态 Token / 原生属性，不再保留旧 nullable Colors 对象。
 目的在于保留 Compose 状态所有权和必要布局关系，不增加通用布局或 Shape 框架。
-任意路径/切角 Shape 及外部 hoisted InteractionSource 明确排除该阶段范围；后者在下述剩余移植批次补齐，Shape 仍未实现。
+任意路径/切角 Shape 及外部 hoisted InteractionSource 明确排除该阶段范围，原理由是避免在组件内建立通用 Shape 框架；交互源在下述剩余移植批次补齐。
+2026-11-08 本轮维护者授权修订历史范围：共享 Surface 已有形状、裁剪、路径描边和反馈能力，因此新增 SegmentedButton.Shape 直接消费该能力。
+null 保留原生 CornerRadius 与行默认，旧调用无需迁移；显式形状不改行布局、选择所有权和图标动画。
+上游 itemShape 的切角端点可用 CutCornerShape 的逻辑四角表达，行的 BaseShape 仍是原圆角便利入口。
+内部 Surface.ShapeLayoutDirection 单独传入按钮的逻辑方向，chrome 继续 LTR，保留原有 physical place 内容布局；不得把整个 Surface 改为 RTL 后再镜像内容。
 
 进入途中反向曾暴露共享 AnimatedVisibility 缺口：Exit.None 缺失 fade/scale 规格时错误用 Snap，
 且缩放中心使用像素 Point/Snap 而非比例坐标 spring。历史确认保留在上面的拆分前组件记录，
@@ -92,7 +96,7 @@ origin 为比例坐标默认 spring、阈值 0.01。组件不复制依赖动画�
 
 ## 一致性边界与历史观测
 
-尚未实现的 Shape 范围如上；真实桌面、文字 raster 和屏幕阅读器体验未经无字形场景验收。
+真实桌面、文字 raster 和屏幕阅读器体验未经无字形场景验收。
 旧主线合入记录中，全量双端结构化事实相等、截图在既定容差内且重复捕获稳定，未放宽门禁。
 当时代表性 FAB Default Extended 反向、菜单反向、Medium Toggle 反向和 FilterChip 反向选择回归也稳定，
 但不代表 FAB/Chip 全量验证；依赖升级后的状态应重新采集，不沿用历史通过结论。
@@ -136,3 +140,6 @@ SegmentedButtonInteractionSourceTests 覆盖重叠、未配对结束、换源、
 不能将此次 self-test 记为全通过。颜色描边与图标栅格的容差未修改；旧失败运行保留为清理缺陷修复前证据。
 随后原有 `segmented-button` 全部 75 例（`20261103-113608-3b8f6809`）完成 self-test：
 2 equal、73 withinTolerance、0 different、0 执行错误，双端两类重复检查全部稳定。
+
+本轮显式路径扩展的 `segmented-paths` 双端 self-test：111 个用例全部通过（2 equal、109 withinTolerance），
+执行错误 0，双端重复及附加截图稳定。覆盖静态切角/百分比/凹路径、RTL、单项/三项及按压、反向、运行时改形状。

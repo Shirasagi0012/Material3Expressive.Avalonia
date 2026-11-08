@@ -72,7 +72,9 @@ public sealed class AnimatedCornerRadius : IDisposable
 
     /// <summary>Resolved, interpolated corners before outline normalization.</summary>
     public CornerRadius Current =>
-        Lerp(_start.Resolve(Size), _target.Resolve(Size), _progress.Value);
+        _start.IsCut == _target.IsCut ? Lerp(_start.Resolve(Size), _target.Resolve(Size), _progress.Value)
+            : (_progress.Value < .5f ? _start : _target).Resolve(Size);
+    internal bool CurrentIsCut => (_progress.Value < .5f ? _start : _target).IsCut;
 
     /// <summary>Starts morphing towards corners, or reverses if it is the one being left.</summary>
     /// <param name="corners">The corners to head for.</param>
@@ -110,7 +112,7 @@ public sealed class AnimatedCornerRadius : IDisposable
             {
                 1f => _target,
                 0f => _start,
-                _ => new CornerShape.Blend(_start, _target, progress)
+                _ => CornerShape.Interpolate(_start, _target, progress)
             };
             initialProgress = 0;
             initialVelocity = 0;

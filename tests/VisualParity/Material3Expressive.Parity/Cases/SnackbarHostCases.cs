@@ -8,16 +8,20 @@ using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using ComposeAnimation.TestSupport;
 using Avalonia.Threading;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Parity;
 
-public sealed record SnackbarHostConfig(string Action, bool Rtl = false, bool Overlap = false);
+public sealed record SnackbarHostConfig(string Action, bool Rtl = false, bool Overlap = false, bool Shaped = false);
 
 [ParitySuite("snackbar-host")]
 public sealed class SnackbarHostCases
 {
     public static IEnumerable<CaseData<SnackbarHostConfig>> Configurations()
     {
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "dismiss", "interrupt" })
+            yield return new($"dynamic.path.{rtl}.{action}".ToLowerInvariant(), "Shaped Snackbar host transition", new(action, rtl, Shaped: true));
         // Host motion/queue ownership is independent of surface colors and Snackbar layout.
         foreach (var action in new[] { "dismiss", "interrupt", "action-queue", "cancel-current", "cancel-queued", "state", "template", "detach", "timeout-short", "timeout-long", "timeout-queue", "timeout-detach", "timeout-state", "timeout-template" })
             yield return new($"dynamic.{action}", action, new(action));
@@ -152,6 +156,9 @@ public sealed class SnackbarHostCases
 
         IDataTemplate Template(double width) => new FuncDataTemplate<ISnackbarData>((data, _) =>
         {
+            if (config.Shaped) return new Snackbar { Width = width, Height = 48,
+                Shape = new CutCornerShape(12), Background = data!.Visuals.Message == "second" ? Brushes.Blue : Brushes.Red,
+                Content = new Border { Width = 32, Height = 16, Background = Brushes.White } };
             // Compose's marker is an unclipped Canvas. TemplatedControl defaults to clipping,
             // which cuts fractional scaled edges even though the Host itself is unclipped.
             var button = new Button { Width = width, Height = 48, FocusAdorner = null, ClipToBounds = false,

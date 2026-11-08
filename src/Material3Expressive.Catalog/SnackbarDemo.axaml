@@ -16,6 +16,7 @@
         <TextBlock x:Name="Result" Text="Results for actions, dismissals, timeouts, and cancellations appear here." TextWrapping="Wrap" />
         <TextBlock Text="Custom Snackbar slots" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <m3:Snackbar Content="Connection failed" HorizontalAlignment="Stretch">
+          <m3:Snackbar.Shape><m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="16" BottomStart="4" /></m3:Snackbar.Shape>
           <m3:Snackbar.Action>
             <Button Content="Retry" Theme="{StaticResource MaterialSnackbarActionButtonTheme}"
                     Foreground="{Binding ActionForeground, RelativeSource={RelativeSource AncestorType=m3:Snackbar}}" Click="OnRetry" />

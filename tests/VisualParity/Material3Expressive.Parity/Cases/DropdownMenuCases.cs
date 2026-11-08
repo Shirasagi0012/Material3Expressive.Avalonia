@@ -7,17 +7,22 @@ using Avalonia.Controls.Templates;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Parity;
 
 public sealed record DropdownMenuConfig(bool Grouped = false, bool Rtl = false, bool Dark = false,
-    int X = 112, int Y = 64, string Action = "none", bool NoShadow = false, bool Divider = false);
+    int X = 112, int Y = 64, string Action = "none", bool NoShadow = false, bool Divider = false, string Path = "none");
 
 [ParitySuite("dropdown-menu")]
 public sealed class DropdownMenuCases
 {
     public static IEnumerable<CaseData<DropdownMenuConfig>> StaticConfigurations()
     {
+        foreach (var path in new[] { "cut", "percent", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var dark in new[] { false, true })
+            yield return new($"static.path.{path}.{rtl}.{dark}".ToLowerInvariant(), "Container path", new(Rtl: rtl, Dark: dark, Path: path));
         foreach (var grouped in new[] { false, true })
         foreach (var rtl in new[] { false, true })
         foreach (var dark in new[] { false, true })
@@ -31,6 +36,10 @@ public sealed class DropdownMenuCases
     }
     public static IEnumerable<CaseData<DropdownMenuConfig>> DynamicConfigurations()
     {
+        foreach (var path in new[] { "cut", "percent", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "show", "reverse", "shape-change" })
+            yield return new($"dynamic.path.{path}.{rtl}.{action}".ToLowerInvariant(), "Container path and popup motion", new(Rtl: rtl, Path: path, Action: action));
         foreach (var grouped in new[] { false, true })
         foreach (var action in new[] { "show", "reverse", "outside" })
             yield return new($"dynamic.{(grouped ? "grouped" : "baseline")}.{action}", "Real popup transition and dismissal", new(grouped, Action: action));
@@ -64,6 +73,18 @@ public sealed class DropdownMenuCases
         var selectedIcon = new Marker(20, 20);
         var anchor = new Border { Width = 24, Height = 24, Background = Brushes.Blue };
         DropdownMenuPopup menu = config.Grouped ? new DropdownMenuPopup() : new DropdownMenu();
+        void SetPath(string path)
+        {
+            if (menu is not DropdownMenu shaped) return;
+            shaped.Shape = path switch
+            {
+                "cut" => new CutCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+                    BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) },
+                "percent" => new CutCornerShape(new RelativeScalar(.25, RelativeUnit.Relative)),
+                "generic" => new NotchedShape(), _ => null
+            };
+        }
+        SetPath(config.Path);
         if (config.NoShadow && menu is DropdownMenu baseline) baseline.ShadowElevation = 0;
         menu.PlacementTarget = anchor;
         menu.FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
@@ -125,6 +146,11 @@ public sealed class DropdownMenuCases
         void Times(params long[] times) { foreach (var time in times) { Advance(origin + time); host.Draw(); Sample($"time-{time}"); } }
         switch (config.Action)
         {
+            case "shape-change":
+                Change(1000, "generic", () => SetPath("generic")); Times(16000);
+                Change(17000, "percent", () => SetPath("percent")); Times(32000);
+                Change(33000, "grow", () => menu.Width = 200); Times(48000);
+                Change(49000, "clear", () => SetPath("none")); Times(64000, 160000); break;
             case "show": case "reverse":
                 Change(1000, "open", () => menu.IsOpen = true); Times(16000, 32000, 64000);
                 if (config.Action == "reverse")
@@ -148,6 +174,16 @@ public sealed class DropdownMenuCases
                 var center = marker.TranslatePoint(new(24, 8), host.Window)!.Value;
                 Change(1000, "enter", () => host.Input("move", center)); Times(16000, 80000);
                 Change(81000, "exit", () => host.Input("move", new(8, 8))); Times(96000, 160000, 400000); break;
+        }
+    }
+    private sealed class NotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry(); using var context = path.Open();
+            context.BeginFigure(default, true); context.LineTo(new(size.Width, 0));
+            context.LineTo(new(size.Width - 12, size.Height / 2)); context.LineTo(new(size.Width, size.Height));
+            context.LineTo(new(0, size.Height)); context.EndFigure(true); return path;
         }
     }
     private sealed class Marker(double width, double height) : Control

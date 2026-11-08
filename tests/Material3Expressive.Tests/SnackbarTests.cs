@@ -13,6 +13,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 using Xunit;
 
@@ -20,6 +21,27 @@ namespace Material3Expressive.Tests;
 
 public class SnackbarTests
 {
+    [AvaloniaFact]
+    public void ExplicitShapeTracksLiveCornersAndClearsWithoutChangingSlotLayout()
+    {
+        using var clock = new MotionTestClockScope();
+        var shape = new CutCornerShape(8);
+        var snackbar = new Snackbar { Shape = shape, Content = new Border { Width = 64, Height = 16 }, Width = 240 };
+        var window = DialogTests.Show(snackbar);
+        try
+        {
+            var surface = snackbar.GetVisualDescendants().OfType<MaterialSurface>().Single();
+            var size = surface.Bounds.Size; Assert.Same(shape, surface.Shape);
+            shape.TopStart = new(.25, RelativeUnit.Relative); window.UpdateLayout();
+            Assert.Equal((float)Math.Min(size.Width, size.Height) * .25f, ((PathGeometry)surface.ContainerGeometry!).Figures![0].StartPoint.Y);
+            snackbar.Shape = null; window.UpdateLayout(); Assert.Null(surface.ContainerGeometry);
+            Assert.Equal(size, surface.Bounds.Size);
+            snackbar.Shape = shape; window.Content = null; shape.TopStart = new(6, RelativeUnit.Absolute);
+            window.Content = snackbar; window.UpdateLayout();
+            Assert.Equal(6, ((PathGeometry)surface.ContainerGeometry!).Figures![0].StartPoint.Y);
+        }
+        finally { window.Close(); }
+    }
     [AvaloniaTheory]
     [InlineData(0)]
     [InlineData(10)]

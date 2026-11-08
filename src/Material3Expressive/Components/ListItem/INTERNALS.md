@@ -60,11 +60,18 @@ AnimatedShape 在重定向时将 progress 重设为 0，轮廓可能暂时不动
 
 - 两控件和显式 InteractionMode；受控 IsSelected / IsChecked；多选以 CheckedChangeRequested 回传，外部容器提供分组间距。
 - IsInteractionEnabled 对应上游 enabled，IsEnabled 保留 Avalonia 子树禁用语义。
-- CornerRadius 六状态形变；任意路径/切角 Shape 尚未实现。可配置内缩焦点环按共享机制接入，详见第 2 节。
+- 原先只确认 CornerRadius 六状态形变；任意 Shape 延期的原因是缺少共享路径/裁剪能力。2026-11-08 本轮维护者授权修订该边界，现复用共享 Surface 和 AnimatedCornerRadius，增加六个可选 MaterialShape 属性，每个状态独立覆盖圆角。原有 Shapes / 分组默认和调用方不需要迁移。
 - LongClickLabel 映射 HelpText；辅助技术直接动作使用槽内同命令按钮。Avalonia 12.1.2 没有第二个 Invoke 动作入口。
 - supporting 多行只自动识别普通文本；复杂模板合并首末基线的限制保留，本轮不新增显式行数属性。
 
 配对交互源、继承最小交互尺寸和内部关闭 tonal 着色的共享决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
+
+固定 `ListItemDefaults.kt.shapeForInteraction` 在六项全为 CornerBasedShape 时使用 keyed AnimatedShape；任一任意路径会让整个配置走直接选择分支。
+本地将切角参数保存为不可变 CornerShape.Cut 快照，配置属性变化在既有 composition 帧比较并重建；订阅随 motion 卸载释放。
+圆角/切角混合时保留固定 `Interpolatable.lerp` 的 `<0.5` 选起点、否则选终点，而非仅根据 AnimatedShape 的概述注释立即切目标。
+第三目标保存真实中间形状，反向保持原进度翻转和速度取反。路径绘制消费同一进度，不引入新的动画时钟。
+Surface 的内部外部角值入口现也支持切角；ListItem 自己维护 ripple shape 的身份与重建，Surface 禁止重复重建反馈。
+模板替换清除旧 Surface 轮廓，最终 Bounds 发布后再次解析百分比，避免子布局仍读到上一轮容器尺寸。
 
 未经验证的范围包括真实桌面辅助技术与字体栅格。焦点环边缘保留已观测到的栅格差异，精确像素及容差内结果分别报告。
 
@@ -79,3 +86,13 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 self-test --family list-item
 ./tests/VisualParity/parity.ps1 self-test --family focus-ring
 ```
+
+本轮 `list-item-paths-final` 双端 self-test 完成 137 例，122 equal、15 withinTolerance、0 different、
+执行错误 0；新增 66 例路径状态/动画场景全部匹配且重复稳定。全部 137 例中已有 `dynamic.key-long`
+在 Core 的 time-176000 截图发生重复与额外截图变化，Avalonia 两项自检均稳定，故整组 self-test
+仍返回非零；没有放宽重复性门禁，初始失败与修正后的原始运行均保留。
+
+本轮同时补齐单一 indication 的形状裁剪与 Border.kt 零 inset Clear hairline。RTL 在无 pointer 历史的
+键盘按压初值使用物理左上角；新增行为测试和双端 space 样本核实该映射。任意路径拖动态的初始
+测试输入曾误用两个实例（Core 同一对象）；现两端统一对象身份。外部 Press 的 RTL 坐标也按各框架
+的实际本地坐标约定映射，未改产品行为来迁就用例。

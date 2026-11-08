@@ -127,6 +127,34 @@ Catalog 的 grouped / selectable 示例提供开关。当前 Baseline 与原生 
 DropdownMenuPopup 可组合 StackPanel 和多个 DropdownMenuGroup，内容需要滚动时显式放置 ScrollViewer。
 
 MenuAppearance.ColorStyle 可从 Popup 传到组和项目。Padding、CornerRadius、颜色及 `Comp.Menu` Token 可局部覆盖，MenuItemShapes / MenuGroupShapes 的 null 字段继承主题。
+
+`DropdownMenuGroup.Shape` 与 `InactiveShape` 可分别覆盖主轮廓和离开悬浮后的轮廓；null 继续使用对应圆角配置。
+首次悬浮前使用主轮廓，离开后切换到 inactive，再次进入恢复主轮廓。两端为圆角或切角时保留形变；
+两种角形混用时按上游在动画中点切换类型，任一端为自定义路径时直接切换。
+
+```xml
+<m3:DropdownMenuGroup Width="280">
+    <m3:DropdownMenuGroup.Shape>
+        <m3:CutCornerShape TopStart="24" TopEnd="4" BottomEnd="24" BottomStart="4" />
+    </m3:DropdownMenuGroup.Shape>
+    <m3:DropdownMenuGroup.InactiveShape>
+        <m3:CutCornerShape TopStart="8%" TopEnd="8%" BottomEnd="8%" BottomStart="8%" />
+    </m3:DropdownMenuGroup.InactiveShape>
+    <m3:DropdownMenuItem Content="Open" />
+</m3:DropdownMenuGroup>
+```
+
+独立 `DropdownMenu.Shape`（包括继承它的 `ExposedDropdownMenu`）用于整个容器；形状改变不影响
+布局和开闭动画。`DropdownMenuItem.Shape` / `SelectedShape` 用于专用菜单项及其 Checkable / Selectable
+子类，null 分别回退到原 `CornerRadius` / `Shapes.SelectedShape`。选中形变采用与分组相同的角形规则；
+路径形状不会自动写回选择状态。Baseline 普通项只用 `Shape`。
+
+```xml
+<m3:SelectableDropdownMenuItem Content="Sort by name" IsSelected="{Binding SortByName}">
+    <m3:SelectableDropdownMenuItem.Shape><m3:CutCornerShape TopStart="16" TopEnd="4" BottomEnd="16" BottomStart="4" /></m3:SelectableDropdownMenuItem.Shape>
+    <m3:SelectableDropdownMenuItem.SelectedShape><m3:CutCornerShape TopStart="25%" TopEnd="25%" BottomEnd="25%" BottomStart="25%" /></m3:SelectableDropdownMenuItem.SelectedShape>
+</m3:SelectableDropdownMenuItem>
+```
 Offset 使用 DIP，X 随 RTL 反向，PositionProvider 使用物理像素。AnchorPosition 的 Left / Right 与逻辑 Start / End 行为一致。
 DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
@@ -151,7 +179,7 @@ DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
 ## 使用限制与注意事项
 
-独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。形状配置使用圆角，平台系统 inset 和预测返回尚未提供。
+独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。原生 MenuItem 主题路径尚未接入显式 Shape；平台系统 inset 和预测返回尚未提供。
 原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。原生 flyout 的组级形变和开闭动画尚未提供。
 菜单栏沿用 Alt 访问键与方向键，当前原生版本的 F10 激活尚未实现。公开菜单栏 keyed 主题仍有待确认，维护状态见内部契约。
 

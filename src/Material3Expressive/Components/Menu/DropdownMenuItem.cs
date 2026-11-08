@@ -13,6 +13,8 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
+using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
 
 namespace Material3Expressive.Components;
 
@@ -52,6 +54,14 @@ public class DropdownMenuItem : Button
     public static readonly StyledProperty<object?> SupportingTextProperty = AvaloniaProperty.Register<DropdownMenuItem, object?>(nameof(SupportingText));
     public static readonly StyledProperty<IDataTemplate?> SupportingTextTemplateProperty = AvaloniaProperty.Register<DropdownMenuItem, IDataTemplate?>(nameof(SupportingTextTemplate));
     public static readonly StyledProperty<MenuItemShapes?> ShapesProperty = AvaloniaProperty.Register<DropdownMenuItem, MenuItemShapes?>(nameof(Shapes));
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<DropdownMenuItem, MaterialShape?>(nameof(Shape));
+    public static readonly StyledProperty<MaterialShape?> SelectedShapeProperty = AvaloniaProperty.Register<DropdownMenuItem, MaterialShape?>(nameof(SelectedShape));
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+    public MaterialShape? SelectedShape { get => GetValue(SelectedShapeProperty); set => SetValue(SelectedShapeProperty, value); }
+    internal static readonly StyledProperty<CornerRadius> SelectedCornerRadiusProperty = AvaloniaProperty.Register<DropdownMenuItem, CornerRadius>(nameof(SelectedCornerRadius));
+    internal static readonly StyledProperty<MaterialSpring?> ShapeAnimationProperty = AvaloniaProperty.Register<DropdownMenuItem, MaterialSpring?>(nameof(ShapeAnimation));
+    internal CornerRadius SelectedCornerRadius { get => GetValue(SelectedCornerRadiusProperty); set => SetValue(SelectedCornerRadiusProperty, value); }
+    internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     public static readonly StyledProperty<IBrush?> LeadingIconColorProperty = AvaloniaProperty.Register<DropdownMenuItem, IBrush?>(nameof(LeadingIconColor));
     public static readonly StyledProperty<IBrush?> TrailingContentColorProperty = AvaloniaProperty.Register<DropdownMenuItem, IBrush?>(nameof(TrailingContentColor));
     public static readonly StyledProperty<double> LeadingSpacingProperty = AvaloniaProperty.Register<DropdownMenuItem, double>(nameof(LeadingSpacing));
@@ -79,12 +89,16 @@ public class DropdownMenuItem : Button
     internal bool HasSupporting => SupportingText is not null || SupportingTextTemplate is not null;
     private DropdownMenuItemLayout? _layout;
     private bool _enterPressed;
+    private MaterialSurface? _surface;
+    private MenuItemShapeMotion? _shapeMotion;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         var replacing = _layout is not null;
+        _shapeMotion?.Dispose(); _shapeMotion = null;
         _layout?.SetOwner(null);
         base.OnApplyTemplate(e);
+        _surface = e.NameScope.Find<MaterialSurface>("PART_ItemSurface");
         _layout = e.NameScope.Find<DropdownMenuItemLayout>("PART_Layout");
         _layout?.SetOwner(this);
         Refresh();
@@ -94,12 +108,14 @@ public class DropdownMenuItem : Button
     {
         base.OnAttachedToVisualTree(e);
         ConnectSource();
+        RefreshShape();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         MaterialInteraction.GetOrCreate(this).ConnectSource(null);
         _connectedSource = null;
         _enterPressed = false;
+        _shapeMotion?.Dispose(); _shapeMotion = null;
         base.OnDetachedFromVisualTree(e);
     }
     private void ConnectSource()
@@ -117,6 +133,8 @@ public class DropdownMenuItem : Button
     {
         base.OnPropertyChanged(change);
         if (change.Property == InteractionSourceProperty) ConnectSource();
+        if (change.Property == ShapeProperty || change.Property == SelectedShapeProperty || change.Property == CornerRadiusProperty
+            || change.Property == SelectedCornerRadiusProperty || change.Property == ShapeAnimationProperty) RefreshShape();
         if (change.Property == LeadingIconProperty || change.Property == SelectedLeadingIconProperty
             || change.Property == TrailingContentProperty || change.Property == SupportingTextProperty)
         {
@@ -133,11 +151,18 @@ public class DropdownMenuItem : Button
     internal void RefreshSelection(bool selected) => Selected = selected;
     private void Refresh()
     {
+        RefreshShape();
         PseudoClasses.Set(":selected", Selected);
         PseudoClasses.Set(":supporting", HasSupporting);
         PseudoClasses.Set(":leading", HasLeading || HasSelectedLeading);
         PseudoClasses.Set(":trailing", HasTrailing);
         _layout?.Refresh();
+    }
+    private void RefreshShape()
+    {
+        if (!this.IsAttachedToVisualTree() || _surface is null || ShapeAnimation is null) return;
+        if (_shapeMotion is null) _shapeMotion = new(this, _surface);
+        else _shapeMotion.Refresh();
     }
 
     // Compose clickable activates both Enter and Space on release. Native Button already

@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -16,7 +17,7 @@ public sealed class DragHandleCases
 {
     public static IEnumerable<CaseData<DragHandleConfig>> StaticConfigurations()
     {
-        foreach (var appearance in new[] { "default", "custom", "fractional" })
+        foreach (var appearance in new[] { "default", "custom", "fractional", "cut", "percent", "path" })
         foreach (var dark in new[] { false, true })
         foreach (var rtl in new[] { false, true })
             yield return Data($"static.{appearance}.{(dark ? "dark" : "light")}.{(rtl ? "rtl" : "ltr")}", new(dark, rtl, appearance));
@@ -31,6 +32,10 @@ public sealed class DragHandleCases
             yield return Data($"dynamic.{mutation}", new(Mutation: mutation));
         yield return Data("dynamic.press.custom", new(Appearance: "custom", Mutation: "press"));
         yield return Data("dynamic.drag.custom", new(Appearance: "custom", Mutation: "drag"));
+        foreach (var appearance in new[] { "cut", "percent", "path" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var mutation in new[] { "press", "drag", "external-press", "shape-change" })
+            yield return Data($"dynamic.{appearance}.{mutation}.{(rtl ? "rtl" : "ltr")}", new(Rtl: rtl, Appearance: appearance, Mutation: mutation));
     }
     static CaseData<DragHandleConfig> Data(string id, DragHandleConfig config) => new(id, id.Replace('.', ' '), config);
     [ParityScenario("static", Data = nameof(StaticConfigurations))]
@@ -88,6 +93,12 @@ public sealed class DragHandleCases
                 Change(161000, "leave", () => host.Input("move", new Point(4, 4))); Times(176000, 240000, 400000); break;
             case "theme": Change(1000, "dark", () => Theme(true)); Change(2000, "light", () => Theme(false)); break;
             case "configuration": Change(1000, "custom", () => Appearance("custom")); Change(2000, "default", () => Appearance("default")); break;
+            case "shape-change":
+                var held = new MaterialInteractionEvent.Press(new Point(2, 24));
+                Change(1000, "source-down", () => source.Emit(held)); Times(16000, 64000);
+                Change(65000, "replace-shapes", () => Appearance(config.Appearance == "path" ? "percent" : "path")); Times(80000, 160000);
+                Change(161000, "source-up", () => source.Emit(new MaterialInteractionEvent.Release(held))); Times(176000, 240000, 400000);
+                Change(401000, "restore-corners", () => Appearance("default")); break;
             case "external-press":
                 var press = new MaterialInteractionEvent.Press(new Point(2, 24));
                 Change(1000, "source-down", () => source.Emit(press)); Times(16000, 64000, 160000);
@@ -103,6 +114,7 @@ public sealed class DragHandleCases
         void Appearance(string appearance)
         {
             handle.ClearValue(VerticalDragHandle.SizesProperty); handle.ClearValue(VerticalDragHandle.ColorsProperty); handle.ClearValue(VerticalDragHandle.ShapesProperty);
+            handle.Shape = handle.PressedShape = handle.DraggedShape = null;
             if (appearance == "custom")
             {
                 handle.Sizes = new(new(8, 40), new(14, 56), new(20, 64));
@@ -110,6 +122,30 @@ public sealed class DragHandleCases
                 handle.Shapes = new(new(3), new(4), new(6));
             }
             if (appearance == "fractional") handle.Sizes = new(new(4.125, 47.625), new(12.125, 51.625), new(12.125, 51.625));
+            if (appearance is "cut" or "percent" or "path")
+            {
+                handle.Sizes = new(new(16, 48), new(24, 52), new(32, 60));
+                handle.Shape = appearance == "path" ? new NotchedShape() : new CutCornerShape
+                { TopStart = Corner(6, .5), TopEnd = Corner(2, .12), BottomEnd = Corner(4, .25), BottomStart = Corner(1, 0) };
+                handle.PressedShape = new CutCornerShape { TopEnd = Corner(8, .5), BottomStart = Corner(8, .5) };
+                handle.DraggedShape = new CutCornerShape(Corner(10, .37));
+                RelativeScalar Corner(double dip, double fraction) => appearance == "percent"
+                    ? new(fraction, RelativeUnit.Relative) : new(dip, RelativeUnit.Absolute);
+            }
+        }
+    }
+
+    private sealed class NotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var w = size.Width; var h = size.Height;
+            var path = new PathGeometry();
+            using var context = path.Open();
+            context.BeginFigure(new Point(0, 0), true);
+            context.LineTo(new Point(w, 0)); context.LineTo(new Point(w * .5, h * .5));
+            context.LineTo(new Point(w, h)); context.LineTo(new Point(0, h)); context.EndFigure(true);
+            return path;
         }
     }
 }

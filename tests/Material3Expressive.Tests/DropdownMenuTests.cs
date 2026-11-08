@@ -14,12 +14,40 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using Xunit;
 
 namespace Material3Expressive.Tests;
 
 public class DropdownMenuTests
 {
+    [AvaloniaFact]
+    public void ContainerPathTracksMutationDirectionAndReopeningWithoutChangingLayout()
+    {
+        using var clock = new MotionTestClockScope();
+        var shape = new CutCornerShape(12);
+        var menu = new DropdownMenu { Shape = shape, Items = { new DropdownMenuItem { Content = "Open" } } };
+        var (window, _) = Show(menu); menu.IsOpen = true; Flush(window); Advance(clock, window, 100);
+        try
+        {
+            var surface = Assert.IsType<MaterialSurface>(menu.Presentation);
+            var size = surface.Bounds.Size;
+            Assert.Same(shape, surface.Shape); Assert.NotNull(surface.ContainerGeometry);
+            shape.TopStart = new(.25, RelativeUnit.Relative); Flush(window);
+            Assert.Equal((float)Math.Min(size.Width, size.Height) * .25f,
+                ((PathGeometry)surface.ContainerGeometry!).Figures![0].StartPoint.Y);
+            menu.FlowDirection = FlowDirection.RightToLeft; Flush(window);
+            Assert.Equal(FlowDirection.RightToLeft, surface.FlowDirection);
+            menu.Shape = null; Flush(window); Assert.Null(surface.ContainerGeometry); Assert.Equal(size, surface.Bounds.Size);
+            menu.Shape = shape; menu.IsOpen = false; Flush(window); Advance(clock, window, 100);
+            shape.TopStart = new(8, RelativeUnit.Absolute);
+            menu.IsOpen = true; Flush(window); Advance(clock, window, 100);
+            Assert.Same(shape, Assert.IsType<MaterialSurface>(menu.Presentation).Shape);
+            Assert.Equal(size, menu.Presentation!.Bounds.Size);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
+    }
     [AvaloniaFact]
     public void ExpressivePopup_InheritsPrecision_AndTracksChangesWhileOpen()
     {

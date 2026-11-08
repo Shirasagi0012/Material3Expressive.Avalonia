@@ -5,11 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
@@ -60,6 +65,13 @@ import kotlinx.serialization.Serializable
                 }
                 "theme" -> {change(1000,"dark"){s.dark=true};change(2000,"light"){s.dark=false}}
                 "configuration" -> {change(1000,"custom"){s.appearance="custom"};change(2000,"default"){s.appearance="default"}}
+                "shape-change" -> {
+                    val held=PressInteraction.Press(Offset(2f,24f)*ComposeHost.RenderScale.toFloat())
+                    change(1000,"source-down"){source.tryEmit(held)};times(16000,64000)
+                    change(65000,"replace-shapes"){s.appearance=if(config.appearance=="path")"percent" else "path"};times(80000,160000)
+                    change(161000,"source-up"){source.tryEmit(PressInteraction.Release(held))};times(176000,240000,400000)
+                    change(401000,"restore-corners"){s.appearance="default"}
+                }
                 "external-press" -> {
                     val press=PressInteraction.Press(Offset(2f,24f)*ComposeHost.RenderScale.toFloat())
                     change(1000,"source-down"){source.tryEmit(press)};times(16000,64000,160000)
@@ -85,11 +97,18 @@ import kotlinx.serialization.Serializable
                         val sizes=when(appearance) {
                             "custom" -> DragHandleSizes(DpSize(8.dp,40.dp),DpSize(14.dp,56.dp),DpSize(20.dp,64.dp))
                             "fractional" -> DragHandleSizes(DpSize(4.125.dp,47.625.dp),DpSize(12.125.dp,51.625.dp),DpSize(12.125.dp,51.625.dp))
+                            "cut","percent","path" -> DragHandleSizes(DpSize(16.dp,48.dp),DpSize(24.dp,52.dp),DpSize(32.dp,60.dp))
                             else -> VerticalDragHandleDefaults.sizes()
                         }
                         VerticalDragHandle(modifier=modifier,sizes=sizes,interactionSource=source,
                             colors=if(appearance=="custom") DragHandleColors(Color.Red,Color(0xFF008000),Color.Blue) else VerticalDragHandleDefaults.colors(),
-                            shapes=if(appearance=="custom") DragHandleShapes(RoundedCornerShape(3.dp),RoundedCornerShape(4.dp),RoundedCornerShape(6.dp)) else VerticalDragHandleDefaults.shapes())
+                            shapes=when(appearance) {
+                                "custom" -> DragHandleShapes(RoundedCornerShape(3.dp),RoundedCornerShape(4.dp),RoundedCornerShape(6.dp))
+                                "cut" -> DragHandleShapes(CutCornerShape(6.dp,2.dp,4.dp,1.dp),CutCornerShape(0.dp,8.dp,0.dp,8.dp),CutCornerShape(10.dp))
+                                "percent" -> DragHandleShapes(CutCornerShape(50,12,25,0),CutCornerShape(0,50,0,50),CutCornerShape(37))
+                                "path" -> DragHandleShapes(NotchedShape,CutCornerShape(0.dp,8.dp,0.dp,8.dp),CutCornerShape(10.dp))
+                                else -> VerticalDragHandleDefaults.shapes()
+                            })
                     }
                 }
             }
@@ -101,5 +120,11 @@ import kotlinx.serialization.Serializable
                 vector("size","point",listOf(c.size.width.toDouble()/d,c.size.height.toDouble()/d),"dip","local","geometry","layout.box.local-size","LayoutCoordinates.size / density",listOf("width","height")),
                 number("presses",presses.toDouble(),"count",definition="drag-handle.source.press-count"))))
         }
+    }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline = Outline.Generic(Path().apply {
+            moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width*.5f,size.height*.5f)
+            lineTo(size.width,size.height);lineTo(0f,size.height);close()
+        })
     }
 }

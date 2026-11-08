@@ -113,7 +113,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
 - 菜单栏的公开 `MaterialMenuBarItemTheme` 名称仍待维护者确认，可选容器式菜单栏也处于未实现提议阶段。
-- 尚未实现任意 Shape / CutCornerShape、任意 Arrangement、系统平台 inset 与预测返回。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
+- 独立容器、分组、专用菜单项已接入任意 Shape / CutCornerShape（见下文），原生 MenuItem 主题尚未接入。任意 Arrangement、系统平台 inset 与预测返回仍未实现。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
 - `menu-source` 的部分 Core 重复及额外截图存在最大单通道 1 的不稳定像素，稳定性门禁保留失败。原生无阴影外观与上游仍有已接受差异，历史暗色圆角边缘结果不能作为当前 Surface 裁剪的隔离证据。
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
@@ -160,3 +160,41 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 原生 Vertical 的参考使用既有映射 SelectableDropdownMenuItem(selected=false)，测量外层分配宽度，
 按压坐标扣除对应的触摸内缩，不把原生 Margin 误当 Compose 内部 padding。
 控件库全量 2202/2202、菜单相关 87/87、VisualParity 基础设施 124/124 和整仓 Release 构建通过。
+
+## 分组路径形状（2026-11-08）
+
+此前只开放圆角，原理由是组级动画与 Surface 仅共享圆角求值；本轮维护者明确授权扩展 API 及共享能力。
+固定 AndroidX Menu.kt 的 `shapeByInteraction(MenuGroupShapes, hasBeenHovered, hovered)` 先判断两个 RoundedCornerShape，
+再判断两个 CornerBasedShape，否则返回所选 Shape；Core 对此无不同实现。
+现在 `Shape` / `InactiveShape` 各自覆盖原圆角，保留原 API、主题和调用方，无需迁移。
+
+组仍按首次观察到 hover 的 composition 记录历史，替换 interactionSource 保留已记忆 Boolean，卸载清空历史。
+配置变化重新创建形状状态，切角复用 AnimatedCornerRadius；百分比保留尺寸表达式，反向保留速度，混合类型
+按固定 Interpolatable.lerp 的 0.5 阈值选择端点。任意路径使整个双状态配置直接切换。
+Surface 接收已求值切角，尺寸完成安排后重新绘制；属性观察在卸载时解绑，模板替换释放旧 Surface 托管状态。
+Catalog 提供切角分组；MenuGroupShapeTests 覆盖历史、反向、百分比尺寸变化、配置清除与模板替换。
+
+分组双端运行 `menu-group-paths` 的 54 例全部通过，双端重复稳定、执行错误 0；包括切角、混合角形、
+任意路径、RTL、首次/重叠 hover、换源、反向、尺寸变化、配置重建和卸载重挂。
+
+## 独立容器与菜单项路径（同轮授权）
+
+`DropdownMenu.Shape` 对应固定 DropdownMenu 的 shape 参数，直接交由 Surface 求值，开闭 Transition、
+定位及滚动保留；ExposedDropdownMenu 继承入口。Catalog 可切换容器切角。`dropdown-container-paths`
+54 例双端 self-test 全部通过，执行错误 0、重复稳定；含真实 overlay Popup、阴影、深色、RTL、
+切角/百分比/凹路径、开闭与反向、运行时换形状和尺寸。GPU/实际桌面弹层后端未经本轮验证。
+
+此前专用菜单项只将两个圆角交给 Surface 的 ButtonSurfaceState。固定 Menu.kt 由菜单项本身执行
+shapeByInteraction 并将结果交给 Surface；为支持两个任意 Shape，本轮授权将该职责移至 MenuItemShapeMotion。
+模板中的 selected radius / spec 改为绑定到菜单项内部属性，所有仓内调用已迁移；公开 Shapes 和主题
+名称不变，业务调用方无需迁移。自定义模板若照搬原模板，改为使用新的 PART_ItemSurface，并避免同时
+配置 ButtonSurfaceState.CheckedCornerRadius：形状播放器现由控件持有。
+
+普通/选中 Shape 独立回退到原圆角；两端角形使用同一 AnimatedCornerRadius 的进度、反向速度与第三目标
+语义，任一端为任意路径时直接切换。配置 key 比较不可变角值，替换为数值相同的 CutCornerShape 不重启动画；
+真正改配置时重建 shape 和 indication，不重放旧 Press。Baseline 的 Shape 是本地便利入口，固定 Baseline
+DropdownMenuItem 不公开该参数；已由本轮自主 API 授权采纳，Baseline 仍无选中形变。原生 MenuItem 模板未迁移。
+
+`menu-item-paths` 的 90 例双端 self-test 全部通过（86 equal、4 withinTolerance），执行错误 0、
+重复稳定；包含原有 Baseline/Standard/Vibrant 场景以及新增切角、混合角形、任意路径、RTL、按压、
+hover、选中与快速反向。已查看菜单分组反向与真实凹路径容器的双端截图。

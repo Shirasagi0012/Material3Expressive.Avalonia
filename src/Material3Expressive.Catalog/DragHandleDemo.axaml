@@ -21,7 +21,12 @@
     <StackPanel Orientation="Horizontal" Spacing="24">
       <m3:VerticalDragHandle />
       <m3:VerticalDragHandle x:Name="CustomHandle" />
-      <TextBlock Text="Default / custom" VerticalAlignment="Center" />
+      <m3:VerticalDragHandle x:Name="CutHandle">
+        <m3:VerticalDragHandle.Shape><m3:CutCornerShape TopStart="50%" BottomEnd="50%" /></m3:VerticalDragHandle.Shape>
+        <m3:VerticalDragHandle.PressedShape><m3:CutCornerShape TopEnd="50%" BottomStart="50%" /></m3:VerticalDragHandle.PressedShape>
+        <m3:VerticalDragHandle.DraggedShape><m3:CutCornerShape TopStart="50%" TopEnd="50%" BottomEnd="50%" BottomStart="50%" /></m3:VerticalDragHandle.DraggedShape>
+      </m3:VerticalDragHandle>
+      <TextBlock Text="Default / custom / cut corners" VerticalAlignment="Center" />
       <m3:InputChip x:Name="LinkedChip" Content="Shared drag" />
     </StackPanel>
     <StackPanel Orientation="Horizontal" Spacing="16">

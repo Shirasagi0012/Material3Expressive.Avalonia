@@ -7,7 +7,8 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
-              CornerRadius="{TemplateBinding CornerRadius}" StateLayerBrush="{TemplateBinding Foreground}" />
+              ResetIndicationOnShapeChange="False"
+              CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding CurrentShape}" StateLayerBrush="{TemplateBinding Foreground}" />
         </ControlTemplate>
       </Setter>
     </ControlTheme>
@@ -40,7 +41,8 @@
         <ControlTemplate>
           <m3:DragHandleLayout MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+DragHandle.MinimumInteractiveSize}}">
             <m3:DragHandlePresenter x:Name="PART_Handle" Sizes="{TemplateBinding Sizes}" Colors="{TemplateBinding Colors}"
-                Shapes="{TemplateBinding Shapes}" InteractionSource="{TemplateBinding InteractionSource}" Foreground="{TemplateBinding Foreground}" />
+                Shapes="{TemplateBinding Shapes}" Shape="{TemplateBinding Shape}" PressedShape="{TemplateBinding PressedShape}"
+                DraggedShape="{TemplateBinding DraggedShape}" InteractionSource="{TemplateBinding InteractionSource}" Foreground="{TemplateBinding Foreground}" />
           </m3:DragHandleLayout>
         </ControlTemplate>
       </Setter>

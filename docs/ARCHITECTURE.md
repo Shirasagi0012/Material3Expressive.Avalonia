@@ -68,7 +68,7 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 - **Tooltip 路径并集**：内部几何入口让 Tooltip 的容器和箭头共用背景、内容裁剪及路径阴影；不改变测量，也不扩展圆角描边/交互契约。阴影快照及多轮廓回退见 [决定 §27](DECISIONS.md#27-tooltip-并集轮廓与路径阴影入口)。
 - **描边处理**：均匀圆角采用内缩算法计算外框，非对称圆角通过内外轮廓布尔相减绘制，保证高精度对齐。
 - **路径型圆角描边**：内部 SurfaceOutline 的显式路径分支用于 Carousel 的 MaskShape，保留上游通用路径的离屏双宽描边、反向路径擦除及整数像素缓存边界。默认 Surface 描边不切换；适用范围见 [决定 §29](DECISIONS.md#29-carousel-路径描边)。
-- **显式路径形状**：`MaterialShape` / `CutCornerShape` 由 Surface 提供共享绘制，Card、Button、IconButton、ToggleButton、Chip 与 PullToRefreshIndicatorBox 按各自上游入口接入。可观察形状返回闭合 DIP 路径；共享快照供背景、内容裁剪、阴影、均匀描边和交互反馈消费。同族切角复用既有四角动画播放器；百分比随短边重算，RTL 在消费点抵消原生镜像；null 保留既有圆角路径。范围与焦点图层语义见[决定 §35](DECISIONS.md#35-surface-与-card-的显式路径形状)。
+- **显式路径形状**：`MaterialShape` / `CutCornerShape` 由 Surface 提供共享绘制，Card、Button、IconButton、ToggleButton、Chip、PullToRefreshIndicatorBox、DragHandle、SegmentedButton、ListItem、Snackbar 及独立 Menu 容器/组/项按各自上游入口接入。可观察形状返回闭合 DIP 路径；共享快照供背景、内容裁剪、阴影、均匀描边和交互反馈消费。ListItem/Menu 的圆角与切角同族逐角插值，混合类型按固定 Interpolatable 的中点规则选取端点；百分比随短边重算，RTL 在消费点抵消原生镜像；null 保留既有圆角路径。范围与焦点图层语义见[决定 §35](DECISIONS.md#35-surface-与-card-的显式路径形状)。
 
 ---
 

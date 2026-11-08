@@ -3,17 +3,19 @@ package parity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.*
 import kotlinx.serialization.Serializable
 
 @Serializable data class DropdownMenuConfig(val grouped:Boolean=false,val rtl:Boolean=false,val dark:Boolean=false,
-    val x:Int=112,val y:Int=64,val action:String="none",val noShadow:Boolean=false,val divider:Boolean=false)
+    val x:Int=112,val y:Int=64,val action:String="none",val noShadow:Boolean=false,val divider:Boolean=false,val path:String="none")
 
 @ParitySuite("dropdown-menu")
 class DropdownMenuCases {
@@ -32,6 +34,12 @@ class DropdownMenuCases {
             fun change(time:Long,id:String,action:()->Unit){advance(origin+time);action();writer.record(origin+time,"mutation",id);host.draw();host.frame(origin+time);sample(id)}
             fun times(vararg times:Long){times.forEach{advance(origin+it);host.draw();sample("time-$it")}}
             when(config.action){
+                "shape-change"->{
+                    change(1000,"generic"){scene.path="generic"};times(16000)
+                    change(17000,"percent"){scene.path="percent"};times(32000)
+                    change(33000,"grow"){scene.width=200};times(48000)
+                    change(49000,"clear"){scene.path="none"};times(64000,160000)
+                }
                 "show","reverse"->{
                     change(1000,"open"){scene.expanded=true};times(16000,32000,64000)
                     if(config.action=="reverse"){
@@ -54,7 +62,15 @@ class DropdownMenuCases {
             }
         }
     }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline=Outline.Generic(Path().apply {
+            val inset=with(density){12.dp.toPx()};moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width-inset,size.height/2)
+            lineTo(size.width,size.height);lineTo(0f,size.height);close()
+        })
+    }
     private class Scene(val config:DropdownMenuConfig){
+        var path by mutableStateOf(config.path)
+        var width by mutableStateOf<Int?>(null)
         var expanded by mutableStateOf(config.action !in setOf("show","reverse"))
         var selected by mutableStateOf(false)
         var requests=0
@@ -75,7 +91,10 @@ class DropdownMenuCases {
                                         supportingText={Box(Modifier.size(32.dp,12.dp).background(LocalContentColor.current))},trailingContent=trailing)
                                     if(config.divider)HorizontalDivider(divider.modifier())
                                 }
-                            }else DropdownMenu(expanded=expanded,onDismissRequest={requests++},shadowElevation=if(config.noShadow)0.dp else MenuDefaults.ShadowElevation){
+                            }else DropdownMenu(expanded=expanded,onDismissRequest={requests++},
+                                modifier=width?.let{Modifier.width(it.dp)}?:Modifier,
+                                shape=when(path){"cut"->CutCornerShape(20.dp,4.dp,12.dp,2.dp);"percent"->CutCornerShape(25);"generic"->NotchedShape;else->MenuDefaults.shape},
+                                shadowElevation=if(config.noShadow)0.dp else MenuDefaults.ShadowElevation){
                                 DropdownMenuItem(text=label,onClick={},trailingIcon=trailing)
                                 if(config.divider)HorizontalDivider(divider.modifier())
                             }

@@ -70,6 +70,23 @@
 ```
 
 `Space` 应与描边宽度协调；行不自动修改按钮 `BorderThickness`。
+`Shape` 可为每个按钮指定切角或自定义 `MaterialShape`，优先于行生成的圆角与 `CornerRadius`。
+清除 Shape 后恢复当前行位置的圆角；显式路径使用均匀描边。切角属性按逻辑起止边解释，RTL 自动调整。
+端点的显式形状由调用方提供，例如：
+
+```xml
+<m3:SingleChoiceSegmentedButtonRow>
+  <m3:SegmentedButton Content="列表" IsSelected="True">
+    <m3:SegmentedButton.Shape><m3:CutCornerShape TopStart="16" BottomStart="16" /></m3:SegmentedButton.Shape>
+  </m3:SegmentedButton>
+  <m3:SegmentedButton Content="网格">
+    <m3:SegmentedButton.Shape><m3:CutCornerShape TopEnd="16" BottomEnd="16" /></m3:SegmentedButton.Shape>
+  </m3:SegmentedButton>
+</m3:SingleChoiceSegmentedButtonRow>
+```
+
+形状固定时，选择、图标和波纹仍按各自规则更新；更换路径直接切换轮廓。
+
 `Content`/`ContentTemplate` 是 LabelLarge 标签槽，默认 `Padding` 为水平 12/垂直 8 DIP。
 `ActiveIcon` 与 `ActiveIconTemplate` 均为空时使用默认 Check 向量；
 `InactiveIcon` 与 `InactiveIconTemplate` 均为空时不显示未选中图标。

@@ -15,6 +15,7 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation.Rendering;
 using Material3Expressive.Foundation.Typography;
 
 namespace Material3Expressive.Components;
@@ -30,6 +31,19 @@ public sealed record ListItemShapes(CornerRadius Shape, CornerRadius SelectedSha
 
 public class ListItem : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(Shape));
+    public static readonly StyledProperty<MaterialShape?> SelectedShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(SelectedShape));
+    public static readonly StyledProperty<MaterialShape?> PressedShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(PressedShape));
+    public static readonly StyledProperty<MaterialShape?> FocusedShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(FocusedShape));
+    public static readonly StyledProperty<MaterialShape?> HoveredShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(HoveredShape));
+    public static readonly StyledProperty<MaterialShape?> DraggedShapeProperty = AvaloniaProperty.Register<ListItem, MaterialShape?>(nameof(DraggedShape));
+    /// <summary>Overrides the normal corner shape. Null uses Shapes or the grouped default.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+    public MaterialShape? SelectedShape { get => GetValue(SelectedShapeProperty); set => SetValue(SelectedShapeProperty, value); }
+    public MaterialShape? PressedShape { get => GetValue(PressedShapeProperty); set => SetValue(PressedShapeProperty, value); }
+    public MaterialShape? FocusedShape { get => GetValue(FocusedShapeProperty); set => SetValue(FocusedShapeProperty, value); }
+    public MaterialShape? HoveredShape { get => GetValue(HoveredShapeProperty); set => SetValue(HoveredShapeProperty, value); }
+    public MaterialShape? DraggedShape { get => GetValue(DraggedShapeProperty); set => SetValue(DraggedShapeProperty, value); }
     internal static readonly StyledProperty<double> VerticalAlignmentBreakpointProperty = AvaloniaProperty.Register<ListItem, double>(nameof(VerticalAlignmentBreakpoint));
     internal double VerticalAlignmentBreakpoint { get => GetValue(VerticalAlignmentBreakpointProperty); set => SetValue(VerticalAlignmentBreakpointProperty, value); }
     internal static readonly StyledProperty<double> MinimumLayoutSizeProperty = AvaloniaProperty.Register<ListItem, double>(nameof(MinimumLayoutSize));
@@ -214,9 +228,12 @@ public class ListItem : Button
     {
         _feedbackLease?.Dispose(); _feedbackLease = null;
         _layout?.SetOwner(null);
+        if (_surface is not null) _surface.PropertyChanged -= SurfaceChanged;
         _surface?.SetAnimatedCorners(null);
+        if (_surface is not null) _surface.Shape = null;
         base.OnApplyTemplate(e);
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
+        if (_surface is not null) _surface.PropertyChanged += SurfaceChanged;
         _layout = e.NameScope.Find<ListItemLayout>("PART_Layout");
         _layout?.SetOwner(this);
         if (_surface is not null) _surface.ApplyTonalElevation = false;
@@ -291,6 +308,12 @@ public class ListItem : Button
     }
     private void InteractionChanged() => _motion?.Refresh();
     internal void LayoutChanged() => _motion?.PaintShape();
+    private void SurfaceChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        // Child arrange happens before Surface publishes its final Bounds. Re-evaluate
+        // percentage corners once the actual container size has been committed.
+        if (e.Property == BoundsProperty) _motion?.PaintShape();
+    }
     internal void ResetIndication() => _interaction?.ResetSourceIndication();
 
     protected override bool IsEnabledCore => IsEnabled;

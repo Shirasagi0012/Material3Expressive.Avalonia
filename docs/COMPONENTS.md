@@ -19,7 +19,7 @@
 | `IconButton` | 图标按钮六种主题及四种切换主题，支持三状态切角形变 | [README](../src/Material3Expressive/Components/IconButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/IconButton/INTERNALS.md) | |
 | `Icon` | 位图、矢量与自定义图片图标，内容色着色、Fit 缩放和可选 RTL 镜像 | [README](../src/Material3Expressive/Components/Icon/README.md) | [INTERNALS](../src/Material3Expressive/Components/Icon/INTERNALS.md) | |
 | `ToggleButton` | 原生切换按钮四种主题、精确指针尺寸及选中/按压切角形变 | [README](../src/Material3Expressive/Components/ToggleButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/ToggleButton/INTERNALS.md) | |
-| `SegmentedButton` | 单选与多选分段按钮，支持首尾平滑圆角 | [README](../src/Material3Expressive/Components/SegmentedButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md) | |
+| `SegmentedButton` | 单选与多选分段按钮、首尾圆角及显式切角/路径形状 | [README](../src/Material3Expressive/Components/SegmentedButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md) | |
 | `SplitButton` | 双操作按钮组合，主操作与次级菜单联动 | [README](../src/Material3Expressive/Components/SplitButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SplitButton/INTERNALS.md) | |
 | `ButtonGroup` | 按压扩宽、相邻项压缩与自动溢出收纳 | [README](../src/Material3Expressive/Components/ButtonGroup/README.md) | [INTERNALS](../src/Material3Expressive/Components/ButtonGroup/INTERNALS.md) | |
 | `Chip` | 辅助、建议、过滤与输入标签，含 Elevated 和固定路径形状 | [README](../src/Material3Expressive/Components/Chip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Chip/INTERNALS.md) | |
@@ -71,8 +71,8 @@
 | `Surface` | 基础表面容器，承载背景、阴影、圆角/切角/自定义轮廓与描边 | [README](../src/Material3Expressive/Components/Surface/README.md) | [INTERNALS](../src/Material3Expressive/Components/Surface/INTERNALS.md) | |
 | `Card` | 填充、抬升与描边卡片，支持切角及自定义轮廓 | [README](../src/Material3Expressive/Components/Card/README.md) | [INTERNALS](../src/Material3Expressive/Components/Card/INTERNALS.md) | |
 | `Scaffold` | 屏幕标准槽位骨架，自动处理窗口插桩与内边距传播 | [README](../src/Material3Expressive/Components/Scaffold/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scaffold/INTERNALS.md) | |
-| `ListItem` | 标准五槽列表行、分段列表行与受控选择状态 | [README](../src/Material3Expressive/Components/ListItem/README.md) | [INTERNALS](../src/Material3Expressive/Components/ListItem/INTERNALS.md) | |
-| `DragHandle` | 三状态竖向拖动手柄与共享交互反馈 | [README](../src/Material3Expressive/Components/DragHandle/README.md) | [INTERNALS](../src/Material3Expressive/Components/DragHandle/INTERNALS.md) | |
+| `ListItem` | 标准五槽列表行、分段列表行、六状态圆角/切角形变及受控选择 | [README](../src/Material3Expressive/Components/ListItem/README.md) | [INTERNALS](../src/Material3Expressive/Components/ListItem/INTERNALS.md) | |
+| `DragHandle` | 三状态竖向拖动手柄、切角/自定义轮廓与共享交互反馈 | [README](../src/Material3Expressive/Components/DragHandle/README.md) | [INTERNALS](../src/Material3Expressive/Components/DragHandle/INTERNALS.md) | |
 | `SwipeToDismissBox` | 双向滑动消除、背景槽与可控状态 | [README](../src/Material3Expressive/Components/SwipeToDismissBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/SwipeToDismissBox/INTERNALS.md) | |
 | `GroupBox` | 分组框容器，以内嵌标题与描边表面呈现 | [README](../src/Material3Expressive/Components/GroupBox/README.md) | [INTERNALS](../src/Material3Expressive/Components/GroupBox/INTERNALS.md) | |
 | `Expander` | 原生折叠展开框，列表风格与动画显隐过渡 | [README](../src/Material3Expressive/Components/Expander/README.md) | [INTERNALS](../src/Material3Expressive/Components/Expander/INTERNALS.md) | |
@@ -84,14 +84,14 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `Menu` | 独立下拉菜单、分组/尾随标签、精确指针项布局、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
+| `Menu` | 独立下拉菜单及容器/分组/选中项路径形状、尾随标签、精确指针项布局、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
 | `AlertDialog` | 标准确认对话框、精确指针尺寸与自定义内容弹窗 | [README](../src/Material3Expressive/Components/AlertDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md) | |
 | `BottomSheet` | 树内三态面板、常驻脚手架与模态面板 | [README](../src/Material3Expressive/Components/BottomSheet/README.md) | [INTERNALS](../src/Material3Expressive/Components/BottomSheet/INTERNALS.md) | |
 | `Scrim` | 可点击或装饰性遮罩 | [README](../src/Material3Expressive/Components/Scrim/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scrim/INTERNALS.md) | |
 | `DatePickerDialog` | 日期选择器专用对话框容器 | [README](../src/Material3Expressive/Components/DatePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePickerDialog/INTERNALS.md) | |
 | `TimePickerDialog` | 普通与 Vibrant 时间选择器对话框容器 | [README](../src/Material3Expressive/Components/TimePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePickerDialog/INTERNALS.md) | |
 | `Tooltip` | 默认/自定义箭头的简单与富内容提示、提示框与交互标签 | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
-| `Snackbar` | 底部短消息与全局消息队列宿主 | [README](../src/Material3Expressive/Components/Snackbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/Snackbar/INTERNALS.md) | |
+| `Snackbar` | 可定制路径轮廓的底部短消息与全局消息队列宿主 | [README](../src/Material3Expressive/Components/Snackbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/Snackbar/INTERNALS.md) | |
 | `Badge` | 数字与圆点徽标，配合徽标容器定位 | [README](../src/Material3Expressive/Components/Badge/README.md) | [INTERNALS](../src/Material3Expressive/Components/Badge/INTERNALS.md) | |
 | `ProgressIndicator` | 线性与圆形进度条，支持直线与表现型波浪动画 | [README](../src/Material3Expressive/Components/ProgressIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/ProgressIndicator/INTERNALS.md) | |
 | `LoadingIndicator` | 动态多边形形状变换加载指示器 | [README](../src/Material3Expressive/Components/LoadingIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/LoadingIndicator/INTERNALS.md) | |

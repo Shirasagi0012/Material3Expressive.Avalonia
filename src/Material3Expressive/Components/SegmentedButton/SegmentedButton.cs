@@ -10,12 +10,16 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>Single-choice selectable or multi-choice toggleable segment, with external selection.</summary>
 public sealed class SegmentedButton : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = AvaloniaProperty.Register<SegmentedButton, MaterialShape?>(nameof(Shape));
+    /// <summary>An explicit outline, overriding the row's default corners. Null restores CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
         AvaloniaProperty.Register<SegmentedButton, MaterialInteractionSource?>(nameof(InteractionSource));
     /// <summary>The shared input/feedback stream. Null uses a component-local source.</summary>

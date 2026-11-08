@@ -154,8 +154,11 @@ public class SnackbarHost : TemplatedControl
 
                 async Task AnimateOpacity()
                 {
-                    await item.Opacity.AnimateToAsync(item.Scope, visible ? 1f : 0f,
+                    var result = await item.Opacity.AnimateToAsync(item.Scope, visible ? 1f : 0f,
                         Spec(opacitySpec), cancellationToken: token);
+                    // Compose cancellation aborts LaunchedEffect before onAnimationFinish.
+                    // Our runtime reports cancellation explicitly instead of throwing.
+                    if (result.EndReason != AnimationEndReason.Finished || token.IsCancellationRequested) return;
                     if (!ReferenceEquals(item.Data, _current))
                     {
                         _items.Remove(item); _panel?.Children.Remove(item.Presenter);

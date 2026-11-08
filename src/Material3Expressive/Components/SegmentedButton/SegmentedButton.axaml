@@ -45,6 +45,7 @@
                         ContainerMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.ContainerHeight}}">
           <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                               FlowDirection="LeftToRight"
+                              Shape="{TemplateBinding Shape}" ShapeLayoutDirection="{TemplateBinding FlowDirection}"
                               BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"
                               TextElement.Foreground="{TemplateBinding Foreground}" StateLayerBrush="{TemplateBinding Foreground}">
             <Border Padding="{TemplateBinding Padding}">

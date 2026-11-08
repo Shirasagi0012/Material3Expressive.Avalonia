@@ -9,6 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -17,7 +18,7 @@ public sealed record ListItemConfig(bool Segmented = false, string Mode = "none"
     bool Selected = false, bool Enabled = true, bool Dark = false, bool Rtl = false,
     int Index = 0, int Count = 1, double Width = 280, double? Height = null,
     double Leading = 24, bool Sides = true, bool Unbounded = false, string Alignment = "auto",
-    bool CustomPadding = false, string Action = "none");
+    bool CustomPadding = false, string Action = "none", string Path = "none");
 
 [ParitySuite("list-item")]
 public sealed class ListItemCases
@@ -25,6 +26,11 @@ public sealed class ListItemCases
     static CaseData<ListItemConfig> Data(string id, ListItemConfig c) => new(id.ToLowerInvariant(), id.Replace('.', ' '), c);
     public static IEnumerable<CaseData<ListItemConfig>> StaticConfigurations()
     {
+        foreach (var path in new[] { "cut", "mixed", "generic" })
+        foreach (var segmented in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var selected in new[] { false, true })
+            yield return Data($"static.path.{path}.{segmented}.{rtl}.{selected}", new(Segmented: segmented, Mode: "multiple", Selected: selected, Rtl: rtl, Path: path));
         foreach (var segmented in new[] { false, true })
         foreach (var mode in new[] { "none", "click", "single", "multiple" })
         foreach (var lines in new[] { 1, 2, 3 })
@@ -46,6 +52,10 @@ public sealed class ListItemCases
     }
     public static IEnumerable<CaseData<ListItemConfig>> DynamicConfigurations()
     {
+        foreach (var path in new[] { "cut", "mixed", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "press", "quick", "select", "drag", "path-change", "path-resize", "space" })
+            yield return Data($"dynamic.path.{path}.{rtl}.{action}", new(Segmented: true, Mode: "multiple", Rtl: rtl, Path: path, Action: action));
         foreach (var action in new[] { "press", "quick", "cancel", "disable", "select", "drag", "theme", "group" })
             yield return Data($"dynamic.{action}", new(Segmented:action=="group", Mode:action=="select"?"multiple":"click", Lines:3, Action:action));
         foreach(var action in new[] { "space", "enter", "long", "key-long", "nested", "disabled-input", "passive-input", "single-click", "multiple-click", "shapes" })
@@ -76,6 +86,17 @@ public sealed class ListItemCases
         Sample("initial");
         switch(config.Action)
         {
+            case "path-change":
+                Input(1000,"move",center); Input(2000,"down",center); Sample("pressed"); Times(16000,64000);
+                Change(65000,"generic",()=>scene.SetPath("generic")); Times(80000,160000);
+                Input(161000,"up",center); Sample("released"); Times(176000);
+                Change(177000,"cut",()=>scene.SetPath("cut")); Times(192000,400000);
+                Change(401000,"restore-corners",()=>scene.SetPath("none")); Times(416000,800000); break;
+            case "path-resize":
+                var hold=new MaterialInteractionEvent.Press(new Point(config.Rtl ? scene.Item.Bounds.Width - 30 : 30,30));
+                Change(1000,"press",()=>scene.Source.Emit(hold)); Times(16000,32000);
+                Change(33000,"grow",()=>scene.Item.Height=100); Times(48000,64000);
+                Change(65000,"release",()=>scene.Source.Emit(new MaterialInteractionEvent.Release(hold))); Times(80000,160000,400000); break;
             case "key-long":
                 Change(1000,"focus",()=>scene.Item.Focus(NavigationMethod.Tab));Times(16000,64000,160000);
                 Change(161000,"enter-down",()=>host.Window.KeyPress(Key.Enter,RawInputModifiers.None,PhysicalKey.None,null));
@@ -122,6 +143,7 @@ public sealed class ListItemCases
     sealed class Scene
     {
         readonly AvaloniaHost host;
+        readonly ListItemConfig c;
         readonly List<(string Name,Marker Control)> slots=[];
         int clicks,requests,longClicks,childClicks;
         public Button? Child { get; }
@@ -130,11 +152,17 @@ public sealed class ListItemCases
         public Control Root { get; }
         public Scene(AvaloniaHost host,ListItemConfig c)
         {
-            this.host=host;SetColors(host,c.Dark);
+            this.host=host;this.c=c;SetColors(host,c.Dark);
             if(c.Rtl) host.Window.FlowDirection=FlowDirection.RightToLeft;
             Item=c.Segmented?new SegmentedListItem { GroupIndex=c.Index,GroupCount=c.Count }:new ListItem();
             Item.InteractionMode=c.Mode switch { "click"=>ListItemInteractionMode.Click,"single"=>ListItemInteractionMode.SingleSelection,"multiple"=>ListItemInteractionMode.MultipleSelection,_=>ListItemInteractionMode.None };
             Item.IsInteractionEnabled=c.Enabled;Item.IsSelected=c.Selected;Item.IsChecked=c.Selected;Item.InteractionSource=Source;
+            SetPath(c.Path);
+            if(c.Path!="none" && c.Action=="space")
+            {
+                MaterialInteraction.SetFocusFeedback(Item,FocusFeedback.InsetRing);
+                MaterialInteraction.SetFocusRingOuterColor(Item,Colors.Red); MaterialInteraction.SetFocusRingInnerColor(Item,Colors.Blue);
+            }
             Item.ItemVerticalAlignment=Enum.Parse<ListItemVerticalAlignment>(c.Alignment,true);
             if(c.Height is {} h) Item.Height=h;
             if(c.CustomPadding) Item.Padding=new Thickness(8,4,20,14);
@@ -157,13 +185,35 @@ public sealed class ListItemCases
             Control container=c.Unbounded?new StackPanel { Orientation=Orientation.Horizontal,Children={Item} }:Item;
             Root=new Grid { Width=c.Width,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,Children={container} };
         }
+        public void SetPath(string path)
+        {
+            Item.Shape=Item.SelectedShape=Item.PressedShape=Item.FocusedShape=Item.HoveredShape=Item.DraggedShape=null;
+            if(path=="none")return;
+            Item.Shape=new CutCornerShape { TopStart=new(20,RelativeUnit.Absolute),TopEnd=new(4,RelativeUnit.Absolute),BottomEnd=new(8,RelativeUnit.Absolute),BottomStart=new(2,RelativeUnit.Absolute) };
+            Item.PressedShape=new CutCornerShape(new RelativeScalar(.1,RelativeUnit.Relative));
+            Item.SelectedShape=new CutCornerShape(12);Item.FocusedShape=new CutCornerShape(8);
+            Item.HoveredShape=new CutCornerShape(4);Item.DraggedShape=new CutCornerShape(new RelativeScalar(.25,RelativeUnit.Relative));
+            if(path=="mixed") {Item.SelectedShape=null;Item.PressedShape=null;}
+            if(path=="generic") {Item.Shape=Item.DraggedShape=new NotchedShape();}
+        }
         public ProbePoint[] Measure()=>[new("item","list-item",null,[..AvaloniaMeasurements.Geometry(Item,host.Window).Where(m=>m.Name is "box" or "size"),
             Measurement.Numeric("corner",Item.Surface!.EffectiveCornerRadius.TopLeft,"dip",category:"motion",definition:"list-item.top-left-outline-radius"),
+            ..c.Path!="none" ? new[] {Measurement.Text("outlineKind",Item.Surface.ContainerGeometry is not null?"generic":"rounded",definition:"list-item.rendered-outline-kind"),
+                Measurement.Numeric("pathStartY",Item.Surface.ContainerGeometry is PathGeometry geometry?geometry.Figures![0].StartPoint.Y:0,"dip",category:"motion",definition:"list-item.generic-outline-first-move-y-or-zero")} : [],
             Measurement.Numeric("shadow",Item.Surface!.ShadowElevation,"dip",category:"motion",definition:"list-item.shadow-elevation"),
             Measurement.Numeric("longClicks",longClicks,"count",definition:"list-item.long-clicks"),
             Measurement.Numeric("childClicks",childClicks,"count",definition:"list-item.child-clicks"),
             Measurement.Numeric("clicks",clicks,"count",definition:"list-item.clicks"),Measurement.Numeric("requests",requests,"count",definition:"list-item.checked-requests")]),
             ..slots.Select(s=>new ProbePoint(s.Name,"content","item",AvaloniaMeasurements.Geometry(s.Control,host.Window).Where(m=>m.Name is "box" or "size").ToArray()))];
+    }
+    sealed class NotchedShape:MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size,FlowDirection layoutDirection,double density)
+        {
+            var path=new PathGeometry(); using var context=path.Open();
+            context.BeginFigure(default,true);context.LineTo(new(size.Width,0));context.LineTo(new(size.Width-12,size.Height/2));
+            context.LineTo(new(size.Width,size.Height));context.LineTo(new(0,size.Height));context.EndFigure(true);return path;
+        }
     }
     static void SetColors(AvaloniaHost host,bool dark)
     {

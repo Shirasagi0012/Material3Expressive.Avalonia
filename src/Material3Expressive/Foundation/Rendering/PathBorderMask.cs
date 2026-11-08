@@ -31,7 +31,7 @@ internal sealed class PathBorderMask : IDisposable
     }
 
     // The caller owns the physical-pixel path. Focus borders additionally erase the inset stroke.
-    internal WriteableBitmap Update(SKPath path, float stroke, float density, bool fill, Size layoutSize, Color color, float inset = 0)
+    internal WriteableBitmap Update(SKPath path, float stroke, float density, bool fill, Size layoutSize, Color color, float inset = 0, bool eraseInset = false)
     {
         var bounds = path.Bounds;
         var width = bounds.Width;
@@ -58,8 +58,10 @@ internal sealed class PathBorderMask : IDisposable
         canvas.DrawPath(path, paint);
         if (!fill)
         {
-            if (inset > 0)
+            if (eraseInset)
             {
+                // Ripple Border.kt always issues this clear stroke, including width zero:
+                // Skia treats zero as a one-physical-pixel hairline. Foundation border does not.
                 paint.StrokeWidth = inset * 2; paint.BlendMode = SKBlendMode.Clear;
                 canvas.DrawPath(path, paint);
             }

@@ -21,6 +21,7 @@ public partial class DragHandleDemo : Window
         AnimationScope.Initialize(this);
         InitializeComponent();
         Handle.InteractionSource = _source;
+        CutHandle.InteractionSource = _source;
         LinkedCard.InteractionSource = _source;
         LinkedChip.InteractionSource = _source;
         LinkedCard.Bind(IsEnabledProperty, new Avalonia.Data.Binding("IsChecked") { Source = FeedbackEnabled });

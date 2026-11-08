@@ -33,6 +33,8 @@ public partial class MenuDemo : Window
     private void OnChooseSize(object? sender, RoutedEventArgs e)
     { ReadOnlyOptionText.Text = ((DropdownMenuItem)sender!).Content?.ToString(); ReadOnlyOptions.IsExpanded = false; }
     private void OnDropdown(object? sender, RoutedEventArgs e) => Dropdown.IsOpen = true;
+    private void OnContainerShape(object? sender, RoutedEventArgs e) => Dropdown.Shape = ((CheckBox)sender!).IsChecked == true
+        ? new Material3Expressive.Foundation.Rendering.CutCornerShape(20) : null;
     private void OnGrouped(object? sender, RoutedEventArgs e) => Grouped.IsOpen = true;
     private void OnDropdownDismiss(object? sender, DismissRequestedEventArgs e) => ((DropdownMenuPopup)sender!).IsOpen = false;
     private void OnDropdownAction(object? sender, RoutedEventArgs e)

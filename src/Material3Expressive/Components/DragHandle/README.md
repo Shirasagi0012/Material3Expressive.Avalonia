@@ -39,9 +39,20 @@ Handle.Shapes = new(new Avalonia.CornerRadius(4), new Avalonia.CornerRadius(8), 
 
 `Foreground` 控制交互反馈颜色，`Colors` 控制手柄本体颜色。`MaterialInteractiveSize.Minimum` 设置外层最小布局留白。
 
+`Shape`、`PressedShape`、`DraggedShape` 分别覆盖对应状态的圆角配置，可使用切角或自定义 `MaterialShape`。
+每个属性独立生效；未设置的状态仍读取 `Shapes` 中对应的圆角。三态形状直接切换，拖动优先于按下。
+
+```xml
+<m3:VerticalDragHandle>
+  <m3:VerticalDragHandle.Shape><m3:CutCornerShape TopStart="50%" BottomEnd="50%" /></m3:VerticalDragHandle.Shape>
+  <m3:VerticalDragHandle.PressedShape><m3:CutCornerShape TopEnd="50%" BottomStart="50%" /></m3:VerticalDragHandle.PressedShape>
+  <m3:VerticalDragHandle.DraggedShape><m3:CutCornerShape TopStart="50%" TopEnd="50%" BottomEnd="50%" BottomStart="50%" /></m3:VerticalDragHandle.DraggedShape>
+</m3:VerticalDragHandle>
+```
+
 ## 使用限制与注意事项
 
-宿主可用透明背景提供较大的拖动区域。最小布局留白本身仅影响布局，形状配置使用 `CornerRadius`。
+宿主可用透明背景提供较大的拖动区域。最小布局留白本身仅影响布局。切角采用逻辑起止角，随 RTL 调整。
 本地按压改变手柄外观，外部源的 Press 可产生波纹反馈。
 
 [Catalog 示例](../../../Material3Expressive.Catalog/DragHandleDemo.axaml)可用 `--drag-handles` 启动，包含拖动、取消与共享交互源。实现和验证范围见 [INTERNALS.md](INTERNALS.md)。

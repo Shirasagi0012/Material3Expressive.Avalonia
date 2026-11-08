@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
 using Material3Expressive.Foundation.Typography;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -15,13 +16,17 @@ public sealed record SnackbarConfig(bool HasAction = true, bool HasDismiss = fal
     bool Dark = false, bool Rtl = false, bool Buttons = false, double ContentWidth = 64, double ContentHeight = 12,
     double DismissWidth = 24, int HostWidth = 720, double? Width = null, double? Height = null,
     double MinimumWidth = 0, string Colors = "default", string Mutation = "none",
-    double? FirstBaseline = null, double? LastBaseline = null, double? ActionBaseline = null, bool LastOnlyWrapper = false);
+    double? FirstBaseline = null, double? LastBaseline = null, double? ActionBaseline = null, bool LastOnlyWrapper = false, string Path = "none");
 
 [ParitySuite("snackbar")]
 public sealed class SnackbarCases
 {
     public static IEnumerable<CaseData<SnackbarConfig>> StaticConfigurations()
     {
+        foreach (var path in new[] { "cut", "percent", "generic" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var dark in new[] { false, true })
+            yield return Data($"static.path.{path}.{rtl}.{dark}".ToLowerInvariant(), new(HasDismiss: true, Rtl: rtl, Dark: dark, HostWidth: 360, Path: path));
         foreach (var newLine in new[] { false, true })
         foreach (var rtl in new[] { false, true })
             yield return Data($"static.baseline.wrapper.{newLine}.{rtl}".ToLowerInvariant(),
@@ -55,6 +60,8 @@ public sealed class SnackbarCases
     }
     public static IEnumerable<CaseData<SnackbarConfig>> DynamicConfigurations()
     {
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"dynamic.path.{rtl}".ToLowerInvariant(), new(HasDismiss: true, Rtl: rtl, HostWidth: 360, Path: "cut", Mutation: "shape"));
         foreach (var newLine in new[] { false, true })
         foreach (var rtl in new[] { false, true })
             yield return Data($"dynamic.baseline.{newLine}.{rtl}".ToLowerInvariant(),
@@ -85,6 +92,14 @@ public sealed class SnackbarCases
         }
         var snackbar = new Snackbar { Content = message, ActionOnNewLine = config.NewLine, MinWidth = config.MinimumWidth,
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        void Path(string path) => snackbar.Shape = path switch
+        {
+            "cut" => new CutCornerShape { TopStart = new(16, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+                BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) },
+            "percent" => new CutCornerShape(new RelativeScalar(.25, RelativeUnit.Relative)),
+            "generic" => new NotchedShape(), _ => null
+        };
+        Path(config.Path);
         if (config.Width is { } width) snackbar.Width = width;
         if (config.Height is { } height) snackbar.Height = height;
         host.Window.FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
@@ -127,6 +142,11 @@ public sealed class SnackbarCases
         void Times(params long[] times) { foreach (var time in times) { Advance(time); host.Draw(); Sample($"time-{time}"); } }
         switch (config.Mutation)
         {
+            case "shape":
+                Change(1000, "percent", () => Path("percent"));
+                Change(2000, "new-line", () => snackbar.ActionOnNewLine = true);
+                Change(3000, "generic", () => Path("generic"));
+                Change(4000, "clear", () => Path("none")); break;
             case "baseline":
                 Change(1000, "first", () => MaterialTextBaseline.SetFirst(content, 14));
                 Change(2000, "single-line", () => MaterialTextBaseline.SetLast(content, 14));
@@ -167,6 +187,16 @@ public sealed class SnackbarCases
             if (colors == "custom") { snackbar.Background = Brush.Parse("#E0F0E8"); snackbar.Foreground = Brushes.Red; snackbar.ActionForeground = Brushes.Blue; snackbar.DismissActionForeground = Brush.Parse("#00FF00"); snackbar.CornerRadius = new(12); }
             if (colors == "surface") snackbar.Background = Brush.Parse("#FEF7FF");
             if (colors == "transparent") snackbar.Background = Brushes.Transparent;
+        }
+    }
+    private sealed class NotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry(); using var context = path.Open();
+            context.BeginFigure(default, true); context.LineTo(new(size.Width, 0));
+            context.LineTo(new(size.Width - 12, size.Height / 2)); context.LineTo(new(size.Width, size.Height));
+            context.LineTo(new(0, size.Height)); context.EndFigure(true); return path;
         }
     }
     private sealed class Marker(double width, double height) : Control

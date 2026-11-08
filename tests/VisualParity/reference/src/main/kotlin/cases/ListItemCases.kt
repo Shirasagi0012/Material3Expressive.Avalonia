@@ -6,12 +6,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -23,7 +27,7 @@ data class ListItemConfig(val segmented:Boolean=false,val mode:String="none",val
     val selected:Boolean=false,val enabled:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,
     val index:Int=0,val count:Int=1,val width:Double=280.0,val height:Double?=null,
     val leading:Double=24.0,val sides:Boolean=true,val unbounded:Boolean=false,val alignment:String="auto",
-    val customPadding:Boolean=false,val action:String="none")
+    val customPadding:Boolean=false,val action:String="none",val path:String="none")
 
 @ParitySuite("list-item")
 class ListItemCases {
@@ -51,6 +55,19 @@ class ListItemCases {
             val center=coordinates.localToRoot(Offset(coordinates.size.width/2f,coordinates.size.height/2f))/ComposeHost.RenderScale.toFloat()
             sample("initial")
             when(config.action) {
+                "path-change"->{
+                    input(1000,"move",center);input(2000,"down",center);sample("pressed");times(16000,64000)
+                    change(65000,"generic"){scene.path="generic"};times(80000,160000)
+                    input(161000,"up",center);sample("released");times(176000)
+                    change(177000,"cut"){scene.path="cut"};times(192000,400000)
+                    change(401000,"restore-corners"){scene.path="none"};times(416000,800000)
+                }
+                "path-resize"->{
+                    val hold=PressInteraction.Press(Offset(30f,30f)*ComposeHost.RenderScale.toFloat())
+                    change(1000,"press"){scene.source.tryEmit(hold)};times(16000,32000)
+                    change(33000,"grow"){scene.height=100.0};times(48000,64000)
+                    change(65000,"release"){scene.source.tryEmit(PressInteraction.Release(hold))};times(80000,160000,400000)
+                }
                 "key-long"->{
                     fun key(key:Key,type:KeyEventType) {host.scene.sendKeyEvent(KeyEvent(key,type));host.scheduler.runCurrent()}
                     change(1000,"focus"){scene.requester.requestFocus()};times(16000,64000,160000)
@@ -108,6 +125,8 @@ class ListItemCases {
         val requester=FocusRequester()
         val childProbe=Probe()
         var changedShapes by mutableStateOf(false)
+        var path by mutableStateOf(config.path)
+        var height by mutableStateOf(config.height)
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -125,14 +144,16 @@ class ListItemCases {
             // Product MotionTokenSource supplies Expressive springs. MaterialTheme alone defaults
             // to Standard; use the same public theme input, not per-animation compensation.
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
-                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+                CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
+                    LocalRippleThemeConfiguration provides if(config.path!="none" && config.action=="space") RippleDefaults.InsetFocusRingThemeConfiguration else RippleDefaults.OpacityFocusThemeConfiguration,
+                    LocalRippleConfiguration provides RippleConfiguration(focus=RippleConfiguration.Focus.InsetRing(Color.Red,Color.Blue))) {
                     Box(Modifier.fillMaxSize().background(Color.White),contentAlignment=Alignment.Center) {
                         Box(Modifier.width(config.width.toFloat().dp)) {
                             var modifier:Modifier=Modifier
                             if(config.unbounded) modifier=modifier.wrapContentWidth(Alignment.Start,unbounded=true)
                             modifier=modifier.then(probe.modifier())
                             if(config.mode!="none") modifier=modifier.focusRequester(requester)
-                            config.height?.let {modifier=modifier.height(it.toFloat().dp)}
+                            height?.let {modifier=modifier.height(it.toFloat().dp)}
                             val leading:(@Composable ()->Unit)?=if(config.sides) {{Marker("leading",config.leading,config.leading)}} else null
                             val trailing:(@Composable ()->Unit)?=if(config.sides) {{
                                 if(config.action=="nested") Button({childClicks++},childProbe.modifier().size(64.dp,32.dp),contentPadding=PaddingValues(8.dp)) {Marker("trailing",16.0,16.0)}
@@ -143,8 +164,14 @@ class ListItemCases {
                             val content:@Composable ()->Unit={Marker("main",64.0,24.0)}
                             val alignment=when(config.alignment) {"top"->Alignment.Top;"center"->Alignment.CenterVertically;"bottom"->Alignment.Bottom;else->ListItemDefaults.verticalAlignment()}
                             val padding=if(config.customPadding) PaddingValues(start=8.dp,top=4.dp,end=20.dp,bottom=14.dp) else ListItemDefaults.ContentPadding
-                            val shapes=if(changedShapes) ListItemDefaults.shapes(shape=RoundedCornerShape(2.dp),selectedShape=RoundedCornerShape(8.dp),pressedShape=RoundedCornerShape(24.dp),focusedShape=RoundedCornerShape(8.dp),hoveredShape=RoundedCornerShape(6.dp),draggedShape=RoundedCornerShape(8.dp))
+                            val defaults=if(changedShapes) ListItemDefaults.shapes(shape=RoundedCornerShape(2.dp),selectedShape=RoundedCornerShape(8.dp),pressedShape=RoundedCornerShape(24.dp),focusedShape=RoundedCornerShape(8.dp),hoveredShape=RoundedCornerShape(6.dp),draggedShape=RoundedCornerShape(8.dp))
                                 else if(config.segmented) ListItemDefaults.segmentedShapes(index,count) else ListItemDefaults.shapes()
+                            val shapes=if(path=="none")defaults else ListItemShapes(
+                                shape=if(path=="generic")NotchedShape else CutCornerShape(20.dp,4.dp,8.dp,2.dp),
+                                selectedShape=if(path=="mixed")defaults.selectedShape else CutCornerShape(12.dp),
+                                pressedShape=if(path=="mixed")defaults.pressedShape else CutCornerShape(10),
+                                focusedShape=CutCornerShape(8.dp),hoveredShape=CutCornerShape(4.dp),
+                                draggedShape=if(path=="generic")NotchedShape else CutCornerShape(25))
                             val longClick:(()->Unit)?=if(config.action in listOf("long","key-long")) {{longClicks++}} else null
                             if(!config.segmented) when(config.mode) {
                                 "none"->ListItem(modifier=modifier,enabled=enabled,leadingContent=leading,trailingContent=trailing,overlineContent=overline,supportingContent=supporting,verticalAlignment=alignment,shapes=shapes,contentPadding=padding,content=content)
@@ -165,7 +192,7 @@ class ListItemCases {
         }
         fun measure():List<ProbePoint> {
             var coordinator:Any?=probe.coordinates
-            var corner=0.0;var elevation=0.0
+            var corner=0.0;var elevation=0.0;var outlineKind="rounded";var pathStartY=0.0
             while(coordinator!=null) {
                 val layer=field(coordinator,"layer")
                 if(layer!=null) {
@@ -174,18 +201,30 @@ class ListItemCases {
                     // carry a negative spring overshoot. Keep that signed runtime value.
                     val layerElevation=(graphics.javaClass.methods.single {it.name=="getShadowElevation" && it.parameterCount==0}.invoke(graphics) as Number).toDouble()
                     if(layerElevation!=0.0) elevation=layerElevation
-                    if(graphics.javaClass.methods.single {it.name=="getClip" && it.parameterCount==0}.invoke(graphics)==true)
-                        corner=(field(layer,"outline") as Outline.Rounded).roundRect.topLeftCornerRadius.x.toDouble()
+                    if(graphics.javaClass.methods.single {it.name=="getClip" && it.parameterCount==0}.invoke(graphics)==true) {
+                        when(val outline=field(layer,"outline")) {
+                            is Outline.Rounded -> corner=outline.roundRect.topLeftCornerRadius.x.toDouble()
+                            is Outline.Generic -> {outlineKind="generic";pathStartY=outline.path.iterator().next().points[1].toDouble()/ComposeHost.RenderScale}
+                            is Outline.Rectangle -> outlineKind="rectangle"
+                        }
+                    }
                 }
                 coordinator=field(coordinator,"wrapped")
             }
             return listOf(ProbePoint("item","list-item",null,probe.geometry().filter {it.name=="box" || it.name=="size"}+listOf(
-            number("corner",corner/ComposeHost.RenderScale,"dip",category="motion",definition="list-item.top-left-outline-radius"),
+            number("corner",corner/ComposeHost.RenderScale,"dip",category="motion",definition="list-item.top-left-outline-radius"))+
+            (if(config.path!="none")listOf(text("outlineKind",outlineKind,definition="list-item.rendered-outline-kind"),number("pathStartY",pathStartY,"dip",category="motion",definition="list-item.generic-outline-first-move-y-or-zero"))else emptyList())+listOf(
             number("shadow",elevation/ComposeHost.RenderScale,"dip",category="motion",definition="list-item.shadow-elevation"),
             number("longClicks",longClicks.toDouble(),"count",definition="list-item.long-clicks"),
             number("childClicks",childClicks.toDouble(),"count",definition="list-item.child-clicks"),
             number("clicks",clicks.toDouble(),"count",definition="list-item.clicks"),number("requests",requests.toDouble(),"count",definition="list-item.checked-requests"))))+
             slots.map {(name,p)->ProbePoint(name,"content","item",p.geometry().filter {it.name=="box" || it.name=="size"})}
         }
+    }
+    private object NotchedShape:Shape {
+        override fun createOutline(size:Size,layoutDirection:LayoutDirection,density:Density):Outline=Outline.Generic(Path().apply {
+            val inset=with(density){12.dp.toPx()};moveTo(0f,0f);lineTo(size.width,0f);lineTo(size.width-inset,size.height/2)
+            lineTo(size.width,size.height);lineTo(0f,size.height);close()
+        })
     }
 }

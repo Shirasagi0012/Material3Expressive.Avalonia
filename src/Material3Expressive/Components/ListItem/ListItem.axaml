@@ -81,6 +81,7 @@
                                VerticalAlignment="{TemplateBinding VerticalAlignment}"
                                MinimumInteractiveSize="{Binding MinimumLayoutSize, RelativeSource={RelativeSource TemplatedParent}}">
                   <m3:MaterialSurface x:Name="PART_Container" Background="{TemplateBinding Background}"
+                                      ResetIndicationOnShapeChange="False"
                                       StateLayerBrush="{TemplateBinding Foreground}"
                                       TextElement.Foreground="{TemplateBinding Foreground}"
                                       Padding="{TemplateBinding Padding}"

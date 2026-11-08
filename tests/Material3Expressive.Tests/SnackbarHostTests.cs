@@ -15,6 +15,46 @@ namespace Material3Expressive.Tests;
 
 public class SnackbarHostTests
 {
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InterruptedEntryRetainsOutgoingShapedContentUntilExitFinishes(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var host = new SnackbarHost
+        {
+            FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
+            SnackbarTemplate = new FuncDataTemplate<ISnackbarData>((_, _) => new Snackbar
+            {
+                Width = 120, Height = 48,
+                Shape = new Material3Expressive.Foundation.Rendering.CutCornerShape(12),
+                Content = new Border { Width = 32, Height = 16, Background = Brushes.White }
+            })
+        };
+        var first = host.State.ShowSnackbarAsync("first", duration: SnackbarDuration.Indefinite, cancellationToken: TestContext.Current.CancellationToken);
+        var window = DialogTests.Show(host);
+        try
+        {
+            Advance(clock, window, 4);
+            var outgoing = Layers(host).Single();
+            var snackbar = outgoing.GetVisualDescendants().OfType<Snackbar>().Single();
+            Assert.Equal(host.FlowDirection, snackbar.FlowDirection);
+            var marker = Assert.IsType<Border>(snackbar.Content);
+            var layout = snackbar.GetVisualDescendants().OfType<SnackbarLayout>().Single();
+            Assert.Equal(rtl ? 88 : 32, marker.TranslatePoint(new Point(16, 8), layout)!.Value.X);
+            Assert.InRange(outgoing.Opacity, .01, .99);
+            host.State.CurrentSnackbarData!.Dismiss();
+            await first;
+            Advance(clock, window, 1);
+            Assert.Same(outgoing, Layers(host).Single());
+            Assert.InRange(outgoing.Opacity, .01, .99);
+            Advance(clock, window, 30);
+            Assert.Empty(Layers(host));
+            Assert.Null(window.MotionRoot.Diagnostics.LastError);
+        }
+        finally { window.Close(); }
+    }
+
     [AvaloniaFact]
     public async Task AnimatedPresenterValuesPreserveLocalValuesUntilDetach()
     {

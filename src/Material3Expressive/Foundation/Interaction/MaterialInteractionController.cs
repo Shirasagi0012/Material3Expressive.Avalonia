@@ -436,7 +436,10 @@ internal sealed partial class MaterialInteractionController
         // sources (navigation items) instead originate in the owner before their mapping.
         // Pointer input replaces this zero with the last observed clickable bounds' centre.
         var origin = _keyboardPressCenter ?? (PressPositionMapper is null && _presenter is { } surface
-            ? surface.TranslatePoint(default, _owner) ?? default : default);
+            // Compose's zero is physical top-left even in RTL. Avalonia mirrors the local
+            // drawing axes, so its equivalent is the right edge of the RTL presenter.
+            ? surface.TranslatePoint(surface.FlowDirection == FlowDirection.RightToLeft
+                ? new Point(surface.Bounds.Width, 0) : default, _owner) ?? default : default);
         if (_source is not null)
         {
             if (IsEnabled && !_nativeKeyPresses.ContainsKey(e.Key))

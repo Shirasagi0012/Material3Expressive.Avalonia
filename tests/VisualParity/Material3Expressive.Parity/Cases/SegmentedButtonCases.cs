@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 using static Material3Expressive.Tokens.MaterialTokens;
 
 namespace Material3Expressive.Parity;
@@ -14,13 +15,18 @@ namespace Material3Expressive.Parity;
 public sealed record SegmentedButtonConfig(bool Multi = false, bool Selected = false, bool Enabled = true,
     string Icon = "check", bool Dark = false, bool Rtl = false, int Count = 3, bool Varied = false,
     double? Width = null, double? Height = null, double LabelHeight = 16, double IconWidth = 18,
-    double? Padding = null, double Border = 1, double? Radius = null, bool CustomColors = false, string Action = "none");
+    double? Padding = null, double Border = 1, double? Radius = null, bool CustomColors = false, string Action = "none", string Path = "none");
 
 [ParitySuite("segmented-button")]
 public sealed class SegmentedButtonCases
 {
     public static IEnumerable<CaseData<SegmentedButtonConfig>> StaticConfigurations()
     {
+        foreach (var path in new[] { "cut", "percent", "notch" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var count in new[] { 1, 3 })
+        foreach (var enabled in new[] { false, true })
+            yield return Data($"static.path.{path}.{rtl}.{count}.{enabled}", new(Selected: true, Enabled: enabled, Rtl: rtl, Count: count, Path: path));
         foreach (var multi in new[] { false, true })
         foreach (var selected in new[] { false, true })
         foreach (var enabled in new[] { false, true })
@@ -48,6 +54,10 @@ public sealed class SegmentedButtonCases
     }
     public static IEnumerable<CaseData<SegmentedButtonConfig>> DynamicConfigurations()
     {
+        foreach (var multi in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "press", "reverse", "path-change" })
+            yield return Data($"dynamic.path.{multi}.{rtl}.{action}", new(Multi: multi, Rtl: rtl, Path: "cut", Action: action));
         foreach (var icon in new[] { "check", "active", "swap" })
         foreach (var action in new[] { "selection", "reverse" })
             yield return Data($"dynamic.{action}.{icon}", new(Icon: icon, Action: action));
@@ -86,6 +96,12 @@ public sealed class SegmentedButtonCases
         var outside = new Point(515, 203); Sample("initial");
         switch (c.Action)
         {
+            case "path-change":
+                Input(1000, "move", center); Input(2000, "down", center); Sample("press"); Times(16000, 64000);
+                Mutate(65000, "notch", () => s.SetPath("notch")); Times(80000, 160000);
+                Input(161000, "up", center); Sample("release"); Times(176000, 400000);
+                Mutate(401000, "percent", () => s.SetPath("percent")); Times(416000);
+                Mutate(417000, "restore-corners", () => s.SetPath("none")); Times(432000, 800000); break;
             case "selection": case "reverse":
                 Mutate(1000, "selected", () => item.IsSelected = true); Times(16000, 32000, 64000);
                 if (c.Action == "reverse") Mutate(65000, "reverse", () => item.IsSelected = false);
@@ -157,6 +173,20 @@ public sealed class SegmentedButtonCases
                 item.Click += (_, _) => { clicks[index]++; if (c.Action == "click") { if (!c.Multi) foreach (var other in Items) other.IsSelected = false; item.IsSelected = c.Multi ? !item.IsSelected : true; } };
                 Row.Items.Add(item);
             }
+            SetPath(c.Path);
+        }
+        public void SetPath(string path)
+        {
+            for (var i = 0; i < Items.Length; i++)
+            {
+                if (path == "none") { Items[i].Shape = null; continue; }
+                if (path == "notch") { Items[i].Shape = new NotchedShape(); continue; }
+                var start = i == 0; var end = i == Items.Length - 1;
+                RelativeScalar Corner(bool outer, double dip, double percent) => !outer ? new(0, RelativeUnit.Absolute)
+                    : path == "percent" ? new(percent, RelativeUnit.Relative) : new(dip, RelativeUnit.Absolute);
+                Items[i].Shape = new CutCornerShape { TopStart = Corner(start, 14, .4), BottomStart = Corner(start, 6, .2),
+                    TopEnd = Corner(end, 8, .25), BottomEnd = Corner(end, 16, .5) };
+            }
         }
         public void SetTheme(bool dark) { CaseDefaults.SetThemeColors(host, dark); host.Window.Resources[Sys.Color.Outline] = Color.Parse(dark ? "#938F99" : "#79747E"); }
         public ProbePoint[] Measure() => [new("row", "row", null, Layout(Row)), .. Items.SelectMany((item, i) => new[]
@@ -169,6 +199,18 @@ public sealed class SegmentedButtonCases
             new ProbePoint($"label-{i}", "content", $"container-{i}", Layout(Labels[i])),
         }).ToArray()];
         Measurement[] Layout(Control control) => AvaloniaMeasurements.Geometry(control, host.Window).Where(m => m.Name is "box" or "size").ToArray();
+    }
+    private sealed class NotchedShape : MaterialShape
+    {
+        public override PathGeometry CreateOutline(Size size, FlowDirection layoutDirection, double density)
+        {
+            var path = new PathGeometry();
+            using var context = path.Open();
+            context.BeginFigure(new Point(0, 0), true); context.LineTo(new Point(size.Width, 0));
+            context.LineTo(new Point(size.Width - 8, size.Height / 2)); context.LineTo(new Point(size.Width, size.Height));
+            context.LineTo(new Point(0, size.Height)); context.LineTo(new Point(8, size.Height / 2)); context.EndFigure(true);
+            return path;
+        }
     }
     internal sealed class Marker : Control
     {
