@@ -61,6 +61,21 @@ RichTooltip 的 Title / TitleTemplate、Content / ContentTemplate、Action / Act
 
 Background、CornerRadius、Padding 和 elevation 可定制表面。RichTooltip 的 Foreground、TitleForeground、ActionForeground 分别控制三个槽，默认文字角色为 BodyMedium、TitleSmall、LabelLarge。
 
+两类提示的 `Shape` 接受 `MaterialShape`：支持切角、百分比圆角以及自定义闭合路径；null 使用主题的 CornerRadius。
+容器形状与 CaretSize / CaretShape 的箭头做真实路径并集，同一外形用于背景、内容裁剪和阴影，布局尺寸不变。
+
+```xml
+<m3:PlainTooltip CaretSize="16,8" Content="保存当前更改">
+  <m3:PlainTooltip.Shape>
+    <m3:CutCornerShape TopStart="18" TopEnd="4" BottomEnd="12" BottomStart="2" />
+  </m3:PlainTooltip.Shape>
+</m3:PlainTooltip>
+```
+
+逻辑角随 RTL 解析，百分比随提示尺寸重算；可观察形状属性的原位修改立即刷新。
+自定义 `MaterialShape.CreateOutline` 返回的路径会被快照，形状不会改写调用方路径。
+清除 Shape 恢复当前主题圆角，并保留已配置的箭头。Catalog 的 **Container shapes** 演示显示期间修改与清除形状。
+
 `PlainTooltip.CaretShape` / `RichTooltip.CaretShape` 可提供自定义轮廓，优先于 `CaretSize`：
 
 ```csharp
@@ -71,6 +86,7 @@ tooltip.CaretShape = (tooltipSize, direction) =>
 
 回调收到提示表面的 DIP 尺寸和布局方向，返回填充路径。原点是箭头与表面的连接点，正 Y 向外；Tooltip 自动旋转、定位并与表面合并。
 支持多轮廓、孔洞、曲线与路径 Transform；路径不增加布局尺寸，背景、内容裁剪和阴影共同使用该轮廓。
+有箭头时按固定上游使用 NonZero 规则合并容器和箭头轮廓；孔洞需与外轮廓绕向相反，源路径的 EvenOdd 不会传入并集。
 返回值会被快照；捕获参数改变时赋予新的委托。设为 null 恢复 CaretSize，二者均为 null 时不绘制箭头。
 
 ```xml

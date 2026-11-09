@@ -180,5 +180,30 @@ Modal 两个形态独立，继承的普通 Shape 不参与 Modal 模板。
 Catalog 的“导航容器消费 Insets”提供切换外层 Insets、展开与收起的组合。
 此前手工减去祖先消费量的调用方应改传完整 Insets。
 
-`ModalWideNavigationRail` 的独立弹层与内联占位尚未接入该消费协议，仍直接使用其 WindowInsets；
-普通宽栏的通过结果不代表模态路径已完成。
+## 模态宽栏的 Insets 作用域
+
+`ModalWideNavigationRail` 的内联收起栏继承页面祖先消费；展开的独立弹层与固定桌面 Dialog 一样，
+从新的 Insets 消费根开始。页面祖先已消费的 Insets 不会抵扣浮层 Insets。
+直接设在 Rail 上的 `MaterialWindowInsets.ConsumePadding` / `ConsumeInsets` 则作为调用方自身修饰，
+在两种呈现中均有效。物理 `WindowInsets` 扣除当前根消费后的剩余量，再向 Header、项目和嵌套内容发布消费，
+因此子图标再次请求同一 Insets 不会重复留白。
+
+```xml
+<Border m3:MaterialWindowInsets.ConsumeInsets="40">
+  <m3:ModalWideNavigationRail WindowInsets="13,7,5,11">
+    <m3:WideNavigationRailItem Label="Home">
+      <m3:WideNavigationRailItem.Icon>
+        <m3:MaterialWindowInsetsPadding Insets="13,7,5,11">
+          <m3:MaterialSymbol Symbol="HomeAndGarden" />
+        </m3:MaterialWindowInsetsPadding>
+      </m3:WideNavigationRailItem.Icon>
+    </m3:WideNavigationRailItem>
+  </m3:ModalWideNavigationRail>
+</Border>
+```
+
+上例内联栏的窗口留白为零，展开浮层仍有完整物理 Insets；在 Rail 本身设置 `ConsumeInsets="30"`
+时两处都不再留白。`ConsumePadding` 是逻辑 start/end，可与 RTL 配合；它只声明消费，不应用实际留白。
+`ContentPadding` 保持独立内容间距，不发布为 Insets 消费。运行时更新、密度变化与反复开关自动更新消费根；
+项目或 Header 移出后可在另一处重用，不会保留旧栏的消费来源。
+此前自行减去祖先消费的调用方，应传完整 Insets 并删除手工抵扣。Catalog 的隐藏式 Modal 演示这一组合。

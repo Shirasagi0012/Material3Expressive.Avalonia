@@ -18,7 +18,8 @@ namespace Material3Expressive.Parity;
 public sealed record ModalWideNavigationRailConfig(bool Hide = false, bool Expanded = false, bool Header = false,
     string Arrangement = "top", bool Rtl = false, bool Dark = false, bool Insets = false, bool Empty = false,
     bool CustomColors = false, bool CustomPadding = false, double HeaderTopPadding = 0, double LabelWidth = 32,
-    double? Width = null, string Action = "none", string Shape = "default");
+    double? Width = null, string Action = "none", string Shape = "default", bool ParentInsets = false,
+    bool OwnInsets = false, bool NestedInsets = false, bool ObserveInsets = false, bool OwnPadding = false);
 
 [ParitySuite("modal-wide-navigation-rail")]
 public sealed class ModalWideNavigationRailCases
@@ -91,6 +92,9 @@ public sealed class ModalWideNavigationRailCases
         Sample("initial");
         switch (config.Action)
         {
+            case "insets-change":
+                Mutate(1000, "changed-insets", () => scene.ChangeInsets(true)); Times(16000);
+                Mutate(17000, "restored-insets", () => scene.ChangeInsets(false)); Times(32000); break;
             case "shape-change":
                 Mutate(1000, "rounded-shape", () => scene.Rail.CollapsedShape = scene.Rail.ExpandedShape = BottomSheetCases.ResolveShape("round-percent")); Times(16000);
                 Mutate(17000, "default-shape", () => scene.Rail.CollapsedShape = scene.Rail.ExpandedShape = null); Times(32000); break;
@@ -158,6 +162,8 @@ public sealed class ModalWideNavigationRailCases
             _icon = new Marker { Icon = true, PreferredWidth = 24, PreferredHeight = 24 };
             _label = new Marker { PreferredWidth = config.LabelWidth, PreferredHeight = 16 };
             Item = new WideNavigationRailItem { Icon = _icon, Label = _label, IsSelected = true };
+            if (config.NestedInsets) Item.Icon = new Material3Expressive.Foundation.Rendering.MaterialWindowInsetsPadding
+                { Insets = new Thickness(13, 7, 5, 11), Child = _icon };
             Item.Click += (_, _) => _clicks++;
             Rail = new ModalWideNavigationRail { CollapsedShape = BottomSheetCases.ResolveShape(config.Shape), ExpandedShape = BottomSheetCases.ResolveShape(config.Shape), HideOnCollapse = config.Hide, State = new(config.Expanded ? WideNavigationRailValue.Expanded : WideNavigationRailValue.Collapsed),
                 Arrangement = WideNavigationRailCases.Arrange(config.Arrangement), ExpandedHeaderTopPadding = config.HeaderTopPadding,
@@ -169,6 +175,8 @@ public sealed class ModalWideNavigationRailCases
             }
             if (config.CustomPadding) Rail.ContentPadding = new Thickness(7, 13, 11, 5);
             if (config.Width is { } width) Rail.Width = width;
+            if (config.OwnPadding) Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumePadding(Rail, new Thickness(3, 2, 9, 1));
+            if (config.OwnInsets) Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumeInsets(Rail, new Thickness(30));
             if (config.CustomColors)
             {
                 Rail.Background = Brush.Parse("#E0F0E8"); Rail.Foreground = Brush.Parse("#126E60");
@@ -185,6 +193,14 @@ public sealed class ModalWideNavigationRailCases
             Root = new VisualLayerManager { EnableOverlayLayer = true, Child = new Border { Padding = new Thickness(16),
                 FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
                 Child = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { Rail, _page } } } };
+            if (config.ParentInsets) Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumeInsets(Root, new Thickness(40));
+        }
+        public void ChangeInsets(bool changed)
+        {
+            Rail.WindowInsets = changed ? new Thickness(36, 34, 32, 38) : _config.Insets ? new Thickness(13, 7, 5, 11) : default;
+            Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumePadding(Rail,
+                changed ? new Thickness(18, 4, 2, 3) : _config.OwnPadding ? new Thickness(3, 2, 9, 1) : default);
+            Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumeInsets(Root, new Thickness(changed ? 60 : 40));
         }
         public void Input(string action, Point position) => _host.Input(action, position);
         public void SetTheme(bool dark)
@@ -212,7 +228,14 @@ public sealed class ModalWideNavigationRailCases
                 var color = ((ISolidColorBrush)TextElement.GetForeground(marker)!).Color;
                 points.Add(new(id, id, "item", [.. Geometry(marker), Measurement.Vector("color", "color", [color.R, color.G, color.B, color.A], "srgba8", "none", "properties", "navigation-item.content-inherited-srgba8", "Marker consumed TextElement.Foreground")]));
             }
-            Marker("icon", _icon); Marker("label", _label); return points.ToArray();
+            Marker("icon", _icon); Marker("label", _label);
+            if (_config.ObserveInsets)
+            {
+                var consumed = _icon.GetValue(Material3Expressive.Foundation.Rendering.MaterialWindowInsets.ConsumedPaddingProperty);
+                points.Add(new("consumption", "consumption", "item", [Measurement.Vector("insets", "rect", [consumed.Left, consumed.Top, consumed.Right, consumed.Bottom],
+                    "dip", "physical", "properties", "window-insets.consumed", "MaterialWindowInsets.ConsumedPadding", ["left", "top", "right", "bottom"])]));
+            }
+            return points.ToArray();
         }
     }
     private sealed class Marker : Control

@@ -64,6 +64,7 @@ public class ToggleFloatingActionButton : Button
     public event EventHandler<FabCheckedChangeRequestedEventArgs>? CheckedChangeRequested;
     private Animatable<float>? _progress;
     private ToggleFabLayout? _layout;
+    private ToggleFabContentLayout? _contentLayout;
     private MaterialSurface? _surface;
     private AnimationChildScope? _attachScope;
     private bool _pending, _needsTransition;
@@ -79,6 +80,7 @@ public class ToggleFloatingActionButton : Button
     {
         EndMotion(); base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<ToggleFabLayout>("PART_Layout");
+        _contentLayout = e.NameScope.Find<ToggleFabContentLayout>("PART_ContentLayout");
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
         if (this.IsAttachedToVisualTree()) StartMotion();
     }
@@ -107,7 +109,7 @@ public class ToggleFloatingActionButton : Button
     {
         base.OnPropertyChanged(change);
         if (change.Property == IconProperty || change.Property == IconTemplateProperty)
-            _layout?.InvalidateMeasure();
+            _contentLayout?.InvalidateMeasure();
         if (change.Property == IsCheckedProperty)
         {
             PseudoClasses.Set(":checked", IsChecked);

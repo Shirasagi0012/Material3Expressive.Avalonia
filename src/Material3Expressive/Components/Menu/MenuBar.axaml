@@ -24,6 +24,9 @@
       <Setter Property="Margin" Value="0" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselineItemPadding}}" />
       <Setter Property="Background" Value="Transparent" />
+      <Style Selector="^:not(:separator) /template/ m3|NativeMenuRow">
+        <Setter Property="Spacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}}" />
+      </Style>
       <Style Selector="^:not(:separator) /template/ m3|MenuItemChrome">
         <Setter Property="MinimumContainerWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" />
         <Setter Property="MinimumContainerHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonSmall.ContainerHeight}}" />

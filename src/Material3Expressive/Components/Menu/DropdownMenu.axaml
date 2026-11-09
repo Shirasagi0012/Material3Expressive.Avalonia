@@ -268,7 +268,15 @@
                     Foreground="{TemplateBinding Foreground}" IsVisible="False" m3:MaterialText.Style="{m3:Typography BodyMedium}" />
               </StackPanel>
               <m3:DropdownMenuSlotPresenter x:Name="PART_Trailing" HorizontalContentAlignment="Center" Content="{TemplateBinding TrailingContent}" ContentTemplate="{TemplateBinding TrailingContentTemplate}"
-                  PreferredMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+                  PreferredMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}">
+                <m3:MaterialSymbol.DefaultSize>
+                  <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}" Priority="Template">
+                    <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource TemplatedParent}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}" />
+                    <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionTrailingIconSize}" />
+                  </MultiBinding>
+                </m3:MaterialSymbol.DefaultSize>
+              </m3:DropdownMenuSlotPresenter>
             </m3:DropdownMenuItemLayout>
           </m3:MaterialSurface>
         </m3:MenuItemChrome>

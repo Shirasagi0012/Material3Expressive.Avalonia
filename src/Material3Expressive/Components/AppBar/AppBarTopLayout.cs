@@ -42,6 +42,7 @@ internal sealed class AppBarTopChrome : Panel
     private Animatable<Color>? _container;
     private bool _pending;
     private readonly Dictionary<Control, (Color Color, Style Style)> _actionDefaults = [];
+    private readonly Dictionary<Control, (Control Parent, IDisposable Binding)> _insetSlots = [];
     private int _left, _right, _top, _bottom, _smallHeight, _expandedHeight;
     private int _lastLimitHeight = int.MinValue;
     private int _limitHeight;
@@ -131,6 +132,8 @@ internal sealed class AppBarTopChrome : Panel
         foreach (var (control, entry) in _actionDefaults)
             control.Styles.Remove(entry.Style);
         _actionDefaults.Clear();
+        foreach (var entry in _insetSlots.Values) entry.Binding.Dispose();
+        _insetSlots.Clear();
         _attachScope?.Dispose(); _attachScope = null;
         _container = null;
         _pending = false;
@@ -332,6 +335,42 @@ internal sealed class AppBarTopChrome : Panel
         _right = Math.Max(0, Px(insets.Right) - Px(consumed.Right));
         _top = Math.Max(0, Px(insets.Top) - Px(consumed.Top));
         _bottom = Math.Max(0, Px(insets.Bottom) - Px(consumed.Bottom));
+        // Upstream has sibling windowInsetsPadding nodes: all sides on the top row,
+        // only horizontal sides on the expanded row. Publishing at the ItemsControl
+        // would incorrectly consume the top inset for the lower title as well.
+        Small.SetValue(MaterialWindowInsets.AppliedInsetsProperty, insets);
+        Expanded.SetValue(MaterialWindowInsets.AppliedInsetsProperty, new Thickness(insets.Left, 0, insets.Right, 0));
+        MaterialWindowInsets.Refresh(Small); MaterialWindowInsets.Refresh(Expanded);
+        var slotParents = new Dictionary<Control, Control>();
+        foreach (var row in owner.HasTwoRows ? new[] { Small, Expanded } : new[] { Small })
+        {
+            // Realize templates before measuring children that read consumed insets.
+            var slots = row.Title.Children.OfType<ContentPresenter>();
+            if (row.Children[0] is Border { Child: ContentPresenter navigation }) slots = slots.Prepend(navigation);
+            foreach (var slot in slots)
+            {
+                // ApplyTemplate only realizes a changed slot. UpdateChild would rebuild
+                // a non-recycling template on every measure and replace the bound root.
+                slot.ApplyTemplate();
+                if (slot.Child is { } child) slotParents.TryAdd(child, row);
+            }
+        }
+        // Direct actions are logically parented to the TopAppBar and do not pass
+        // through ContentPresenter; generated data containers do pass through it.
+        foreach (var item in owner.Items.OfType<Control>()) slotParents[item] = Small;
+        var actionsPresenter = Small.Children[2].GetVisualDescendants().OfType<ItemsPresenter>().FirstOrDefault();
+        foreach (var container in actionsPresenter?.Panel?.Children.ToArray() ?? []) slotParents[container] = Small;
+        foreach (var removed in _insetSlots.Keys.Except(slotParents.Keys).ToArray())
+        { _insetSlots[removed].Binding.Dispose(); _insetSlots.Remove(removed); }
+        foreach (var (child, parent) in slotParents)
+        {
+            if (_insetSlots.TryGetValue(child, out var previous))
+            {
+                if (ReferenceEquals(previous.Parent, parent)) continue;
+                previous.Binding.Dispose();
+            }
+            _insetSlots[child] = (parent, MaterialWindowInsets.BindConsumptionParent(child, parent));
+        }
         var width = Math.Max(0, Px(availableSize.Width) - _left - _right);
         var constraint = new Size(
             width / scale,
@@ -344,10 +383,19 @@ internal sealed class AppBarTopChrome : Panel
         // the action-row's inherited color. Project the same default at style priority.
         // A local foreground or an application style remains authoritative.
         var color = Owner.ActionIconContentColor;
-        var presenter = Small.Children[2].GetVisualDescendants()
-            .OfType<ItemsPresenter>()
-            .FirstOrDefault();
-        var controls = presenter?.Panel?.Children.ToArray() ?? [];
+        var controls = actionsPresenter?.Panel?.Children.ToArray() ?? [];
+        var realizedInsets = false;
+        foreach (var control in controls)
+        {
+            if (_insetSlots.ContainsKey(control)) continue;
+            _insetSlots[control] = (Small, MaterialWindowInsets.BindConsumptionParent(control, Small));
+            realizedInsets = true;
+        }
+        if (realizedInsets)
+        {
+            Small.InvalidateMeasure(); Small.Measure(constraint);
+            _smallHeight = Px(Small.DesiredSize.Height);
+        }
         foreach (var removed in _actionDefaults.Keys.Except(controls).ToArray())
         {
             removed.Styles.Remove(_actionDefaults[removed].Style);
@@ -749,10 +797,11 @@ internal sealed class AppBarTitle : Panel
                 // The presenter is its content's inheritance parent: a string's TextBlock, a template
                 // root and an explicit control all inherit the style and the presenter's Foreground.
                 MaterialText.SetStyle(presenter, styles[i]);
-                // UpdateChild only after a slot update: non-recycling templates must not be rebuilt each measure.
+                // The chrome may already have realized this slot to bind consumed insets.
+                // ApplyTemplate preserves that root; it still realizes changed content/templates.
                 if (_contentDirty[i])
                 {
-                    presenter.UpdateChild();
+                    presenter.ApplyTemplate();
                     _contentDirty[i] = false;
                 }
             }

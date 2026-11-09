@@ -184,7 +184,7 @@ public sealed class TabRowCases
             Row = config.Native ? new TabControl() : new TabRow();
             Row.Width = config.Width; if (config.Height is { } height) Row.Height = height;
             Row.HorizontalAlignment = HorizontalAlignment.Left; Row.VerticalAlignment = VerticalAlignment.Top;
-            TabRowAppearance.SetVariant(Row, config.Variant == "primary" ? TabRowVariant.Primary : TabRowVariant.Secondary);
+            TabRowAppearance.SetVariant(Row, config.Variant switch { "primary" => TabRowVariant.Primary, "legacy" => TabRowVariant.Legacy, _ => TabRowVariant.Secondary });
             TabRowAppearance.SetIndicatorMatchContentSize(Row, config.MatchContentSize);
             TabRowAppearance.SetIsScrollable(Row, config.Scrollable); TabRowAppearance.SetEdgePadding(Row, config.EdgePadding); TabRowAppearance.SetMinTabWidth(Row, config.MinTabWidth);
             if (config.NoSlots) { TabRowAppearance.SetIndicator(Row, null); TabRowAppearance.SetDivider(Row, null); }

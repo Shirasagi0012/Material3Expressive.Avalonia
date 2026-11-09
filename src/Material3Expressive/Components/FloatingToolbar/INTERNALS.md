@@ -112,3 +112,54 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 `toolbar-shape-verified` 完成 60 例，零执行错误、全部重复和额外截图稳定。40 个静态用例均通过
 原有 raster 门槛，动态仍保留两轴普通反向的差异；这些不因新增形状被接受。
 具体结构化事实与图像记录保留在对应 case 报告，不放宽门槛。
+
+## 公开过渡工厂（2026-11-09）
+
+固定 AndroidX/Core `FloatingToolbarDefaults.horizontalEnterTransition(Alignment.Horizontal)`、
+`verticalEnterTransition(Alignment.Vertical)`、`horizontalExitTransition(Alignment.Horizontal)`、
+`verticalExitTransition(Alignment.Vertical)` 的实现相同：以 FastSpatial 调用 Expand/Shrink 的对应轴入口。
+此前只能从完整工具栏的内部 FloatingToolbarVisibility 消费；本轮依据维护者明确授权新增四个同名
+Defaults 工厂，返回既有 Enter/ExitTransition，内部工具栏也改为调用它们。
+
+Compose 的 composable theme/布局环境在本地由显式 `AnimatedVisibility owner`、alignment 和
+`Foundation.Motion.SpringSpec animationSpec` 表达。调用方负责在主题输入变更后重新配置结果，
+不把一次性 Token 读取伪装成动态主题，也不新增 Visibility 包装控件或动画循环。
+原 FloatingToolbarSizeSpec 继续提供物理像素 IntSize 投影、0.01px 阈值及 PostExit→Visible 的
+400 stiffness / 1px 回退；其 Vectorize 从 owner 读取当前实际 density 与 segment，避免挂载前
+创建工厂时固化 1x。保持 SpringSpec 身份以接续中断速度。
+无公开 API 删除或仓内调用方迁移要求；原来手写 Expand/Shrink 的应用可以选择使用新工厂。
+
+`FloatingToolbarTransitionTests` 验证挂载前配置、两轴/方向、进入退出与反向、运行时规格替换、
+像素尺寸和卸载清理；新旧 FloatingToolbar 行为测试合计 21 项通过，Catalog 构建通过。
+`floating-toolbar-transition` 双端直接调用固定上游真实工厂，覆盖三种对齐、方向、循环、反向、
+运行中内容/主题替换与卸载重挂。
+
+首次独立双端运行 `floating-toolbar-transition-public` 34 例为 12 equal / 22 different，
+全部稳定、零执行错误。直接 Visible 进入提前一帧（64ms 纵向尺寸 Core 20 DIP、本地 27.75 DIP）。
+固定 Core AnimatedVisibility(bool) 使用 updateTransition.animateTo，在 composition 更新目标，
+DisposableEffect 的帧循环随后采样；本地默认即时 Visible 则会被同一事件帧的 idle loop 采样。
+本轮授权扩展共享 AnimatedVisibility 的显式 `TargetCommitPhase=AfterFrame`，复用已有根提交队列，
+保持默认即时模式与 Source 状态所有权；工厂不偷偷写入模式。内部工具栏改用该入口并移除自己的
+WaitForNextFrame 延迟，独立用法显式选择 AfterFrame。初始进入的 16ms / 64ms 关键帧现严格相等，
+32ms 父容器居中仍可相差 0.25 DIP，不能据此宣称完整轨迹一致。
+新共享测试覆盖同批合并、捕获后重入、卸载取消、换源及切回即时模式；原模块回归继续通过。
+
+非对称 marker 进一步发现：RTL 横向 Start 的 64ms 两端外框相等，本地却裁掉物理左侧标记。
+固定 Core EnterExitTransition.kt 使用 LayoutDirection.Ltr 与 placeWithLayer；本轮授权把共享
+AnimatedVisibility 模板的效果层设为物理 LTR，内容 presenter 仍绑定宿主方向，保留内容 RTL。
+8 项真实 TransformToVisual 测试先复现 4 个 RTL 失败，修后完整 ComposeAnimation 1010 项、
+FloatingToolbar / SegmentedButton / DatePicker / Expander / SearchBar 实际使用者 163 项全通过。
+此次没有扩展到 AnimatedContent 或 AnimateEnterExit 的其他效果层。
+
+最终 `floating-toolbar-transition-physical` 34 例为 12 equal / 22 different，全部重复与额外截图稳定，
+零执行错误。RTL Start / End 的 64ms、160ms 裁剪 marker 现与 Core 精确相等。动态剩余差异包括
+父级居中的 0.25 DIP、部分返回弹簧样本的 0.25 DIP，以及内容替换时本地重建显隐呈现所产生的跳变
+（横向 65ms Core 41×40、本地 110×28 DIP），反向、主题变更与重挂场景也保留不同判定。
+这些是未对齐范围，不是接受的近似；没有调整比较容差、删除失败用例或替换基准。
+最终 `toolbar-physical-{horizontal,vertical}-{expand,collapse,reverse}` 原组件 6 例回归中，
+4 个展开/收起 withinTolerance，2 个已有反向差异仍为 different；3 个 SegmentedButton RTL 选择与
+单/多选路径反向用例均 withinTolerance。以上全部稳定、零执行错误。
+
+```powershell
+./tests/VisualParity/parity.ps1 self-test --family floating-toolbar-transition
+```

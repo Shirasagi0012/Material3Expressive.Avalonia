@@ -907,6 +907,43 @@ public class AnimatedVisibilityTest
         Assert.InRange(Layer(host).Surface.Bounds.X, expectedX - 1, expectedX + 1);
     });
 
+    [Theory]
+    [InlineData(FlowDirection.LeftToRight, "start", 0, 0, 100, 80)]
+    [InlineData(FlowDirection.RightToLeft, "start", 0, 0, 100, 80)]
+    [InlineData(FlowDirection.LeftToRight, "end", -50, 0, 100, 80)]
+    [InlineData(FlowDirection.RightToLeft, "end", -50, 0, 100, 80)]
+    [InlineData(FlowDirection.LeftToRight, "slide", -25, 0, 100, 80)]
+    [InlineData(FlowDirection.RightToLeft, "slide", -25, 0, 100, 80)]
+    [InlineData(FlowDirection.LeftToRight, "scale", 0, 40, 50, 40)]
+    [InlineData(FlowDirection.RightToLeft, "scale", 0, 40, 50, 40)]
+    public Task EffectsUsePhysicalCoordinatesAndPreserveContentDirection(
+        FlowDirection direction, string effect, double x, double y, double width, double height) => OnUi(() =>
+    {
+        var host = Host(false);
+        host.FlowDirection = direction;
+        host.Enter = effect switch
+        {
+            "start" => new ExpandHorizontally { ExpandFrom = VisibilityHorizontalAlignment.Start, Spec = Tween<Size>() },
+            "end" => new ExpandHorizontally { ExpandFrom = VisibilityHorizontalAlignment.End, Spec = Tween<Size>() },
+            "slide" => new SlideInHorizontally { Spec = Tween<Vector>() },
+            _ => new ScaleIn { InitialScale = 0, TransformOrigin = new RelativePoint(0, 1, RelativeUnit.Relative), Spec = Tween<double>() }
+        };
+        using var f = new Fixture(host);
+        host.Visible = true;
+        f.Step(16); f.Step(50);
+        var content = (Control)host.Content!;
+        var contentBounds = new Rect(content.Bounds.Size).TransformToAABB(content.TransformToVisual(f.Window)!.Value);
+        var hostBounds = new Rect(host.Bounds.Size).TransformToAABB(host.TransformToVisual(f.Window)!.Value);
+        // Surface.Bounds alone misses Avalonia's native RTL mirror and cannot prove the
+        // physical crop, slide direction or scale pivot seen by the user.
+        Assert.Equal(x, contentBounds.X - hostBounds.X, 8);
+        Assert.Equal(y, contentBounds.Y - hostBounds.Y, 8);
+        Assert.Equal(width, contentBounds.Width, 8);
+        Assert.Equal(height, contentBounds.Height, 8);
+        Assert.Equal(direction, content.FlowDirection);
+        f.Finish();
+    });
+
     [Fact]
     public Task ChangingAnchorOnInterruption_DoesNotJumpContentPosition() => OnUi(() =>
     {

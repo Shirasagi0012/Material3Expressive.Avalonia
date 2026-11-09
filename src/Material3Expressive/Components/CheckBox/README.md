@@ -96,6 +96,20 @@ XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"
 端帽、连接和尖角限制分别由 `Cap`、`Join`、`MiterLimit` 控制。
 未指定 Stroke 时使用上游默认的物理像素取整，显式 Stroke 按所给 DIP 绘制。
 
+`PathEffect` 接受任意 `SkiaSharp.SKPathEffect`，优先于 `Dashes` / `DashOffset`。
+与进度指示器相同，效果内部参数使用**物理像素**，根据控件所在窗口的 `RenderScaling`
+创建；窗口 DPI 改变时用新的效果替换 Stroke。原生 `CheckBox` 和 `CheckBoxDisplay` 共用此入口：
+
+```csharp
+var corner = SKPathEffect.CreateCorner(3 * (float)window.RenderScaling);
+CheckBoxAppearance.SetCheckmarkStroke(checkBox,
+    new CheckBoxStroke { Width = 2, PathEffect = corner });
+```
+
+调用者持有效果的所有权。效果必须在使用它的控件及待提交绘制结束前保持有效，
+不能在赋值后立即 `Dispose`。完整的创建、DPI 更新和窗口关闭释放示例见
+[CheckBoxStrokeDemo](../../../Material3Expressive.Catalog/CheckBoxStrokeDemo.axaml.cs)。
+
 需要整套最终颜色时，用 C# 创建不可变 `CheckBoxColors` 并传给
 `CheckBoxAppearance.SetColors(checkBox, colors)`（`Material3Expressive.Components`）；
 其十三个槽见 [CheckBoxAppearance.cs](CheckBoxAppearance.cs)。传 `null` 恢复动态 Token。
@@ -105,7 +119,7 @@ XAML 可用 `m3:CheckBoxAppearance.InteractionSource="{Binding SelectionSource}"
 
 需要 Avalonia.Skia。指示器尺寸与外留白可覆盖对应组件的 `IndicatorSize` / `IndicatorPadding` Token，交互布局环境使用 `MaterialInteractiveSize.Minimum`。
 `MaterialInteraction.FocusFeedback="InsetRing"` 启用内缩焦点环。选择自动化仍由原生控件提供，关闭普通输入后也保留该语义。
-自定义描边支持 DIP 线宽、端帽、连接和 dash 参数。
+自定义描边支持 DIP 线宽、端帽、连接、dash 参数和任意 Skia 路径效果。
 组合示例见 [Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。

@@ -154,3 +154,27 @@ label.InteractionSource = source;
 每个 Press/Focus 加一，每个 Release/CancelPress/Unfocus 减一，再加上选中态的 5；hover/drag 不抬高。
 正常调用应配对发送，未匹配的结束事件仍会减少计数。换源保留计数，但波纹从新源的后续事件重新开始；
 卸载清理订阅和计数。ItemsSource 模板的层级应用到实际同级 ContentPresenter。
+
+## 独立选择图标
+
+`SegmentedButtonIcon` 对应 `SegmentedButtonDefaults.Icon`，可以在自定义按钮、菜单或状态展示中单独使用。
+它只呈现选择状态，不处理点击、不改写状态，也不添加最小交互留白：
+
+```xml
+<m3:SegmentedButtonIcon IsActive="{Binding IsSelected}" />
+<m3:SegmentedButtonIcon IsActive="{Binding IsFavorite}"
+                       ActiveContent="{m3:Symbol Star}" InactiveContent="{m3:Symbol StarBorder}" />
+```
+
+没有 `InactiveContent` / `InactiveContentTemplate` 时，进入使用淡入和从左下角开始的缩放，退出立即完成。
+提供未选中槽时，两槽使用交叉淡入，进行中的切换支持反向。两个槽可放不同尺寸的控件或数据模板，
+只提供模板也算存在；正在切换时保留两槽，动画结束后只保留当前槽。
+`ActiveContent` 和其模板均为空时使用默认勾号；`IsActive=True` 的静态实例对应上游 `ActiveIcon`。
+
+`Foreground` 默认继承外层内容色；`IconSize` 默认来自 18 DIP 组件 Token，仅影响默认勾号和
+MaterialSymbol 的默认尺寸，不强制任意自定义内容的大小。没有独立 `Width/Height` 时由当前内容测量，
+未激活的单槽图标不占空间；需要稳定占位时由外层容器预留。`IsVisible=False` 或卸载会清理动画，
+重新显示/挂载从当前状态开始。
+
+分段按钮默认模板复用同一个公开控件，原 `ActiveIcon` / `InactiveIcon` / `ShowSelectionIcon` 用法不变。
+Catalog 主窗口的 **Reusable selection icons** 同时展示默认勾号、字体图标交换和不同尺寸的内容交换。

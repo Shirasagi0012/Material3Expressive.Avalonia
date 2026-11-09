@@ -125,6 +125,7 @@ internal sealed class WideNavigationRailLayout : Panel
         int Px(double value) => double.IsFinite(value) ? MathUtils.DipToPx(value, density) : int.MaxValue / 4;
         var maxWidth = Math.Min(Px(availableSize.Width), Px(ExpandedContainerMaxWidth - ContentPadding.Left - ContentPadding.Right));
         var owner = TemplatedParent as WideNavigationRail ?? this.FindAncestorOfType<WideNavigationRail>();
+        (owner as ModalWideNavigationRail)?.UpdateInsetContentScopes();
         // ItemsControl owns the item logical parents; inheritance from ItemsPanel
         // would skip these controls even though they are its visual children.
         var itemHeight = WideNavigationRailVerticalValue.FromDp(_minimumHeight,
@@ -135,14 +136,16 @@ internal sealed class WideNavigationRailLayout : Panel
             owner.SetValue(ItemHeightMotionProperty, itemHeight);
         }
         var externalMinWidth = owner is null ? 0 : double.IsNaN(owner.Width) ? owner.MinWidth : owner.Width;
+        var insets = owner is ModalWideNavigationRail modal ? modal.RemainingInsets(IsModal) : owner?.WindowInsets ?? default;
         var actualMin = externalMinWidth <= 0 ? Math.Min(Px(_minimumWidth), maxWidth)
-            : Math.Min(Px(Math.Max(0, externalMinWidth - owner!.WindowInsets.Left - owner.WindowInsets.Right - ContentPadding.Left - ContentPadding.Right)), maxWidth);
+            : Math.Min(Px(Math.Max(0, externalMinWidth - insets.Left - insets.Right - ContentPadding.Left - ContentPadding.Right)), maxWidth);
         var expandedMin = externalMinWidth <= 0 ? Math.Min(Px(ExpandedContainerMinWidth), maxWidth) : actualMin;
         var header = (ContentPresenter)Children[0];
         header.Measure(new Size(maxWidth / layoutScale, availableSize.Height));
         var hasHeader = header.Content is not null || header.ContentTemplate is not null;
         Children[1].Measure(new Size(maxWidth / layoutScale, availableSize.Height)); // Materialize the ItemsPanel.
         _items = Children[1].GetVisualDescendants().OfType<WideNavigationRailItemsPanel>().FirstOrDefault();
+        (owner as ModalWideNavigationRail)?.UpdateInsetContentScopes();
         if (_items is null) return new Size(actualMin / layoutScale, double.IsFinite(availableSize.Height) ? availableSize.Height : header.DesiredSize.Height);
         _items.Expanded = Expanded;
         _items.HeaderHeight = hasHeader ? Px(header.DesiredSize.Height) : 0;

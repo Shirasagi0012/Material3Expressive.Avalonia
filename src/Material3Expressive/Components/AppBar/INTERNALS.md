@@ -165,6 +165,13 @@ Material 的 ScrollViewer 主题使用 SmoothScroll presenter，当前以
 正文使用 SmoothScroll 惯性，结束后栏独立 spring 吸附；不使用 behavior.FlingAnimationSpec 的 Compose decay。
 显式 spring snap 与 null 禁用 snap 仍有效，直接拖动栏保留独立 UI 路径。
 
+2026-11-09 搜索自动接入的边界复核修正了共享 snap 的单位生命周期：旧参与器用启动密度生成
+物理像素动画值，却在每帧除以当前密度；20 DIP 的活动 snap 在 density 1→2 后的 t=0
+帧错误变成 10 DIP。现每次 top/bottom snap 分别捕获启动单位比例，整个 evaluator 使用同一
+比例回到 DIP；当前 density 仍用于绘制量化。搜索显式 spec 保留单位比例 1，与其直接 settle
+路径捕获 units 的方式一致。搜索默认、显式及普通 top/bottom 的 1↔2 / 1.25→2 组合由
+`SearchScrollEdgeTests` 在真实 compositor 线程验证；不是动态切换显示器的桌面实测。
+
 栏高、标题位置/透明度、背景色、正文位置与裁剪视口由同一组合成输出驱动；
 底栏关联 FAB/Snackbar 位置随动。UI 恢复后更新真正 Measure/Arrange、ContentPadding 和 ScrollViewer.Offset；
 新 UI 布局是下一次合成补偿基准，不能把栏位移写进正文 Offset。
@@ -181,6 +188,16 @@ Avalonia 12.1.2 的桥接包括首次 expression 主动求值、停止后恢复�
 - Scope 不改写主题/模板；自定义模板的实际 SmoothScroll presenter 满足同样布局条件也可接入。
   owner 内容使用 TemplateBinding，模板退出时应解除归属；参见 [ScrollViewer](../ScrollViewer/README.md)
 - 模板、行为、内容切换及 detach/re-attach 重建并释放连接；正文内部滚动器及 Scaffold 栏/覆盖槽不参与主正文选择
+
+Scope 对三种 behavior 的 PropertyChanged 订阅也只存在于 attached 生命周期，卸载时解除，
+重新挂载时订阅当前值。此前即使 Scope 从未挂载，外部应用持有的 behavior 也会通过事件委托
+强引用 Scope；搜索/普通 top/bottom 三个弱引用用例均实际复现。修正后的未挂载及实际卸载
+回收、重新挂载配置响应，与密度及真实 wheel 边界共 15 项由 `SearchScrollEdgeTests` 覆盖。
+含连接/合成回归的 54 项通过，日志 `artifacts/search-scroll-edge-final.log`；失败前证据保留在
+`artifacts/search-scroll-edge-density-before.log`、`artifacts/search-scroll-edge-lifecycle-before.log`。
+普通 AppBar 滚动、行为和密度 Token 的另 58 项回归通过，日志 `artifacts/search-scroll-edge-shared-regression.log`。
+两项原生 wheel 边界（reverse 顶端剩余消费、limit 缩小后下一笔输入重新夹取）在修正前后均通过，
+没有据静态推测改写边界 admission 谓词。
 
 内层滚动器自己滚动不驱动外层栏，到边界后的下一笔滚轮按 IsScrollChainingEnabled 冒泡；
 触摸保持 SmoothScroll 捕获接力。单笔跨边界剩余量与已启动惯性余速不额外分给父层，
@@ -309,7 +326,15 @@ Avalonia 的 RTL 子树镜像。运行中替换排列或 FlowDirection 使实际
 本轮维护者明确授权共享能力和职责调整，依据固定 AppBar.kt 的两个底栏入口，在 BottomAppBar owner
 持有应用/消费作用域，Row 读取 UnconsumedInsets。Actions 的逻辑项、FAB 与 CustomContent
 因此继承同一总量，未增加组件局部消费机制。折叠外层布局仍按完整高度缩小，不改变滚动状态算法。
-顶栏双行分别应用全部/仅水平 Insets，必须在各内容 scope 明确处理；此次保留其原祖先扣除路径。
+当时顶栏双行分别应用全部/仅水平 Insets，必须在各内容 scope 明确处理，因此先保留原祖先扣除路径。
+本轮后续明确授权下，新增内部消费父级绑定补齐发布：Small/Expanded 两个真实行分别应用完整/仅水平 Insets；
+仅对直接槽根及生成的 action 容器绑定消费源，避免逻辑 owner 越过行作用域。
+不递归覆盖任意内容内部的 presenter，不覆盖用户 ConsumePadding/ConsumeInsets；换槽、模板替换和卸载释放贡献。
+原有顶栏自身物理边距、折叠 offset 和合成行高计算不变，新增的是后代对剩余 Insets 的观察与布局。
+`TopAppBarInsetsTests` 覆盖直接/模板内容、两行/RTL、父级变化、重挂与模板替换；
+双端 `top-app-bar-insets` 使用真实 TopAppBar / TwoRowsTopAppBar 和嵌套 windowInsetsPadding。
+`top-app-bar-insets-box-equivalent` 的普通/双行顶栏 20 例及搜索顶栏 10 例全部 equal、
+零错误且重复稳定；本地输入槽夹具的 Box 语义修正及原失败证据见 SearchBar/INTERNALS.md。
 
 本轮 navigation-insets-bottom-delivery 的 70 例全部 equal，其中两个底栏新增 20 例；错误为零且重复稳定。
 含 Actions/FAB/CustomContent 的消费与动态修改测试在 200 项相关回归中全部通过，整仓构建通过。

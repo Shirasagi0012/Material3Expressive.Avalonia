@@ -110,7 +110,7 @@ public sealed class VerticalFloatingToolbar : FloatingToolbar
     public FloatingToolbarVerticalFabPosition FloatingActionButtonPosition { get => GetValue(FloatingActionButtonPositionProperty); set => SetValue(FloatingActionButtonPositionProperty, value); }
 }
 
-public static class FloatingToolbarDefaults
+public static partial class FloatingToolbarDefaults
 {
     public const double ScrollDistanceThreshold = 40;
     public static FloatingToolbarScrollBehavior ExitAlwaysScrollBehavior(FloatingToolbarExitDirection exitDirection,

@@ -1,11 +1,15 @@
 using Avalonia;
 using Avalonia.Controls;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
 /// <summary>A Material plain tooltip surface. Content can be text or an arbitrary control.</summary>
 public class PlainTooltip : ContentControl
 {
+    /// <summary>An explicit container outline, or null to use the themed CornerRadius.</summary>
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<PlainTooltip>();
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     /// <summary>Optional custom caret outline. Takes precedence over CaretSize.</summary>
     public static readonly StyledProperty<TooltipCaretShape?> CaretShapeProperty =
         AvaloniaProperty.Register<PlainTooltip, TooltipCaretShape?>(nameof(CaretShape));

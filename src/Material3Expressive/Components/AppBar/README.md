@@ -254,7 +254,12 @@ Nested scrolling 展示独立内层列表/编辑区；切换该选项会重置�
 普通及 Flexible 底栏的 `WindowInsets` 扣除祖先已消费部分后，会向 Actions、FAB、CustomContent
 发布自身消费量。内容再次请求相同 Insets 不会重复留白，`ContentPadding` 仍单独处理。
 外层可以使用 `MaterialWindowInsetsPadding` 或 `MaterialWindowInsets.ConsumeInsets`。
-Catalog 的 AppBar 窗口提供普通/Flexible 底栏及父级 Insets 切换示例。
+Catalog 的 AppBar 窗口提供普通/Flexible 底栏及双行顶栏的父级 Insets 切换示例。
+
+顶栏的导航、动作和标题槽同样发布消费量；双行顶栏按上游分为两个独立区域：
+上行消费完整 `WindowInsets`，下行只消费左右两边。标题或图标内嵌 `MaterialWindowInsetsPadding`
+时继续传完整 Insets，它只应用所在行尚未消费的部分。下行标题仍能申请顶/底留白；
+上行已经应用的顶边距不会被当成下行内容内部已消费的边距。
 
 原调用方若已经手工从内容的窗口 Insets 中减去底栏消费量，应改为传入完整 Insets。
 顶栏已有祖先消费扣除，但双行标题各自的消费传播尚未接入，不能据此推断顶栏内容也具备该能力。

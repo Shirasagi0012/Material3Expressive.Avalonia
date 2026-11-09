@@ -57,6 +57,7 @@ public sealed class MenuTokenSource : ITokenSource
         [Comp.Menu.BaselineIconSize] = 24d,
         [Comp.Menu.LeadingIconSize] = 20d,
         [Comp.Menu.TrailingIconSize] = 20d,
+        [Comp.Menu.PrecisionTrailingIconSize] = 24d,
         [Comp.Menu.ColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsFast),
         [Comp.Menu.ShapeAnimation] = new TokenRef(Sys.Motion.Spring.SpatialFast),
     }.ToFrozenDictionary();

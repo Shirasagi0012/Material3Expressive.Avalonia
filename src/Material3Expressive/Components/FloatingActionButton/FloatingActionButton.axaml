@@ -1,5 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:ToggleFloatingActionButtonIcon}" TargetType="m3:ToggleFloatingActionButtonIcon"
+                  BasedOn="{StaticResource {x:Type m3:MaterialIcon}}">
+      <!-- animateIcon keeps its fixed size when constraints are smaller; the apparent
+           placeable is coerced and its actual image is centered in that allocation. -->
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:FloatingActionButtonMenu}" TargetType="m3:FloatingActionButtonMenu">
       <Setter Property="MenuAlignment" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+FabMenu.MenuAlignment}}"/>
       <Setter Property="ClipToBounds" Value="False"/>

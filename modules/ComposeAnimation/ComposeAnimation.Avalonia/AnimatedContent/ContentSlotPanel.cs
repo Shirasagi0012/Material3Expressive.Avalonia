@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using ComposeAnimation.Runtime;
 
 namespace ComposeAnimation;
@@ -116,8 +117,10 @@ internal sealed class ContentSlotPanel : Panel
         {
             if (child is not ContentSlot slot) continue;
             var childSize = slot.DesiredSize;
+            // These are native layout coordinates. Avalonia mirrors the visual subtree for RTL;
+            // resolving Start/End to physical RTL coordinates here would mirror them a second time.
             var offset = host is null ? default
-                : EnterExitMotion.Align(childSize, finalSize, host.ContentAlignment, FlowDirection);
+                : EnterExitMotion.Align(childSize, finalSize, host.ContentAlignment, FlowDirection.LeftToRight);
             slot.Arrange(new Rect(offset, childSize));
         }
         return finalSize;

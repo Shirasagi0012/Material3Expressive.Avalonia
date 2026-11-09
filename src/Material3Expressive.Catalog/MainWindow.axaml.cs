@@ -56,6 +56,7 @@ public partial class MainWindow : Window
     private void OnSearchAppBarDemo(object? sender, RoutedEventArgs e) => new SearchAppBarDemo().Show(this);
     private void OnContainedSearchDemo(object? sender, RoutedEventArgs e) => new ExpandedSearchBarDemo(SearchPresentation.Contained).Show(this);
     private void OnCommandBarDemo(object? sender, RoutedEventArgs e) => new CommandBarDemo().Show(this);
+    private void OnCheckBoxStrokeDemo(object? sender, RoutedEventArgs e) => new CheckBoxStrokeDemo().Show(this);
     private void OnMenuDemo(object? sender, RoutedEventArgs e) => new MenuDemo().Show(this);
     private void OnIconDemo(object? sender, RoutedEventArgs e) => new IconDemo().Show(this);
     private void OnTooltipDemo(object? sender, RoutedEventArgs e) => new TooltipDemo().Show(this);
@@ -259,6 +260,13 @@ public partial class MainWindow : Window
     {
         foreach (var item in DemoWideNavigationRail.Items.OfType<WideNavigationRailItem>())
             item.IsSelected = ReferenceEquals(item, sender);
+    }
+
+    private void OnModalRailInsets(object? sender, RoutedEventArgs e)
+    {
+        var consumed = Material3Expressive.Foundation.Rendering.MaterialWindowInsets.GetConsumeInsets(DemoHiddenModalRail);
+        Material3Expressive.Foundation.Rendering.MaterialWindowInsets.SetConsumeInsets(DemoHiddenModalRail,
+            consumed.Left == 0 ? new Avalonia.Thickness(30) : default);
     }
 
     private async void OnToggleModalRail(object? sender, RoutedEventArgs e)

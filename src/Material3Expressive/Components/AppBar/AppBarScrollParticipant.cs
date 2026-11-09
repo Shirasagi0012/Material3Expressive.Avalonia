@@ -40,7 +40,10 @@ internal readonly record struct AppBarScrollConfiguration(
     AppBarSpring? BottomSnap,
     AppBarSpring ColorSpring,
     double ExpandedViewport,
-    double Extent);
+    double Extent,
+    bool Search = false,
+    bool ReverseSearch = false,
+    double? TopAnimationScale = null);
 
 internal readonly record struct AppBarScrollSnapshot(
     long Generation,
@@ -61,6 +64,7 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     private double _top, _bottom, _topContent, _bottomContent, _body;
     private long _generation, _sequence;
     private TargetBasedAnimation<float>? _topSnap, _bottomSnap;
+    private double _topSnapScale, _bottomSnapScale;
     private TargetBasedAnimation<Color>? _colorAnimation;
     private Color _paintedColor, _targetColor;
     private long _colorStarted;
@@ -89,13 +93,14 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     internal void Configure(AppBarScrollConfiguration config)
     {
         if (_config.TopRange != config.TopRange || _config.TopKind != config.TopKind ||
-            _config.TopEnabled != config.TopEnabled || _config.TopSnap != config.TopSnap)
+            (!config.Search && _config.TopEnabled != config.TopEnabled) || _config.TopSnap != config.TopSnap ||
+            _config.Search != config.Search || _config.ReverseSearch != config.ReverseSearch)
             _topSnap = null;
         if (_config.BottomRange != config.BottomRange || _config.BottomEnabled != config.BottomEnabled ||
             _config.BottomSnap != config.BottomSnap)
             _bottomSnap = null;
         _config = config;
-        _top = Math.Clamp(_top, 0, config.TopRange);
+        if (!config.Search) _top = Math.Clamp(_top, 0, config.TopRange);
         _bottom = Math.Clamp(_bottom, 0, config.BottomRange);
         Output();
     }
@@ -103,7 +108,7 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
     internal void SetState(AppBarScrollSnapshot state)
     {
         _generation = state.Generation;
-        _top = Math.Clamp(state.TopCollapsed, 0, _config.TopRange);
+        _top = _config.Search ? state.TopCollapsed : Math.Clamp(state.TopCollapsed, 0, _config.TopRange);
         _bottom = Math.Clamp(state.BottomHidden, 0, _config.BottomRange);
         _topContent = state.TopContentOffset;
         _bottomContent = state.BottomContentOffset;
@@ -121,6 +126,10 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
             return 0;
         var old = _top;
         _top = Math.Clamp(_top + context.Delta, 0, _config.TopRange);
+        // SearchBar.kt consumes the whole input when its clamped offset changes, and
+        // always returns zero in reverse layout. Keep this distinct from ordinary bars.
+        if (_config.Search)
+            return !_config.ReverseSearch && old != _top ? context.Delta : 0;
         // Unlike Compose's whole-input return at the edge, account for actual movement.
         // The rest goes to the body in this same transaction (the approved SmoothScroll path).
         return _top - old;
@@ -136,6 +145,21 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
 
         if (!_config.TopEnabled)
             return 0;
+        if (_config.Search)
+        {
+            if (_config.ReverseSearch && context.Delta < 0)
+            {
+                _top = Math.Clamp(_top + context.Delta, 0, _config.TopRange);
+                _topContent -= context.Delta;
+                return context.Delta;
+            }
+            if (!_config.ReverseSearch)
+            {
+                _top = Math.Clamp(_top + selfConsumed, 0, _config.TopRange);
+                _topContent -= selfConsumed;
+            }
+            return 0;
+        }
         _topContent -= selfConsumed;
         if (_config.TopKind != TopAppBarScrollMode.ExitUntilCollapsed || context.Delta >= 0)
             return 0;
@@ -169,21 +193,23 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         // content displacement (or the pinned bar's overlap). Reset only at the boundary.
         if (_lastDirection < 0 && _body <= 1e-7)
         {
-            _topContent = 0;
+            if (!_config.Search) _topContent = 0;
             if (_bottom == 0 || _bottom == _config.BottomRange)
                 _bottomContent = 0;
         }
 
+        _topSnapScale = _config.TopAnimationScale ?? _config.Density;
+        _bottomSnapScale = _config.Density;
         _topSnap = StartSnap(
             _top,
             _config.TopRange,
             _config.TopEnabled && _config.TopKind != TopAppBarScrollMode.Pinned ? _config.TopSnap : null,
-            _config.Density);
+            _topSnapScale);
         _bottomSnap = StartSnap(
             _bottom,
             _config.BottomRange,
             _config.BottomEnabled ? _config.BottomSnap : null,
-            _config.Density);
+            _bottomSnapScale);
         Output();
     }
 
@@ -205,14 +231,17 @@ internal sealed class AppBarScrollParticipant : IScrollMovementParticipant
         var time = TimeSpan.FromSeconds(elapsedSeconds);
         if (_topSnap is { } top)
         {
-            _top = Math.Clamp(top.GetValue(time) / _config.Density, 0, _config.TopRange);
+            // The evaluator keeps its starting units for its whole lifetime. A density
+            // change affects drawing quantization, not the physical-to-DIP conversion
+            // of an already running spring (matching SearchBar's direct settle path).
+            _top = Math.Clamp(top.GetValue(time) / _topSnapScale, 0, _config.TopRange);
             if (top.IsFinished(time))
                 _topSnap = null;
         }
 
         if (_bottomSnap is { } bottom)
         {
-            _bottom = Math.Clamp(bottom.GetValue(time) / _config.Density, 0, _config.BottomRange);
+            _bottom = Math.Clamp(bottom.GetValue(time) / _bottomSnapScale, 0, _config.BottomRange);
             if (bottom.IsFinished(time))
                 _bottomSnap = null;
         }

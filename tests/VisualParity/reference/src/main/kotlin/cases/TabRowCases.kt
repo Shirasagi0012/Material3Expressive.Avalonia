@@ -130,6 +130,7 @@ class TabRowCases {
         val indicator=Probe(); val divider=Probe(); val requester=FocusRequester()
         val painted=mutableMapOf<String,Color>()
         var scope:TabIndicatorScope?=null
+        var legacyPositions:List<TabPosition> = emptyList()
         var scrollState:ScrollState?=null
         @Composable
         fun Content() {
@@ -160,7 +161,21 @@ class TabRowCases {
                 }
             }
             val tabsContent:@Composable ()->Unit = { repeat(config.count) { TabContent(it) } }
-            if(config.scrollable) {
+            if(config.variant=="legacy") {
+                @Suppress("DEPRECATION")
+                val legacyIndicator:@Composable (List<TabPosition>)->Unit = { positions ->
+                    legacyPositions=positions
+                    if(!config.noSlots && config.count>0) {
+                        val offset=with(TabRowDefaults){Modifier.tabIndicatorOffset(positions[selected])}.then(indicator.modifier())
+                        if(config.customSlots) Box(offset.fillMaxWidth().height(5.dp).background(Color.Cyan))
+                        else TabRowDefaults.SecondaryIndicator(offset)
+                    }
+                }
+                @Suppress("DEPRECATION")
+                if(config.scrollable) ScrollableTabRow(selected,modifier,edgePadding=config.edgePadding.toFloat().dp,
+                    indicator=legacyIndicator,divider=dividerContent,tabs=tabsContent)
+                else TabRow(selected,modifier,indicator=legacyIndicator,divider=dividerContent,tabs=tabsContent)
+            } else if(config.scrollable) {
                 val state=rememberScrollState(); scrollState=state
                 if(primary) PrimaryScrollableTabRow(selected,modifier,edgePadding=config.edgePadding.toFloat().dp,minTabWidth=config.minTabWidth.toFloat().dp,
                     scrollState=state,indicator=indicatorContent,divider=dividerContent,tabs=tabsContent)
@@ -205,10 +220,19 @@ class TabRowCases {
         fun measure():List<ProbePoint> {
             fun geometry(probe:Probe)=probe.geometry().filter { it.name=="box" || it.name=="size" }
             val points=mutableListOf(ProbePoint("row","container",null,geometry(row)))
-            points+=ProbePoint("selection","state","row",listOf(number("index",selected.toDouble(),"index",definition="tab-row.selected-index"),
-                number("scroll",(scrollState?.value ?: 0).toDouble()/ComposeHost.RenderScale,"dip",category="motion",definition="tab-row.scroll-start-offset")))
             @Suppress("UNCHECKED_CAST")
-            val positions=(checkNotNull(field(checkNotNull(scope),"tabPositions")) as State<List<TabPosition>>).value
+            val positions=if(config.variant=="legacy")legacyPositions else (checkNotNull(field(checkNotNull(scope),"tabPositions")) as State<List<TabPosition>>).value
+            val scroll=if(config.variant=="legacy" && config.scrollable && tabs.isNotEmpty()) {
+                // Legacy ScrollableTabRow owns its rememberScrollState internally. Read its
+                // actual physical displacement from the first placed tab, not a predicted target.
+                val rowCoordinates=checkNotNull(row.coordinates);val tabCoordinates=checkNotNull(tabs[0].coordinates)
+                val rowX=rowCoordinates.localToRoot(Offset.Zero).x
+                val tabX=tabCoordinates.localToRoot(Offset.Zero).x
+                val visibleStart=if(config.rtl)rowX+rowCoordinates.size.width-tabX-tabCoordinates.size.width else tabX-rowX
+                positions[0].left.value.toDouble()-visibleStart.toDouble()/ComposeHost.RenderScale
+            } else (scrollState?.value ?: 0).toDouble()/ComposeHost.RenderScale
+            points+=ProbePoint("selection","state","row",listOf(number("index",selected.toDouble(),"index",definition="tab-row.selected-index"),
+                number("scroll",scroll,"dip",category="motion",definition="tab-row.scroll-start-offset")))
             tabs.forEachIndexed { index,probe ->
                 val node=checkNotNull(field(checkNotNull(probe.coordinates),"layoutNode"))
                 val semantics=checkNotNull(field(node,"_semanticsConfiguration")) as SemanticsConfiguration

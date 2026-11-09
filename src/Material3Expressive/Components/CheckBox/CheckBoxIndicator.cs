@@ -298,7 +298,9 @@ internal sealed class CheckBoxIndicator : Control
                         StrokeWidth = (float)value.Width * scale, StrokeMiter = (float)value.MiterLimit,
                         StrokeCap = value.Cap switch { PenLineCap.Round => SKStrokeCap.Round, PenLineCap.Square => SKStrokeCap.Square, _ => SKStrokeCap.Butt },
                         StrokeJoin = value.Join switch { PenLineJoin.Round => SKStrokeJoin.Round, PenLineJoin.Bevel => SKStrokeJoin.Bevel, _ => SKStrokeJoin.Miter } };
-                    if (value.Dashes is { Length: > 0 } dashes)
+                    if (value.PathEffect is { } pathEffect)
+                        paint.PathEffect = pathEffect;
+                    else if (value.Dashes is { Length: > 0 } dashes)
                     {
                         using var effect = SKPathEffect.CreateDash(dashes.Select(x => (float)x * scale).ToArray(), (float)value.DashOffset * scale);
                         paint.PathEffect = effect;

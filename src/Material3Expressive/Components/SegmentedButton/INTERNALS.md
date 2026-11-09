@@ -18,7 +18,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | `SingleChoiceSegmentedButtonRow` / `MultiChoiceSegmentedButtonRow` | [SegmentedButtonRow.cs](SegmentedButtonRow.cs) 的 ItemsControl、行角色和布局失效 |
 | 两种 `SegmentedButton` 重载、`itemShape`、状态层级 | [SegmentedButton.cs](SegmentedButton.cs)、[SegmentedButton.axaml](SegmentedButton.axaml)、[SegmentedButtonItemsPanel.cs](SegmentedButtonItemsPanel.cs) |
 | `SegmentedButtonContentMeasurePolicy` | [SegmentedButtonContentLayout.cs](SegmentedButtonContentLayout.cs) |
-| `SegmentedButtonDefaults.Icon` / `ActiveIcon` | [SegmentedButtonIconSlot.cs](SegmentedButtonIconSlot.cs) |
+| `SegmentedButtonDefaults.Icon` / `ActiveIcon` | [SegmentedButtonIcon.cs](SegmentedButtonIcon.cs) |
 | 上游 `SegmentedButtonColors`、`OutlinedSegmentedButtonTokens` | [SegmentedButtonTokenSource.cs](SegmentedButtonTokenSource.cs) 的状态 Token、SegmentedButton.axaml 的条件默认与原生颜色属性；[Token](../../Tokens/MaterialTokens.Comp.SegmentedButton.cs) |
 
 ## 配置流与状态默认
@@ -40,7 +40,7 @@ RowCornerRadius 候选，主题再把它绑定到原生 CornerRadius；行不直
 
 IconSize、IconSpacing、ContentMinWidth、MinimumInteractiveSize 和 LabelOffsetAnimation 从模板进入
 SegmentedButtonContentLayout；intrinsic 重放与实际布局消费同一份有效输入。图标的 effects/spatial
-规格同样进入 SegmentedButtonIconSlot，ItemsPanel 的容器高度也由主题供给。
+规格同样进入 SegmentedButtonIcon，ItemsPanel 的容器高度也由主题供给。
 运行时不再从 owner 的 resolver 另取默认值，资源/主题变更与重挂载由当前 Token 绑定处理；
 标签偏移和图标动画只更新呈现状态，不回写配置。
 
@@ -143,3 +143,43 @@ SegmentedButtonInteractionSourceTests 覆盖重叠、未配对结束、换源、
 
 本轮显式路径扩展的 `segmented-paths` 双端 self-test：111 个用例全部通过（2 equal、109 withinTolerance），
 执行错误 0，双端重复及附加截图稳定。覆盖静态切角/百分比/凹路径、RTL、单项/三项及按压、反向、运行时改形状。
+
+## 独立 Icon 入口（2026-11-09）
+
+本轮依据维护者对缺失 API 与职责调整的明确授权，将已存在的内部 Icon 实现提升为公开
+`SegmentedButtonIcon`；固定 AndroidX / Core 的 `SegmentedButtonDefaults.Icon` 与 `ActiveIcon`
+分支相同。此前仅整颗按钮可以消费该动画，现在自定义组合可直接使用 `IsActive` 与两内容槽。
+默认 SegmentedButton 模板绑定到相同控件，不保留第二套动画实现，也无公开 API 删除或迁移。
+
+保留无 inactive 槽时 `AnimatedVisibility(fadeIn + scaleIn, ExitTransition.None)`，缩放原点为
+物理左下角；有 inactive 槽时使用 Crossfade，稳定布尔状态对象避免反向时重新挂载调用者控件。
+内容/模板改变只更新已有 presenter，不重新创建 remembered transition；切换有无 inactive 槽
+才改变上游分支。停止时显式释放已退休动画槽中的 presenter，避免其仍持有调用者的 Control。
+主题向控件提供 IconSize / effects / spatial 输入，默认勾号与原按钮共用固定向量路径。
+
+行为验证入口为 `SegmentedButtonIconTests`，双端为 `segmented-button-icon`，直接调用真实
+`SegmentedButtonDefaults.Icon`，覆盖三种内容分支、初始选中/未选中、方向、尺寸约束、进入退出、
+反向、运行中换内容和卸载重挂；旧 `SegmentedButtonTests` 验证默认模板迁移。
+不同宽度两槽的 RTL 用例还发现共享 AnimatedContent 的重复镜像：ContentSlotPanel 与
+ContentViewport 先用 RTL 算布局坐标，Avalonia Visual 又镜像该子树。按本轮授权修正这两个
+Arrange 的逻辑坐标；原生镜像完成 Start/End 的方向解析，动画变换仍沿用原定义。
+实际调用者 SegmentedButton、PullToRefresh 与 ClockFace 未用反转 alignment 补偿此问题。
+共享回归新增 6 种不同尺寸/Start/End/Center/方向组合，修前仅两项 RTL Start/End 失败，
+修后 AnimatedContent/Crossfade 的 100 项测试通过，三组件的 71 项行为测试通过。
+
+双端运行 `segmented-button-icon-final` 的 31 例均稳定、执行错误 0：
+12 equal、3 withinTolerance、16 different。15 个静态用例通过；16 个动态用例保留以下未解决差异，
+不能把新增入口或其底层动画记为完全一致，也未修改参考、容差或删除失败用例：
+
+- 单槽 Exit.None 在 401000µs 变更提交帧：Compose 仍保留旧内容和自然尺寸，Avalonia 已变为 0×0；416000µs 相等。
+- 单槽与双槽在 65000µs / 145000µs 中途反向后仍有动画像素差异，不能归类为静态栅格差。
+- 无反向双槽在部分采样中也存在 1–2 通道值的颜色差；图标区域平均差超过既定容差，原因尚未完全确认。
+
+不同尺寸 RTL 两槽的错误对齐已消除，初始进入提交帧现严格相等；其余反向差仍保留。
+单槽的物理左下缩放原点由显式 LTR 动画宿主保留，内容 presenter 仍消费调用方方向。
+新增实际变换范围测试验证两方向相同原点，独立入口行为测试最终 6 项通过。
+默认模板的完整 `segmented-button-public-icon-regression` 共 111 例，初次 108 项通过，
+3 个 RTL 单槽用例揭示了原点回归；修复后在 `segmented-button-rtl-final`、
+`segmented-button-path-rtl-final`、`segmented-button-multi-path-rtl-final` 分别重跑并全部
+withinTolerance、稳定且零执行错误。保留初次失败证据，不把分批回归表述为一次全量全通过。
+文字图标、真实桌面与辅助技术未经这些非文字用例验证。

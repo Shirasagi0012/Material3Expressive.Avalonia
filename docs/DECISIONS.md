@@ -193,6 +193,8 @@
 - **适用范围与影响**：物理主视口、内置滚动行为与标准栏目模板。
 - **确认依据**：2026-10-04 维护者明确授权实现；2026-10-05 维护者批准完成公开协议与辅助接口的命名规范化。
 
+- **搜索顶栏扩展（2026-11-09 本轮授权）**：原范围只含普通 Top/BottomAppBar，因为搜索的 DIP 状态和整笔消费不能套用普通栏适配。此次维护者授权必要共享能力及修订历史决定；在同一连接/参与器加入搜索分支，Scaffold 自动选择实际呈现的普通或搜索顶栏。搜索严格保留整笔 pre 消费、reverse post 剩余量和 contentOffset 生命周期；旧普通顶栏的实际位移消费仍只适用于普通栏。正文惯性、嵌套视口隔离及支持范围沿用本决定；搜索自定义 fling 仍用于直接拖动/显式 post-fling，自动 snap 支持 spring，非 spring 不接入。没有破坏公共 API，新增 `AppBarScrollScope.SearchScrollBehavior`；布局与输入例见 SearchBar README。
+
 ---
 
 ## 19. Tween / Bezier 精度：历史保留与固定算法补齐
@@ -296,6 +298,8 @@
 - **原因与动机**：避免退出期间的实际收缩尺寸污染共享元素的最终目标，同时保留已有隐藏测量契约与动画中断连续性。
 - **适用范围与影响**：可见性容器与相关过渡效果。
 - **确认依据**：2026-10-16 维护者确认类型与调用顺序方案并要求实施。
+- **AnimatedContent 方向适配（2026-11-09 本轮授权）**：新增独立 SegmentedButtonIcon 的不同尺寸双槽验证发现，ContentSlotPanel / ContentViewport 在原生 Arrange 中先按 RTL 解读 Start/End，随后 Avalonia Visual 又对 RTL 子树施加镜像，导致内容错误地靠向另一侧。保持原有显隐状态所有权与完整退出几何；仅这两个布局点改用逻辑 LTR 坐标，由原生镜像完成方向解析。变换与动画参数不变，也不改变 EnterExitMotion.Align 的物理坐标定义。检查现有 Crossfade 消费者 SegmentedButton、PullToRefresh 与 ClockFace，无手工反向 alignment 补偿。不同尺寸 Start/End/Center 的 6 项方向回归先复现两个 RTL 失败，修后共享 AnimatedContent/Crossfade 100 项测试通过。依据为固定 Core AnimatedContent.kt 的逻辑 Alignment 及锁定 Avalonia Visual.InvalidateMirrorTransform；此次修订已由维护者明确授权。
+- **AnimatedVisibility 物理效果层（同轮授权）**：FloatingToolbar 公开过渡工厂的非对称双端 marker 发现 RTL 的 Start 展开裁掉了错误一侧；Surface.Bounds 的旧测试没有包含原生镜像，未能发现此问题。固定 Core EnterExitTransition.kt 明确以 LayoutDirection.Ltr 计算尺寸对齐，再以 placeWithLayer 放置物理 offset，scale pivot 也属于物理坐标。仅将 AnimatedVisibility 默认模板的动画 layer 固定为 LTR，内容 presenter 显式绑定宿主 FlowDirection；内容仍按其方向布局，效果不再受原生镜像反转。保留原状态、测量与退出几何决定，不改变 AnimatedContent 的逻辑槽对齐，也不扩大到其他效果宿主。新增 Start/End/Slide/Scale × LTR/RTL 的真实 TransformToVisual 测试先复现 4 个 RTL 失败，修后完整 ComposeAnimation 1010 项通过。调用方 FloatingToolbar、DatePicker、Expander、SearchBar 没有方向补偿；SegmentedButtonIcon 原单槽的物理 LTR 设置仍兼容，无公开 API 迁移。
 
 ---
 
@@ -317,6 +321,7 @@
 - **决定**：为 AnimatedState 增加显式 `AnimationCommitPhase.AfterFrame` 及独立 `AnimationInterruptionMode.Restart`；每种阶段共享根队列与唤醒，复用既有 FrameClock/dispatcher 的帧末边界。旧动画先采样；Restart 等其取消清理后再起新运行，从新真实帧计时。重入、断开、Scope 恢复与异常仍走原有所有权协议。
 - **用法及范围**：`AnimatedState.Create(owner, initialColor, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)`。NavigationBar/Rail 与复用它们轨迹的 CommandBar 切换项、AppBarWithSearch 的容器颜色采用此组合。其他调用方及原重载继续 BeforeFrame + Continue；不扩大到 Transition、动画输入状态或完整 Compose 重组。
 - **替代方案**：统一延迟所有动画会破坏已有布局目标合同；组件各自 NextFrame/Stop 会重复状态合并、异常和生命周期；只延后首帧不能保留取消顺序，不能修复反向轨迹。两个选项分别表达提交与中断，避免把速度策略隐含在阶段名称里。
+- **显隐入口扩展（2026-11-09 本轮授权）**：原范围不含 Transition，是为了不改变其显式状态/时钟所有权，理由仍保留。新 FloatingToolbar 公开过渡工厂的双端用例明确复现默认 AnimatedVisibility.Visible 比 Core boolean composable 提前一帧；新增宿主级 TargetCommitPhase，默认 BeforeFrame 保留即时目标，AfterFrame 复用同一根队列合并并捕获本地 Visible 请求。固定 Core AnimatedVisibility(bool)→updateTransition.animateTo 在 composition 更新目标，随后注册帧循环；新模式只投影此提交边界，Source 仍独立拥有目标和时钟，不改 Runtime.Transition.UpdateTarget。内部工具栏移除自己的下一帧等待并采用显式新模式；DatePicker/Expander 及其他默认调用方不需迁移。帧末重入属于下一批，卸载/换源撤销队列；行为与真实两端工厂用例验证，仍不提供完整重组运行时。
 - **兼容及边界**：原有公共构造函数和全部工厂重载签名保留，无外部强制迁移。采用新模式才改变时序。非帧输入后的原生 enabled 即时读数与 Core 重组缓存仍分别保留；不为它们延迟原生交互，也不将残留差异改记为通过。真实消费者、模块行为回归和双端 self-test 是验证依据，未改变基线或容差。
 
 ## 26. 重组消费的动画值与帧提交 effect
@@ -489,6 +494,17 @@ Baseline/MenuBar 不采用此附加属性。不改变上文关于权重、intrin
 复用原 PaddingScope 继承/重挂链，ConsumePadding 的 add 不变；同一元素的顺序明确为 add 后 union，
 自动容器应用剩余物理 Insets。新入口不读取 OS 状态，不改变 Scaffold 默认正文布局。
 同轮后续依据三个导航组件固定源码的 windowInsetsPadding 接入 NavigationBar、ShortNavigationBar、NavigationRail；
-消费归属控件，模板仅执行布局，以覆盖真实逻辑内容。普通 WideNavigationRail 后续按相同固定算法接入；ModalWideRail 因弹层搬移尚未纳入。
-底部 AppBar 后续同样接入发布阶段，使 Actions/FAB/CustomContent 不重复消费；顶栏双行 scope 尚未扩展。
+消费归属控件，模板仅执行布局，以覆盖真实逻辑内容。普通 WideNavigationRail 后续按相同固定算法接入。
+当时 ModalWideRail 因弹层搬移尚未纳入，避免把声明 owner 的消费误当成独立 Dialog 消费；保留此原理由。
+同轮在维护者明确授权下补齐 Modal：固定 Core Dialog 创建独立 SceneLayer，Foundation 消费节点遍历 LayoutNode
+祖先而非 CompositionLocal；实际双端 proof 也确认声明祖先消费只影响 inline。模板两处各用现有
+MaterialWindowInsetsPadding，Dialog 根消费清零，声明 owner 自身的 add/union 在浮层重放；Header/移动项目
+真实内容根复用 BindConsumptionParent 指向实际呈现作用域，移出或 detach 立即解绑。保持其他继承和状态身份。
+未新建通用环境或更改 Dialog 本身，其他浮层必须各自按固定上游验证，不能从此推断全部弹层都继承或清零。
+底部 AppBar 后续同样接入发布阶段，使 Actions/FAB/CustomContent 不重复消费。
+顶栏双行最初延后，是因为其标题与直接 Action 逻辑父级为 ItemsControl，不能在 owner 上统一发布全部 Insets：
+固定 `AppBar.kt` 的上行消费全部四边，下行只消费左右。2026-11-09 本轮授权后补齐内部
+`BindConsumptionParent`，仅将模板实际内容根的消费源绑定到所属行，保留该根自己的 ConsumePadding/ConsumeInsets。
+两行各自使用已有 AppliedInsets 并集；模板替换、换槽与卸载释放绑定恢复原继承链，不增加公共 API。
+该能力不迁移逻辑/视觉树、不更改布局尺寸，也不将某行已消费的垂直 Insets 传给另一行。
 无签名迁移；原先手工从子内容请求中扣除消费的调用方应改传完整 Insets。示例和双端证据由各组件文档维护。

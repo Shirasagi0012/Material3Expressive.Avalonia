@@ -1,0 +1,11 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        x:Class="Material3Expressive.Catalog.CheckBoxStrokeDemo" Width="460" Height="330" Title="CheckBox path effects">
+  <StackPanel Margin="24" Spacing="16">
+    <TextBlock Text="自定义复选框路径效果" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <CheckBox x:Name="Rounded" Content="圆角路径勾号" IsChecked="True" />
+    <CheckBox x:Name="Dashed" Content="组合圆角与虚线" IsChecked="True" IsThreeState="True" />
+    <CheckBox x:Name="Outlined" Content="虚线轮廓" />
+    <TextBlock Text="点击切换状态，查看圆角勾号、虚线与组合路径的变化。中间一项支持三态切换。" TextWrapping="Wrap" />
+  </StackPanel>
+</Window>

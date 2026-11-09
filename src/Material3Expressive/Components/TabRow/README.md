@@ -57,7 +57,7 @@ label.InteractionSource = source;
 不点击或更改选择。Release/Cancel、Exit/Unfocus 必须引用开始对象；替换源不重放旧事件，禁用只取消自身输入。
 Catalog 的 Tooltip 示例提供受控 Tab 接入。
 
-## 四种栏与内容布局
+## 栏变体与内容布局
 
 `Variant="Primary|Secondary"` × `IsScrollable="False|True"` 组合四种栏。
 独立 Row 使用同名属性；原生 TabControl 使用 `TabRowAppearance` 附加属性：
@@ -76,6 +76,21 @@ Catalog 的 Tooltip 示例提供受控 Tab 接入。
 默认 Primary 指示器随标签内容宽度，Secondary 覆盖整个 Tab。滚动栏默认 EdgePadding=52、MinTabWidth=90 DIP。
 初次布局和选择变化会自动居中；同一选择下调整窗口/内容宽度不会主动重新居中。
 用户滚轮/滚动手势会取消正在进行的自动居中。
+
+`Variant="Legacy"` 提供固定基线旧 `TabRow` / `ScrollableTabRow` 的两种外观和行为，两个入口均可使用：
+
+```xml
+<m3:TabRow Variant="Legacy" IsScrollable="True" SelectedIndex="0">
+  <m3:Tab Content="Overview" IsSelected="True" />
+  <m3:Tab Content="Recent activity" />
+</m3:TabRow>
+```
+
+Legacy 使用 Primary 内容色与方角整项宽度指示器；它的宽度、位置动画在目标中断时重新启动，
+滚动分隔线跨整个内容 extent。`IndicatorMatchContentSize` 在 Legacy 下不改变整项宽度策略。
+`TabPositions.ContentWidth` 仍提供旧上游测量值：滚动 Legacy 不强制 24 DIP 最小值，自定义窄内容可能为负值。
+在 Legacy 与新变体之间切换会重建栏动画和滚动状态；Primary/Secondary 之间继续复用当前动画。
+Catalog **Legacy tabs** 展示固定、滚动与原生入口。
 
 更新已选 Tab.Content 或原生 TabItem.Header 时，指示器随重新测量后的内容宽度运动；
 动画中再次修改内容会保留当前速度并转向新目标。同次布局前的多次更新使用最终内容。
@@ -133,7 +148,7 @@ Catalog 示例见 [TabRowDemo.axaml](../../../Material3Expressive.Catalog/TabRow
 
 `TabRow.IndicatorMatchContentSize` 或原生 `TabRowAppearance.IndicatorMatchContentSize` 对应
 上游 `tabIndicatorOffset(matchContentSize)`：true 跟随内容宽度，false 跟随整项宽度，null 恢复 Variant 的默认值。
-该设置同时适用于默认和自定义 Indicator 模板，不改变标签测量、选择或颜色。
+该设置适用于 Primary/Secondary 的默认和自定义 Indicator 模板，不改变标签测量、选择或颜色。
 运行时切换使用原有宽度弹簧，动画中反转保留当前位置和速度。
 
 ```xml

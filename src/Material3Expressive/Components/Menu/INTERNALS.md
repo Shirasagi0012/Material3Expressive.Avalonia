@@ -38,18 +38,23 @@ scale 从 .8、alpha 从 0 入场，分别使用 FastSpatial / FastEffects。外
 Separator 按最终列宽 Stretch。小图标槽保留内容实际测量尺寸，箭头和勾选标记保留 24×24 画布后缩放到槽尺寸。
 首尾组 / 项的组合圆角取 reference ShapeTokens，普通圆角保持 Token 绑定。Core precision pointer 分支默认未启用。
 
-**精确指针尺寸增量（2026-11-08 本轮授权）**：沿用共享决定 §34 的显式继承环境，
-独立 Expressive / Checkable / Selectable 主题直接选择固定两端 `MenuDefaults.kt` 的实时 getter：
+沿用共享决定 §34 的显式继承环境，独立 Expressive / Checkable / Selectable 及原生 Vertical 主题
+直接选择固定两端 `MenuDefaults.kt` 的实时 getter：
 `itemHorizontalArrangement` 间距 12 DIP、`DropdownMenuSelectableItemContentPadding` 为 16/12/10/12。
-既有 Padding 和 spacing 属性承载主题默认值，调用方样式/局部值优先，无新菜单状态或高度算法。
+本轮维护者授权补齐原生分支及默认尾图标尺寸；既有 Padding 和 spacing 属性承载主题默认值，
+调用方样式/局部值优先，无新菜单状态或高度算法。
 原先默认关闭的理由仍成立：固定 Core 桌面监听为空，不能自动检测鼠标开启。
-Baseline 使用自身常量路径，不静默改写；原生 MenuItem 与专用 default icon 辅助 API 仍未接入。
-这次不改变尾部槽的 20 DIP 默认最小宽度，它直接来自固定 SegmentedMenuTokens，而非 precision 的推荐图标大小。
-新增行为测试覆盖继承、动态切换、样式/局部覆盖和 Token 更新；双端 `precision-menu-item` 覆盖首尾内容有无、RTL 和切换恢复。
+此前原生模板未消费此环境，现在复用相同 converter 与 Token 关系；Baseline 和菜单栏顶层保留自身常量路径。
+`MenuDefaults.TrailingIconSize` 通过已有 MaterialSymbol.DefaultSize 提示提供 20/24 DIP，原生 chevron 使用同一有效值。
+显式尺寸和任意内容保持自身测量，不改变尾槽 20 DIP 默认最小宽度；它直接来自固定 SegmentedMenuTokens，
+并非 precision 的推荐图标大小。独立尾槽改用语义对应的 TrailingIconSize Token，默认值仍为 20；
+此前只覆盖 LeadingIconSize 来同时修改尾槽的调用方，须显式覆盖 TrailingIconSize，precision 推荐尺寸另用 PrecisionTrailingIconSize。
+未增加公开专用图标类型。原生实际 Popup 和子菜单通过框架继承保留运行时更新与关闭重开。
 
 本次 `precision-menu-item-delivery` 16 例 / 32 个采样全部 equal，零执行错误，重复/额外截图稳定；
 已查看首尾图标场景的真实双端图像。相关菜单/精确指针行为测试 112 项通过，包含真实 Popup 打开后的继承和局部覆盖。
-最终解决方案构建通过，保留 6 项既有警告。精确尺寸不改变布局高度和原有选中图标动画参数。
+最终解决方案构建通过，保留 6 项既有警告。这是先前范围的记录，不覆盖后补的尾图标默认尺寸。
+新的尾图标实际测量参与项目高度计算，原有选中图标动画参数不变。
 
 选中图标的可见宽度按动画排列，弹层自然宽度读取保留内容的完整宽度。进入初始零宽也需使父级测量失效。
 目标在 composition 对应帧合并，宽度 spring 使用上游泛型规格的 0.01 阈值。退出完成后释放内容和模板，反向保留运行状态。
@@ -86,7 +91,9 @@ SupportingItemMargin，否则使用 ItemMargin。Margin 仍是主题 Setter，�
 `TrailingContent / TrailingContentTemplate` 复用 DropdownMenuSlotPresenter 保留 Box 的最小宽度及小内容居中，
 使用 TrailingIconSize 和 trailing content 颜色。原生 InputGesture 与子菜单箭头仍单独保留，
 三者按 VerticalContentSpacing 排列；尾部容器可见性绑定为 Template 优先级，允许原生子菜单触发器显示箭头。
-内部 NativeMenuRow 按 leading → label/supporting → trailing 顺序测量，间距受剩余宽度约束；
+独立 Expressive 默认行与内部 NativeMenuRow 按 leading → label/supporting → trailing 顺序测量，
+每项测量后才为下一间距保留剩余空间；不得提前从正文约束扣除尾间距。精确模式窄行的正文和零宽尾槽仍按此顺序测量。
+NativeMenuRow 的间距受剩余宽度约束；
 主行把最后的尾部槽放到末端。不能用 Auto,*,Auto Grid 先预留尾部宽度。
 尾部 presenter 的 PreferredMinWidth 只影响自身首选尺寸，不向内容传播，且受传入约束限制；
 这保留上游 defaultMinSize 的小内容居中与窄行收缩。内部行也用于组合尾部内容，不扩展公共布局框架。
@@ -118,6 +125,16 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
 ## 4. 验证入口
+
+- `NativeMenuPrecisionTests` 覆盖原生与独立项的尺寸环境、真实 Popup/子菜单继承、重开、局部关闭、
+  样式与 Token 覆盖、默认尾图标/显式尺寸及窄约束；`NativeMenuPrecisionCases.cs/.kt` 的
+  `native-menu-precision` 族覆盖四入口、LTR/RTL、深色、支持内容、显式 padding 和按压期间切换。
+  `native-menu-precision-verified` 的 61 例为 45 equal / 16 different，执行错误为零且重复稳定。
+  已检查实际原图；固定宽度/窄约束的 45 个静态用例均逐像素相等。8 个动态用例在非帧 setter 当刻，
+  本地已更新布局、Core 仍使用旧重组值；下一帧几何相等，后续按压图像相等或在原容差内。
+  另 8 个没有外层宽度约束的裸项目，Core 的 fillMaxWidth 填满 320 DIP，而本地按内容收缩为 136/150 DIP；
+  这属于此前自然测量边界，尚未接受，不由精确模式的新静态通过结果消除。
+  原始失败、采样和门禁保留；相关行为测试 196 项通过，Catalog 构建通过。
 
 - `MenuLabelTests` 覆盖真实主题尺寸、窄约束、显式尺寸、继承文字/颜色、模板及覆盖优先级；
   `menu-label` 双端族覆盖两个标签、LTR/RTL、自定义留白、宽高边界和真实菜单组合的动态尺寸环境。

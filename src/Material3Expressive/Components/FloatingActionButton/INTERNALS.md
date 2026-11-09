@@ -136,6 +136,30 @@ Extended 继承，两个模板直接传至共享 Surface（决定 §35）。此�
 `IconSize` / `IconColor` 仍是显式 opt-in：调用方可绑定图标尺寸和颜色以复现 animateIcon，不能自动动画任意 Content。
 任意位图或复合内容的整层 SrcIn tint 留作独立基础能力任务；任意内容仍继承环境 Foreground，不把显式图标绑定当作完整 animateIcon。
 
+2026-11-09 本轮维护者授权补齐缺失 API 与必要适配后，图片分支新增 `ToggleFloatingActionButtonIcon`。
+原决定避免对任意 Content 隐式改色的理由继续成立，原 Icon / Content 路径不变。
+固定两端 `ToggleFloatingActionButtonDefaults.animateIcon` 的 size 函数按 `roundToPx` 形成正方形固定约束，
+color 函数对已录制层执行 SrcIn。本入口消费相同的 CheckedProgress、默认函数和物理取整，
+通过已有 MaterialIcon 对 IImage 的实际绘制 alpha 施加整图 tint；可公开覆盖 Size / Color 函数。
+绑定贡献在 Animation 优先级，卸载释放并恢复底层值；重挂只观察新的祖先 Toggle。
+DrawingImage 的变更沿 MaterialIcon 已有 Invalidated 订阅传播；没有每帧轮询或额外时钟。
+这完整覆盖位图/矢量/自定义 IImage 分支，但不是任意 Control 子树的 animateIcon 替代品。
+后者仍未实现：Avalonia VisualBrush 不传播任意源子树的绘制失效，公共 Effect 也没有整体颜色滤镜入口；
+不采用持续重录制或静态截图降低动态内容语义。
+
+`ToggleFabIconTests` 验证默认尺寸、过渡跟随、自定义函数、密度取整、重挂、底层值恢复及图片语义。
+`toggle-fab-icon` 双端用例覆盖三尺寸、三图片来源、选中态、RTL、受限布局、半透明重叠图像、
+默认/自定义动画反向、图片替换与 DrawingImage 形状变更。
+运行 `./tests/VisualParity/parity.ps1 self-test -NoRestore --family toggle-fab-icon`。
+
+2026-11-09 `toggle-fab-icon-content-cache` 的 32 例全部重复稳定、零执行错误；30 例 withinTolerance，
+所有几何、进度与内容宽度读数相等。2 个原位修改时间线保留真实截图差异：宽度从 20 改成 8 时，
+Core 已重组且读数为 8，但 `animateIcon.drawWithCache` 录制层仍显示旧图；65ms 再触发 checked，
+96ms 起缓存重录制后两端恢复容差内。直接 `MaterialIcon` 的原 32 例全部逐像素相等。
+本轮用户授权下保留既有 MaterialIcon 的 DrawingImage.Invalidated 即时刷新合约，不故意缓存过期图片；
+这项框架接入差异不扩展到其他动画时序，也不把 32 例整体称为视觉验收通过。原失败用例、截图与容差保持不变。
+相关行为测试 71 项通过，Catalog 构建成功；实际屏幕阅读器与真实设备输入未经本单元验证。
+
 原移植修正过 ComposeAnimation spring 预计时长的整数毫秒截断，否则 threshold=1 的菜单 stagger
 会在帧边界多延后一帧。该原因须保留，但旧本地包版本不是当前安装要求，也不能根据依赖升级省略反向/中断回归。
 

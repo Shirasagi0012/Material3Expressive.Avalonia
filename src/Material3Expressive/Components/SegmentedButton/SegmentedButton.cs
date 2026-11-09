@@ -40,7 +40,7 @@ public sealed class SegmentedButton : Button
     internal static readonly StyledProperty<CornerRadius> RowCornerRadiusProperty = AvaloniaProperty.Register<SegmentedButton, CornerRadius>(nameof(RowCornerRadius));
     internal CornerRadius RowCornerRadius { get => GetValue(RowCornerRadiusProperty); set => SetValue(RowCornerRadiusProperty, value); }
     private SegmentedButtonContentLayout? _layout;
-    private SegmentedButtonIconSlot? _icon;
+    private SegmentedButtonIcon? _icon;
     private MaterialSurface? _surface;
     private Key? _activationKey;
     private bool _suppressKeyboardClick;
@@ -58,7 +58,7 @@ public sealed class SegmentedButton : Button
         if (_surface is not null) _surface.PropertyChanged -= SurfaceChanged;
         base.OnApplyTemplate(e);
         _layout = e.NameScope.Find<SegmentedButtonContentLayout>("PART_Layout");
-        _icon = e.NameScope.Find<SegmentedButtonIconSlot>("PART_Icon");
+        _icon = e.NameScope.Find<SegmentedButtonIcon>("PART_Icon");
         _surface = e.NameScope.Find<MaterialSurface>("PART_Container");
         if (_surface is not null) _surface.PropertyChanged += SurfaceChanged;
         UpdateSurfaceCorners();
@@ -143,7 +143,6 @@ public sealed class SegmentedButton : Button
     private void Refresh()
     {
         RefreshZIndex();
-        if (_icon is not null && this.IsAttachedToVisualTree()) _icon.Update(this);
     }
     private void RefreshZIndex()
     {

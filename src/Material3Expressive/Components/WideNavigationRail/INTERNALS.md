@@ -273,3 +273,45 @@ ContentPadding、宽度动画与状态职责不变，没有改写既有动画轨
 
 本轮 navigation-insets-wide-delivery 共 50 例全部 equal（其中普通宽栏新增 20 例），执行错误为零、重复稳定。
 相关普通/模态宽栏及自定义排列行为回归 56/56，整仓构建通过。
+
+
+## 2026-11-09：Modal 实际呈现根的 Insets 消费
+
+保留上一节的原决定与理由：普通栏迁移时，Modal 会把同一 ItemsPresenter 在声明树与独立弹层间搬移，
+因此不能直接在声明 owner 上发布 WindowInsets，也不能据普通栏结果宣称完成。
+本轮维护者明确授权缺失组件能力、共享接入和历史决定修订；现在用现有局部消费作用域完成两条路径。
+
+固定 AndroidX/Core `WideNavigationRailLayout` 的调用方 modifier 先进入 Surface，内部才应用
+`windowInsetsPadding(windowInsets)`。Core `WideNavigationRail.skiko.kt` 用 `Dialog` 创建独立 SceneLayer；
+`WindowInsetsPadding.kt` 的 InsetsConsumingModifierNode 通过 LayoutNode 祖先遍历消费节点，不是 CompositionLocal。
+因此 inline 继承声明祖先；Dialog 不继承声明祖先消费，但自身 modifier 的 add/union 仍须在新根执行。
+4 个双端 proof 实测：祖先消费 40，inline 图标消费 40；Dialog 图标消费 13/7/5/11；
+自身 ConsumeInsets 30 时 Dialog 图标消费 30。改前报告保留于 `modal-rail-insets-proof-valid`。
+
+模板在 inline/modal 各用一个 MaterialWindowInsetsPadding。Overlay 保留主题、数据与其他继承，单独以零消费
+标识 Dialog 根；modal padding 重放 owner 的原始 ConsumePadding/ConsumeInsets，不复制 owner 的累计总量。
+利用已有 BindConsumptionParent 将 Header 实际内容根和移动项目的逻辑根绑定到当前呈现 padding。
+绑定随内容替换、增删、模板替换或 items 转移更新；不重建非 recycling HeaderTemplate，原状态和动画身份不变。
+显式 Width/MinWidth 的可用内容宽度按实际剩余 Insets 扣除。没有新增通用 scope 框架或改变弹层职责。
+
+新增 ModalRailInsetsTests 覆盖 retained/hidden、LTR/RTL、声明祖先与自身消费、运行时参数、独立 Header、
+项目增删、detach/reattach 与 reopen。双端 `modal-rail-insets` 包含静态根验证、宽度与逻辑 padding、运行时
+消费变化和反复打开时间线；动画差异单独读取，不因 Insets 接入修改既有运动参考或比较容差。
+
+
+本单元最终 `modal-rail-insets-verified` 30 例：24 equal、2 withinTolerance、4 different；零执行错误，全部重复稳定。
+20 个静态场景逐项/逐像素相同；6 个运行时 Insets 变更场景的消费与几何全部相同，其中两个 RTL 场景仅有
+一个物理像素的 R/B 通道 1/255 栅格差，保持原容差。4 个 reopen 时间线仍有既有模态创建时序、
+尺寸/位置动画与混色差异；首次/再次打开的首帧（16ms/2416ms），Core 仍在 inline 或尚未组成 hidden 内容，
+Avalonia 已进入弹层，故该帧的消费观测也不同，下一帧消费量相同。所有展开/收起终点相等。
+
+用保留的改前 runner 和最终 runner 对旧 retained/hidden reopen 分别重跑：
+`modal-insets-retained-before` / `modal-insets-retained-control`、
+`modal-insets-hidden-before` / `modal-insets-hidden-control` 各有 18/18 测量样本、18/18 Avalonia 图像字节完全一致，
+证明上述既有动画差异未由本次接入引入。未修改这些轨迹或失败参考。
+已实际查看 RTL 自身 padding 静态图及 64ms reopen 双端图，未把统计相等扩大为所有动画一致。
+
+新增 11 行为例与原宽栏/模态/排列回归合计 57/57 通过，Catalog Release 构建成功。
+同轮审查补充了内容移出/detach 时立即释放消费源，避免旧内容重挂别的树后仍引用旧栏；
+也以 1x→2x 的 0.4 DIP caller ConsumePadding 复现旧剩余 10、正确值 9.5，测量前刷新 caller 消费修复。
+移出 closed-hidden 内容、非循环 HeaderTemplate 身份与双根重新挂载均有行为覆盖。

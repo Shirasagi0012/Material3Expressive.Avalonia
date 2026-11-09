@@ -14,7 +14,7 @@
 | `Card.kt`：`Card`、`ElevatedCard`、`OutlinedCard` 普通/onClick 重载 | [Card.cs](Card.cs)、[Card.axaml](Card.axaml)：IsClickable、原生输入、Surface 和 automation |
 | `Card.kt`：`CardDefaults`、`CardColors` | [Card.axaml](Card.axaml)、[CardThemeConverters.cs](CardThemeConverters.cs)、[CardTokenSource.cs](CardTokenSource.cs)：独立颜色属性与主题派生 |
 | `Card.kt`：`CardElevation.shadowElevation`，`internal/Elevation.kt` | Card 的高度选择、effect 替换与生命周期；共享交互源读数来自 Foundation |
-| `Card.kt` 内容 `Column` | [CardColumn.cs](CardColumn.cs)：按剩余高度顺序测量，不是完整 ColumnScope |
+| `Card.kt` 内容 `Column`；Foundation `Column.kt` / `RowColumnMeasurePolicy.kt` / `Box.kt` | [CardColumn.cs](CardColumn.cs)、[CardColumnItem.cs](CardColumnItem.cs)：顺序测量及显式 Box + weight/fill/align 宿主 |
 | `tokens/FilledCardTokens.kt`、`ElevatedCardTokens.kt`、`OutlinedCardTokens.kt` | [MaterialTokens.Comp.Card](../../Tokens/MaterialTokens.Comp.Card.cs) 与 CardTokenSource |
 
 ## 2. 关键机制与架构契约
@@ -37,6 +37,18 @@ IsClickable 改变会更新原生启用判断、automation 与反馈接入；进
 CardColumn 从上到下、Start 对齐、零间距。每个子项使用剩余高度，包括耗尽后的零约束；
 默认 Stretch 在此按 Start 放置，显式对齐保留。RTL 消费原生布局方向。
 直接放入原生 StackPanel 的行为仍归 StackPanel，不借文档扩大为完整 ColumnScope。
+
+`CardColumnItem` 对应 `Box(Modifier.weight(...).align(...))`，不是对任意 Control 注入父最小约束。
+固定 AndroidX/Core 的 Foundation RowColumnMeasurePolicy、Column 和 Box 规则为依据：先测所有
+无权重项，再按剩余物理像素和 Float 权重分配；四舍五入后的正/负余数依次给前面的权重项。
+Fill=false 的未用空间不重新分配；无界最大高度改用 Column 自身最小高度作为分配目标。
+默认 Weight=NaN 表达无 modifier，与已有 ButtonGroupItem API 一致；正无穷按上游转为 Float.MaxValue。
+Alignment 是 Start/Center/End 逻辑位置，宿主内容以 TopStart 放置。
+
+Avalonia `Measure(Size)` 仅表达最大约束；宿主在自己的 MeasureOverride 中消化分配的最小高度，
+Child 仍按 `0..max` 测量，等价于 Box 默认 `propagateMinConstraints=false`。没有临时写 Child.MinHeight，
+没有新增共享约束协议。2026-11-09 本轮用户明确授权补基础能力与调整 API，批准此显式组合入口。
+原 CardColumn 的引入理由（受限高度下 StackPanel 无限测量）仍有效，无权重的既有直接子项沿用原路径。
 
 颜色 Token 经主题绑定提供四个独立有效属性；主题派生颜色后再以普通 Setter 选择当前状态画刷。
 Elevation 是六个非 nullable double 的完整不可变值，主题通过动态 MultiBinding 组装默认组；
@@ -85,13 +97,22 @@ Card 的数值适配范围以组件确认记录为准。
 [Core 焦点](../../../../docs/DECISIONS.md)与
 [Surface 描边](../../../../docs/DECISIONS.md)，不在组件内建立另一套规则。
 
-切角及自定义路径通过 Shape 接入共享 Surface；完整 ColumnScope 尚未实现。文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
+切角及自定义路径通过 Shape 接入共享 Surface；权重/Fill/逻辑对齐通过显式 CardColumnItem 提供。
+任意 Control 的透明 ColumnScope.weight、alignBy 与 intrinsic weight 测量尚未实现；文字栅格和完整真实设备输入仍未经验证。共享源入口授权见引入提交 `e89f5fc8`。
 
 切角卡片新增验证位于双端 `material-shape` 族，包含三种主题、普通/可点击、RTL、焦点、波纹及动态尺寸。
 方向切换瞬间 Core 描边保留旧方向的六个卡片用例仍超差，详见 [Surface 已知差异](../Surface/INTERNALS.md#3-已确认决定与已知差异)；
 没有放宽容差或从用例集中移除。此差异不属于此前允许的阴影/数值边界。
 
 ## 4. 验证入口
+
+2026-11-09 新增 `CardColumnTests` 15 项，连同既有 Card 行为共 43 项通过；Catalog 构建通过。
+双端 `card-column-verified` 30 例为 29 equal、1 different，执行错误零且重复稳定，已检查真实图像。
+包含不等 Float 权重、正/负舍入余数、Fill=false、无界/最小高度、耗尽、RTL、内容与宿主几何及动态更新。
+额外 1x 行为测试发现并修正 RTL 奇数像素居中：先在物理方向四舍五入，再转换为 Avalonia 逻辑位置。
+保留的 `static.fractional-pixel.rtl` 差异来自外层居中：宽 101.25 DIP 时 Compose Card.x=109.5、
+Avalonia Grid 的 Center 使 Card.x=109.25；所有宿主/内容的相对坐标及尺寸一致，整个子树平移 0.25 DIP。
+这是宿主层的真实差异，没有移动截图、放宽容差或更改基准来消除。完整 ColumnScope 的未实现范围仍见上节。
 
 当前全族 `card-elevation-current` 共 97 例：68 equal、27 withinTolerance、2 different，
 全部重复稳定且无执行错误。剩余为 filled.enter 原生键盘激活时序及 filled.ambient-color 内容色，
@@ -117,6 +138,8 @@ Card 的数值适配范围以组件确认记录为准。
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter "FullyQualifiedName~CardTests|FullyQualifiedName~ElevationSourceLifetimeTests"
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~CardColumnTests
+./tests/VisualParity/parity.ps1 self-test --family card-column
 ./tests/VisualParity/parity.ps1 self-test --family card
 ./tests/VisualParity/parity.ps1 self-test --family focus-ring
 ```

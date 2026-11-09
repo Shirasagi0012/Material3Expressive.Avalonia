@@ -175,7 +175,13 @@
       <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
       <Setter Property="FocusAdorner" Value="{x:Null}" />
       <Setter Property="m3:MaterialText.Style" Value="{m3:Typography LabelLarge}" />
-      <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}}" />
+      <Setter Property="Padding">
+        <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}">
+          <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource Self}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalItemPadding}" />
+          <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionItemPadding}" />
+        </MultiBinding>
+      </Setter>
       <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ItemShape}}" />
       <Setter Property="Margin">
         <MultiBinding Converter="{x:Static m3:MenuSpacingConverters.SupportingMargin}">
@@ -220,7 +226,14 @@
           <Panel>
             <m3:MenuItemChrome ShapeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" SelectedCornerRadius="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.SelectedItemShape}}" MinimumContainerWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinItemWidth}}" MaximumIntrinsicWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MaxItemWidth}}" MinimumContainerHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalItemHeight}}" MinimumInteractiveHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.MinimumInteractiveSize}}" TargetBrush="{TemplateBinding Background}" ColorAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
               <m3:MaterialSurface x:Name="PART_ItemSurface" Background="{Binding PaintedBrush, RelativeSource={RelativeSource AncestorType=m3:MenuItemChrome}}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}" StateLayerBrush="{TemplateBinding Foreground}" ShadowElevation="0" TonalElevation="0">
-                <m3:NativeMenuRow HorizontalArrangement="{TemplateBinding m3:MenuAppearance.HorizontalArrangement}" AlignLastToEnd="True" Spacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}}" Background="Transparent">
+                <m3:NativeMenuRow HorizontalArrangement="{TemplateBinding m3:MenuAppearance.HorizontalArrangement}" AlignLastToEnd="True" Background="Transparent">
+                  <m3:NativeMenuRow.Spacing>
+                    <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}" Priority="Template">
+                      <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource TemplatedParent}" />
+                      <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}" />
+                      <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionContentSpacing}" />
+                    </MultiBinding>
+                  </m3:NativeMenuRow.Spacing>
                   <m3:DropdownMenuLeadingIcon Name="PART_LeadingIcon" VerticalAlignment="Center" ClipToBounds="True"
                       SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}"
                       AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
@@ -263,7 +276,21 @@
                       </ContentPresenter.IsVisible>
                     </ContentPresenter>
                   </StackPanel>
-                  <m3:NativeMenuRow Name="PART_Trailing" Spacing="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}}" VerticalAlignment="Center" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}">
+                  <m3:NativeMenuRow Name="PART_Trailing" VerticalAlignment="Center">
+                    <m3:NativeMenuRow.Spacing>
+                      <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}" Priority="Template">
+                        <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource TemplatedParent}" />
+                        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.VerticalContentSpacing}" />
+                        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionContentSpacing}" />
+                      </MultiBinding>
+                    </m3:NativeMenuRow.Spacing>
+                    <m3:MaterialSymbol.DefaultSize>
+                      <MultiBinding Converter="{x:Static m3:MenuPrecisionDefaults.Value}" Priority="Template">
+                        <Binding Path="(m3:MaterialPrecisionPointer.IsEnabled)" RelativeSource="{RelativeSource TemplatedParent}" />
+                        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}" />
+                        <m3:Token Key="{x:Static m3:MaterialTokens+Comp+Menu.PrecisionTrailingIconSize}" />
+                      </MultiBinding>
+                    </m3:MaterialSymbol.DefaultSize>
                     <m3:NativeMenuRow.IsVisible>
                       <MultiBinding Converter="{x:Static BoolConverters.Or}" Priority="Template">
                         <Binding Path="InputGesture" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static ObjectConverters.IsNotNull}" />
@@ -308,7 +335,7 @@
                         </MultiBinding>
                       </TextBlock.Foreground>
                     </TextBlock>
-                    <Viewbox Name="PART_Chevron" Width="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}" Height="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.TrailingIconSize}}" Stretch="Uniform">
+                    <Viewbox Name="PART_Chevron" Width="{Binding (m3:MaterialSymbol.DefaultSize), RelativeSource={RelativeSource Self}}" Height="{Binding (m3:MaterialSymbol.DefaultSize), RelativeSource={RelativeSource Self}}" Stretch="Uniform">
                       <Canvas Width="24" Height="24">
                         <Path Data="M 9,6 L 15,12 9,18 7.6,16.6 12.2,12 7.6,7.4 Z">
                           <Path.Fill>

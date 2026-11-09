@@ -42,6 +42,7 @@
 | 成员 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `Visible` | `bool` | `true` | 动画显隐的目标状态，绑定它做显隐 |
+| `TargetCommitPhase` | `AnimationCommitPhase` | `BeforeFrame` | 本地 Visible 目标的提交阶段；AfterFrame 在帧末合并目标，Source 不受影响 |
 | `Source` | `VisibilitySource?` | `null` | 外部显隐状态源；设置后优先于 `Visible` |
 | `Enter` | `EnterTransition` | `new FadeIn() + new ExpandIn()` | 进入过渡声明 |
 | `Exit` | `ExitTransition` | `new FadeOut() + new ShrinkOut()` | 退出过渡声明 |
@@ -51,6 +52,13 @@
 | `IsContentPresent` | `bool`（只读） | — | 内容是否仍在视觉树中（含正在退出的内容） |
 | `Scope` | `AnimatedVisibilityScope?`（只读） | — | 当前呈现的作用域，无呈现时为 `null` |
 | `ScopeCreated` | `EventHandler<VisibilityScopeEventArgs>` | — | 每次呈现创建作用域时触发一次，参数含 `Scope` |
+
+`BeforeFrame` 保留现有的即时目标更新。要表达 Compose 布尔入口在重组后提交目标的阶段，设置
+`TargetCommitPhase="AfterFrame"`：本帧已有动画先采样，同一批目标变更合并后提交，新的动画从随后真实帧开始采样。
+`Visible` 是请求值，`TargetVisible` 是已提交值，待提交时 `IsIdle=false`。初始挂载仍立即采用初始 Visible，
+不会额外播放入场；外部 Source 拥有自身时序。模式切回 BeforeFrame 会立即提交最新请求。
+卸载、换源或生命周期结束会撤销待提交项；帧末 effect 中发生的新变更属于下一批，不递归提交。
+该模式复用根的动画帧队列，不是 Dispatcher 延时，也不提供完整的 Compose 重组或布局屏障。
 
 ### 过渡目录
 

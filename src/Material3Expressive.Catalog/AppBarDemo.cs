@@ -74,6 +74,16 @@ public sealed class AppBarDemo : Window
             toggle.Click += (_, _) => insetHost.Insets = insetHost.Insets.Top == 6 ? new Thickness(32) : new Thickness(8, 6, 12, 10);
             content.Children.Add(toggle); content.Children.Add(insetHost);
         }
+        content.Children.Add(new TextBlock { Text = "Two-row top bar Insets — each title receives the consumption of its own row." });
+        Control InsetTitle(string text) => new MaterialWindowInsetsPadding {
+            Insets = requestedInsets, Child = new TextBlock { Text = text } };
+        var topPreview = new TwoRowsTopAppBar { WindowInsets = requestedInsets,
+            Title = InsetTitle("Expanded title"), CollapsedTitle = InsetTitle("Collapsed title"),
+            NavigationIcon = new MaterialWindowInsetsPadding { Insets = requestedInsets, Child = Action(MaterialSymbolCodepoint.Menu, "Menu") } };
+        var topInsets = new MaterialWindowInsetsPadding { Insets = new Thickness(8, 6, 12, 10), Child = topPreview };
+        var topToggle = new Button { Content = "Top: toggle parent Insets" };
+        topToggle.Click += (_, _) => topInsets.Insets = topInsets.Insets.Top == 6 ? new Thickness(32) : new Thickness(8, 6, 12, 10);
+        content.Children.Add(topToggle); content.Children.Add(topInsets);
         var overflowStatus = new TextBlock { Text = "Use the actions or their overflow menu." };
         var overflowRow = CreateOverflowActions(overflowStatus);
         var overflowColumn = CreateOverflowActions(overflowStatus, vertical: true);

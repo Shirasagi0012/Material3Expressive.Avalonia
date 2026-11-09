@@ -73,6 +73,9 @@
         <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
         <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
       </Style>
+      <Style Selector="^[Variant=Legacy]">
+        <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+      </Style>
     </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:Tab}" TargetType="m3:Tab">
       <Setter Property="ClipToBounds" Value="False" />
@@ -184,6 +187,9 @@
       </Setter>
       <Style Selector="^[(m3|TabRowAppearance.Variant)=Secondary]">
         <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.SecondaryContentColor}}" />
+        <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
+      </Style>
+      <Style Selector="^[(m3|TabRowAppearance.Variant)=Legacy]">
         <Setter Property="m3:TabRowThemeDefaults.Indicator" Value="{StaticResource MaterialSecondaryTabIndicator}" />
       </Style>
     </ControlTheme>

@@ -6,7 +6,7 @@
         <m3:MaterialInteractionSource x:Key="PreviewSource" />
     </Window.Resources>
     <ScrollViewer>
-    <StackPanel Margin="24" Spacing="20">
+    <StackPanel Margin="24" Spacing="20" m3:MaterialPrecisionPointer.IsEnabled="{Binding #NativePrecision.IsChecked}">
         <TextBlock Text="Exposed dropdown fields" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="Editable text, selection and menu expansion are independent. Use Up/Down to enter the menu." TextWrapping="Wrap" />
         <m3:ExposedDropdownMenuBox x:Name="EditableOptions" Width="280" HorizontalAlignment="Left" ExpandedChangeRequested="OnExpandedOptions">
@@ -42,6 +42,7 @@
         </m3:ExposedDropdownMenuBox>
         <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
+        <CheckBox x:Name="NativePrecision" Content="Precision sizing for native menus" />
         <StackPanel Orientation="Horizontal" Spacing="16">
             <Button Content="Standard">
                 <Button.Flyout>
@@ -113,6 +114,7 @@
         </StackPanel>
         <TextBlock Text="Native selection — toggle quickly to reverse the check animation" TextWrapping="Wrap" />
         <MenuItem x:Name="NativeIconPreview" Header="Native selected icon" ToggleType="CheckBox"
+                  m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}"
                   m3:MenuAppearance.InteractionSource="{StaticResource PreviewSource}"
                   Theme="{StaticResource MaterialVerticalMenuItemTheme}" Width="240" HorizontalAlignment="Left" />
         <StackPanel Orientation="Horizontal" Spacing="12">

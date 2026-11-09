@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using ComposeAnimation.Runtime;
 
@@ -98,12 +99,18 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
                 [~BorderThicknessProperty] = new TemplateBinding(BorderThicknessProperty),
                 [~CornerRadiusProperty] = new TemplateBinding(CornerRadiusProperty),
                 [~PaddingProperty] = new TemplateBinding(PaddingProperty),
+                [~FlowDirectionProperty] = new TemplateBinding(FlowDirectionProperty),
                 [~HorizontalContentAlignmentProperty] = new TemplateBinding(HorizontalContentAlignmentProperty),
                 [~VerticalContentAlignmentProperty] = new TemplateBinding(VerticalContentAlignmentProperty)
             };
             names.Register(presenter.Name, presenter);
 
-            var layer = new EnterExitLayout { Name = "PART_EnterExitLayout", Surface = { Child = presenter } };
+            // EnterExitTransition places physical offsets (LayoutDirection.Ltr / placeWithLayer).
+            // Keep native RTL mirroring outside the effect, while content retains its direction.
+            var layer = new EnterExitLayout {
+                Name = "PART_EnterExitLayout", FlowDirection = FlowDirection.LeftToRight,
+                Surface = { Child = presenter }
+            };
             names.Register(layer.Name, layer);
 
             return layer;
@@ -152,11 +159,13 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
         _attached = true;
         _failed = false;
         SynchronizePresentation();
+        UpdateVisibleTarget();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _attached = false;
+        CancelTargetCommit();
         SynchronizePresentation();
         LookaheadLayout.Forget(this);
         base.OnDetachedFromVisualTree(e);
@@ -184,9 +193,9 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
         if (change.Property == EnterProperty || change.Property == ExitProperty)
             _enterExitMotion?.UpdateTransitions(Enter, Exit);
 
-        if (change.Property == VisibleProperty)
+        if (change.Property == VisibleProperty || change.Property == TargetCommitPhaseProperty)
         {
-            if (Source is null && _visibilityConnection is { }) _visibilityConnection.Transition.UpdateTarget(Visible);
+            if (UpdateVisibleTarget()) return;
             SynchronizePresentation();
         }
         else if (change.Property == SourceProperty
@@ -205,7 +214,9 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
     // drain runs before the frame's waiter snapshot, so the run samples this frame, continuing
     // from its stored play time. Detach is handled by OnDetachedFromVisualTree.
     void IAnimationScopeHost.OnScopeChanged(AnimationScopeChangedEventArgs e)
-        => _animationScopeBinding.Handle(e,
+    {
+        CancelTargetCommit();
+        _animationScopeBinding.Handle(e,
             onResume: animationScope => {
                 if (_visibilityConnection is not { } connection || connection.Transition.IsDisposed) return false;
                 _failed = false;
@@ -222,6 +233,8 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
                 _failed = false;
                 SynchronizePresentation(!resumed);
             });
+        UpdateVisibleTarget();
+    }
 
     private void OnPhaseChanged() => SynchronizePresentation();
 
@@ -283,7 +296,7 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
                 if (scope is { IsDisposed: false })
                 {
                     Transition<EnterExitState> transition = scope.Transition;
-                    bool idle = !parent.HasPendingTargetState
+                    bool idle = !_targetCommitQueued && !parent.HasPendingTargetState
                      && scope.IsInitialLayoutReady
                      && transition is { IsPreparing: false, IsRunning: false }
                      && transition.CurrentState == transition.TargetState
@@ -295,7 +308,7 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
                         EndPresentation();
                     SetAndRaise(IsIdleProperty, ref _isIdle, idle && !parent.IsSeeking);
                 }
-                else SetAndRaise(IsIdleProperty, ref _isIdle, true);
+                else SetAndRaise(IsIdleProperty, ref _isIdle, !_targetCommitQueued);
             }
         }
         catch (Exception error)
@@ -377,6 +390,7 @@ public partial class AnimatedVisibility : ContentControl, IEnterExitScopeHost, I
 
     private void DisconnectVisibilitySource()
     {
+        CancelTargetCommit();
         _animationScopeBinding.Reset();
         VisibilityConnection? connection = _visibilityConnection;
         _visibilityConnection = null;

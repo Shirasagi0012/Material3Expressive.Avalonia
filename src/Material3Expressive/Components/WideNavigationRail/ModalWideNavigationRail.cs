@@ -16,6 +16,7 @@ using ComposeAnimation.Runtime;
 using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Input;
 using Material3Expressive.Foundation.Overlays;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -57,6 +58,10 @@ public class ModalWideNavigationRail : WideNavigationRail
     private WideNavigationRailLayout? _modalLayout;
     private ItemsPresenter? _presenter;
     private ContentPresenter? _expandedHeader;
+    private ContentPresenter? _inlineHeader;
+    private MaterialWindowInsetsPadding? _inlineInsets, _modalInsets;
+    private IDisposable? _inlineInsetsParent, _modalInsetsParent;
+    private readonly Dictionary<Control, (Control Parent, IDisposable Binding)> _insetContentBindings = new();
     private Border? _expandedHeaderPadding, _scrim;
     private Control? _surface;
     private readonly Popup _popup = new();
@@ -92,12 +97,14 @@ public class ModalWideNavigationRail : WideNavigationRail
     protected override Size MeasureCore(Size availableSize)
     {
         ApplyTemplate(); // A hidden placeholder must still construct its modal host.
+        MaterialWindowInsets.Refresh(this); // Re-round caller consumption after a density change.
         return HideOnCollapse ? default : base.MeasureCore(availableSize);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         CloseOverlay(false);
+        ClearInsetBindings();
         _templateRoot?.Children.Remove(_popup);
         if (_overlay is not null) { _overlay.DismissRequested -= OnModalDismissRequested; _overlay.Closed -= OnModalClosed; }
         base.OnApplyTemplate(e);
@@ -108,11 +115,19 @@ public class ModalWideNavigationRail : WideNavigationRail
         _modalLayout = e.NameScope.Find<WideNavigationRailLayout>("PART_ModalLayout");
         _presenter = e.NameScope.Find<ItemsPresenter>("PART_ItemsPresenter");
         _expandedHeader = e.NameScope.Find<ContentPresenter>("PART_ExpandedHeader");
+        _inlineHeader = e.NameScope.Find<ContentPresenter>("PART_Header");
+        _inlineInsets = e.NameScope.Find<MaterialWindowInsetsPadding>("PART_InlineInsets");
+        _modalInsets = e.NameScope.Find<MaterialWindowInsetsPadding>("PART_ModalInsets");
         _expandedHeaderPadding = e.NameScope.Find<Border>("PART_ExpandedHeaderPadding");
         _surface = e.NameScope.Find<Control>("PART_ModalSurface");
         _scrim = e.NameScope.Find<Border>("PART_Scrim");
         if (_overlay is not null)
         {
+            // Core Dialog has a new LayoutNode root. Preserve theme/data inheritance,
+            // but not the declaring layout's consumed insets.
+            _overlay.SetValue(MaterialWindowInsets.ConsumedPaddingProperty, default(Thickness));
+            if (_modalInsets is not null)
+                _modalInsetsParent = MaterialWindowInsets.BindConsumptionParent(_modalInsets, _overlay);
             _overlay.Owner = this;
             _overlay.DismissRequested += OnModalDismissRequested;
             _overlay.Closed += OnModalClosed;
@@ -121,6 +136,9 @@ public class ModalWideNavigationRail : WideNavigationRail
             _overlay.AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel, true);
             _overlay.PointerCaptureLost += OnPointerCaptureLost;
         }
+        if (_inlineInsets is not null)
+            _inlineInsetsParent = MaterialWindowInsets.BindConsumptionParent(_inlineInsets, this);
+        UpdateOwnInsets();
         if (_scrim is not null)
         {
             _scrim.PointerReleased += OnScrimReleased;
@@ -139,6 +157,7 @@ public class ModalWideNavigationRail : WideNavigationRail
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         CloseOverlay(false);
+        ClearInsetContentBindings();
         _pendingDragSettle = null;
         _pendingDismiss = false;
         _position?.Dispose(); _alpha?.Dispose();
@@ -158,6 +177,8 @@ public class ModalWideNavigationRail : WideNavigationRail
             || change.Property == ExpandedHeaderTemplateProperty || change.Property == ExpandedHeaderTopPaddingProperty)
             UpdateHeader();
         if (change.Property == HideOnCollapseProperty) RefreshPresentation();
+        if (change.Property == MaterialWindowInsets.ConsumeInsetsProperty || change.Property == MaterialWindowInsets.ConsumePaddingProperty)
+            UpdateOwnInsets();
         if (change.Property == EffectsAnimationProperty && EffectsAnimation.Stiffness > 0)
         {
             if (_position is { } position && position.TargetValue != (State.TargetValue == WideNavigationRailValue.Expanded ? 1f : 0f)) UpdateExpansion();
@@ -183,6 +204,63 @@ public class ModalWideNavigationRail : WideNavigationRail
             _offset = null; _width = 0; _anchorTarget = State.TargetValue;
             _overlay?.InvalidateMeasure();
         }
+    }
+    private void UpdateOwnInsets()
+    {
+        // The caller's modifier is applied in both upstream branches. Only its own
+        // add/union operations replay in Dialog; ancestor consumption stays inline.
+        if (_modalInsets is null) return;
+        MaterialWindowInsets.SetConsumePadding(_modalInsets, MaterialWindowInsets.GetConsumePadding(this));
+        MaterialWindowInsets.SetConsumeInsets(_modalInsets, MaterialWindowInsets.GetConsumeInsets(this));
+    }
+    private void ClearInsetBindings()
+    {
+        ClearInsetContentBindings();
+        _inlineInsetsParent?.Dispose(); _inlineInsetsParent = null;
+        _modalInsetsParent?.Dispose(); _modalInsetsParent = null;
+    }
+    private void ClearInsetContentBindings()
+    {
+        foreach (var child in _insetContentBindings.Keys.ToArray()) ReleaseInsetContent(child);
+    }
+    private void OnInsetContentDetached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is Control child) ReleaseInsetContent(child);
+    }
+    private void ReleaseInsetContent(Control child)
+    {
+        if (!_insetContentBindings.Remove(child, out var entry)) return;
+        child.DetachedFromVisualTree -= OnInsetContentDetached;
+        entry.Binding.Dispose();
+    }
+    internal Thickness RemainingInsets(bool modal) =>
+        (modal ? _modalInsets : _inlineInsets)?.GetValue(MaterialWindowInsets.UnconsumedInsetsProperty) ?? WindowInsets;
+
+    internal void UpdateInsetContentScopes()
+    {
+        // Deferred popup restoration can move the presenter after owner detach.
+        // Do not recreate leases on content that can already belong to a new tree.
+        if (!this.IsAttachedToVisualTree()) { ClearInsetContentBindings(); return; }
+        if (_inlineInsets is null || _modalInsets is null) return;
+        var desired = new Dictionary<Control, Control>();
+        // ApplyTemplate respects ContentPresenter's existing child identity. An
+        // unconditional UpdateChild would recreate non-recycling data templates.
+        _inlineHeader?.ApplyTemplate(); _expandedHeader?.ApplyTemplate();
+        if (_inlineHeader?.Child is { } inlineHeader) desired[inlineHeader] = _inlineInsets;
+        if (_expandedHeader?.Child is { } modalHeader) desired[modalHeader] = _modalInsets;
+        var layout = _presenter?.GetVisualParent() as WideNavigationRailLayout;
+        var panel = _presenter?.GetVisualDescendants().OfType<WideNavigationRailItemsPanel>().FirstOrDefault();
+        if (layout is not null && panel is not null)
+            foreach (var child in panel.Children) desired[child] = layout.IsModal ? _modalInsets : _inlineInsets;
+        foreach (var child in _insetContentBindings.Keys.Where(child => !desired.TryGetValue(child, out var parent)
+                     || !ReferenceEquals(parent, _insetContentBindings[child].Parent)).ToArray())
+            ReleaseInsetContent(child);
+        foreach (var (child, parent) in desired)
+            if (!_insetContentBindings.ContainsKey(child))
+            {
+                _insetContentBindings.Add(child, (parent, MaterialWindowInsets.BindConsumptionParent(child, parent)));
+                child.DetachedFromVisualTree += OnInsetContentDetached;
+            }
     }
     internal override void UpdateExpansion()
     {
@@ -267,6 +345,7 @@ public class ModalWideNavigationRail : WideNavigationRail
             from.Children.Add(new Panel());
             to.Children.RemoveAt(1);
             to.Children.Add(_presenter);
+            UpdateInsetContentScopes();
         }
         finally { _moving = false; }
     }

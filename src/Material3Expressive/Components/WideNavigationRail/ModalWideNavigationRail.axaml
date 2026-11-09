@@ -14,13 +14,7 @@
         <ControlTemplate>
           <Grid x:Name="PART_Root">
             <m3:MaterialSurface x:Name="PART_Inline" Background="{TemplateBinding Background}" Shape="{TemplateBinding CollapsedShape}" CornerRadius="{TemplateBinding CollapsedCornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}">
-              <Border>
-                <Border.Padding>
-                  <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
-                    <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
-                    <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
-                  </MultiBinding>
-                </Border.Padding>
+              <m3:MaterialWindowInsetsPadding x:Name="PART_InlineInsets" Insets="{TemplateBinding WindowInsets}">
                 <Border Padding="{TemplateBinding ContentPadding}">
                   <m3:WideNavigationRailLayout
                       ExpandedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemMinHeight}}"
@@ -40,20 +34,14 @@
                     <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" UseLayoutRounding="False" />
                   </m3:WideNavigationRailLayout>
                 </Border>
-              </Border>
+              </m3:MaterialWindowInsetsPadding>
             </m3:MaterialSurface>
             <m3:ModalWideNavigationRailOverlay x:Name="PART_Overlay" IsVisible="False" Background="Transparent" ClipToBounds="True">
               <m3:ModalWideNavigationRailScrim x:Name="PART_Scrim" Background="{TemplateBinding ScrimBrush}" RenderOptions.RequiresFullOpacityHandling="True" />
               <m3:MaterialSurface x:Name="PART_ModalSurface" Width="{TemplateBinding Width}" MinWidth="{TemplateBinding MinWidth}" MaxWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedContainerMaxWidth}}"
                                   Background="{TemplateBinding ModalBackground}" Shape="{TemplateBinding ExpandedShape}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
                 <m3:MaterialSurface Background="{TemplateBinding ModalBackground}" Shape="{TemplateBinding ExpandedShape}" CornerRadius="{TemplateBinding ExpandedCornerRadius}" TextElement.Foreground="{TemplateBinding ModalForeground}">
-                  <Border>
-                    <Border.Padding>
-                      <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
-                        <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
-                      </MultiBinding>
-                    </Border.Padding>
+                  <m3:MaterialWindowInsetsPadding x:Name="PART_ModalInsets" Insets="{TemplateBinding WindowInsets}">
                     <Border Padding="{TemplateBinding ContentPadding}">
                       <m3:WideNavigationRailLayout
                           ExpandedItemMinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+WideNavigationRail.ExpandedItemMinHeight}}"
@@ -77,7 +65,7 @@
                         <Panel />
                       </m3:WideNavigationRailLayout>
                     </Border>
-                  </Border>
+                  </m3:MaterialWindowInsetsPadding>
                 </m3:MaterialSurface>
               </m3:MaterialSurface>
             </m3:ModalWideNavigationRailOverlay>

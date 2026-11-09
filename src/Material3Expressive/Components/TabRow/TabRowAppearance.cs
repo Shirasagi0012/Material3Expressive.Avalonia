@@ -6,7 +6,7 @@ using Material3Expressive.Foundation.Interaction;
 
 namespace Material3Expressive.Components;
 
-public enum TabRowVariant { Primary, Secondary }
+public enum TabRowVariant { Primary, Secondary, Legacy }
 public enum TabContentLayout { Stacked, Leading, Custom }
 
 /// <summary>A tab's start-relative layout, in DIP. ContentWidth excludes the 16 DIP text padding on each side.</summary>

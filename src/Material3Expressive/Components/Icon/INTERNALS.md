@@ -24,6 +24,11 @@
 着色用 source alpha 作 opacity mask、前景画笔作源，保留 SrcIn 的透明度相乘关系。
 DrawingBrush 的 SourceRect/DestinationRect 明确使用实际布局边界，避免内部整数 DIP 的绘制数据包围盒再次缩放小数尺寸。
 Bitmap.Draw 的源矩形实际使用像素，SizedImage 将 IImage DIP 源矩形映射到完整 PixelSize；矢量和自定义 IImage 保留原坐标契约。
+Avalonia 12.1.5 的 DrawingImage.Draw 把目标平移与源平移一起乘以缩放，非零 Fit 偏移因而被再次缩放，
+并被目标矩形裁掉。2026-11-09 本轮维护者授权必要共享修复后，SizedImage 仅对 DrawingImage 将目标平移
+放到外层 DrawingContext，传入原点开始的目标矩形；保留 Viewbox/源坐标变换，不改 Bitmap 或第三方 IImage 接收的 destRect。
+依据是框架 DrawingImage 的 `translate * scale` 与 IImage.Draw 的输出矩形契约；三来源的 Fit、RTL、
+透明重叠和动画均由 toggle-fab-icon 双端覆盖，原 icon 族补充回归。
 DrawingImage.Invalidated 在挂载期订阅，换源/卸载解除，重挂恢复；不持有或释放调用方图片的所有权。
 
 ## 3. 已确认决定与已知差异

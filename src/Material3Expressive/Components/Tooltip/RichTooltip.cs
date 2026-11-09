@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Media;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
@@ -9,6 +10,9 @@ namespace Material3Expressive.Components;
 /// <remarks>Content is the supporting text. Actions do not implicitly dismiss the containing TooltipBox.</remarks>
 public class RichTooltip : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = PlainTooltip.ShapeProperty.AddOwner<RichTooltip>();
+    /// <summary>An explicit container outline, or null to use the themed CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<TooltipCaretShape?> CaretShapeProperty = PlainTooltip.CaretShapeProperty.AddOwner<RichTooltip>();
     public TooltipCaretShape? CaretShape { get => GetValue(CaretShapeProperty); set => SetValue(CaretShapeProperty, value); }
     public static readonly StyledProperty<Size?> CaretSizeProperty = PlainTooltip.CaretSizeProperty.AddOwner<RichTooltip>();

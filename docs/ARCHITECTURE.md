@@ -45,8 +45,13 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 `MaterialWindowInsets.ConsumePadding` 把逻辑 Padding 累加到祖先消费；`ConsumeInsets` 对物理四边取并集。
 两者只传播事实。`MaterialWindowInsetsPadding` 实际应用祖先尚未消费的 Insets，再向子树发布消费，
 对应 Foundation windowInsetsPadding。Scaffold / AppBar 读取同一环境；普通/Flexible BottomAppBar 也向内容发布自身消费；NavigationBar、ShortNavigationBar、普通 NavigationRail、普通 WideNavigationRail
-也会应用并向真实内容发布消费。其他组件需按其上游明确接入。
+也会应用并向真实内容发布消费。搜索顶栏发布完整消费；普通双行顶栏分别在上行发布全部边、下行发布水平边。
+模板槽的逻辑父级绕过实际布局消费节点时，使用内部消费源绑定并在换槽/卸载时释放，调用方自己的 add/union 顺序不变。
+其他组件需按其上游明确接入。
 同一元素同时提供两种消费时先 add 再 union；复杂顺序用嵌套元素表达，不从控件位置猜测消费。
+ModalWideNavigationRail 的内联栏继承声明祖先消费，独立 Dialog 弹层从零消费根开始；
+调用方直接设在栏上的 ConsumePadding/ConsumeInsets 在两处各自执行。Header 与移动项目的实际内容根
+使用现有 BindConsumptionParent 关联各自呈现作用域，detach/移出释放绑定，避免内容重用时保留旧来源。
 宿主仍负责 OS/IME Insets 来源。用法与验证见 [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md#自动应用窗口-insets)。
 
 ## 横向内容排列
@@ -86,7 +91,7 @@ Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则
 - **Tooltip 路径并集**：内部几何入口让 Tooltip 的容器和箭头共用背景、内容裁剪及路径阴影；不改变测量，也不扩展圆角描边/交互契约。阴影快照及多轮廓回退见 [决定 §27](DECISIONS.md#27-tooltip-并集轮廓与路径阴影入口)。
 - **描边处理**：均匀圆角采用内缩算法计算外框，非对称圆角通过内外轮廓布尔相减绘制，保证高精度对齐。
 - **路径型圆角描边**：内部 SurfaceOutline 的显式路径分支用于 Carousel 的 MaskShape，保留上游通用路径的离屏双宽描边、反向路径擦除及整数像素缓存边界。默认 Surface 描边不切换；适用范围见 [决定 §29](DECISIONS.md#29-carousel-路径描边)。
-- **显式路径形状**：`MaterialShape` / `CutCornerShape` / `RoundedCornerShape` 由 Surface 提供共享绘制，Card、Button、IconButton、ToggleButton、SplitButton、普通/Extended FAB、FloatingToolbar、Chip、PullToRefreshIndicatorBox、DragHandle、SegmentedButton、ListItem、Snackbar 及独立 Menu 容器/组/项按各自上游入口接入。可观察形状返回闭合 DIP 路径；共享快照供背景、内容裁剪、阴影、均匀描边和交互反馈消费。ListItem/Menu 的圆角与切角同族逐角插值，混合类型按固定 Interpolatable 的中点规则选取端点；百分比随短边重算，RTL 在消费点抵消原生镜像；null 保留既有圆角路径。范围与焦点图层语义见[决定 §35](DECISIONS.md#35-surface-与-card-的显式路径形状)。
+- **显式路径形状**：`MaterialShape` / `CutCornerShape` / `RoundedCornerShape` 由 Surface 提供共享绘制，Card、Button、IconButton、ToggleButton、SplitButton、普通/Extended FAB、FloatingToolbar、Chip、PullToRefreshIndicatorBox、DragHandle、SegmentedButton、ListItem、Snackbar、PlainTooltip/RichTooltip 及独立 Menu 容器/组/项按各自上游入口接入。可观察形状返回闭合 DIP 路径；共享快照供背景、内容裁剪、阴影、均匀描边和交互反馈消费。ListItem/Menu 的圆角与切角同族逐角插值，混合类型按固定 Interpolatable 的中点规则选取端点；百分比随短边重算，RTL 在消费点抵消原生镜像；null 保留既有圆角路径。范围与焦点图层语义见[决定 §35](DECISIONS.md#35-surface-与-card-的显式路径形状)。
 
 ---
 
@@ -95,7 +100,7 @@ Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则
 - **事件流模型**：`MaterialInteractionSource` 提供 UI 线程上的配对事件流，结束事件引用开始对象，订阅从后续事件开始。`MaterialInteractionController` 将原生输入接入该流；组件独立维护形状、高度等收集状态，源替换和模板重建的生命周期见各组件内部契约。
 - **状态层与波纹**：状态层按存活顺序选择交互，并以开始对象身份判断动画重启，同类型的新交互也会重新启动动画。波纹动画独立持有子生命周期，按压释放与取消时执行平滑淡出。
 - **焦点环机制**：`MaterialInteraction.FocusFeedback` 提供透明度与内缩焦点环两种模式，独立呈现器负责动画与四角不等圆角绘制。Surface / Switch 切换模式时重建 indication；CheckBox / RadioButton / ListItem 更新同一 ripple 配置，保留活动反馈。配置与缓存契约见 [Interaction](../src/Material3Expressive/Foundation/Interaction/README.md)。
-- **精确指针尺寸环境**：`MaterialPrecisionPointer.IsEnabled` 提供默认关闭的继承开关，由应用显式选择。目前消费方为 Button / ToggleButton / AlertDialog / 独立 Expressive 菜单项；不改变最小交互留白，不自动检测设备。范围与精确 Token 选择见 [决定 §34](DECISIONS.md#34-显式精确指针尺寸环境)。
+- **精确指针尺寸环境**：`MaterialPrecisionPointer.IsEnabled` 提供默认关闭的继承开关，由应用显式选择。目前消费方为 Button / ToggleButton / AlertDialog / 独立及原生 Expressive 菜单项；不改变最小交互留白，不自动检测设备。范围与精确 Token 选择见 [决定 §34](DECISIONS.md#34-显式精确指针尺寸环境)。
 - **最小交互留白**：通过 `MaterialInteractiveSize.Minimum` 建立可继承的布局环境，为触摸与无障碍操作预留外层空间，不强行扩张绘制边界。
 
 ---
@@ -119,4 +124,4 @@ Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则
 
 - **弹层宿主**：模态弹窗通过顶层窗口的 `PART_VisualLayerManager` 接入统一的覆盖图层，共享遮罩与输入阻挡行为。
 - **平滑滚动**：为滚动容器提供物理惯性支持，滚动条与视口测量保留原生行为，通过统一的增量接入点处理位移积分。
-- **视口联动**：应用栏等顶部栏目通过滚动作用域与主滚动视口建立协同，在统一帧周期内分配栏目收起位移与正文位移，实现无缝折叠联动。
+- **视口联动**：应用栏和搜索顶栏通过同一滚动作用域与主物理滚动视口协同，共享动态范围和合成输出。搜索保留整笔预滚动消费与反向布局分支，普通应用栏沿用实际位移消费；Scaffold 只连接正文中唯一的主视口。具体接入范围见决定 18。

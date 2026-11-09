@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using ComposeAnimation;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Catalog;
 
@@ -59,6 +60,16 @@ public partial class TooltipDemo : Window
     }
 
     private void OnDismissRich(object? sender, RoutedEventArgs e) => RichHelp.State.Dismiss();
+
+    private void OnChangeTooltipCorners(object? sender, RoutedEventArgs e)
+    {
+        if (ShapedTooltip.Shape is not CutCornerShape shape)
+            ShapedTooltip.Shape = shape = new CutCornerShape(4);
+        shape.TopStart = new(shape.TopStart.Scalar > 12 ? 4 : 20, Avalonia.RelativeUnit.Absolute);
+        shape.BottomEnd = shape.TopStart;
+    }
+
+    private void OnClearTooltipShape(object? sender, RoutedEventArgs e) => ShapedTooltip.ClearValue(PlainTooltip.ShapeProperty);
 
     private void OnTransformAnchor(object? sender, RoutedEventArgs e) =>
         TransformedLabel.RenderTransform = TransformedLabel.RenderTransform is null ? new Avalonia.Media.ScaleTransform(1.25, 1.25) : null;

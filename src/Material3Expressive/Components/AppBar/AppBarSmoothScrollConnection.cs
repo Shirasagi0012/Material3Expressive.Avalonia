@@ -23,6 +23,9 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     private readonly ScrollViewerPresenter _presenter;
     private readonly Scaffold _scaffold;
     private readonly TopAppBar? _top;
+    private readonly AppBarWithSearch? _search;
+    private readonly SearchBarScrollBehavior? _searchBehavior;
+    private readonly SearchBarScrollState? _searchState;
     private readonly BottomAppBar? _bottom;
     private readonly TopAppBarScrollBehavior? _topBehavior;
     private readonly BottomAppBarScrollBehavior? _bottomBehavior;
@@ -34,6 +37,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     private CompositionColorOutput? _color;
     private AppBarCompositionVisuals? _visuals;
     private AppBarTopChrome? _topChrome;
+    private AppBarWithSearchLayout? _searchLayout;
     private AppBarScrollConfiguration? _configuration;
     private bool _mirroring, _disposed;
     private long _generation, _lastSequence;
@@ -45,13 +49,17 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         ReferenceEquals(_presenter, presenter) &&
         _scope.TopScrollBehavior == _topBehavior &&
         _scope.BottomScrollBehavior == _bottomBehavior &&
+        _scope.SearchScrollBehavior == _searchBehavior &&
         ReferenceEquals(_topState, _topBehavior?.State) &&
         ReferenceEquals(_bottomState, _bottomBehavior?.State) &&
         ReferenceEquals(_top, _scaffold.PresentedTopBar) &&
+        ReferenceEquals(_search, _scaffold.PresentedSearchBar) &&
         ReferenceEquals(_bottom, _scaffold.PresentedBottomBar) &&
         (_tracker is null || ReferenceEquals(
             _topChrome,
-            _top?.GetVisualDescendants().OfType<AppBarTopChrome>().FirstOrDefault()));
+            _top?.GetVisualDescendants().OfType<AppBarTopChrome>().FirstOrDefault())) &&
+        (_tracker is null || ReferenceEquals(_searchLayout,
+            _search?.GetVisualDescendants().OfType<AppBarWithSearchLayout>().FirstOrDefault()));
 
     internal static bool IsSupported(AppBarScrollScope scope, ScrollViewer viewer)
     {
@@ -71,14 +79,20 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             return false;
         if (scope.BottomScrollBehavior is { } && scaffold.PresentedBottomBar is not BottomAppBar)
             return false;
+        if (scope.SearchScrollBehavior is { } search &&
+            (scaffold.PresentedSearchBar?.ScrollBehavior != search || scope.TopScrollBehavior is not null))
+            return false;
         if (scaffold.PresentedTopBar is TopAppBar top && top.ScrollBehavior != scope.TopScrollBehavior)
             return false;
         if (scaffold.PresentedBottomBar is BottomAppBar bottom && bottom.ScrollBehavior != scope.BottomScrollBehavior)
             return false;
-        if (scope.TopScrollBehavior is null && scope.BottomScrollBehavior is null)
+        if (scope.TopScrollBehavior is null && scope.BottomScrollBehavior is null && scope.SearchScrollBehavior is null)
             return false;
         if (scaffold.PresentedTopBar is TopAppBar actualTop && actualTop.IsArrangeValid &&
             !actualTop.GetVisualDescendants().OfType<AppBarTopChrome>().Any())
+            return false;
+        if (scaffold.PresentedSearchBar is AppBarWithSearch actualSearch && actualSearch.IsArrangeValid &&
+            !actualSearch.GetVisualDescendants().OfType<AppBarWithSearchLayout>().Any())
             return false;
 
         var content = viewer.GetVisualDescendants()
@@ -109,6 +123,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         }
 
         return AppBarSpring.TryRead(scope.TopScrollBehavior?.GetSnapAnimationSpec(), out _) &&
+               AppBarSpring.TryRead(scope.SearchScrollBehavior?.GetSnapAnimationSpec(), out _) &&
                AppBarSpring.TryRead(scope.BottomScrollBehavior?.GetSnapAnimationSpec(), out _);
     }
 
@@ -120,6 +135,9 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _presenter = presenter;
         _scaffold = scope.Host ?? viewer.GetVisualAncestors().OfType<Scaffold>().First();
         _top = _scaffold.PresentedTopBar;
+        _search = _scaffold.PresentedSearchBar;
+        _searchBehavior = scope.SearchScrollBehavior;
+        _searchState = _searchBehavior?.State;
         _bottom = _scaffold.PresentedBottomBar;
         _topBehavior = scope.TopScrollBehavior;
         _bottomBehavior = scope.BottomScrollBehavior;
@@ -127,6 +145,8 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _bottomState = _bottomBehavior?.State;
         if (_topState is { })
             _topState.PropertyChanged += StateChanged;
+        if (_searchState is { })
+            _searchState.PropertyChanged += StateChanged;
         if (_bottomState is { })
             _bottomState.PropertyChanged += StateChanged;
         _viewer.PropertyChanged += ViewerChanged;
@@ -144,6 +164,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _color = CompositionColorOutput.Create(tracker.Compositor);
         _visuals = new(_offsets, _appearance, _color);
         _topChrome = _top?.GetVisualDescendants().OfType<AppBarTopChrome>().FirstOrDefault();
+        _searchLayout = _search?.GetVisualDescendants().OfType<AppBarWithSearchLayout>().FirstOrDefault();
         _topChrome?.SetComposition(_offsets, _appearance, _color);
         var config = ReadConfiguration(refreshGeometry: true);
         _configuration = config;
@@ -201,9 +222,9 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         // Bottom ExitAlways observes body movement; it never consumes leftover input.
         // ExitUntilCollapsed can expand in post even though its reverse pre consumes zero.
         if (_configuration is not { TopEnabled: true } config ||
-            config.TopKind is null or TopAppBarScrollMode.Pinned || _topBehavior is null)
+            config.TopKind is null or TopAppBarScrollMode.Pinned)
             return false;
-        var collapsed = -_topState!.HeightOffset / config.Density;
+        var collapsed = _searchState is { } search ? -search.ScrollOffset : -_topState!.HeightOffset / config.Density;
         return delta > 0 ? collapsed < config.TopRange : delta < 0 && collapsed > 0;
     }
 
@@ -211,14 +232,16 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     {
         if (_mirroring || _disposed || _tracker is null)
             return;
-        if (e.Property == TopAppBarState.HeightOffsetLimitProperty || e.Property == BottomAppBarState.HeightOffsetLimitProperty)
+        if (e.Property == TopAppBarState.HeightOffsetLimitProperty || e.Property == BottomAppBarState.HeightOffsetLimitProperty ||
+            e.Property == SearchBarScrollState.ScrollOffsetLimitProperty)
         {
             UpdateConfiguration();
             return;
         }
 
         if (e.Property != TopAppBarState.HeightOffsetProperty && e.Property != TopAppBarState.ContentOffsetProperty &&
-            e.Property != BottomAppBarState.HeightOffsetProperty && e.Property != BottomAppBarState.ContentOffsetProperty)
+            e.Property != BottomAppBarState.HeightOffsetProperty && e.Property != BottomAppBarState.ContentOffsetProperty &&
+            e.Property != SearchBarScrollState.ScrollOffsetProperty && e.Property != SearchBarScrollState.ContentOffsetProperty)
             return;
 
         ++_generation;
@@ -233,9 +256,9 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         return new(
             _generation,
             0,
-            -(_topState?.HeightOffset ?? 0) / density,
+            _searchState is { } search ? -search.ScrollOffset : -(_topState?.HeightOffset ?? 0) / density,
             -(_bottomState?.HeightOffset ?? 0) / density,
-            (_topState?.ContentOffset ?? 0) / density,
+            _searchState?.ContentOffset ?? (_topState?.ContentOffset ?? 0) / density,
             (_bottomState?.ContentOffset ?? 0) / density,
             _viewer.Offset.Y,
             _viewer.Viewport.Height);
@@ -248,7 +271,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         double Range(float? value) => value is > -1_000_000 and <= 0 ? -value.Value / density : 0;
         double Hidden(float? value) => -MathUtils.RoundToInt(value ?? 0) / density;
         var colors = _topChrome?.GetCompositionColors() ?? (Colors.Transparent, Colors.Transparent, false);
-        AppBarSpring.TryRead(_topBehavior?.GetSnapAnimationSpec(), out var topSnap);
+        AppBarSpring.TryRead(_searchBehavior?.GetSnapAnimationSpec() ?? _topBehavior?.GetSnapAnimationSpec(), out var topSnap);
         AppBarSpring.TryRead(_bottomBehavior?.GetSnapAnimationSpec(), out var bottomSnap);
         var colorSpring = _topChrome is { } chrome
             ? new AppBarSpring(
@@ -258,11 +281,11 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             : default;
         var bottomHidden = _bottom?.TouchExplorationEnabled == true ? 0 : Hidden(_bottomState?.HeightOffset);
         return new(
-            _topBehavior?.Mode,
-            Range(_topState?.HeightOffsetLimit),
+            _searchBehavior is null ? _topBehavior?.Mode : TopAppBarScrollMode.EnterAlways,
+            _searchState is { } searchState ? Math.Max(0, -searchState.ScrollOffsetLimit) : Range(_topState?.HeightOffsetLimit),
             Range(_bottomState?.HeightOffsetLimit),
             density,
-            _topBehavior?.CanScroll ?? false,
+            _searchBehavior?.CanScroll ?? _topBehavior?.CanScroll ?? false,
             _bottomBehavior?.CanScroll ?? false,
             _bottom?.TouchExplorationEnabled ?? false,
             _topState?.IsScrollingContentAtStart ?? true,
@@ -273,12 +296,19 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             bottomSnap,
             colorSpring,
             refreshGeometry || _configuration is null
-                ? _presenter.Viewport.Height - Hidden(_topState?.HeightOffset) - bottomHidden
+                ? _presenter.Viewport.Height - TopHidden(density) - bottomHidden
                 : _configuration.Value.ExpandedViewport,
             refreshGeometry || _configuration is null
                 ? _presenter.Extent.Height
-                : _configuration.Value.Extent);
+                : _configuration.Value.Extent,
+            _searchBehavior is not null,
+            _searchBehavior?.ReverseLayout ?? false,
+            _searchBehavior?.SnapAnimationSpec is not null ? 1 : density);
     }
+
+    private double TopHidden(double density) => _searchState is { } search
+        ? -MathUtils.RoundToInt(search.ScrollOffset * density) / density
+        : -MathUtils.RoundToInt(_topState?.HeightOffset ?? 0) / density;
 
     private void UpdateConfiguration(bool refreshGeometry = false)
     {
@@ -298,12 +328,22 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             return;
         UpdateConfiguration(refreshGeometry: true);
         var density = LayoutHelper.GetLayoutScale(_viewer);
-        var top = -MathUtils.RoundToInt(_topState?.HeightOffset ?? 0) / density;
+        var top = TopHidden(density);
         var bottom = _bottom?.TouchExplorationEnabled == true
             ? 0
             : -MathUtils.RoundToInt(_bottomState?.HeightOffset ?? 0) / density;
         string N(double n) => AppBarCompositionVisuals.Number(n);
         var heightDelta = $"offsets.Value.X + offsets.Value.Y - {N(top + bottom)}";
+        if (_searchLayout?.Child is { } searchSurface)
+        {
+            // The search modifier translates its full-height content inside a shrinking
+            // clipped box. The UI layout remains the baseline for each committed batch.
+            _visuals.Bind(searchSurface, "Translation", $"Vector3(0, {N(top)} - offsets.Value.X, 0)");
+            foreach (var visual in searchSurface.GetVisualAncestors().OfType<Control>()
+                         .TakeWhile(control => control is not ScaffoldLayout && control != _scaffold))
+                _visuals.Bind(visual, "Size",
+                    $"Vector2({N(visual.Bounds.Width)}, Max(0, {N(visual.Bounds.Height + top)} - offsets.Value.X))");
+        }
         _visuals.Bind(_viewer, "Translation", $"Vector3(0, {N(top)} - offsets.Value.X, 0)");
         // Every clipping viewport inside the stock template must expand together. Content itself
         // keeps SmoothScroll's transform; no AppBar displacement is added to the scroll Offset.
@@ -356,6 +396,14 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
                 top.HeightOffset = (float)(-snapshot.TopCollapsed * density);
                 top.ContentOffset = (float)(snapshot.TopContentOffset * density);
             }
+            if (_searchState is { } search)
+            {
+                // A limit-only update does not reclamp SearchBarScrollState. Avoid
+                // turning a passive compositor mirror into a new offset mutation.
+                var offset = (float)-snapshot.TopCollapsed;
+                if (offset != search.ScrollOffset) search.ScrollOffset = offset;
+                search.ContentOffset = (float)snapshot.TopContentOffset;
+            }
 
             if (_bottomState is { } bottom)
             {
@@ -380,6 +428,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _tracker = null;
         _topChrome?.SetComposition(null, null);
         _topChrome = null;
+        _searchLayout = null;
         _visuals?.Dispose();
         _visuals = null;
         _offsets?.Dispose();
@@ -403,6 +452,8 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _viewer.PropertyChanged -= ViewerChanged;
         if (_topState is { })
             _topState.PropertyChanged -= StateChanged;
+        if (_searchState is { })
+            _searchState.PropertyChanged -= StateChanged;
         if (_bottomState is { })
             _bottomState.PropertyChanged -= StateChanged;
         _registration.Dispose();

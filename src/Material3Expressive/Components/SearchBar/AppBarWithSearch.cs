@@ -12,6 +12,7 @@ namespace Material3Expressive.Components;
 /// <summary>A top app bar containing a search surface, navigation slot and action row.</summary>
 public class AppBarWithSearch : ItemsControl
 {
+    public AppBarWithSearch() => MaterialWindowInsets.EnsureScope(this);
     public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<AppBarWithSearch>();
     /// <summary>Explicit search outline; null uses CornerRadius. Full-screen variants use this as the collapsed shape.</summary>
     public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
@@ -50,6 +51,11 @@ public class AppBarWithSearch : ItemsControl
     internal SearchBar? CollapsedBar => _layout?.Bar;
     static AppBarWithSearch() => TemplateProperty.OverrideDefaultValue<AppBarWithSearch>(null);
     protected override Type StyleKeyOverride => typeof(AppBarWithSearch);
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
+    }
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         _layout = e.NameScope.Find<AppBarWithSearchLayout>("PART_Layout");
@@ -59,13 +65,14 @@ public class AppBarWithSearch : ItemsControl
     {
         base.OnPropertyChanged(change);
         var property = change.Property;
+        if (property == WindowInsetsProperty) SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
         if (property.OwnerType == typeof(AppBarWithSearch) || property == StateProperty ||
             property == InputFieldProperty || property == InputFieldTemplateProperty ||
             property == NavigationIconProperty || property == NavigationIconTemplateProperty ||
             property == NavigationIconContentColorProperty || property == ActionIconContentColorProperty ||
             property == BackgroundProperty || property == TonalElevationProperty || property == ShadowElevationProperty ||
             property == FlowDirectionProperty || property == ItemCountProperty ||
-            property == MaterialWindowInsets.ConsumedPaddingProperty)
+            property == MaterialWindowInsets.ConsumedPaddingProperty || property == MaterialWindowInsets.UnconsumedInsetsProperty)
             _layout?.OwnerChanged();
     }
     protected override AutomationPeer OnCreateAutomationPeer() => new SearchAppBarPeer(this);

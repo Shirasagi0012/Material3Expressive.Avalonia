@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
@@ -26,6 +27,16 @@ public sealed class MaterialWindowInsets : AvaloniaObject
         AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("ConsumedPadding", inherits: true);
     private static readonly AttachedProperty<PaddingScope?> ScopeProperty =
         AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, PaddingScope?>("Scope");
+    // A control slot can have a logical owner outside the layout that consumes insets
+    // (for example the two independent rows of a TopAppBar). Bind only that slot root
+    // to its real consumption scope; the caller's own add/union remains untouched.
+    private static readonly AttachedProperty<Control?> ConsumptionParentProperty =
+        AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Control?>("ConsumptionParent");
+    internal static IDisposable BindConsumptionParent(Control child, Control parent)
+    {
+        EnsureScope(child);
+        return child.SetValue(ConsumptionParentProperty, parent, BindingPriority.Animation)!;
+    }
 
     static MaterialWindowInsets()
     {
@@ -67,7 +78,7 @@ public sealed class MaterialWindowInsets : AvaloniaObject
         private void VisualDetached(object? sender, VisualTreeAttachmentEventArgs e) { _detached = true; Reparent(); }
         private void Reparent()
         {
-            var parent = _detached ? null : owner.Parent ?? owner.GetVisualParent() as StyledElement ?? owner.TemplatedParent as StyledElement;
+            var parent = _detached ? null : owner.GetValue(ConsumptionParentProperty) ?? owner.Parent ?? owner.GetVisualParent() as StyledElement ?? owner.TemplatedParent as StyledElement;
             if (!ReferenceEquals(parent, _parent))
             {
                 if (_parent is not null) _parent.PropertyChanged -= ParentChanged;
@@ -82,7 +93,7 @@ public sealed class MaterialWindowInsets : AvaloniaObject
         }
         private void Changed(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.Property == StyledElement.ParentProperty || e.Property == StyledElement.TemplatedParentProperty) Reparent();
+            if (e.Property == ConsumptionParentProperty || e.Property == StyledElement.ParentProperty || e.Property == StyledElement.TemplatedParentProperty) Reparent();
             else if (e.Property == ConsumePaddingProperty || e.Property == ConsumeInsetsProperty || e.Property == AppliedInsetsProperty || e.Property == Visual.FlowDirectionProperty) Update();
         }
         public void Update()

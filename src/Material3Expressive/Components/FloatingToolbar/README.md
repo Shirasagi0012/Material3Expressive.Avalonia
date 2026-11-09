@@ -84,6 +84,43 @@ PrimaryContainer / TertiaryContainer FAB 背景；静止、按压、焦点高度
 FAB 入口的 AnimationSpec 接受 `IFiniteAnimationSpec<float>`，主题提供动态 FastSpatial 默认值；普通槽动画规格由
 组件 motion Token 提供。嵌入的 IconButton 自身边界见 [IconButton](../IconButton/README.md)。
 
+## 独立进入与退出过渡
+
+`FloatingToolbarDefaults.HorizontalEnterTransition` / `HorizontalExitTransition` 和对应的
+`VerticalEnterTransition` / `VerticalExitTransition` 可以直接配置已有 `ComposeAnimation.AnimatedVisibility`，
+让自定义操作组使用相同的展开/收起效果，无需放进完整工具栏。
+
+```csharp
+using ComposeAnimation;
+using Material3Expressive.Components;
+using Material3Expressive.Foundation.Motion;
+
+var group = new AnimatedVisibility
+{
+    Visible = false, Content = actions,
+    TargetCommitPhase = AnimationCommitPhase.AfterFrame
+};
+var spring = MotionScheme.Expressive.FastSpatial; // Explicit fixed scheme in this example.
+group.Enter = FloatingToolbarDefaults.HorizontalEnterTransition(
+    group, VisibilityHorizontalAlignment.Start, spring);
+group.Exit = FloatingToolbarDefaults.HorizontalExitTransition(
+    group, VisibilityHorizontalAlignment.End, spring);
+group.Visible = true;
+```
+
+横向对齐使用 `VisibilityHorizontalAlignment.Start / Center / End`；与固定上游 EnterExit 一样，
+这里的 Start / End 是物理左 / 右，即使内容为 RTL 也不反转。纵向使用 `Avalonia.Layout.VerticalAlignment`
+的 Top / Center / Bottom。四个工厂保留零尺寸起点/终点、裁剪和固定上游的尺寸弹簧行为；可在宿主挂载前调用。
+工厂结果属于传入的实际 `AnimatedVisibility`，不要把同一结果复用到另一个宿主，density 与反向状态由该宿主提供。
+`TargetCommitPhase=AfterFrame` 使用共享帧末提交，表达 Compose 布尔入口的目标提交阶段；工厂本身只返回过渡，
+不会修改宿主的目标或时钟。默认 BeforeFrame 仍保留 AnimatedVisibility 原有即时目标行为。
+
+`animationSpec` 是显式参数，不会偷偷读取或缓存主题。应用使用动态主题时，将
+`Sys.Motion.Spring.SpatialFast` Token 绑定到自己的 spring 属性，属性更新时重新调用工厂并设置 Enter/Exit；
+工厂消费弹簧的 DampingRatio / Stiffness，尺寸终止阈值仍采用上游独立的物理像素规则。
+工具栏内置槽也复用这四个工厂。[Catalog 示例](../../../Material3Expressive.Catalog/FloatingToolbarDemo.axaml.cs)
+提供完整的主题属性绑定、两轴组合和展开开关。更换过渡不会更换内容或负责选择状态。
+
 ## 随滚动退出与展开
 
 退出整个工具栏和展开槽位是不同能力。以下 C# 放在已初始化视图中，`toolbar` 与 `scrollViewer`

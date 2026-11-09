@@ -3,6 +3,7 @@ using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ComposeAnimation.Runtime;
@@ -63,6 +64,39 @@ public class CrossfadeTest
 
     private static IReadOnlyList<ContentSlot> Slots(Crossfade host)
         => host.GetVisualDescendants().OfType<ContentSlot>().ToList();
+
+    [Theory]
+    [InlineData(false, VisibilityAlignment.TopStart)]
+    [InlineData(true, VisibilityAlignment.TopStart)]
+    [InlineData(false, VisibilityAlignment.TopEnd)]
+    [InlineData(true, VisibilityAlignment.TopEnd)]
+    [InlineData(false, VisibilityAlignment.Center)]
+    [InlineData(true, VisibilityAlignment.Center)]
+    public Task DifferentSizeSlotsRespectLogicalAlignmentInStretchedViewport(bool rtl, VisibilityAlignment alignment) => OnUi(() =>
+    {
+        var host = Host();
+        host.Width = 160; host.Height = 120;
+        host.FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        host.ContentAlignment = alignment;
+        host.ContentTemplate = new FuncDataTemplate<string>((state, _) =>
+            new Border { Width = state == "A" ? 100 : 40, Height = state == "A" ? 80 : 20 });
+        using var fixture = new Fixture(host);
+        fixture.Finish();
+        host.Content = "B"; fixture.Step(16); fixture.Step(48);
+        Assert.Equal(2, host.VisibleSlotCount);
+        var hostBox = new Rect(host.Bounds.Size).TransformToAABB(host.TransformToVisual(fixture.Window)!.Value);
+        foreach (var slot in Slots(host))
+        {
+            var content = Assert.IsType<Border>(slot.Presenter.Child);
+            var box = new Rect(content.Bounds.Size).TransformToAABB(content.TransformToVisual(fixture.Window)!.Value);
+            var atRight = alignment == VisibilityAlignment.TopStart ? rtl : !rtl;
+            var expectedX = alignment == VisibilityAlignment.Center ? (160 - box.Width) / 2
+                : atRight ? 160 - box.Width : 0;
+            var expectedY = alignment == VisibilityAlignment.Center ? (120 - box.Height) / 2 : 0;
+            Assert.Equal(hostBox.X + expectedX, box.X, 6);
+            Assert.Equal(hostBox.Y + expectedY, box.Y, 6);
+        }
+    });
 
     [Fact]
     public Task Reverse_PreservesPaintOrderAndTargetsTheExistingSlot() => OnUi(() =>

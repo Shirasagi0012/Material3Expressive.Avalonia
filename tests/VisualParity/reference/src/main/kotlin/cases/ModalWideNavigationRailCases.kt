@@ -27,7 +27,8 @@ import kotlinx.serialization.Serializable
 data class ModalWideNavigationRailConfig(val hide:Boolean=false,val expanded:Boolean=false,val header:Boolean=false,
     val arrangement:String="top",val rtl:Boolean=false,val dark:Boolean=false,val insets:Boolean=false,val empty:Boolean=false,
     val customColors:Boolean=false,val customPadding:Boolean=false,val headerTopPadding:Double=0.0,val labelWidth:Double=32.0,
-    val width:Double?=null,val action:String="none",val shape:String="default")
+    val width:Double?=null,val action:String="none",val shape:String="default",val parentInsets:Boolean=false,
+    val ownInsets:Boolean=false,val nestedInsets:Boolean=false,val observeInsets:Boolean=false,val ownPadding:Boolean=false)
 
 @ParitySuite("modal-wide-navigation-rail")
 class ModalWideNavigationRailCases {
@@ -57,6 +58,10 @@ class ModalWideNavigationRailCases {
             }
             sample("initial")
             when(config.action) {
+                "insets-change" -> {
+                    mutate(1000,"changed-insets") { scene.changedInsets=true }; times(16000)
+                    mutate(17000,"restored-insets") { scene.changedInsets=false }; times(32000)
+                }
                 "shape-change" -> {
                     mutate(1000,"rounded-shape") { scene.shape="round-percent" }; times(16000)
                     mutate(17000,"default-shape") { scene.shape="default" }; times(32000)
@@ -104,6 +109,7 @@ class ModalWideNavigationRailCases {
     private class Scene(val config:ModalWideNavigationRailConfig,val host:ComposeHost) {
         var dark by mutableStateOf(config.dark)
         var shape by mutableStateOf(config.shape)
+        var changedInsets by mutableStateOf(false)
         lateinit var state:WideNavigationRailState
         lateinit var scope:CoroutineScope
         val page=Probe(); val item=Probe(); val icon=Probe(); val label=Probe()
@@ -114,14 +120,16 @@ class ModalWideNavigationRailCases {
                 CompositionLocalProvider(LocalLayoutDirection provides if(config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     state=rememberWideNavigationRailState(if(config.expanded) WideNavigationRailValue.Expanded else WideNavigationRailValue.Collapsed)
                     scope=rememberCoroutineScope()
-                    Row(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
+                    Row(Modifier.fillMaxSize().background(Color.White).padding(16.dp).then(if(config.parentInsets)Modifier.consumeWindowInsets(if(changedInsets)WindowInsets(60.dp,60.dp,60.dp,60.dp) else WindowInsets(40.dp,40.dp,40.dp,40.dp)) else Modifier)) {
                         var modifier:Modifier=Modifier
+                        if(changedInsets || config.ownPadding)modifier=modifier.consumeWindowInsets(if(changedInsets) PaddingValues(start=18.dp,top=4.dp,end=2.dp,bottom=3.dp) else PaddingValues(start=3.dp,top=2.dp,end=9.dp,bottom=1.dp))
+                        if(config.ownInsets)modifier=modifier.consumeWindowInsets(WindowInsets(30.dp,30.dp,30.dp,30.dp))
                         if(config.width!=null) modifier=modifier.width(config.width.toFloat().dp)
                         ModalWideNavigationRail(modifier=modifier,state=state,hideOnCollapse=config.hide,
                             header=if(config.header) ({ Marker(null,48.0,40.0,false,null) }) else null,
                             expandedHeaderTopPadding=config.headerTopPadding.toFloat().dp,
                             arrangement=arrange(config.arrangement),
-                            windowInsets=if(config.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else WideNavigationRailDefaults.windowInsets,
+                            windowInsets=if(changedInsets)WindowInsets(36.dp,34.dp,32.dp,38.dp) else if(config.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else WideNavigationRailDefaults.windowInsets,
                             contentPadding=if(config.customPadding) PaddingValues(start=7.dp,top=13.dp,end=11.dp,bottom=5.dp) else WideNavigationRailDefaults.ContentPadding,
                             expandedProperties=ModalWideNavigationRailProperties(shouldDismissOnBackPress=config.action!="escape-no-back"),
                             colors=if(config.customColors) WideNavigationRailDefaults.colors(containerColor=Color(0xFFE0F0E8),contentColor=Color(0xFF126E60),
@@ -129,7 +137,10 @@ class ModalWideNavigationRailCases {
                             collapsedShape=resolveSheetShape(shape) ?: if(config.customColors) RoundedCornerShape(8.dp) else WideNavigationRailDefaults.modalCollapsedShape,
                             expandedShape=resolveSheetShape(shape) ?: if(config.customColors) RoundedCornerShape(28.dp) else WideNavigationRailDefaults.modalExpandedShape) {
                             if(!config.empty) {
-                                WideNavigationRailItem(true,{clicks++},icon={Marker(icon,24.0,24.0,true,"icon")},
+                                WideNavigationRailItem(true,{clicks++},icon={
+                                    if(config.nestedInsets)Box(Modifier.windowInsetsPadding(WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp))){Marker(icon,24.0,24.0,true,"icon")}
+                                    else Marker(icon,24.0,24.0,true,"icon")
+                                },
                                     label={Marker(label,config.labelWidth,16.0,false,"label")},railExpanded=state.targetValue==WideNavigationRailValue.Expanded,modifier=item.modifier())
                                 WideNavigationRailItem(false,{},icon={Marker(null,24.0,24.0,true,null)},label={Marker(null,48.0,16.0,false,null)},railExpanded=state.targetValue==WideNavigationRailValue.Expanded)
                                 WideNavigationRailItem(false,{},icon={Marker(null,24.0,24.0,true,null)},label=null,railExpanded=state.targetValue==WideNavigationRailValue.Expanded)
@@ -140,11 +151,17 @@ class ModalWideNavigationRailCases {
                 }
             }
         }
+        private var consumedInsets=List(4){0.0}
         @Composable fun Marker(probe:Probe?,width:Double,height:Double,isIcon:Boolean,id:String?) {
             val color=LocalContentColor.current
+            val density=androidx.compose.ui.platform.LocalDensity.current
+            val direction=LocalLayoutDirection.current
             if(id!=null) painted[id]=color
             val focus=if(height==40.0 && config.action.startsWith("escape")) Modifier.focusable() else Modifier
-            Canvas((probe?.modifier() ?: Modifier).then(focus).size(width.toFloat().dp,height.toFloat().dp)) {
+            val consumption=if(config.observeInsets && id=="icon")Modifier.onConsumedWindowInsetsChanged { insets ->
+                consumedInsets=listOf(insets.getLeft(density,direction),insets.getTop(density),insets.getRight(density,direction),insets.getBottom(density)).map{it.toDouble()/ComposeHost.RenderScale}
+            } else Modifier
+            Canvas((probe?.modifier() ?: Modifier).then(focus).then(consumption).size(width.toFloat().dp,height.toFloat().dp)) {
                 if(isIcon) {
                     drawRect(color,size=Size(size.width/3,size.height))
                     drawRect(color,topLeft=Offset(size.width/3,0f),size=Size(size.width*2/3,size.height/3))
@@ -175,7 +192,10 @@ class ModalWideNavigationRailCases {
                 points+=ProbePoint(id,id,"item",geometry(probe)+vector("color","color",listOf((argb ushr 16 and 255).toDouble(),(argb ushr 8 and 255).toDouble(),(argb and 255).toDouble(),(argb ushr 24).toDouble()),
                     "srgba8","none","properties","navigation-item.content-inherited-srgba8","Canvas consumed LocalContentColor.toArgb()"))
             }
-            marker("icon",icon); marker("label",label); return points
+            marker("icon",icon); marker("label",label)
+            if(config.observeInsets)points+=ProbePoint("consumption","consumption","item",listOf(vector("insets","rect",consumedInsets,
+                "dip","physical","properties","window-insets.consumed","onConsumedWindowInsetsChanged",listOf("left","top","right","bottom"))))
+            return points
         }
     }
     companion object {

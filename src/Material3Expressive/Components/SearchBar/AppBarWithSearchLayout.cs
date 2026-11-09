@@ -46,7 +46,7 @@ internal sealed class AppBarWithSearchLayout : Decorator
         _color.ValueChanged += Paint;
         Paint(_color.Value);
         _gesture = new AppBarVerticalGesture(() => _behavior?.DirectDragEnabled == true,
-            () => _behavior?.Interrupt(),
+            () => { _behavior?.Interrupt(); this.FindAncestorOfType<AppBarScrollScope>()?.Interrupt(); },
             (delta, _) => { if (_behavior is not { } behavior) return default; var before = behavior.State.ScrollOffset; behavior.State.ScrollOffset += delta; return new Vector(0, behavior.State.ScrollOffset - before); },
             (velocity, gestureId, cancelled) => { if (_behavior is { } behavior && _scope is { } scope) _ = scope.Launch(ct => behavior.SettleAsync(cancelled ? 0 : velocity, ct), "Search app bar drag settle"); }, directDrag: true);
         GestureRecognizers.Add(_gesture);
@@ -145,12 +145,7 @@ internal sealed class AppBarWithSearchLayout : Decorator
         if (Owner.Background is not null and not ISolidColorBrush) throw new ArgumentException("AppBarWithSearch.Background must be a solid color brush or null.");
         var scale = (float)LayoutHelper.GetLayoutScale(this);
         double Round(double value) => MathUtils.DipToPx((float)value, scale) / (double)scale;
-        var consumed = Owner.GetValue(MaterialWindowInsets.ConsumedPaddingProperty);
-        var requested = Owner.WindowInsets;
-        _insets = new(Math.Max(0, Round(requested.Left) - Round(consumed.Left)), Math.Max(0, Round(requested.Top) - Round(consumed.Top)),
-            Math.Max(0, Round(requested.Right) - Round(consumed.Right)), Math.Max(0, Round(requested.Bottom) - Round(consumed.Bottom)));
-        var rtl = Owner.FlowDirection == FlowDirection.RightToLeft;
-        MaterialWindowInsets.SetConsumePadding(Surface, rtl ? new(_insets.Right, _insets.Top, _insets.Left, _insets.Bottom) : _insets);
+        _insets = Owner.GetValue(MaterialWindowInsets.UnconsumedInsetsProperty);
         Surface.Measure(availableSize.Deflate(_insets));
         _unscrolled = Surface.DesiredSize.Inflate(_insets);
         if (double.IsFinite(availableSize.Width)) _unscrolled = _unscrolled.WithWidth(availableSize.Width);

@@ -3,16 +3,23 @@
         x:Class="Material3Expressive.Catalog.SearchAppBarDemo" Title="Search app bar" Width="760" Height="640">
   <Window.Resources><m3:SearchBarState x:Key="SearchState" /></Window.Resources>
   <Grid>
-    <DockPanel>
-      <m3:AppBarWithSearch x:Name="Bar" DockPanel.Dock="Top" State="{StaticResource SearchState}">
+    <m3:Scaffold x:Name="Screen">
+      <m3:Scaffold.TopBar>
+      <m3:AppBarWithSearch x:Name="Bar" State="{StaticResource SearchState}" WindowInsets="16,8,24,12">
         <m3:AppBarWithSearch.NavigationIcon><m3:IconButton Symbol="Menu" Click="NavigationClicked" AutomationProperties.Name="导航" /></m3:AppBarWithSearch.NavigationIcon>
         <m3:AppBarWithSearch.InputField>
           <Button Content="搜索组件" Height="56" MinWidth="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                   Theme="{StaticResource MaterialTextButtonTheme}" Click="OpenSearch" />
         </m3:AppBarWithSearch.InputField>
         <m3:IconButton Symbol="Palette" Click="ToggleTheme" AutomationProperties.Name="切换主题" />
-        <m3:IconButton Symbol="Settings" Click="ToggleDirection" AutomationProperties.Name="切换布局方向" />
+        <m3:MaterialWindowInsetsPadding Insets="16,8,24,12">
+          <m3:IconButton Symbol="Settings" Click="ToggleDirection" AutomationProperties.Name="切换布局方向" />
+        </m3:MaterialWindowInsetsPadding>
       </m3:AppBarWithSearch>
+      </m3:Scaffold.TopBar>
+      <Border Width="{Binding Bounds.Width, ElementName=Screen}" Height="{Binding Bounds.Height, ElementName=Screen}"
+              Padding="{Binding ContentPadding, ElementName=Screen}" m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=Screen}">
+      <ScrollViewer x:Name="MainScroll" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Margin="24" Spacing="16">
         <TextBlock Text="搜索应用栏" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock Text="搜索框与两侧操作分别布局；拖动栏空白区域可收起和展开。搜索结果使用独立停靠弹层。" TextWrapping="Wrap" />
@@ -20,11 +27,16 @@
           <Button Content="向上滚动" Click="ScrollUp" /><Button Content="向下滚动" Click="ScrollDown" />
           <Button Content="释放并吸附" Click="ReleaseScroll" /><Button Content="重置" Click="ResetScroll" />
         </StackPanel>
-        <TextBlock Text="这些按钮演示宿主的显式滚动回调。普通 ScrollViewer 尚不自动接入搜索栏滚动。" TextWrapping="Wrap" />
+        <TextBlock Text="滚动正文可自动收起搜索栏，向下滚动立即展开。按钮同时保留显式滚动策略示例；独立搜索结果滚动不会带动顶栏。" TextWrapping="Wrap" />
         <CheckBox Content="透明应用栏背景" IsCheckedChanged="TransparencyChanged" />
+        <CheckBox Content="暂停搜索栏滚动（正文继续滚动）" IsCheckedChanged="ScrollEnabledChanged" />
+        <CheckBox Content="应用模拟窗口 Insets（设置图标不重复留白）" IsChecked="True" IsCheckedChanged="InsetsChanged" />
         <TextBlock x:Name="Status" Text="尚未选择结果" />
+        <ItemsControl x:Name="Examples" />
       </StackPanel>
-    </DockPanel>
+      </ScrollViewer>
+      </Border>
+    </m3:Scaffold>
     <m3:ExpandedDockedSearchBar x:Name="SearchPopup" State="{StaticResource SearchState}">
       <m3:ExpandedDockedSearchBar.InputField>
         <m3:SearchBarInputField x:Name="Query" IsExpanded="True" PlaceholderText="搜索组件" HorizontalAlignment="Stretch"

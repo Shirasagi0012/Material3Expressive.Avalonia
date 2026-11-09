@@ -54,6 +54,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> BaselineIconSize = new("md.comp.menu.baseline-icon-size");
             public static readonly MaterialTokenKey<double> LeadingIconSize = new("md.comp.menu.leading-icon-size");
             public static readonly MaterialTokenKey<double> TrailingIconSize = new("md.comp.menu.trailing-icon-size");
+            public static readonly MaterialTokenKey<double> PrecisionTrailingIconSize = new("md.comp.menu.precision-trailing-icon-size");
             public static readonly MaterialTokenKey<SpringSpec> ColorAnimation = new("md.comp.menu.color-animation");
             public static readonly MaterialTokenKey<SpringSpec> ShapeAnimation = new("md.comp.menu.shape-animation");
         }

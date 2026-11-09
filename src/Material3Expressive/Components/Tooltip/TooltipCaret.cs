@@ -2,6 +2,8 @@
 // Copyright The Android Open Source Project; Apache-2.0. Fixed baseline in docs/upstream-baseline.json.
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSkiaShadow;
 using SkiaSharp;
@@ -19,6 +21,12 @@ internal sealed class TooltipCaret : AvaloniaObject
         AvaloniaProperty.RegisterAttached<TooltipCaret, MaterialSurface, Size?>("Size");
     public static readonly AttachedProperty<TooltipCaretShape?> ShapeProperty =
         AvaloniaProperty.RegisterAttached<TooltipCaret, MaterialSurface, TooltipCaretShape?>("Shape");
+    public static readonly AttachedProperty<MaterialShape?> ContainerShapeProperty =
+        AvaloniaProperty.RegisterAttached<TooltipCaret, MaterialSurface, MaterialShape?>("ContainerShape");
+    private static readonly AttachedProperty<ContainerShapeObserver?> ShapeObserverProperty =
+        AvaloniaProperty.RegisterAttached<TooltipCaret, MaterialSurface, ContainerShapeObserver?>("ShapeObserver");
+    public static MaterialShape? GetContainerShape(MaterialSurface surface) => surface.GetValue(ContainerShapeProperty);
+    public static void SetContainerShape(MaterialSurface surface, MaterialShape? value) => surface.SetValue(ContainerShapeProperty, value);
     public static TooltipCaretShape? GetShape(MaterialSurface surface) => surface.GetValue(ShapeProperty);
     public static void SetShape(MaterialSurface surface, TooltipCaretShape? value) => surface.SetValue(ShapeProperty, value);
     public static Size? GetSize(MaterialSurface surface) => surface.GetValue(SizeProperty);
@@ -28,10 +36,19 @@ internal sealed class TooltipCaret : AvaloniaObject
     {
         SizeProperty.Changed.AddClassHandler<MaterialSurface>((surface, _) => Changed(surface));
         ShapeProperty.Changed.AddClassHandler<MaterialSurface>((surface, _) => Changed(surface));
+        ContainerShapeProperty.Changed.AddClassHandler<MaterialSurface>((surface, _) => Changed(surface));
         static void Changed(MaterialSurface surface)
         {
             surface.PropertyChanged -= SurfaceChanged;
-            if (GetSize(surface) is not null || GetShape(surface) is not null) surface.PropertyChanged += SurfaceChanged;
+            if (GetSize(surface) is not null || GetShape(surface) is not null || GetContainerShape(surface) is not null)
+                surface.PropertyChanged += SurfaceChanged;
+            var observer = surface.GetValue(ShapeObserverProperty);
+            if (observer is null && GetContainerShape(surface) is not null)
+            {
+                observer = new ContainerShapeObserver(surface);
+                surface.SetValue(ShapeObserverProperty, observer);
+            }
+            observer?.Refresh();
             Update(surface);
         }
     }
@@ -46,7 +63,12 @@ internal sealed class TooltipCaret : AvaloniaObject
     {
         var shape = GetShape(surface);
         var size = GetSize(surface);
-        if (shape is null && size is null || surface.Bounds.Width <= 0 || surface.Bounds.Height <= 0)
+        var containerShape = GetContainerShape(surface);
+        var hasCaret = shape is not null || size is not null;
+        // A caret composes the two outlines. Without one, keep Surface's regular shape
+        // path, including its rounded-outline fast path and its own mutable-shape observer.
+        surface.Shape = hasCaret ? null : containerShape;
+        if (!hasCaret || surface.Bounds.Width <= 0 || surface.Bounds.Height <= 0)
         {
             surface.SetContainerGeometry(null, null);
             return;
@@ -68,11 +90,15 @@ internal sealed class TooltipCaret : AvaloniaObject
             if (data.StartsWith("F0 ", StringComparison.Ordinal) || data.StartsWith("F1 ", StringComparison.Ordinal)) data = data[3..];
             using var path = string.IsNullOrWhiteSpace(data) ? new SKPath() : SKPath.ParseSvgPathData(data)
                 ?? throw new InvalidOperationException("Unable to read the tooltip caret path.");
-            path.FillType = outline.FillRule == FillRule.EvenOdd ? SKPathFillType.EvenOdd : SKPathFillType.Winding;
+            // TooltipCaretShape.addPath copies contours into a default NonZero path;
+            // it does not copy the source outline's fill type.
+            path.FillType = SKPathFillType.Winding;
             var matrix = (outline.Transform?.Value ?? Matrix.Identity) * transform;
             caretBuilder.AddPath(path, new SKMatrix((float)matrix.M11, (float)matrix.M21, (float)matrix.M31,
                 (float)matrix.M12, (float)matrix.M22, (float)matrix.M32, 0, 0, 1));
-            caret = outline.Clone();
+            var caretSnapshot = string.IsNullOrWhiteSpace(data) ? new PathGeometry() : PathGeometry.Parse(data);
+            caretSnapshot.FillRule = FillRule.NonZero;
+            caret = caretSnapshot;
             caret.Transform = new MatrixTransform(matrix);
         }
         else
@@ -96,21 +122,68 @@ internal sealed class TooltipCaret : AvaloniaObject
         }
         using var caretPath = caretBuilder.Detach();
         var bounds = new Rect(surface.Bounds.Size);
-        var corners = surface.EffectiveCornerRadius;
-        var geometry = new CombinedGeometry(GeometryCombineMode.Union,
-            RoundedRectangleGeometry.Create(bounds, corners), caret);
-
-        // The shadow receives the actual union, retaining Skia's conic round-rect arcs.
-        using var rounded = new SKRoundRect();
-        rounded.SetRectRadii(new SKRect(0, 0, (float)bounds.Width, (float)bounds.Height),
-            [new((float)corners.TopLeft, (float)corners.TopLeft), new((float)corners.TopRight, (float)corners.TopRight),
-             new((float)corners.BottomRight, (float)corners.BottomRight), new((float)corners.BottomLeft, (float)corners.BottomLeft)]);
+        Geometry containerGeometry;
         using var containerBuilder = new SKPathBuilder();
-        containerBuilder.AddRoundRect(rounded, SKPathDirection.Clockwise);
+        if (containerShape is not null)
+        {
+            var outline = containerShape.CreateOutline(bounds.Size, surface.FlowDirection, LayoutHelper.GetLayoutScale(surface));
+            var snapshot = PathGeometry.Parse(outline.ToString());
+            snapshot.FillRule = FillRule.NonZero;
+            var matrix = outline.Transform?.Value ?? Matrix.Identity;
+            if (surface.FlowDirection == FlowDirection.RightToLeft)
+                matrix *= new Matrix(-1, 0, 0, 1, bounds.Width, 0);
+            snapshot.Transform = new MatrixTransform(matrix);
+            containerGeometry = snapshot;
+            using var path = ShapeGeometry.ToSkiaPath(snapshot);
+            containerBuilder.AddPath(path);
+        }
+        else
+        {
+            var corners = surface.EffectiveCornerRadius;
+            containerGeometry = RoundedRectangleGeometry.Create(bounds, corners);
+            // Retain Skia's conic round-rect arcs for the themed corner path.
+            using var rounded = new SKRoundRect();
+            rounded.SetRectRadii(new SKRect(0, 0, (float)bounds.Width, (float)bounds.Height),
+                [new((float)corners.TopLeft, (float)corners.TopLeft), new((float)corners.TopRight, (float)corners.TopRight),
+                 new((float)corners.BottomRight, (float)corners.BottomRight), new((float)corners.BottomLeft, (float)corners.BottomLeft)]);
+            containerBuilder.AddRoundRect(rounded, SKPathDirection.Clockwise);
+        }
+        var geometry = new CombinedGeometry(GeometryCombineMode.Union, containerGeometry, caret);
         using var containerPath = containerBuilder.Detach();
         using var union = containerPath.Op(caretPath, SKPathOp.Union)
             ?? throw new InvalidOperationException("Unable to combine tooltip container and caret outlines.");
         surface.SetContainerGeometry(geometry, ComposeShadowShape.FromPath(union));
+    }
+
+    // Only the caret branch owns a separate shape observation. The source may be shared
+    // by a view model, so detach must remove its reference back to the tooltip surface.
+    private sealed class ContainerShapeObserver
+    {
+        private readonly MaterialSurface _surface;
+        private MaterialShape? _observed;
+        public ContainerShapeObserver(MaterialSurface surface)
+        {
+            _surface = surface;
+            surface.AttachedToVisualTree += Attached;
+            surface.DetachedFromVisualTree += Detached;
+        }
+        public void Refresh()
+        {
+            Unsubscribe();
+            if (_surface.IsAttachedToVisualTree() && (GetShape(_surface) is not null || GetSize(_surface) is not null))
+            {
+                _observed = GetContainerShape(_surface);
+                if (_observed is not null) _observed.PropertyChanged += ShapeChanged;
+            }
+        }
+        private void Unsubscribe()
+        {
+            if (_observed is not null) _observed.PropertyChanged -= ShapeChanged;
+            _observed = null;
+        }
+        private void ShapeChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => Update(_surface);
+        private void Attached(object? sender, VisualTreeAttachmentEventArgs e) { Refresh(); Update(_surface); }
+        private void Detached(object? sender, VisualTreeAttachmentEventArgs e) => Unsubscribe();
     }
 
     internal static Matrix CalculateTransform(Size tooltip, TooltipCaretPlacement? placement)

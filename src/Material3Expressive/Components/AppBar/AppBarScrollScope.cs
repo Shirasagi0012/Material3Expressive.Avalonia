@@ -16,6 +16,15 @@ public class AppBarScrollScope : Decorator
     public static readonly StyledProperty<BottomAppBarScrollBehavior?> BottomScrollBehaviorProperty =
         AvaloniaProperty.Register<AppBarScrollScope, BottomAppBarScrollBehavior?>(nameof(BottomScrollBehavior));
 
+    public static readonly StyledProperty<SearchBarScrollBehavior?> SearchScrollBehaviorProperty =
+        AvaloniaProperty.Register<AppBarScrollScope, SearchBarScrollBehavior?>(nameof(SearchScrollBehavior));
+
+    public SearchBarScrollBehavior? SearchScrollBehavior
+    {
+        get => GetValue(SearchScrollBehaviorProperty);
+        set => SetValue(SearchScrollBehaviorProperty, value);
+    }
+
     public TopAppBarScrollBehavior? TopScrollBehavior
     {
         get => GetValue(TopScrollBehaviorProperty);
@@ -39,6 +48,7 @@ public class AppBarScrollScope : Decorator
         {
             SetCurrentValue(TopScrollBehaviorProperty, null);
             SetCurrentValue(BottomScrollBehaviorProperty, null);
+            SetCurrentValue(SearchScrollBehaviorProperty, null);
         }
         else
             RefreshBehaviors();
@@ -50,21 +60,24 @@ public class AppBarScrollScope : Decorator
             return;
         SetCurrentValue(TopScrollBehaviorProperty, scaffold.PresentedTopBar?.ScrollBehavior);
         SetCurrentValue(BottomScrollBehaviorProperty, scaffold.PresentedBottomBar?.ScrollBehavior);
+        SetCurrentValue(SearchScrollBehaviorProperty, scaffold.PresentedSearchBar?.ScrollBehavior);
     }
 
     private ScrollViewer? _mainViewer;
     private AppBarSmoothScrollConnection? _connection;
     private readonly HashSet<CancellationTokenSource> _runs = [];
     private bool _scanning;
+    private bool _isAttached;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == TopScrollBehaviorProperty || change.Property == BottomScrollBehaviorProperty)
+        if (change.Property == TopScrollBehaviorProperty || change.Property == BottomScrollBehaviorProperty ||
+            change.Property == SearchScrollBehaviorProperty)
         {
-            if (change.OldValue is StyledElement oldBehavior)
+            if (change.OldValue is AvaloniaObject oldBehavior)
                 oldBehavior.PropertyChanged -= BehaviorChanged;
-            if (change.NewValue is StyledElement behavior)
+            if (_isAttached && change.NewValue is AvaloniaObject behavior)
                 behavior.PropertyChanged += BehaviorChanged;
             Interrupt();
             Disconnect();
@@ -75,10 +88,12 @@ public class AppBarScrollScope : Decorator
     private void BehaviorChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
     {
         if (change.Property.OwnerType != typeof(TopAppBarScrollBehavior) &&
-            change.Property.OwnerType != typeof(BottomAppBarScrollBehavior))
+            change.Property.OwnerType != typeof(BottomAppBarScrollBehavior) &&
+            change.Property.OwnerType != typeof(SearchBarScrollBehavior))
             return;
         if (change.Property != TopAppBarScrollBehavior.CanScrollProperty &&
             change.Property != BottomAppBarScrollBehavior.CanScrollProperty &&
+            change.Property != SearchBarScrollBehavior.CanScrollProperty &&
             change.Property != TopAppBarScrollBehavior.IsScrollingContentAtStartProperty &&
             change.Property != TopAppBarScrollBehavior.IsPinnedProperty)
             Interrupt();
@@ -91,12 +106,20 @@ public class AppBarScrollScope : Decorator
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _isAttached = true;
+        if (TopScrollBehavior is { } top) top.PropertyChanged += BehaviorChanged;
+        if (BottomScrollBehavior is { } bottom) bottom.PropertyChanged += BehaviorChanged;
+        if (SearchScrollBehavior is { } search) search.PropertyChanged += BehaviorChanged;
         LayoutUpdated += UpdateConnection;
         UpdateConnection(null, EventArgs.Empty);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _isAttached = false;
+        if (TopScrollBehavior is { } top) top.PropertyChanged -= BehaviorChanged;
+        if (BottomScrollBehavior is { } bottom) bottom.PropertyChanged -= BehaviorChanged;
+        if (SearchScrollBehavior is { } search) search.PropertyChanged -= BehaviorChanged;
         LayoutUpdated -= UpdateConnection;
         Interrupt();
         Disconnect();
@@ -198,6 +221,7 @@ public class AppBarScrollScope : Decorator
 
     internal void InterruptUiAnimations()
     {
+        SearchScrollBehavior?.Interrupt();
         foreach (var run in _runs.ToArray())
             run.Cancel();
     }

@@ -54,6 +54,10 @@ public sealed class SearchBarScrollBehavior : AvaloniaObject
         Interrupt(); _scope?.Dispose(); _scope = null; _owner = null;
     }
     internal void Interrupt() => _settling?.Cancel();
+    internal IAnimationSpec<float>? GetSnapAnimationSpec() => SnapAnimationSpec ??
+        (_owner?.ScrollSnapAnimation is { } spring
+            ? new SpringSpec<float>(spring.DampingRatio, spring.Stiffness)
+            : null);
     /// <summary>Returns consumed vertical distance. Positive is downward; distances are DIP.</summary>
     public float OnPreScroll(float availableY)
     {

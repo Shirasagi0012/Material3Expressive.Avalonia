@@ -115,6 +115,20 @@ Surface 内部几何入口将同一并集用于背景和内容裁剪，阴影模
 2026-11-08 本轮授权补齐自定义 CaretShape。PlainTooltip / RichTooltip 的委托接收表面 DIP 尺寸与 FlowDirection，返回 PathGeometry；大小、方向、定位或配置改变时重新求值。其公开 invariant 路径表示供 Skia 解析，FillRule 和 Transform 分别保留，不依赖 Avalonia 私有几何后端。调用方路径不会被改写，返回值作为快照；捕获参数改变需替换委托。
 自定义形状优先于 CaretSize，清除后恢复默认三角形；空路径等价于不增加轮廓。闭合路径、曲线和孔洞与表面做真实 union。阴影三次曲线按固定 Skiko 的非 Ganesh 分支及 spot clip 采样补齐；旧拒绝原因与授权记录见 DECISIONS §27。
 这不代表 Surface 的任意形状描边、波纹或焦点环已完成。
+
+2026-11-09 本轮维护者授权补齐 PlainTooltip / RichTooltip 的独立容器 `Shape`。此前只有 CornerRadius，
+caret 并集固定使用圆角矩形；这是旧接口能力范围，不是上游对 shape 的限制。固定 AndroidX/Core 的
+`TooltipScope.PlainTooltip` / `RichTooltip` 都接受任意 Shape，`TooltipCaretShape` 将两条轮廓执行 PathOperation.Union。
+新增入口复用 MaterialShape，不另建形状协议：无 caret 直接交给 MaterialSurface.Shape；有 caret 时，
+TooltipCaret 对容器路径快照、抵消 Avalonia RTL 镜像，再与箭头合并，向已有 SetContainerGeometry 提交背景/裁剪与真实路径阴影。
+默认圆角分支继续保留 Skia conic 圆角，不转换为近似多边形。Shape 为 null 回到当前主题圆角。
+容器形状的可观察变更在挂载期间监听；替换、卸载解除旧监听，重新挂载读取当前值。没有后台轮询或新增公共共享抽象。
+路径变更不触发布局尺寸变更；尺寸、方向、定位与形状配置变化重新求解轮廓。
+补充双端同向 EvenOdd 孔洞时发现，固定 `TooltipCaretShape` 对两个输入都通过 `Path().addPath` 复制，
+不会复制源 FillType；其实际并集按默认 NonZero 解释。旧实现为了保留公共路径数据让背景/clip 继承 FillRule，
+但阴影的 SKPathBuilder 已使用 NonZero，造成同一外形各层不一致。本轮按该源码及实际截图修订此处：
+有 caret 的两个快照统一为 NonZero；无 caret 仍由 Surface 保留原 FillRule。调用方原路径和 Transform 不被改写。
+反向轮廓的孔洞继续保留，同向 EvenOdd 轮廓在有 caret 时填满，行为与固定两端一致。
 BadgedBox 已通过共享读取器仅透传锚点基线，
 并由真实 RichTooltip 组合的双端用例验证；任意自定义容器的自动基线透传仍未实现。
 TooltipBox 的运动截图保留已确认的目标提交时序差异。文字栅格、物理触摸/笔及屏幕阅读器未经验证，Windows Catalog 已检查 RichTooltip 点击打开和动作关闭路径。
@@ -125,6 +139,12 @@ RangeSlider 的 StartThumbInteractionSource / EndThumbInteractionSource 可分�
 
 ## 4. 验证入口
 
+- `TooltipContainerShapeTests` 与既有 Plain/Rich/Caret 相关行为共 36 项通过。新增 `tooltip-container-shape` 双端
+  58 例覆盖切角、百分比圆角、曲线、两种绕向孔洞、箭头填充规则、Plain/Rich、RTL、四方向，以及
+  原位改角/尺寸/方向/caret 开关/换形状/清除；`tooltip-container-shape-final` 为 40 equal、18 withinTolerance，
+  零超差、零执行错误、全部重复稳定，几何读数全等。已检查实际孔洞、曲线、裁剪及阴影截图。
+  同版本旧 `tooltip-shape` 66 例回归为 14 equal、52 withinTolerance（`tooltip-caret-final-regression`），同样零超差且稳定。
+  Catalog 构建通过，新增可见期间修改/清除容器形状示例。初轮 4 个同向孔洞超差报告保留在 `tooltip-container-shape-first`。
 - `TooltipCaretTests` 覆盖路径/内容 clip、动态尺寸与移除、边缘翻转、Label 重新挂载。`tooltip-caret` 的 84 个双端 self-test 全部重复及额外截图稳定、零错误：80 个静态/布局变化用例 equal 或 withinTolerance，4 个 show/interrupt 用例保留既有目标提交时序差异；结构化事实全等。结果为 `artifacts/visual-parity/runs/tooltip-caret-second`，包含六方向 × Plain/Rich × LTR/RTL × 中央/边缘及暗色、高度、尺寸。
 - `NativeToolTipTests` 检查原生服务和静态主题。
 - `PlainTooltipTests`、`RichTooltipTests` 检查尺寸、槽位、文字角色、基线及 Token 覆盖。RichTooltip 的 density 回归覆盖动态资源、RTL、动作最小高度及槽位切换。

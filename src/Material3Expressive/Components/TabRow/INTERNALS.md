@@ -4,7 +4,7 @@
 
 内部必需 spring 的 stiffness 必须大于零。模板首次挂载、重挂或资源暂时撤回时，未就绪配置不构造或提交运行时 spring；有效配置恢复后重新提交当前视觉目标。正在运行的通道继续使用已验证并捕获的规格，不回退 Expressive、Snap 或另一套默认值。
 
-主题把尺寸、指示器/滚动/内容运动绑定到内部配置属性；EdgePadding、MinTabWidth 及标准/图标加标签两种容器高度的基线也放入 TokenSource。Primary/Secondary 只切换内部颜色及指示器候选，公开 Foreground、ContentColor 与 Indicator 在普通主题优先级接入，应用 Style、Binding、LocalValue 可覆盖。
+主题把尺寸、指示器/滚动/内容运动绑定到内部配置属性；EdgePadding、MinTabWidth 及标准/图标加标签两种容器高度的基线也放入 TokenSource。Primary/Secondary/Legacy 切换内部颜色及指示器候选，公开 Foreground、ContentColor 与 Indicator 在普通主题优先级接入，应用 Style、Binding、LocalValue 可覆盖。
 
 SelectedContentColor=null 的环境色继承、UnselectedContentColor=null 跟随选中色是明确语义，继续保留；不是逐字段 nullable Options 合并。指示器/颜色/滚动位置仍是运行时结果，选择及页面所有权不变。
 
@@ -21,11 +21,13 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 下文 Material3 路径均以 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/` 为前缀。
 
 还需读取固定 `Tab.kt` 与 `tokens/PrimaryNavigationTabTokens.kt` / `SecondaryNavigationTabTokens.kt`。
-原记录核对两个仓库的 TabRow.kt 和 Tab.kt 相同，旧 deprecated Row 实现未移植。
+原记录核对两个仓库的 TabRow.kt 和 Tab.kt 相同；旧 deprecated Row 此前未移植。
+2026-11-09 本轮再次逐行比较两固定 TabRow.kt，无差异；依据用户自主补齐组件/变体授权增加 Legacy。
 
 | 上游关键符号 | 本地职责 |
 | --- | --- |
 | PrimaryTabRow / SecondaryTabRow、PrimaryScrollableTabRow / SecondaryScrollableTabRow | [TabRow.cs](TabRow.cs)、[TabRowAppearance.cs](TabRowAppearance.cs)：Variant × IsScrollable、公开位置和模板槽 |
+| deprecated TabRow / ScrollableTabRow、两个 WithSubcomposeImpl、tabIndicatorOffset(TabPosition) | Legacy × IsScrollable：Primary 内容色、Secondary 指示器、旧测量/布局/动画分支 |
 | TabRow 布局、TabPosition、指示器位置与滚动居中 | [TabRowLayout.cs](TabRowLayout.cs)：TabRowChrome / ItemsPanel、intrinsic 查询、排列、动画及 ScrollViewer |
 | Tab / LeadingIconTab、TabBaselineLayout | [Tab.cs](Tab.cs)、[TabHeader.cs](TabHeader.cs)：受控激活、内容布局、真实文字基线与颜色动画 |
 | 默认颜色、Typography 与指示器 | [TabRowTokenSource.cs](TabRowTokenSource.cs)、[组件 Token](../../Tokens/MaterialTokens.Comp.TabRow.cs)、[TabRow.axaml](TabRow.axaml) |
@@ -109,9 +111,24 @@ TabHeader 自身的颜色 Transition 保留，原生 TabItem 的选择时机也�
 局部 intrinsic 查询的当前机制如上；代码和编译成功不独自证明它覆盖所有自定义内容。
 固定/滚动、四种 Row 与不同内容尺寸都应通过跟踪测试重新验证。
 
+### Legacy 变体
+
+旧入口使用 `SubcomposeLayout` 和 `Modifier.tabIndicatorOffset(TabPosition)`；不是 Primary 或 Secondary 的重命名。
+固定栏位置/内容宽度同新版本。旧滚动栏先测 Tab，再以 `maxIntrinsicWidth(placeable.height)` 和实测宽度的较小值
+减两侧文字 padding，保留小于 24 甚至负值；起点先将 edgePadding 舍入到物理像素，再逐项累加。
+divider 按完整滚动 extent 测量、绘制于 Tab 上方，受限高度时仍位于实际 layoutHeight 底部。
+
+旧指示器的 `fillMaxWidth -> wrapContentSize(BottomStart) -> offset -> width` 直接从逻辑起点平移，
+不使用新滚动栏的选中 Tab 中心或 contentWidth coercion。默认宽度始终为整项；
+IndicatorMatchContentSize 在 Legacy 无效，以保留旧 modifier 的语义。
+`animateDpAsState` 在重定向前取消旧任务并清除速度，传入 MotionScheme spring 使用其 0.01f 向量阈值；
+新 TabIndicatorOffsetNode 保留既有速度与 0.1f 阈值。两种机制仍共用本地生命周期、目标合并、滚动实现。
+Legacy/新版之间切换对应上游替换组合函数，取消旧子作用域并重新创建状态，不遗留待提交动画。
+没有破坏既有 Primary/Secondary API；默认 Variant 不变。
+
 ## 一致性边界
 
-- 尚未实现 deprecated TabRow / ScrollableTabRow 的旧入口；当前四种 Row 用 Variant × IsScrollable 表达
+- 六种 Row 用 Primary/Secondary/Legacy × IsScrollable 表达；完整任意 TabIndicatorScope 自定义布局尚未提供
 - 原生主题只支持顶部水平 TabStripPlacement；其他方向不在范围内
 - 旧合并自检的静态用例严格相等，动态用例有按压/键盘采样的少量 raster 容差差异（1–4 像素、最大通道差 1），
   以及上述两个原生输入差异。双端重新采集、重复捕获与额外被动截图稳定，未改容差/遮罩/基线；不是本次验证结果
@@ -119,6 +136,15 @@ TabHeader 自身的颜色 Transition 保留，原生 TabItem 的选择时机也�
 - 桌面触摸/惯性与原生 PageTransition 实际运行画面仍需人工验证
 
 ## 验证入口
+
+2026-11-09 Legacy 单元：`LegacyTabRowTests` 8 项，加既有 TabRowTests 共 38 项全部通过；
+Catalog 和独立 Release 双端执行器构建通过。`legacy-tab-first` 族 69 例（43 静态、26 动态）
+全部 equal，执行错误零、重复和额外截图稳定。已查看 RTL 自定义分隔线/指示器与动画反向的真实原图。
+覆盖两入口、固定/滚动、LTR/RTL、标签/图标/自定义内容、受限高度、空栏、分数 padding、深色，
+以及选择、中断、内容更新、尺寸改变和初始滚动；没有放宽容差或改写基准。
+既有 `tab-row.dynamic.reverse.primary.fixed` 与 `tab-row.dynamic.reverse.secondary.scrollable`
+分别在 `legacy-modern-fixed-regression` / `legacy-modern-scroll-regression` 重跑，均精确相等且稳定。
+此验证不扩大此前原生按压/方向键选择时机及真实文字栅格的确认范围。
 
 `TabInteractionSourceTests` 检查两入口的输入身份、选择所有权、禁用、换源及真实模板替换。
 双端 `tab-source` 覆盖 Stacked/Leading/Custom/仅图标/仅标签、RTL、重叠按压、禁用与换源；
@@ -158,6 +184,8 @@ Badge/Tab 相关控件测试 67/67、控件库全量 2204/2204、整仓 Release 
 
 ```powershell
 dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~TabRowTests
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter FullyQualifiedName~LegacyTabRowTests
+./tests/VisualParity/parity.ps1 self-test --family legacy-tab-row
 ./tests/VisualParity/parity.ps1 prepare-reference --family tab-row
 ./tests/VisualParity/parity.ps1 run --family tab-row
 ./tests/VisualParity/parity.ps1 self-test --family tab-row

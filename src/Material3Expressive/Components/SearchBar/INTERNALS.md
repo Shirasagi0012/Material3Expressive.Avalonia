@@ -76,7 +76,7 @@
 
 
 - **授权范围**：本次任务明确授权上游语义内新增组件及非破坏性组件 API；没有新增公共共享框架或改动既有共享决定。
-- **尚未实现**：搜索顶栏自动 ScrollViewer / SmoothScroll 接入、任意 PopupProperties、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
+- **尚未实现**：任意 PopupProperties、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
 - **未经验证**：触摸输入、复杂多弹层返回栈、屏幕阅读器遍历顺序及带间隙滑动的任意自定义 Keyframes 等规格；已双端验证的自定义规格为 tween、spring、snap 与独立内容淡入淡出。桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
 - **共享适配**：动画尺寸沿用 ComposeAnimation 的 DIP/double 计算，Compose 的 IntSize 中间帧可能在像素取整上不同；不将检测到的视觉差异登记为新批准的近似。
 
@@ -90,7 +90,27 @@
 空行高度差仍如实报告。原生 focus/禁用事件边界没有通过伪造交互消除；真实点击基本流已验证，
 复杂 IME、变换和平台焦点先后仍不在已验证范围内。Catalog 已改用真实输入和共享 State。
 
-**待决定的自动滚动接入**：现有 `AppBarScrollScope` / `AppBarSmoothScrollConnection` 仅连接 Top/BottomAppBar，包含 SmoothScroll 合成线程状态、消费顺序与 Scaffold 的类型约束，不能把 SearchBarScrollBehavior 直接塞入任一槽。建议扩展现有接入点，例如 `new AppBarScrollScope { SearchScrollBehavior = scrolling, Child = viewer }`（示意 API，尚不存在），明确与其他顶栏共存时的先后消费、剩余速度传递、状态归属和卸载中断，再连接同一套同步机制。影响已有嵌套滚动及 Scaffold；未新建共享协议或把方案记为已批准。当前组件可用显式 pre/post-scroll、post-fling 回调和直接拖动独立使用。
+**自动滚动接入（本轮授权修订）**：原先暂缓是因为 `AppBarScrollScope` / `AppBarSmoothScrollConnection` 只支持 Top/BottomAppBar，其合成状态与 Scaffold 类型约束不能直接接纳搜索栏。2026-11-09 用户明确授权 API、必要共享职责与历史决定修订，现扩展同一接入点，增加 `SearchScrollBehavior` 并由 Scaffold 的真实 TopBar 自动发现；搜索顶栏与普通顶栏互斥，底栏仍观察正文消费。不新增公共嵌套滚动框架。
+
+固定 AndroidX/Core `EnterAlwaysSearchBarScrollBehavior` 相同。参与器保留搜索的整笔 pre 消费、reverse pre=0、reverse 向下剩余量 post 消费、普通 post 累积，以及 idle 不清空 contentOffset。普通 AppBar 的既有实际位移消费规则不迁移到搜索。搜索公开状态为 DIP，普通栏状态为物理像素，仅在连接边界换算；尺寸量化使用同一 density。搜索全高 Surface 在缩高裁剪盒内平移，主视口尺寸和位置共享合成输出；UI mirror 保留颜色动画与公开状态。
+
+主正文沿既有 SmoothScroll 所有权处理触摸/滚轮惯性，idle 使用搜索 spring 吸附；直接拖动和显式 post-fling 仍调用固定上游的 decay→snap 流程。自定义 FlingAnimationSpec 不替换原生正文惯性，非 spring snap 不自动连接；这些是明确的接入范围，不是任意 Compose scrollable 的完整替代。新输入取消旧吸附，禁用只门控新输入，换 behavior / 模板 / 主视口和卸载释放连接。源码/行为/双端依据见 `SearchAppBarScrollConnectionTests`、`search-app-bar-scroll`；原生惯性全轨迹与真实设备仍未经双端验证。共享范围见 DECISIONS §18。
+
+`search-scroll-final` 20 例全部稳定、零错误：4 withinTolerance、16 different。实际消费量、正文 offset、
+栏与视口尺寸及显式 snap 轨迹相等；换 behavior 的立即采样仍存在重组时点差异，后续帧相等。
+十个固定宽度输入保留原生子控件不接收 Compose minimum constraints 的缺口；RTL 另保留物理框相等、
+局部角点顺序相反的读数差异。新增 stretch 夹具以 Measure 消费 max width 对应 Compose.fillMaxWidth，
+没有把 Avalonia Stretch 对齐当成同一种测量请求。早期 stretch 夹具和原固定宽度失败产物均保留，未改容差。
+
+本轮同时补齐搜索顶栏 windowInsetsPadding 的发布阶段：旧 Surface 的 ConsumePadding 只覆盖模板视觉后代，
+直接 Action 逻辑父级绕过它。现由 AppBarWithSearch 持有现有 AppliedInsets 作用域，layout 仅读取剩余量，
+输入/导航/操作继承同一并集，不再重复发布 Surface padding。用户 ConsumePadding/ConsumeInsets 顺序保持；
+`TopAppBarInsetsTests` 和 `top-app-bar-insets` 中的 search 场景验证实际槽位与动态消费。
+`top-app-bar-insets-final` 曾有搜索 10 例不同：栏、导航、操作项 box/size 及输入 size 相等，
+输入 x 不同。进一步核对发现参考槽始终带有 Box(propagateMinConstraints=false)，本地夹具却
+直接放固定宽度控件；前者按 TopStart 放内容，后者在 Stretch 槽内居中。为本地夹具补齐同一
+Box 布局后，`top-app-bar-insets-box-equivalent` 全部 30 例 equal、稳定、零错误，其中搜索 10 例
+包含父级消费、Insets 改变和 RTL 切换。未修改组件布局、参考端或容差，原失败采样继续保留。
 
 **尚未实现：布局后的指针重送。** 固定 Core 的 SyntheticEventSender 在布局移动后重送同时间戳的鼠标 Move；
 本地场景输入没有对应协议。真实 `pointer-velocity` 对照的静止目标五种输入均相等，移动内容释放速度为

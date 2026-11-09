@@ -113,13 +113,17 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 尾部标签在精确指针环境下增加末尾 6 DIP 留白，运行时切换有效；显式 Padding 或样式优先。
 标题不会参与菜单项激活或键盘焦点。Catalog 的 Grouped / selectable 菜单展示这两个入口。
 
-独立 Expressive / Checkable / Selectable 项可继承 `MaterialPrecisionPointer.IsEnabled`：
-例如 `<m3:DropdownMenuPopup m3:MaterialPrecisionPointer.IsEnabled="True" ... />`。
+独立 Expressive / Checkable / Selectable 项与原生 Vertical 菜单项可继承 `MaterialPrecisionPointer.IsEnabled`：
+例如在窗口、锚点容器或 `<m3:DropdownMenuPopup m3:MaterialPrecisionPointer.IsEnabled="True" ... />` 上开启。
 启用后左右留白为 start 16 / end 10 DIP、上下 12 DIP，首尾内容间距为 12 DIP；项目高度规则保持原值。
 支持打开时切换、局部关闭及显式 `Padding` / `LeadingSpacing` / `TrailingSpacing` 覆盖。
-默认值可用 `Comp.Menu.PrecisionItemPadding` 和 `PrecisionContentSpacing` Token 配置。
-Catalog 的 grouped / selectable 示例提供开关。当前 Baseline 与原生 MenuItem 不消费此尺寸环境，
-不要把环境开关理解为所有菜单尺寸已完成接入。
+后两个间距属性用于独立项；原生项可用 `HorizontalArrangement` 覆盖排列。
+未显式指定尺寸的尾部 MaterialSymbol 和原生子菜单箭头由 20 改为 24 DIP，任意尾部内容保持自身尺寸，
+尾部槽的最小宽度仍为 20 DIP。默认值可用 `Comp.Menu.PrecisionItemPadding`、`PrecisionContentSpacing`
+和 `PrecisionTrailingIconSize` Token 配置。Catalog 的 Native menus 与 grouped / selectable 示例提供开关。
+Baseline 与菜单栏顶层继续使用原有尺寸。
+若旧代码曾通过 `Comp.Menu.LeadingIconSize` 同时修改独立项的首尾槽，请为尾槽补上
+`Comp.Menu.TrailingIconSize`；精确模式的推荐尾图标大小使用 `PrecisionTrailingIconSize`。
 
 独立 Expressive、Checkable 和 Selectable 项支持 `HorizontalArrangement`，可选择六种标准分布、
 `Absolute.Left/Right/Center/SpaceBetween/SpaceAround/SpaceEvenly`、固定正负间距或自定义排列对象：

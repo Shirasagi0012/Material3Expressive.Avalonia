@@ -55,6 +55,7 @@ public class Scaffold : ContentControl
     private ContentPresenter? _topPresenter, _bottomPresenter;
 
     internal TopAppBar? PresentedTopBar => _topPresenter?.Child as TopAppBar;
+    internal AppBarWithSearch? PresentedSearchBar => _topPresenter?.Child as AppBarWithSearch;
     internal BottomAppBar? PresentedBottomBar => _bottomPresenter?.Child as BottomAppBar;
 
     // Clear ContentControl's single-presenter fallback; Scaffold requires its five-slot template.

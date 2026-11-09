@@ -53,7 +53,8 @@ internal sealed class TabRowChrome : Panel
     internal double EdgePadding => Owner is { } owner ? TabRowAppearance.GetEdgePadding(owner) : 0;
     internal double MinTabWidth => Owner is { } owner ? TabRowAppearance.GetMinTabWidth(owner) : 0;
     internal bool Primary => Owner is not { } owner || TabRowAppearance.GetVariant(owner) == TabRowVariant.Primary;
-    internal bool MatchContentSize => Owner is { } owner ? TabRowAppearance.GetIndicatorMatchContentSize(owner) ?? Primary : Primary;
+    internal bool Legacy => Owner is { } owner && TabRowAppearance.GetVariant(owner) == TabRowVariant.Legacy;
+    internal bool MatchContentSize => !Legacy && (Owner is { } owner ? TabRowAppearance.GetIndicatorMatchContentSize(owner) ?? Primary : Primary);
     internal int SelectedIndex => Owner switch { TabRow row => row.SelectedIndex, TabControl native => native.SelectedIndex, _ => 0 };
     internal ScrollViewer Scroller => (ScrollViewer)Children[1];
     internal TabRowContent Content => (TabRowContent)Scroller.Content!;
@@ -76,6 +77,9 @@ internal sealed class TabRowChrome : Panel
     private void ScrollChanged(object? sender, ScrollChangedEventArgs e) => InvalidateArrange();
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == TabRowAppearance.VariantProperty &&
+            (e.GetOldValue<TabRowVariant>() == TabRowVariant.Legacy || e.GetNewValue<TabRowVariant>() == TabRowVariant.Legacy))
+            Content.ResetVariantMotion();
         if (e.Property == TabRow.SelectedIndexProperty || e.Property == SelectingItemsControl.SelectedIndexProperty ||
             e.Property == TabRowAppearance.IndicatorMatchContentSizeProperty || e.Property == TabRowAppearance.VariantProperty || e.Property == TabRowAppearance.IsScrollableProperty ||
             e.Property == TabRowAppearance.EdgePaddingProperty || e.Property == TabRowAppearance.MinTabWidthProperty)
@@ -90,7 +94,7 @@ internal sealed class TabRowChrome : Panel
         if (Children.Count != 3) return default;
         ScrollViewer.SetHorizontalScrollBarVisibility(Scroller, Scrollable ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Disabled);
         Children[1].Measure(availableSize);
-        Children[0].Measure(new Size(availableSize.Width, Children[1].DesiredSize.Height));
+        Children[0].Measure(new Size(Legacy && Scrollable ? Content.DesiredSize.Width : availableSize.Width, Children[1].DesiredSize.Height));
         // Empty fixed rows have zero height even though the divider has an independent height.
         return Children[1].DesiredSize;
     }
@@ -99,9 +103,11 @@ internal sealed class TabRowChrome : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var height = Content.LayoutHeight;
         var dy = (MathUtils.DipToPx(finalSize.Height, scale) - MathUtils.DipToPx(height, scale)) / 2 / scale;
-        Children[0].ZIndex = Scrollable ? -1 : 1;
+        Children[0].ZIndex = Scrollable && !Legacy ? -1 : 1;
         Children[2].ZIndex = 2;
-        Children[0].Arrange(new Rect(0, (Scrollable ? finalSize.Height : dy + height) - Children[0].DesiredSize.Height, finalSize.Width, Children[0].DesiredSize.Height));
+        Children[0].Arrange(new Rect(Legacy && Scrollable ? -Scroller.Offset.X : 0,
+            (Scrollable && !Legacy ? finalSize.Height : dy + height) - Children[0].DesiredSize.Height,
+            Legacy && Scrollable ? Content.DesiredSize.Width : finalSize.Width, Children[0].DesiredSize.Height));
         Children[1].Arrange(new Rect(finalSize));
         Content.ArrangeIndicator(finalSize);
         Content.UpdateScroll();
@@ -156,13 +162,18 @@ internal sealed class TabRowItemsPanel : StackPanel
             }
             _padding = chrome.Scrollable ? Px(chrome.EdgePadding) : 0;
             _widths = new int[Children.Count]; Positions = new TabPosition[Children.Count];
-            var left = chrome.Scrollable ? (float)chrome.EdgePadding : 0f;
+            var left = chrome.Scrollable ? chrome.Legacy ? _padding / (float)scale : (float)chrome.EdgePadding : 0f;
+            var legacyLeft = _padding;
             var extent = _padding * 2;
             for (var index = 0; index < Children.Count; index++)
             {
                 var intrinsic = headers[index]?.IntrinsicWidth(chrome.Scrollable ? int.MaxValue : _height, scale) ?? Px(Children[index].DesiredSize.Width);
                 var itemWidth = chrome.Scrollable ? Math.Max(Px(chrome.MinTabWidth), intrinsic) : width;
-                var contentWidth = Math.Max((chrome.Scrollable ? intrinsic : Math.Min(intrinsic, width)) / (float)scale - (float)(chrome.TabHorizontalPadding * 2), (float)chrome.PrimaryIndicatorMinWidth);
+                var contentIntrinsic = chrome.Legacy && chrome.Scrollable
+                    ? headers[index]?.IntrinsicWidth(_height, scale) ?? intrinsic : intrinsic;
+                var contentWidth = chrome.Legacy && chrome.Scrollable
+                    ? Math.Min(contentIntrinsic, itemWidth) / (float)scale - (float)(chrome.TabHorizontalPadding * 2)
+                    : Math.Max((chrome.Scrollable ? intrinsic : Math.Min(intrinsic, width)) / (float)scale - (float)(chrome.TabHorizontalPadding * 2), (float)chrome.PrimaryIndicatorMinWidth);
                 _widths[index] = itemWidth;
                 // Intrinsic probes measure the presenters with different constraints. Replay
                 // the real measure through every template wrapper, including Surface's Border,
@@ -175,7 +186,9 @@ internal sealed class TabRowItemsPanel : StackPanel
                 }
                 Children[index].InvalidateMeasure();
                 Children[index].Measure(new Size(itemWidth / scale, _height / scale));
-                Positions[index] = new TabPosition(left, itemWidth / (float)scale, contentWidth);
+                Positions[index] = new TabPosition(chrome.Legacy && chrome.Scrollable ? legacyLeft / (float)scale : left,
+                    itemWidth / (float)scale, contentWidth);
+                legacyLeft += itemWidth;
                 left += itemWidth / (float)scale; extent += itemWidth;
             }
             if (chrome.OwnerAttached && chrome.Owner is { } owner && !TabRowAppearance.GetTabPositions(owner).SequenceEqual(Positions))
@@ -234,11 +247,22 @@ internal sealed class TabRowContent : Panel
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        ClearMotion();
+        base.OnDetachedFromVisualTree(e);
+    }
+    private void ClearMotion()
+    {
         _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
         _scrollPrevious = _scrollFraction = 0; _scrollGeneration++;
         _scrollRun?.Cancel(); _scrollRun?.Dispose(); _scrollRun = null;
         _attachScope?.Dispose(); _attachScope = null;
-        base.OnDetachedFromVisualTree(e);
+    }
+    internal void ResetVariantMotion()
+    {
+        ClearMotion();
+        if (this.IsAttachedToVisualTree()) _attachScope = AnimationScope.Get(this).CreateChild("Tab row content");
+        Chrome.Scroller.Offset = default;
+        InvalidateMeasure();
     }
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -289,7 +313,12 @@ internal sealed class TabRowContent : Panel
             // Both row variants publish TabPositions before measuring the offset node.
             // Intrinsic remeasurement does not add another animation-frame boundary.
             if (_requested[track] != target) return;
-            await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, 0.1f), cancellationToken: ct);
+            // The legacy composed modifier uses animateDpAsState: cancelling the old
+            // job clears velocity before the replacement, unlike the modern offset node.
+            var legacy = Chrome.Legacy;
+            if (legacy) await track.StopAsync();
+            if (ct.IsCancellationRequested) return;
+            await track.AnimateToAsync(motion, target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, legacy ? 0.01f : 0.1f), cancellationToken: ct);
         }, label);
     }
     protected override Size ArrangeOverride(Size finalSize)
@@ -308,6 +337,15 @@ internal sealed class TabRowContent : Panel
         var scale = LayoutHelper.GetLayoutScale(this);
         var position = positions[chrome.SelectedIndex];
         var width = MathUtils.DipToPx(IndicatorWidth, (float)scale) / scale;
+        if (chrome.Legacy)
+        {
+            // tabIndicatorOffset(TabPosition): fillMaxWidth -> wrapContentSize(BottomStart)
+            // -> offset(animated left) -> width(animated width), with no selected-tab centering.
+            var legacyDy = (MathUtils.DipToPx(finalSize.Height, scale) - MathUtils.DipToPx(LayoutHeight, scale)) / 2 / scale;
+            chrome.Indicator.Arrange(new Rect(MathUtils.DipToPx(IndicatorOffset, (float)scale) / scale - chrome.Scroller.Offset.X,
+                legacyDy + LayoutHeight - chrome.Indicator.DesiredSize.Height, width, chrome.Indicator.DesiredSize.Height));
+            return;
+        }
         // Fixed TabRow places the offset node at start zero; scrollable rows center the
         // node in the selected tab before its animated start offset is applied.
         // Compose coerces the offset node's reported width to the outer constraints.

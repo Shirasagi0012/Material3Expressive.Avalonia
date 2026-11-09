@@ -3,12 +3,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
-        xmlns:converters="using:Avalonia.Markup.Xaml.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" RequestedThemeVariant="Light"
         x:Class="Material3Expressive.Catalog.MainWindow"
         Title="Material3Expressive.Catalog">
     <Window.Resources>
-        <converters:ColorToBrushConverter x:Key="FabIconBrushConverter" />
         <m3:MaterialInteractionSource x:Key="SelectionPreviewSource" />
         <m3:MaterialInteractionSource x:Key="FabElevationPreviewSource" />
     </Window.Resources>
@@ -54,8 +52,14 @@
                 <m3:FloatingActionButtonMenu x:Name="DemoFabMenu" HorizontalAlignment="Left">
                     <m3:FloatingActionButtonMenu.Button>
                         <m3:ToggleFloatingActionButton x:Name="DemoToggleFab" Size="Medium" CheckedChangeRequested="OnFabCheckedChange">
-                            <m3:MaterialSymbol Symbol="Add" Width="{Binding IconSize, ElementName=DemoToggleFab}" Height="{Binding IconSize, ElementName=DemoToggleFab}"
-                                                Foreground="{Binding IconColor, ElementName=DemoToggleFab, Converter={StaticResource FabIconBrushConverter}}" />
+                            <m3:ToggleFloatingActionButtonIcon>
+                                <DrawingImage>
+                                    <DrawingGroup>
+                                        <GeometryDrawing Brush="Red" Geometry="M 2,10 L 10,10 L 10,2 L 14,2 L 14,10 L 22,10 L 22,14 L 14,14 L 14,22 L 10,22 L 10,14 L 2,14 Z" />
+                                        <GeometryDrawing Brush="#800000FF" Geometry="M 14,2 L 22,2 L 22,10 L 14,10 Z" />
+                                    </DrawingGroup>
+                                </DrawingImage>
+                            </m3:ToggleFloatingActionButtonIcon>
                         </m3:ToggleFloatingActionButton>
                     </m3:FloatingActionButtonMenu.Button>
                     <m3:FloatingActionButtonMenuItem Content="Create" Click="OnFabMenuItem" Icon="{m3:Symbol Add}" />
@@ -139,6 +143,30 @@
                     </m3:OutlinedCard>
                 </WrapPanel>
                 <TextBlock x:Name="DemoCardStatus" Text="Click a card" />
+                <TextBlock Text="Weighted card content" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+                <CheckBox x:Name="CardColumnFill" Content="Fill weighted hosts" IsChecked="True" />
+                <WrapPanel>
+                    <m3:Card Width="240" Height="200" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16">
+                            <TextBlock Text="Header (preferred height)" />
+                            <m3:CardColumnItem Weight="1" Fill="{Binding IsChecked, ElementName=CardColumnFill}" Alignment="Start">
+                                <TextBlock Text="Weight 1 · Start" />
+                            </m3:CardColumnItem>
+                            <m3:CardColumnItem Weight="2" Fill="{Binding IsChecked, ElementName=CardColumnFill}" Alignment="End">
+                                <TextBlock Text="Weight 2 · End" />
+                            </m3:CardColumnItem>
+                            <TextBlock Text="Footer (preferred height)" />
+                        </m3:CardColumn>
+                    </m3:Card>
+                    <m3:OutlinedCard Width="240" Height="200" FlowDirection="RightToLeft" Margin="0,0,16,16">
+                        <m3:CardColumn Margin="16">
+                            <TextBlock Text="RTL" />
+                            <m3:CardColumnItem Weight="1" Alignment="Start"><TextBlock Text="Start" /></m3:CardColumnItem>
+                            <m3:CardColumnItem Weight="1" Alignment="Center"><TextBlock Text="Center" /></m3:CardColumnItem>
+                            <m3:CardColumnItem Weight="1" Alignment="End"><TextBlock Text="End" /></m3:CardColumnItem>
+                        </m3:CardColumn>
+                    </m3:OutlinedCard>
+                </WrapPanel>
                 <TextBlock Text="Segmented button" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <m3:SingleChoiceSegmentedButtonRow>
                     <m3:SegmentedButton Content="Day" IsSelected="True" Click="OnSingleSegmentClick" />
@@ -163,6 +191,26 @@
                         <m3:SegmentedButton.Shape><m3:CutCornerShape TopEnd="16" BottomEnd="16" /></m3:SegmentedButton.Shape>
                     </m3:SegmentedButton>
                 </m3:SingleChoiceSegmentedButtonRow>
+                <TextBlock Text="Reusable selection icons" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <CheckBox x:Name="StandaloneIconSelection" Content="Selected" IsChecked="True" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <Border Width="40" Height="32">
+                        <m3:SegmentedButtonIcon IsActive="{Binding IsChecked, ElementName=StandaloneIconSelection}"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <m3:SegmentedButtonIcon IsActive="{Binding IsChecked, ElementName=StandaloneIconSelection}"
+                                            InactiveContent="{m3:Symbol StarBorder}" ActiveContent="{m3:Symbol Star}"
+                                            Foreground="#6750A4" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <m3:SegmentedButtonIcon IsActive="{Binding IsChecked, ElementName=StandaloneIconSelection}"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <m3:SegmentedButtonIcon.ActiveContent>
+                            <Border Width="28" Height="12" Background="#146C4C" CornerRadius="4" />
+                        </m3:SegmentedButtonIcon.ActiveContent>
+                        <m3:SegmentedButtonIcon.InactiveContent>
+                            <Border Width="12" Height="20" Background="#79747E" CornerRadius="4" />
+                        </m3:SegmentedButtonIcon.InactiveContent>
+                    </m3:SegmentedButtonIcon>
+                </StackPanel>
                 <Button Content="AppBar demo" Click="OnAppBarDemo" HorizontalAlignment="Left" />
                 <Button Content="Tooltip demo" Click="OnTooltipDemo" HorizontalAlignment="Left" />
                 <Button Content="Drag handle demo" Click="OnDragHandleDemo" HorizontalAlignment="Left" />
@@ -360,6 +408,7 @@
                     </RadioButton>
                 </StackPanel>
                 <TextBlock Text="CheckBox" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <Button Content="路径效果示例" Click="OnCheckBoxStrokeDemo" HorizontalAlignment="Left" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <CheckBox Content="Option" />
                     <CheckBox Content="Selected" IsChecked="True" />
@@ -601,20 +650,28 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-                <Grid ColumnDefinitions="Auto,*" Height="360">
+                <Grid ColumnDefinitions="Auto,*" Height="360" m3:MaterialWindowInsets.ConsumeInsets="40">
                     <StackPanel Grid.Column="1" Margin="16" Spacing="12">
                         <TextBlock Text="Modal Wide NavigationRail" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                         <Button Content="Toggle modal rail" Click="OnToggleModalRail"
                                 Theme="{StaticResource MaterialTonalButtonTheme}" />
+                        <TextBlock Text="页面祖先已消费 40；独立模态窗口仍应用自己的 13,7,5,11。图标再次请求相同 Insets 不重复留白。" TextWrapping="Wrap" />
+                        <Button Content="切换模态栏自身消费 Insets" Click="OnModalRailInsets" />
                         <Button Content="Open hidden modal rail" Tag="hidden" Click="OnToggleModalRail"
                                 Theme="{StaticResource MaterialTonalButtonTheme}" />
                     </StackPanel>
-                    <m3:ModalWideNavigationRail x:Name="DemoHiddenModalRail" HideOnCollapse="True">
+                    <m3:ModalWideNavigationRail x:Name="DemoHiddenModalRail" HideOnCollapse="True" WindowInsets="13,7,5,11">
                         <m3:ModalWideNavigationRail.ExpandedShape><m3:CutCornerShape TopEnd="32" BottomEnd="16" /></m3:ModalWideNavigationRail.ExpandedShape>
                         <m3:ModalWideNavigationRail.ExpandedHeader>
                             <m3:IconButton Symbol="MenuOpen" Tag="hidden" Click="OnToggleModalRail" />
                         </m3:ModalWideNavigationRail.ExpandedHeader>
-                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick" Icon="{m3:Symbol HomeAndGarden}" />
+                        <m3:WideNavigationRailItem Label="Home" IsSelected="True" Click="OnModalDestinationClick">
+                            <m3:WideNavigationRailItem.Icon>
+                                <m3:MaterialWindowInsetsPadding Insets="13,7,5,11">
+                                    <m3:MaterialSymbol Symbol="HomeAndGarden" />
+                                </m3:MaterialWindowInsetsPadding>
+                            </m3:WideNavigationRailItem.Icon>
+                        </m3:WideNavigationRailItem>
                         <m3:WideNavigationRailItem Label="Search" Click="OnModalDestinationClick" Icon="{m3:Symbol Search}" />
                     </m3:ModalWideNavigationRail>
                 </Grid>

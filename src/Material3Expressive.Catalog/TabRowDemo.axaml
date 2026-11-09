@@ -65,6 +65,24 @@
         <m3:Tab Content="Shared albums" Click="OnTabClick" />
       </m3:TabRow>
       <TextBlock Text="Native TabControl · selection and pages" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <TextBlock Text="Legacy tabs · primary color, full tab indicator" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow Variant="Legacy" SelectedIndex="0">
+        <m3:Tab Content="Overview" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Activity" Click="OnTabClick" />
+        <m3:Tab Content="Details" Click="OnTabClick" />
+      </m3:TabRow>
+      <m3:TabRow Variant="Legacy" IsScrollable="True" SelectedIndex="0">
+        <m3:Tab Content="All albums" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Recently added" Click="OnTabClick" />
+        <m3:Tab Content="Favourites" Click="OnTabClick" />
+        <m3:Tab Content="Downloaded" Click="OnTabClick" />
+        <m3:Tab Content="Shared albums" Click="OnTabClick" />
+      </m3:TabRow>
+      <TabControl m3:TabRowAppearance.Variant="Legacy" Height="100">
+        <TabItem Header="Overview"><TextBlock Text="Legacy indicator with native page selection." Margin="16" /></TabItem>
+        <TabItem Header="Activity" />
+      </TabControl>
+      <TextBlock Text="Native TabControl · secondary scrollable" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <TabControl m3:TabRowAppearance.Variant="Secondary" m3:TabRowAppearance.IsScrollable="True" Height="160">
         <TabItem Header="Music"><TextBlock Text="Music library" Margin="16" /></TabItem>
         <TabItem Header="Videos"><TextBlock Text="Video library" Margin="16" /></TabItem>

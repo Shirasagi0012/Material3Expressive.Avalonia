@@ -119,7 +119,16 @@ public class MaterialIcon : Control
             if (source is Bitmap bitmap)
                 sourceRect = new Rect(sourceRect.X * bitmap.PixelSize.Width / size.Width, sourceRect.Y * bitmap.PixelSize.Height / size.Height,
                     sourceRect.Width * bitmap.PixelSize.Width / size.Width, sourceRect.Height * bitmap.PixelSize.Height / size.Height);
-            source.Draw(context, sourceRect, destRect);
+            // DrawingImage 12.1.x applies its destination translation before its scale,
+            // which scales a nonzero Fit offset a second time. Supply a local destination
+            // and translate the context instead. Other IImage implementations retain their
+            // original destination rectangle, including its nonzero Fit offset.
+            if (source is DrawingImage)
+            {
+                using (context.PushTransform(Matrix.CreateTranslation(destRect.Position)))
+                    source.Draw(context, sourceRect, new Rect(destRect.Size));
+            }
+            else source.Draw(context, sourceRect, destRect);
         }
     }
 

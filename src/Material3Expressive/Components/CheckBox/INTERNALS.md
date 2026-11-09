@@ -78,10 +78,19 @@ ToggleProvider 的开关，因此当时未增加独立只显示指示器。
 共享反馈与桌面焦点由[键盘职责](../../../../docs/DECISIONS.md)及
 [Core Desktop 焦点](../../../../docs/DECISIONS.md)维护。
 
-尚未实现任意 PathEffect 映射。默认交互控件的焦点轮廓是 24 DIP 反馈区域的 25% 圆角。
+此前任意 PathEffect 映射尚未实现。本轮依据用户对缺失 API 的明确授权补齐
+`CheckBoxStroke.PathEffect`：固定 AndroidX/Core `Checkbox.kt` 将 Stroke 直接传入勾号与外框；
+组件本来就在 Skia 物理像素坐标绘制，直接设置 Paint.PathEffect 保留同一语义。
+沿用 ProgressIndicatorStroke 的物理像素、调用者持有资源约定；非 null 效果覆盖 DIP dash 便捷参数，
+不擅自缩放任意效果。原先 Cap/Join 上游 bug 的已接受决定继续有效。
+没有破坏性 API 迁移；null 恢复既有 dash/default 行为，两个 Checkbox 入口共享绘制和状态动画。
+默认交互控件的焦点轮廓是 24 DIP 反馈区域的 25% 圆角。
 文字栅格、真实辅助技术、完整桌面输入和非 Windows 平台未经双端验收。selection-source 部分 Core 重复捕获出现最大单通道 1 的变化，稳定性门禁保留原始失败。
 
 ## 4. 验证入口
+
+2026-11-09 `checkbox-path-effects-initial` 新增 27 例全部严格相等、执行错误为零且重复/额外截图稳定；
+包含运行时替换效果和中断的真实像素。新增 5 项行为测试通过，Catalog 构建通过。
 
 `selection-display-initial` 双端自检 68 例：65 equal，3 different，零错误，全部重复/额外截图稳定。3 个 Radio 动画用例仅在已确认的负半径幻影点分支有 raster 差异，结构化状态和几何均相等；保留失败与真实图片。
 
@@ -90,6 +99,8 @@ ToggleProvider 的开关，因此当时未增加独立只显示指示器。
 - `CheckBoxTests` 和 `SelectionControlHitTests` 检查原生输入、状态/命令顺序、内容命中、主题及生命周期。
 - `SelectionDensityTokenTests` 检查尺寸与留白的动态资源覆盖。
 - `SelectionInteractionSourceTests` 检查配对、源替换、重挂及外部交互反馈。
+- `CheckBoxPathEffectTests` 检查实际像素变化、清除恢复、DIP/物理像素密度、显式效果优先级和调用者资源存活；
+  `checkbox-path-effect` 双端用例覆盖 corner、dash、组合效果、三态/RTL、途中反向与运行时替换。
 - 双端 `CheckBoxCases.cs` / `CheckBoxCases.kt` 的族名为 `checkbox`，共享源用例为 `selection-source`。精确比较保留第 3 节已接受的原生适配及已知像素差异。
 
 ```powershell

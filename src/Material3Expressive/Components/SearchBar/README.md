@@ -100,7 +100,7 @@ FullScreenSearch.State = state;
 </m3:AppBarWithSearch>
 ```
 
-`NavigationIcon` 是起始插槽，直接子项是末尾操作。Catalog 的 **Search app bar** 展示搜索过滤、主题/RTL、直接拖动和显式滚动策略，使用 `--search-app-bar` 启动。
+`NavigationIcon` 是起始插槽，直接子项是末尾操作。Catalog 的 **Search app bar** 展示搜索过滤、主题/RTL、直接拖动和正文滚动联动，使用 `--search-app-bar` 启动。
 
 ## 变体与属性
 
@@ -156,7 +156,32 @@ null 使用原有 `CornerRadius`。`AppBarWithSearch.Shape` 定义内部搜索�
 
 `AppBarWithSearch` 的 `Background` 必须为纯色或 null，`SearchBarContainerColor` 单独配置内部搜索表面。两个 nullable 的 `ScrolledContainerColor` / `ScrolledSearchBarContainerColor` 为 null 时保留对应基础色。导航/操作颜色通过各自 `*ContentColor` 配置；子控件显式前景色优先。基础应用栏背景为透明哨兵时，elevation 应用在搜索表面，否则应用在外层。`CornerRadius` 只配置搜索形状，`ContentPadding` 为逻辑方向，`WindowInsets` 为物理方向并排除祖先消费。
 
-可选 `SearchBarScrollBehavior` 提供 enter-always 策略，挂载后支持直接拖动栏区域。嵌套滚动宿主显式接入：
+搜索顶栏还会向输入、导航和操作槽发布已经消费的 `WindowInsets`；槽内的
+`MaterialWindowInsetsPadding` 应继续接收完整 Insets，避免调用方手工扣减或重复留白。
+Catalog 可切换模拟 Insets，并在设置图标槽中演示嵌套消费。
+
+可选 `SearchBarScrollBehavior` 提供 enter-always 策略，挂载后支持直接拖动栏区域。标准 `Scaffold` 会自动连接正文中唯一的主 `ScrollViewer`：
+
+```xml
+<m3:Scaffold x:Name="Screen">
+  <m3:Scaffold.TopBar>
+    <m3:AppBarWithSearch>
+      <m3:AppBarWithSearch.ScrollBehavior><m3:SearchBarScrollBehavior /></m3:AppBarWithSearch.ScrollBehavior>
+      <m3:AppBarWithSearch.InputField><m3:SearchBarInputField PlaceholderText="搜索" /></m3:AppBarWithSearch.InputField>
+    </m3:AppBarWithSearch>
+  </m3:Scaffold.TopBar>
+  <Border Width="{Binding Bounds.Width, ElementName=Screen}" Height="{Binding Bounds.Height, ElementName=Screen}"
+          Padding="{Binding ContentPadding, ElementName=Screen}"
+          m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=Screen}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"><ItemsControl ItemsSource="{Binding Results}" /></ScrollViewer>
+  </Border>
+</m3:Scaffold>
+```
+
+主视口需使用库的物理滚动主题、填满扣除 `ContentPadding` 的正文区域；内嵌滚动器独立处理自己的输入。
+不支持原生 snap points、逻辑滚动、固定高度正文或额外变换时保留视口自身滚动。
+正文惯性由平滑滚动器拥有；`FlingAnimationSpec` 用于直接拖动与显式 `OnPostFlingAsync`，
+自动正文吸附支持默认或显式 spring，其他 snap 规格使用下面的显式接入。自定义宿主仍可按顺序调用：
 
 ```csharp
 var scrolling = new SearchBarScrollBehavior();
@@ -191,7 +216,7 @@ interactions.Interaction += interaction => Debug.WriteLine(interaction.GetType()
 
 ## 使用限制与注意事项
 
-`SearchBarInputField.State` 非空时直接控制共享状态；`IsExpanded` 和 `ExpansionRequested` 仅在 `State=null` 时生效。输入字段用于无标签、无错误状态的单行搜索。`AppBarWithSearch` 尚未自动连接普通 `ScrollViewer` / SmoothScroll；上述显式回调需要宿主按真实嵌套滚动顺序调用。
+`SearchBarInputField.State` 非空时直接控制共享状态；`IsExpanded` 和 `ExpansionRequested` 仅在 `State=null` 时生效。输入字段用于无标签、无错误状态的单行搜索。自动滚动仅连接标准 Scaffold 的主正文；自定义宿主使用上述显式回调并按真实嵌套滚动顺序调用。
 
 独立弹层采用可聚焦的窗口内桌面弹层，形状通过 `Shape` 或 `CornerRadius` 配置；目前不提供移动端软键盘抑制、自动键盘避让和预测返回手势。一个状态应配对同一窗口内一个收起表面和一个展开弹层。仅移动已存在的收起表面不会立即重定位静止弹层；重新打开或进度/窗口尺寸更新时读取最新位置。结果模板在弹层移除时释放，业务状态应保存在视图模型中。
 

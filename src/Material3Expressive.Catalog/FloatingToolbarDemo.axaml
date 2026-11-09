@@ -1,10 +1,25 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:motion="clr-namespace:ComposeAnimation;assembly=ComposeAnimation.Avalonia"
         x:Class="Material3Expressive.Catalog.FloatingToolbarDemo"
-        Title="Floating toolbar" Width="700" Height="660">
+        TransitionSpring="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialFast}}"
+        Title="Floating toolbar" Width="700" Height="790">
   <StackPanel Margin="24" Spacing="16">
     <CheckBox x:Name="Expansion" Content="Expanded" IsChecked="True" />
+    <TextBlock Text="Independent transition factories" />
+    <Grid ColumnDefinitions="*,*" Height="80">
+      <motion:AnimatedVisibility x:Name="HorizontalTransition" TargetCommitPhase="AfterFrame" Visible="{ReflectionBinding IsChecked, ElementName=Expansion}"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Background="#EADDFF" CornerRadius="16" Padding="8">
+          <StackPanel Orientation="Horizontal"><m3:IconButton Symbol="Edit" /><m3:IconButton Symbol="Share" /></StackPanel>
+        </Border>
+      </motion:AnimatedVisibility>
+      <motion:AnimatedVisibility x:Name="VerticalTransition" TargetCommitPhase="AfterFrame" Grid.Column="1" Visible="{ReflectionBinding IsChecked, ElementName=Expansion}"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Background="#E8DEF8" CornerRadius="16" Padding="16"><TextBlock Text="Vertical group" /></Border>
+      </motion:AnimatedVisibility>
+    </Grid>
     <m3:HorizontalFloatingToolbar Expanded="{ReflectionBinding IsChecked, ElementName=Expansion}">
       <m3:HorizontalFloatingToolbar.LeadingContent><m3:IconButton Symbol="ArrowBack" /></m3:HorizontalFloatingToolbar.LeadingContent>
       <m3:HorizontalFloatingToolbar.TrailingContent><m3:IconButton Symbol="MoreVert" /></m3:HorizontalFloatingToolbar.TrailingContent>

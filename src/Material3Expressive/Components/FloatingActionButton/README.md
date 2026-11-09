@@ -138,8 +138,29 @@ private void OnActionToggleRequested(object? sender,
 Toggle 的动画读数为 `CheckedProgress`、`IconSize` 和 `IconColor`。Icon / IconTemplate 存在时使用图标槽，
 否则仍显示 Content。图标槽默认尺寸按 Default/Medium/Large 固定为 24/28/36 DIP，不跟随动画尺寸；
 如需图标随进度变化，可显式绑定 `IconSize` 到图标宽高，并将 `IconColor`（Color）经 Avalonia
-`ColorToBrushConverter` 转为画刷。任意 Content 不会自动获得该动画绑定。完整绑定见
-[Catalog](../../../Material3Expressive.Catalog/MainWindow.axaml)。
+`ColorToBrushConverter` 转为画刷。任意 Content 不会自动获得该动画绑定。
+
+位图、矢量及自定义 `IImage` 可使用 `ToggleFloatingActionButtonIcon`，自动跟随所属 Toggle 的尺寸与颜色动画：
+
+```xml
+<m3:ToggleFloatingActionButton IsChecked="{Binding ActionsExpanded}">
+  <m3:ToggleFloatingActionButtonIcon Source="{Binding ActionImage}" ContentDescription="更多操作" />
+</m3:ToggleFloatingActionButton>
+```
+
+图片按 Fit 保持比例，着色保留整张图片的透明度（包括半透明区域及多色矢量），`AutoMirror` 可在 RTL 镜像。
+`Source` 也可声明为 `DrawingImage`，[Catalog 首页](../../../Material3Expressive.Catalog/MainWindow.axaml)的菜单按钮演示该写法。可用完整进度函数定制：
+
+```csharp
+icon.Size = progress => 28 - 8 * progress;
+icon.Color = progress => progress > .5f ? Colors.White : Colors.DarkBlue;
+```
+
+`Size` / `Color` 为 null 时恢复所属 Toggle 当前尺寸档和主题默认值；尺寸按窗口物理像素取整。
+挂载在 Toggle 内时该入口接管图片的 `Width` / `Height` / `Foreground` 和着色开关，卸载后恢复调用方原值。
+它是图片入口，不接收控件子树；其他 Content 可继续使用上述显式绑定。
+`DrawingImage` 原位变更会立即刷新。本入口没有复制固定 Core `animateIcon` 的图层缓存滞留：
+上游可能在进度不变时保留旧图，直到下一次动画才重新录制；这项已验证差异见 INTERNALS。
 ContainerColor / ContainerSize / ContainerCornerRadius 接受完整进度函数，例如
 `toggle.ContainerSize = progress => 80 - 24 * progress`。主题从当前变体及颜色、尺寸 Token
 动态组装默认函数；显式 Style、Binding 或局部函数优先，清除后恢复当前主题。函数不会被动画写回，
@@ -162,7 +183,8 @@ ContainerColor / ContainerSize / ContainerCornerRadius 接受完整进度函数�
 
 ## 使用边界
 
-任意内容不会自动获得图标 tint，整层 SrcIn tint 尚未实现。图标 Color 绑定仅适用于可设置颜色的内容。
+任意控件子树的整层 SrcIn tint 尚未实现；`ToggleFloatingActionButtonIcon` 完整处理图片入口，
+其他内容的 Color 绑定仅适用于可设置颜色的内容。
 菜单滚轮与触摸惯性由 Avalonia 平台决定；原生 Enter 按下激活的适配沿用共享决定。
 几何双端测试不证明文字、字体图标、真实桌面输入或所有平台一致。
 更多内部时序、历史差异及验证入口见 [INTERNALS](INTERNALS.md#验证与边界)。

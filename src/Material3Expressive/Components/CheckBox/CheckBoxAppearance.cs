@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Material3Expressive.Foundation.Interaction;
+using SkiaSharp;
 
 namespace Material3Expressive.Components;
 
@@ -36,7 +37,8 @@ public sealed record CheckBoxColors(Color CheckedCheckmarkColor, Color Unchecked
     Color UncheckedBorderColor, Color DisabledBorderColor, Color DisabledUncheckedBorderColor,
     Color DisabledIndeterminateBorderColor, Color DisabledCheckmarkColor);
 
-/// <summary>Compose Stroke expressed in DIP. Dashes and DashOffset are absolute DIP, not pen-width multiples.</summary>
+/// <summary>Compose Stroke with Width, Dashes and DashOffset in absolute DIP (not pen-width multiples).
+/// PathEffect is a caller-owned Skia effect expressed in physical pixels.</summary>
 public sealed record CheckBoxStroke
 {
     public double Width { get; init; } = 2;
@@ -45,4 +47,7 @@ public sealed record CheckBoxStroke
     public double MiterLimit { get; init; } = 4;
     public double[]? Dashes { get; init; }
     public double DashOffset { get; init; }
+    /// <summary>Optional Compose/Skia path effect in physical pixels. Takes precedence over
+    /// Dashes and DashOffset; the caller retains ownership and must keep it alive while in use.</summary>
+    public SKPathEffect? PathEffect { get; init; }
 }

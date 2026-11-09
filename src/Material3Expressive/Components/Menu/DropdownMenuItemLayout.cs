@@ -87,15 +87,20 @@ internal sealed class DropdownMenuItemLayout : Panel
         var leadingSpace = owner.HasLeading || owner.HasSelectedLeading ? owner.LeadingSpacing : 0;
         var trailingSpace = owner.HasTrailing ? owner.TrailingSpacing : 0;
         leading.Measure(availableSize);
-        var remaining = Math.Max(0, availableSize.Width - leading.DesiredSize.Width - leadingSpace - trailingSpace);
         if (owner.IsExpressive)
         {
-            // The fixed expressive Row has no weight: measure leading, label, then trailing.
+            // RowColumnMeasurePolicy measures each unweighted child before reserving
+            // the following spacing, clamped to the width still available. Reserving
+            // both spaces up front incorrectly narrows the label when the tail is zero.
+            leadingSpace = Math.Min(leadingSpace, Math.Max(0, availableSize.Width - leading.DesiredSize.Width));
+            var remaining = Math.Max(0, availableSize.Width - leading.DesiredSize.Width - leadingSpace);
             text.Measure(new(remaining, availableSize.Height));
-            trailing.Measure(new(Math.Max(0, remaining - text.DesiredSize.Width), availableSize.Height));
+            trailingSpace = Math.Min(trailingSpace, Math.Max(0, remaining - text.DesiredSize.Width));
+            trailing.Measure(new(Math.Max(0, remaining - text.DesiredSize.Width - trailingSpace), availableSize.Height));
         }
         else
         {
+            var remaining = Math.Max(0, availableSize.Width - leading.DesiredSize.Width - leadingSpace - trailingSpace);
             trailing.Measure(new(remaining, availableSize.Height));
             text.Measure(new(Math.Max(0, remaining - trailing.DesiredSize.Width), availableSize.Height));
         }

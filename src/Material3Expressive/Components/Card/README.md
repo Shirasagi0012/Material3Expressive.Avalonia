@@ -73,8 +73,33 @@ Catalog **Drag handle demo** 把宿主拖动同时传给 handle 和 ElevatedCard
 `Content` / `ContentTemplate` 接收任意内容。`CardColumn` 从上到下、Start 对齐、零间距，
 按顺序把剩余高度交给子项；高度耗尽后后续子项收到零高度约束。
 默认 Stretch 在此按 Start 放置，显式 HorizontalAlignment 可指定其他对齐，RTL 跟随布局方向。
-需要权重或复杂对齐时，可在内容槽组合其他布局容器。
 卡片 `Padding` 或内容 `Margin` 都可用于留白。
+
+权重布局使用显式 `CardColumnItem` 内容宿主：
+
+```xml
+<m3:Card Width="240" Height="220">
+  <m3:CardColumn Margin="16">
+    <TextBlock Text="Overview" />
+    <m3:CardColumnItem Weight="1" Alignment="Start">
+      <TextBlock Text="First section" />
+    </m3:CardColumnItem>
+    <m3:CardColumnItem Weight="2" Alignment="End" Fill="False">
+      <TextBlock Text="Second section" />
+    </m3:CardColumnItem>
+  </m3:CardColumn>
+</m3:Card>
+```
+
+`Weight` 默认为 `NaN`（无权重），正值按比例分配普通子项测量后剩余的高度。
+`Fill=true` 让**宿主**占满分配高度；`Fill=false` 允许宿主按内容缩小，未用空间不会交给其他权重项。
+无界高度（例如垂直滚动内容）只以 `CardColumn.MinHeight` 为分配目标，默认没有可分配空间。
+`Alignment` 为逻辑 `Start`、`Center`、`End`，随 RTL 更新。
+
+此宿主对应 `Column { Box(Modifier.weight(...).align(...)) { content } }`：`Child` 内容以
+TopStart 放置，默认不接收宿主的最小高度，也不被强制拉伸。内容仍可包含自己的布局容器；
+它不是任意控件的透明 weight 修饰器。普通直接子项保持现有行为。
+Catalog **Weighted card content** 展示比例、Fill 和逻辑对齐。
 
 三种卡片的普通与可点击模式均支持 `Shape`。例如保留默认描边颜色、使用两角切角：
 

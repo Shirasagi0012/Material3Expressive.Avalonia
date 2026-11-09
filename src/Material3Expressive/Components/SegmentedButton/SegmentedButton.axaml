@@ -1,6 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:SegmentedButtonIcon}" TargetType="m3:SegmentedButtonIcon">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="IconSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSize}}" />
+      <Setter Property="EffectsAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconEffectsAnimation}}" />
+      <Setter Property="SpatialAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSpatialAnimation}}" />
+    </ControlTheme>
     <ControlTheme x:Key="MaterialSegmentedButtonRowTheme" TargetType="m3:SegmentedButtonRow">
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -51,10 +57,10 @@
             <Border Padding="{TemplateBinding Padding}">
               <!-- Upstream uses physical place(), not placeRelative(), for both slots. -->
               <m3:SegmentedButtonContentLayout IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSize}}" IconSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSpacing}}" ContentMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Button.MinWidth}}" MinimumInteractiveSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Button.MinimumInteractiveSize}}" OffsetAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.LabelOffsetAnimation}}" x:Name="PART_Layout" HorizontalAlignment="Stretch" VerticalAlignment="Center" FlowDirection="LeftToRight">
-                <m3:SegmentedButtonIconSlot x:Name="PART_Icon"
-                    IconSize="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSize}}"
-                    EffectsAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconEffectsAnimation}}"
-                    SpatialAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+SegmentedButton.IconSpatialAnimation}}" />
+                <m3:SegmentedButtonIcon x:Name="PART_Icon" IsActive="{TemplateBinding IsSelected}"
+                    IsVisible="{TemplateBinding ShowSelectionIcon}" FlowDirection="{TemplateBinding FlowDirection}"
+                    ActiveContent="{TemplateBinding ActiveIcon}" InactiveContent="{TemplateBinding InactiveIcon}"
+                    ActiveContentTemplate="{TemplateBinding ActiveIconTemplate}" InactiveContentTemplate="{TemplateBinding InactiveIconTemplate}" />
                 <m3:ButtonContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                                           TextWrapping="Wrap" FlowDirection="{TemplateBinding FlowDirection}" />
               </m3:SegmentedButtonContentLayout>
