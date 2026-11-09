@@ -1,6 +1,19 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:PullToRefreshBox}" TargetType="m3:PullToRefreshBox">
+      <Setter Property="RefreshThreshold" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PullToRefresh.RefreshThreshold}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid>
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <ContentPresenter Content="{TemplateBinding ActualIndicator}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
     <ControlTheme x:Key="{x:Type m3:PullToRefreshIndicatorBox}" TargetType="m3:PullToRefreshIndicatorBox">
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="MaxDistance" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+PullToRefresh.MaxDistance}}" />

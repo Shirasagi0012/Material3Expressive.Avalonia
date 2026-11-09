@@ -101,6 +101,9 @@ public sealed partial class RangeSlider : TemplatedControl
         }
         next.IsRtl = FlowDirection == FlowDirection.RightToLeft;
         if (!ReferenceEquals(next, _actualState)) { CancelGesture(); Unsubscribe(); SetAndRaise(ActualStateProperty, ref _actualState, next); Subscribe(); RefreshSlots(); }
+        // Direction and a replacement State can change placement without changing
+        // any measured size. The bypassed layout must still arrange its two thumbs.
+        (StartPresenter?.GetVisualParent() as SliderLayout)?.InvalidateArrange();
         InvalidateMeasure(); RefreshVisuals();
     }
     private void Subscribe() { if (_subscribed || !this.IsAttachedToVisualTree()) return; _actualState.PropertyChanged += StateChanged; _subscribed = true; }

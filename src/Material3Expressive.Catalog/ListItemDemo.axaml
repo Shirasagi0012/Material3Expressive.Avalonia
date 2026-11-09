@@ -5,12 +5,12 @@
     <StackPanel Margin="24" Spacing="16">
       <TextBlock Text="ListItem" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
       <m3:ListItem Content="Account" OverlineContent="Personal" SupportingContent="Manage your profile" LeadingContent="{m3:Symbol Person}" />
-      <m3:ListItem Content="Downloads" SupportingContent="Click or hold for more actions" InteractionMode="Click"
-                   Click="OnClick" LongClick="OnLongClick" LeadingContent="{m3:Symbol Download}" />
+      <m3:ListItem Content="Downloads" SupportingContent="Click, hold, or invoke the named accessibility action" InteractionMode="Click"
+                   Click="OnClick" LongClick="OnLongClick" LongClickLabel="Download actions" LeadingContent="{m3:Symbol Download}" />
       <TextBlock Text="SegmentedListItem · controlled selection" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <StackPanel Spacing="2">
         <m3:SegmentedListItem Content="Sync photos" GroupIndex="0" GroupCount="3" InteractionMode="MultipleSelection"
-            IsChecked="True" CheckedChangeRequested="OnCheckedChange">
+            IsChecked="True" CheckedChangeRequested="OnCheckedChange" LongClick="OnLongClick" LongClickLabel="Photo sync actions">
           <m3:SegmentedListItem.TrailingContent><CheckBox IsChecked="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=m3:ListItem}}" IsHitTestVisible="False" Focusable="False" /></m3:SegmentedListItem.TrailingContent>
         </m3:SegmentedListItem>
         <m3:SegmentedListItem Content="Sync documents" GroupIndex="1" GroupCount="3" InteractionMode="MultipleSelection" CheckedChangeRequested="OnCheckedChange" />

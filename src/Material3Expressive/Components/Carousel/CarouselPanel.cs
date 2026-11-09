@@ -43,7 +43,18 @@ internal sealed partial class CarouselPanel : VirtualizingPanel
         Strategy = new(keylines, space, _spacing, (float)padding.Left * _density, (float)padding.Right * _density);
         _layoutScroll = null;
         _pageSize = CarouselStrategy.Round(Strategy.ItemSize);
-        if (previousState is { } old && (previousWidth != space / _density || previousStride != PageStride || previousDensity != _density ||
+        if (Strategy.IsValid && Items.Count > 0 && owner.TryTakeRestoredPosition(out var restored))
+        {
+            // CarouselState.Saver restores Pager's page/fraction, then the current
+            // itemCount provider and layout reconstruct physical placement.
+            var item = Math.Clamp(restored.Item, 0, Items.Count - 1);
+            var scroll = Math.Clamp(item * PageStride - CarouselStrategy.Round(
+                Strategy.SnapPosition(item, Items.Count) - restored.OffsetFraction * PageStride), 0, MaxOffset);
+            owner.RebaseAfterMeasure(scroll / _density, _density);
+            var (current, fraction) = LayoutStateAt(scroll);
+            owner.Publish(MaxOffset / _density, current, fraction);
+        }
+        else if (previousState is { } old && (previousWidth != space / _density || previousStride != PageStride || previousDensity != _density ||
             previousSnap != Strategy.SnapPosition(old.Current, Items.Count)))
         {
             var scroll = Math.Clamp(old.Current * PageStride - CarouselStrategy.Round(

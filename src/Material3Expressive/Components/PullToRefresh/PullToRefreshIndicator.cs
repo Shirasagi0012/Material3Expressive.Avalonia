@@ -9,7 +9,7 @@ using Material3Expressive.Foundation.Rendering;
 namespace Material3Expressive.Components;
 
 /// <summary>Positions and clips custom pull-to-refresh content above the top edge of its layout box.</summary>
-public class PullToRefreshIndicatorBox : ContentControl
+public class PullToRefreshIndicatorBox : ContentControl, IPullToRefreshScrollHost
 {
     public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<PullToRefreshIndicatorBox>();
     /// <summary>An explicit container path; null retains CornerRadius. Translation and top-edge clipping are unchanged.</summary>
@@ -44,6 +44,8 @@ public class PullToRefreshIndicatorBox : ContentControl
     private readonly PullToRefreshState _localState = new();
     private IPullToRefreshState? _attachedState;
     internal IPullToRefreshState EffectiveState => State ?? _localState;
+    Control IPullToRefreshScrollHost.Control => this;
+    IPullToRefreshState IPullToRefreshScrollHost.EffectiveState => EffectiveState;
     internal event Action? PresentationChanged;
 
     static PullToRefreshIndicatorBox()

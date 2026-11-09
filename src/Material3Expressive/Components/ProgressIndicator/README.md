@@ -108,6 +108,26 @@ MaterialTheme 为 Avalonia 原生 `ProgressBar` 提供默认主题（`MaterialPr
 linear.DrawStopIndicator = (_, _) => { };
 ```
 
+`ProgressIndicatorDefaults.DrawStopIndicator` 可在该回调中复用默认 marker，也可在自定义控件的
+`Render` 中独立绘制。传入正在绘制的 `owner`，函数使用其实际尺寸、密度和 FlowDirection：
+
+```csharp
+linear.DrawStopIndicator = (context, _) =>
+{
+    ProgressIndicatorDefaults.DrawStopIndicator(context, linear, 12, linear.Color, PenLineCap.Square);
+    ProgressIndicatorDefaults.DrawStopIndicator(context, linear, 5, Colors.OrangeRed, PenLineCap.Round);
+};
+// 自定义 Control.Render(DrawingContext context) 内也可直接调用：
+// ProgressIndicatorDefaults.DrawStopIndicator(context, this, 8, Colors.Teal, PenLineCap.Round);
+```
+
+大小使用 DIP，超过实际高度时限制为高度；Round 绘制圆，其余端帽绘制正方形。marker 位于逻辑尾端，
+与上游相同，尾端留白最多 6 DIP，不强行限制为控件宽度。函数只提交绘制，不改变布局、进度或语义。
+普通控件的原生 RTL 镜像与 ProgressIndicator 的物理坐标绘制都可直接使用，无需手工翻转。
+回调替换、恢复 null 以及 owner 的尺寸/方向/颜色变化均在下一次绘制使用当前值；自定义控件自行
+对其绘制参数调用 InvalidateVisual。不确定进度不执行 DrawStopIndicator 回调。
+Catalog 的“Reusable stop drawing”展示复合 marker 与独立绘制，并可切换方向。
+
 确定圆形波浪的 Morph 按固定基线惰性创建：初始固定非端点振幅在未发生振幅动画时仍可能呈圆形，
 不能保证设置任意静态 Amplitude 就立即得到插值波形。振幅运行中更新也保留上游目标门控，
 不是任意时刻都可中断的新动画。细节见 [INTERNALS](INTERNALS.md#动画与缓存不变量)。

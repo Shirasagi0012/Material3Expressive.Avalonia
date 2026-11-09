@@ -45,7 +45,9 @@ Catalog 的日期语言按钮会同时更新单日和范围选择器。
 日期范围用一次赋值更新起止，避免两个独立双向绑定产生中间状态。终点早于起点，或只有终点没有起点时，范围会整个清空。这与固定版本
 Compose 的 `setSelection` 相同。
 
-## 自定义日期显示
+## 内容槽与定制
+
+**自定义日期显示**
 
 `DateFormatter` 接受 `IDatePickerFormatter`，单日与范围共用同一接口。`FormatMonthYear`
 格式化月份标题，`FormatDate` 格式化已选日期；`forContentDescription` 为 true 时用于朗读描述。
@@ -66,6 +68,32 @@ sealed class IsoDateFormatter : IDatePickerFormatter
 它不改变日期输入的解析规则。修改配置时替换 formatter 实例；接口不监听实例内部状态。
 显式 `Headline` / `HeadlineTemplate` 仍由应用负责标题内容与无障碍描述。
 Catalog 的 “Custom date format” 按钮展示单日和范围入口。
+
+**独立标题内容**
+
+`DatePickerTitle` / `DateRangePickerTitle` 与 `DatePickerHeadline` / `DateRangePickerHeadline`
+可以放入应用自己的页头、对话框或选择摘要；不需要创建月历。标题接受 `DisplayMode`、`Culture`，
+大标题另外接受 `SelectedDate` 或 `SelectedRange`、`DateFormatter`。改变这些属性立即更新文案和朗读描述。
+
+```xml
+<StackPanel Spacing="8">
+  <m3:DateRangePickerTitle DisplayMode="{Binding Mode}" Culture="{Binding DateCulture}"
+                          m3:MaterialText.Style="{m3:Typography LabelLarge}" />
+  <m3:DateRangePickerHeadline SelectedRange="{Binding Dates}" DisplayMode="{Binding Mode}"
+                             Culture="{Binding DateCulture}" DateFormatter="{Binding Formatter}"
+                             m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+</StackPanel>
+```
+
+这些内容不附加外层 Padding 或固定标题字号，排版由容器提供；`Foreground` 可覆盖默认标题颜色。
+单日大标题只显示一行，范围使用三个独立文本槽，以 4 DIP 间距排列“起点 / - / 终点”，受限宽度内分别换行。
+大标题提供 polite live region；范围朗读为一个合并描述，不重复朗读分隔符。
+范围内容只显示传入的日期，不执行完整选择器的起止合法性校验。
+
+完整 DatePicker / DateRangePicker 的默认标题也使用这些控件。已有 `Title`、`Headline` 和模板继续优先；
+自定义模板的默认数据上下文仍是原字符串，应用无需迁移。若应用曾读取模板内部
+`PART_Headline.Content` 并假定它是字符串，应改为读取新内容控件或实际文本节点。
+`DateFormatter = null` 沿用完整选择器既有的平台日期格式；需要固定显示和描述格式时提供 formatter。
 
 ## 月份交互
 

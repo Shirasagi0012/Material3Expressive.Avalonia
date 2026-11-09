@@ -43,7 +43,10 @@ public abstract class FloatingToolbar : ContentControl
     public static readonly StyledProperty<ScrollViewer?> ScrollSourceProperty = AvaloniaProperty.Register<FloatingToolbar, ScrollViewer?>(nameof(ScrollSource));
     public static readonly StyledProperty<bool> TouchExplorationEnabledProperty = AvaloniaProperty.Register<FloatingToolbar, bool>(nameof(TouchExplorationEnabled));
     public static readonly DirectProperty<FloatingToolbar, bool> EffectiveExpandedProperty = AvaloniaProperty.RegisterDirect<FloatingToolbar, bool>(nameof(EffectiveExpanded), o => o.EffectiveExpanded);
+    public static readonly DirectProperty<FloatingToolbar, bool> IsScrollConnectedProperty =
+        AvaloniaProperty.RegisterDirect<FloatingToolbar, bool>(nameof(IsScrollConnected), o => o.IsScrollConnected);
     private bool _forceCollapse;
+    private bool _isScrollConnected;
     private bool _effectiveExpanded = true;
     public bool Expanded { get => GetValue(ExpandedProperty); set => SetValue(ExpandedProperty, value); }
     public object? LeadingContent { get => GetValue(LeadingContentProperty); set => SetValue(LeadingContentProperty, value); }
@@ -58,8 +61,12 @@ public abstract class FloatingToolbar : ContentControl
     public double CollapsedShadowElevation { get => GetValue(CollapsedShadowElevationProperty); set => SetValue(CollapsedShadowElevationProperty, value); }
     public IFiniteAnimationSpec<float> AnimationSpec { get => GetValue(AnimationSpecProperty); set => SetValue(AnimationSpecProperty, value); }
     public FloatingToolbarScrollBehavior? ScrollBehavior { get => GetValue(ScrollBehaviorProperty); set => SetValue(ScrollBehaviorProperty, value); }
-    /// <summary>Observes actual vertical consumed scroll; custom hosts can call the behavior directly.</summary>
+    /// <summary>Connects vertical physical scrolling and its release to the behavior. Other presenters
+    /// retain position-change observation; custom hosts can call the behavior directly.</summary>
     public ScrollViewer? ScrollSource { get => GetValue(ScrollSourceProperty); set => SetValue(ScrollSourceProperty, value); }
+    /// <summary>Whether the source is connected to physical nested scrolling, including post-fling.</summary>
+    public bool IsScrollConnected => _isScrollConnected;
+    internal void ScrollConnectionChanged(bool connected) => SetAndRaise(IsScrollConnectedProperty, ref _isScrollConnected, connected);
     /// <summary>Host-provided accessibility service state; suppresses scrolling and forces expansion unless accessibility collapsed it.</summary>
     public bool TouchExplorationEnabled { get => GetValue(TouchExplorationEnabledProperty); set => SetValue(TouchExplorationEnabledProperty, value); }
     public bool EffectiveExpanded => _effectiveExpanded;

@@ -34,7 +34,7 @@
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
 | `TextField` | 原生文本输入框的填充与轮廓样式、浮动标签、图标槽与容器路径形状 | [README](../src/Material3Expressive/Components/TextField/README.md) | [INTERNALS](../src/Material3Expressive/Components/TextField/INTERNALS.md) | |
-| `SearchBar` | 搜索顶栏、收起表面、停靠/带间隙弹层、普通/contained 全屏搜索、可定制路径的容器与输入 | [README](../src/Material3Expressive/Components/SearchBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/SearchBar/INTERNALS.md) | 顶栏接入标准 Scaffold 主物理 ScrollViewer 和嵌套 Insets 消费；自定义宿主保留显式滚动策略 |
+| `SearchBar` | 搜索顶栏、收起表面、停靠/带间隙弹层、普通/contained 全屏搜索、关闭策略及可定制路径的容器与输入 | [README](../src/Material3Expressive/Components/SearchBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/SearchBar/INTERNALS.md) | 顶栏接入标准 Scaffold 主物理 ScrollViewer 和嵌套 Insets 消费；自定义宿主保留显式滚动策略 |
 | `SecureTextField` | 派生安全输入、末字符定时显示、显示模式及输入法/自动化导出保护 | [README](../src/Material3Expressive/Components/SecureTextField/README.md) | [INTERNALS](../src/Material3Expressive/Components/SecureTextField/INTERNALS.md) | 原生 TextBox 附加主题仍保留兼容入口 |
 | `NumericUpDown` | 数字增减微调框与内置步进按钮 | [README](../src/Material3Expressive/Components/NumericUpDown/README.md) | - | |
 | `ExposedDropdownMenu` | 独立字段下拉菜单，支持编辑、只读、锚点约束与开闭动画 | [README](../src/Material3Expressive/Components/ExposedDropdownMenu/README.md) | [INTERNALS](../src/Material3Expressive/Components/ExposedDropdownMenu/INTERNALS.md) | |
@@ -44,7 +44,7 @@
 | `Switch` | 原生滑动开关、非交互展示与滑块图标动画 | [README](../src/Material3Expressive/Components/Switch/README.md) | [INTERNALS](../src/Material3Expressive/Components/Switch/INTERNALS.md) | |
 | `Slider` | 原生滑块、共享交互源、Label 组合及焦点环 | [README](../src/Material3Expressive/Components/Slider/README.md) | [INTERNALS](../src/Material3Expressive/Components/Slider/INTERNALS.md) | |
 | `ScrollField` | 循环选择、虚拟页、触摸/滚轮吸附与可复用数字动画 | [README](../src/Material3Expressive/Components/ScrollField/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollField/INTERNALS.md) | 设备专用触控板/滚轮元数据及嵌套滚动尚未实现 |
-| `DatePicker` | 单月滚动吸附、范围纵向虚拟化与惯性、键盘导航及月份命名动作、日期/范围输入与 formatter | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | 范围月历需要有限高度 |
+| `DatePicker` | 单月滚动吸附、范围纵向虚拟化与惯性、键盘导航、日期/范围输入、formatter 及可独立组合的标题内容 | [README](../src/Material3Expressive/Components/DatePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePicker/INTERNALS.md) | 范围月历需要有限高度 |
 | `TimePicker` | 钟面指针交互、时间文本输入；TimeScroll 分页拖动、惯性吸附、循环与键盘 | [README](../src/Material3Expressive/Components/TimePicker/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePicker/INTERNALS.md) | |
 | `DateTimePicker` | 原生日期/时间选择器的 Material 外观主题 | [README](../src/Material3Expressive/Components/DateTimePicker/README.md) | - | |
 
@@ -54,12 +54,12 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `AppBar` | 顶部与底部应用栏，支持滚动视口折叠联动、自定义动作排列及分行 Insets 消费 | [README](../src/Material3Expressive/Components/AppBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/AppBar/INTERNALS.md) | |
+| `AppBar` | 顶部与底部应用栏、独立溢出指示器，支持滚动视口折叠联动、自定义动作排列及分行 Insets 消费 | [README](../src/Material3Expressive/Components/AppBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/AppBar/INTERNALS.md) | |
 | `NavigationBar` | 标准底部导航栏与指示胶囊动画 | [README](../src/Material3Expressive/Components/NavigationBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationBar/INTERNALS.md) | |
 | `ShortNavigationBar` | 紧凑型底部导航栏与嵌套 Insets 消费，适合小屏视口 | [README](../src/Material3Expressive/Components/ShortNavigationBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/ShortNavigationBar/INTERNALS.md) | |
 | `NavigationRail` | 侧边导航轨、指示器动效与嵌套 Insets 消费 | [README](../src/Material3Expressive/Components/NavigationRail/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationRail/INTERNALS.md) | |
 | `WideNavigationRail` | 宽导航轨、模态展开、自定义纵向排列、普通/模态宽栏 Insets 消费及独立容器形状 | [README](../src/Material3Expressive/Components/WideNavigationRail/README.md) | [INTERNALS](../src/Material3Expressive/Components/WideNavigationRail/INTERNALS.md) | |
-| `NavigationDrawer` | 固定式、关闭式与模态抽屉导航及 Sheet/项目路径形状 | [README](../src/Material3Expressive/Components/NavigationDrawer/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationDrawer/INTERNALS.md) | |
+| `NavigationDrawer` | 固定式、关闭式与模态抽屉导航，Sheet/项目路径形状及嵌套 Insets 消费 | [README](../src/Material3Expressive/Components/NavigationDrawer/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationDrawer/INTERNALS.md) | |
 | `TabRow` | 独立标签栏容器、原生选项卡主题、Primary/Secondary/Legacy 变体、自定义指示器布局与动画、独立 Primary/Secondary 指示器 | [README](../src/Material3Expressive/Components/TabRow/README.md) | [INTERNALS](../src/Material3Expressive/Components/TabRow/INTERNALS.md) | |
 
 ---
@@ -93,7 +93,7 @@
 | `Tooltip` | 默认/自定义箭头与容器形状的简单及富内容提示、提示框与交互标签 | [README](../src/Material3Expressive/Components/Tooltip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Tooltip/INTERNALS.md) | |
 | `Snackbar` | 可定制路径轮廓的底部短消息与全局消息队列宿主 | [README](../src/Material3Expressive/Components/Snackbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/Snackbar/INTERNALS.md) | |
 | `Badge` | 数字与圆点徽标，配合徽标容器定位 | [README](../src/Material3Expressive/Components/Badge/README.md) | [INTERNALS](../src/Material3Expressive/Components/Badge/INTERNALS.md) | |
-| `ProgressIndicator` | 线性与圆形进度条，支持直线与表现型波浪动画 | [README](../src/Material3Expressive/Components/ProgressIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/ProgressIndicator/INTERNALS.md) | |
+| `ProgressIndicator` | 线性与圆形进度条、可复用终点绘制，支持直线与表现型波浪动画 | [README](../src/Material3Expressive/Components/ProgressIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/ProgressIndicator/INTERNALS.md) | |
 | `LoadingIndicator` | 动态多边形形状变换加载指示器 | [README](../src/Material3Expressive/Components/LoadingIndicator/README.md) | [INTERNALS](../src/Material3Expressive/Components/LoadingIndicator/INTERNALS.md) | |
 
 ---
@@ -105,7 +105,7 @@
 | `ScrollViewer` | 原生滚动容器的平滑物理滚动与惯性接入 | [README](../src/Material3Expressive/Components/ScrollViewer/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollViewer/INTERNALS.md) | |
 | `ScrollView` | 面向照片与自由画布的平滑缩放、漫游与悬浮滚动条主题接入 | [README](../src/Material3Expressive/Components/ScrollView/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollView/INTERNALS.md) | |
 | `Carousel` | 三种经典 keyline 布局、视口虚拟化、Tab 边界搜索、触摸拖动、水平滚轮、键盘分页、焦点滚入与视口缩小跟随、吸附／衰减、导航动画、辅助技术分页及多宽高比路径遮罩与视差 | [README](../src/Material3Expressive/Components/Carousel/README.md) | [INTERNALS](../src/Material3Expressive/Components/Carousel/INTERNALS.md) | 支持切角、百分比圆角与自定义路径；设备专用触控板、嵌套滚动与合成线程接入尚未实现 |
-| `PullToRefresh` | 内置/外部下拉刷新状态、可定制轮廓的传统/Expressive 指示器及显式滚动消费策略 | [README](../src/Material3Expressive/Components/PullToRefresh/README.md) | [INTERNALS](../src/Material3Expressive/Components/PullToRefresh/INTERNALS.md) | 自动 ScrollViewer 接入尚未实现；回弹途中卸载的末帧保留值存在已记录差异 |
+| `PullToRefresh` | 自动正文下拉刷新容器、内置/外部状态、传统/Expressive 指示器及显式滚动消费策略 | [README](../src/Material3Expressive/Components/PullToRefresh/README.md) | [INTERNALS](../src/Material3Expressive/Components/PullToRefresh/INTERNALS.md) | 自动连接唯一纵向物理视口；回弹途中卸载的末帧保留值存在已记录差异 |
 | `ScrollBar` | 原生滚动条外观与交互动效、只读滚动指示 | [README](../src/Material3Expressive/Components/ScrollBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/ScrollBar/INTERNALS.md) | |
 
 ---

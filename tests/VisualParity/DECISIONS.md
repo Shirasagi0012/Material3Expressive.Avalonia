@@ -192,3 +192,34 @@ request.editText 和 Foundation input transformation，不以程序 state.edit �
 的 SetPreeditText；提交先清除预编辑，再发送原生 TextInput。两端记录实际已提交/组合 UTF-16 长度及显示文字。
 桌面 OS 的外部输入法窗口未参与，不能把这一验证宣称为真实系统 IME 验收。组合期间与取消后的已知差异进入报告，
 不调整字段、图像或容差以隐藏尚未移植的事务分类和原生下划线差异。
+
+## AppBarOverflowIndicator 描述提示的必要文字覆盖
+
+原不测普通组件文字的理由是隔离字体后端与排版差异，继续有效。2026-11-09 本轮维护者明确授权
+历史决定修订：新增独立 AppBarOverflowIndicator 的公开 description 直接构建 PlainTooltip，
+不能用非文字占位替换后声称验证了该入口。因此仅此 suite 的提示场景保留固定 en-US/Roboto 实际描述，
+记录真实文字与完整截图。纯图标用例继续使用非字体 MoreVert 路径。
+当前 tooltip 栅格与 source 替换时波纹差异，以及八例 Core 的 repeat/extra-image 不稳定均保留，
+不遮蔽、不放宽容差、不把参考不稳定记为组件通过；详细结果见 AppBar INTERNALS。
+
+## 2026-11-09：合成线程输入事务先于显式动画帧
+
+新 PullToRefreshBox 的真实触摸夹具最初在 raw input 后直接调用 AvaloniaHost.Frame：该方法先发送
+动画 waiter batch，再由 Draw 处理合成请求。SmoothScroll 的 input 请求通过 RegisterForSerialization
+进入真实 compositor，数值快照和 pre-fling 回调因此在该帧发送后才抵达 UI。Core 夹具则在输入后
+明确执行 scheduler.runCurrent，再 performFrame；两端事件完成阶段不同。
+原 `pull-box-slop` 报告保留：160ms fraction 相等，但 176ms 本地仍是 1.132773518562317，
+Core 已是 0.9873000383377075；128ms 箭头 alpha 同时存在差异。`pull-box-delivery` 重跑后这两处
+分别恢复精确数值相等和图像门禁内；208ms 的箭头图像差异仍保留，不把所有图像差异归给该顺序。
+
+本轮依据维护者授权修复夹具：每笔真实触摸输入后先执行已有 Draw barrier，排空实际合成事务与
+FIFO UI 通知，再按原时间发送原有的一批动画帧。独立 ScrollInputFrameOrderTests 在实际宿主中验证
+movement→release 顺序、Draw 不改变 FrameTime/事件时间，以及释放等待者能收到下一次显式帧。
+不修改生产 pre-fling 协议、上游动画规格、采样时间、比较器或容差，也不提前绕过快照调用刷新行为。
+这延续 Draw 仅排空 dispatcher/layout/composition 而不发送动画帧的原决定；不能把它推广为任意场景
+自动增加前置帧或把真实生产线程延迟声明为已与 Core 完全相同。旧显式 Pull 行为用例不变。
+
+同组新夹具还须显式提供 Core lightColorScheme 的 PrimaryContainer/OnPrimaryContainer；
+通用 CaseDefaults 只设置部分颜色，不能假设它已覆盖 Expressive LoadingIndicator 的这两项。
+正文惯性两端都保持默认启用，不以关闭本地惯性换取静态 Offset。原配色/惯性配置不一致的报告保留，
+新报告仍呈现实际原生物理惯性与 Core 的差异，不能把这一输入修正当作更换算法或接受差异。

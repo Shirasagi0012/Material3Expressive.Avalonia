@@ -59,9 +59,16 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 
 - 本次任务授权非破坏性组件 API、内部适配与已有能力复用；不据此宣称所有上游差异已批准。
 - 尚未实现 Android 连续预测返回形变。树内 BottomSheet / BottomSheetScaffold 不包含模态行为。
-- 自动嵌套滚动桥接尚未实现。推荐由现有滚动基础能力统一提供 pre/post scroll 和 fling 分发，再接组件已有入口；
-  例如父层先调用 `sheet.OnPreScroll(deltaY)`，子层消费余量后交 `sheet.OnPostScroll(remainingY)`。
-  这需要新的公共共享协议，影响 ScrollViewer、AppBar、PullToRefresh 等，待维护者决定；未在组件内复制框架。
+- 原先因缺少共享 pre/post scroll 与可等待的 fling 分发而延期自动桥接，避免在组件内复制框架。
+  本轮维护者明确授权补齐基础能力与修订待定决定：现在复用内部 MaterialScrollCoordinator，
+  在原异步 pre-fling 事务后增加正文真实惯性与 post-fling 阶段，见 [共享决定 §39](../../../../docs/DECISIONS.md#39-物理滚动共享参与与异步释放)。
+  BottomSheet.Scroll.cs 的 compositor participant 仅保存 Float 像素 offset/锚点并执行同一 raw-delta clamp；
+  有序快照在 UI 调用 SheetState.ApplyScrollOffset，不改变 settled/current anchor 或 velocity。
+  程序状态变更以代次同步到 participant，过期快照不覆写新状态；确认回调和吸附动画仍在 UI。
+  默认只自动发现唯一纵向物理视口，三种面板共用同一连接；AutoConnectScroll=false 保留原手动宿主。
+  上游 Column 对无权重子项传剩余有限高度，本地新增内部 BottomSheetContentLayout 替代无限主轴 StackPanel，
+  使默认 ScrollViewer 可直接使用；普通短内容仍按自然高度测量。触摸/笔由正文负责 slop、捕获和速度，
+  面板不并行启动第二条直接拖动；鼠标左键直接拖动维持原行为。
 - 原实现使用 Invoke / ExpandCollapse，因 Avalonia provider 缺少多个命名动作槽而延期独立 dismiss；
   当时提出虚拟动作子节点但尚无授权。本轮按用户明确授权采用此方案，见下文；
   原理由保留：增加辅助技术遍历节点属于平台语义适配，并非原位置的 Compose 多动作槽。
@@ -78,6 +85,9 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
   重复和额外截图稳定。与 Swipe 共用场景只复用测试过程，
   生产代码没有新增共享手势机制。入口：`./tests/VisualParity/parity.ps1 self-test --family anchored-child-input`。
 - `BottomSheetTests` / `BottomSheetScaffoldTests` / `ModalBottomSheetTests`：锚点、程序化与拖动、拒绝、中断、卸载、嵌套滚动消费，及模态自动显示、恢复状态、返回/外部点击策略、焦点恢复、换状态、Inset 预消费与遮罩反转。
+- `BottomSheetScrollTests` 验证真实正文触摸、消费顺序、取消吸附、有限高度、开关、状态/内容替换与三个宿主接线；
+  双端 `bottom-sheet-scroll` 从真实触摸输入采集面板 offset、正文 offset、current/target 和过渡图像。
+  该接线的真实桌面合成时序及多层滚动设备仍需验证，行为通过不等于所有 fling 图像轨迹一致。
 - 双端 `BottomSheetCases.cs` / `BottomSheetCases.kt`，族名 `bottom-sheet`。
 - Catalog：`dotnet run --project src/Material3Expressive.Catalog -- --bottom-sheet`。
   常驻面板使用 `--bottom-sheet-scaffold`，模态面板及独立遮罩使用 `--modal-bottom-sheet`。

@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Version>12.0.0.2</Version>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <IgnoresAccessChecksTo Include="Avalonia.Controls" />
+    <IgnoresAccessChecksTo Include="Avalonia.Base" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="IgnoresAccessChecksToGenerator">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="PropertyGenerator.Avalonia">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>Shirasagi0012.SmoothScroll.Avalonia</PackageId>
+    <Description>A fork adding features needed for Material3Expressive.Avalonia; Scrolling, panning and zooming smoothly in Avalonia</Description>
+    <PackageTags>Avalonia;Smooth;Scroll;ScrollView;ScrollViewer;Pan;Zoom;Control;Xaml</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Shirasagi0012/Material3Expressive.Avalonia</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Shirasagi0012/SmoothScroll.Avalonia</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmoothScroll.Avalonia.Interaction\SmoothScroll.Avalonia.Interaction.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SmoothScroll.Avalonia.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Link="README.md" />
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+  </ItemGroup>
+
+</Project>

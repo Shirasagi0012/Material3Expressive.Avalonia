@@ -92,6 +92,24 @@ Sheet 可使用 `Background`、`Foreground`、`CornerRadius`、`TonalElevation` 
 Modal 的 scrim 用 `ScrimBrush`。Item 可分别覆盖 Selected/Unselected 的 Container、Icon、Text、Badge 颜色。
 这些属性不同于环境 Foreground；统一主题定制见[公共 Token 接入](../../../../docs/GETTING_STARTED.md)。
 
+三种 Sheet 的 `WindowInsets` 都填写完整的物理左、上、右、下安全留白。祖先已消费的部分会自动扣除，
+Sheet 会把完整消费继续传给后代；内部的 Insets 容器或 Scaffold 不会重复添加同一留白。
+`ModalNavigationDrawer` 仍在当前窗口布局树中，因此同样继承声明位置的消费量。
+
+```xml
+<m3:MaterialWindowInsetsPadding Insets="8,6,12,10">
+  <m3:PermanentDrawerSheet WindowInsets="16,12,24,20">
+    <m3:MaterialWindowInsetsPadding Insets="16,12,24,20">
+      <m3:NavigationDrawerItem Content="收件箱" IsSelected="True" />
+    </m3:MaterialWindowInsetsPadding>
+  </m3:PermanentDrawerSheet>
+</m3:MaterialWindowInsetsPadding>
+```
+
+已由外部布局处理的空间可用 `MaterialWindowInsets.ConsumeInsets` 声明；附加属性本身不改变布局。
+不要再手工从 Sheet 的 `WindowInsets` 扣减祖先留白。Catalog 的 “Nested insets” 页展示父级、Sheet 与
+嵌套 Scaffold 的组合，并可动态改变父级留白和布局方向。
+
 ## 使用边界
 
 `NavigationDrawerItem.InteractionSource` 可连接共享交互源，null 使用内部源。例如现有视图中的 item 与 TooltipLabel：

@@ -8,7 +8,7 @@
 - `src/Material3Expressive.Catalog/`：组件展示应用。
 - `tests/Material3Expressive.Tests/`：控件库测试。
 - `tests/VisualParity/`：Compose 参考端、Avalonia 捕获端、比较器及系统自身测试。
-- `modules/`：ComposeAnimation、MaterialShapes、阴影、字体等仓内源码模块；颜色、图标和 SmoothScroll 通过 NuGet 接入。
+- `modules/`：ComposeAnimation、MaterialShapes、阴影、字体、SmoothScroll 等仓内源码模块；颜色和图标通过 NuGet 接入。
 
 ## 开始工作
 

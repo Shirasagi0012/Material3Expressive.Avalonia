@@ -53,6 +53,7 @@ internal sealed class FloatingToolbarLayout : Panel
     private Animatable<float>? _elevation;
     private FloatingToolbarScrollBehavior? _behavior;
     private ScrollViewer? _source;
+    private FloatingToolbarScrollConnection? _scrollConnection;
     private readonly TranslateTransform _offset = new();
     private readonly TranslateTransform _zeroWidthPlacement = new();
     private readonly VelocityTracker _velocity = new();
@@ -154,15 +155,40 @@ internal sealed class FloatingToolbarLayout : Panel
         _behavior = _owner.ScrollBehavior;
         if (_behavior is not null) { _behavior.Attach(_owner, scope); _behavior.State.PropertyChanged += ScrollStateChanged; }
         _source = _owner.ScrollSource;
-        if (_source is not null) _source.ScrollChanged += Scrolled;
+        if (_source is not null)
+        {
+            _source.ScrollChanged += Scrolled;
+            _source.LayoutUpdated += UpdateScrollConnection;
+            UpdateScrollConnection(null, EventArgs.Empty);
+        }
     }
     private void DetachScroll()
     {
-        if (_source is not null) _source.ScrollChanged -= Scrolled;
+        _scrollConnection?.Dispose(); _scrollConnection = null;
+        if (_source is not null) { _source.ScrollChanged -= Scrolled; _source.LayoutUpdated -= UpdateScrollConnection; }
         if (_behavior is not null) { _behavior.State.PropertyChanged -= ScrollStateChanged; _behavior.Detach(); }
         _behavior = null; _source = null; _offset.X = _offset.Y = 0;
     }
-    private void Scrolled(object? sender, ScrollChangedEventArgs e) => _behavior?.OnPostScroll(-(float)e.OffsetDelta.Y);
+    private void UpdateScrollConnection(object? sender, EventArgs e)
+    {
+        if (_owner is null || _source is null || _behavior is null) return;
+        var presenter = _source.Presenter as SmoothScroll.Avalonia.Controls.ScrollViewerPresenter;
+        // The explicit ScrollSource corresponds to nestedScroll on the common host of
+        // the floating sibling and the viewport, not to the toolbar's own subtree depth.
+        var ancestors = _source.GetVisualAncestors().ToHashSet();
+        var scrollHost = _owner.GetVisualAncestors().OfType<Control>().FirstOrDefault(ancestors.Contains);
+        if (presenter is null || scrollHost is null ||
+            _source.HorizontalScrollBarVisibility != global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled ||
+            _source.VerticalScrollBarVisibility == global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled)
+        { _scrollConnection?.Dispose(); _scrollConnection = null; return; }
+        if (_scrollConnection is not null && !_scrollConnection.Matches(presenter, scrollHost))
+        { _scrollConnection.Dispose(); _scrollConnection = null; }
+        _scrollConnection ??= new FloatingToolbarScrollConnection(_owner, _behavior, presenter, scrollHost);
+    }
+    private void Scrolled(object? sender, ScrollChangedEventArgs e)
+    {
+        if (_owner?.IsScrollConnected != true) _behavior?.OnPostScroll(-(float)e.OffsetDelta.Y);
+    }
     private void ScrollStateChanged(object? sender, PropertyChangedEventArgs e) => InvalidateArrange();
     private double Axis(Point point) => _behavior?.ExitDirection is FloatingToolbarExitDirection.Start or FloatingToolbarExitDirection.End ? point.X : point.Y;
     private void Pressed(object? sender, PointerPressedEventArgs e)

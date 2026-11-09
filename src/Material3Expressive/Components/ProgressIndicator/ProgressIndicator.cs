@@ -320,9 +320,12 @@ public abstract class ProgressIndicator : Control
             var stroke = new ProgressIndicatorStroke(strokeWidth / scale, cap);
             context.Custom(new PlainProgressDrawOperation(Bounds.Size, scale, Circular, IsIndeterminate,
                 CoercedProgress, Color, TrackColor, stroke, (float)GapSize * scale,
-                FlowDirection == FlowDirection.RightToLeft, Fractions, sweep, globalRotation + additionalRotation,
-                this is LinearProgressIndicator { DrawStopIndicator: null } indicator ? (float)indicator.StopSize * scale : 0));
-            if (this is LinearProgressIndicator { IsIndeterminate: false, DrawStopIndicator: { } draw }) draw(context, Bounds.Size);
+                FlowDirection == FlowDirection.RightToLeft, Fractions, sweep, globalRotation + additionalRotation));
+            if (this is LinearProgressIndicator { IsIndeterminate: false } indicator)
+            {
+                if (indicator.DrawStopIndicator is { } draw) draw(context, Bounds.Size);
+                else ProgressIndicatorDefaults.DrawStopIndicator(context, indicator, indicator.StopSize, Color, cap);
+            }
         }
     }
 

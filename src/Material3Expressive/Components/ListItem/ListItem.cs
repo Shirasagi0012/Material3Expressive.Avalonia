@@ -190,7 +190,12 @@ public class ListItem : Button
     internal float AnimatedElevation { get => GetValue(AnimatedElevationProperty); set => SetValue(AnimatedElevationProperty, value); }
 
     public event EventHandler<ListItemCheckedChangeEventArgs>? CheckedChangeRequested;
-    public event EventHandler? LongClick;
+    private EventHandler? _longClick;
+    public event EventHandler? LongClick
+    {
+        add { _longClick += value; RefreshLongClickAutomation(); }
+        remove { _longClick -= value; RefreshLongClickAutomation(); }
+    }
     private readonly MaterialInteractionSource _localSource = new();
     private MaterialInteractionController? _interaction;
     private IDisposable? _feedbackLease;
@@ -243,21 +248,30 @@ public class ListItem : Button
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (LongClickCommand is { } command) command.CanExecuteChanged += LongClickCanExecuteChanged;
         _interaction = MaterialInteraction.GetOrCreate(this);
         _interaction.Changed += InteractionChanged;
         Refresh();
+        RefreshLongClickAutomation();
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (LongClickCommand is { } command) command.CanExecuteChanged -= LongClickCanExecuteChanged;
         CancelAllLongPresses();
         if (_interaction is not null) { _interaction.Changed -= InteractionChanged; _interaction.ConnectSource(null); }
         _feedbackLease?.Dispose(); _feedbackLease = null;
         _motion?.Dispose(); _motion = null;
         base.OnDetachedFromVisualTree(e);
+        RefreshLongClickAutomation();
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == LongClickCommandProperty && this.IsAttachedToVisualTree())
+        {
+            if (change.OldValue is ICommand previous) previous.CanExecuteChanged -= LongClickCanExecuteChanged;
+            if (change.NewValue is ICommand current) current.CanExecuteChanged += LongClickCanExecuteChanged;
+        }
         if (change.Property == LeadingContentProperty || change.Property == TrailingContentProperty
             || change.Property == OverlineContentProperty || change.Property == SupportingContentProperty)
         {
@@ -265,6 +279,10 @@ public class ListItem : Button
             if (change.NewValue is ILogical child) LogicalChildren.Add(child);
         }
         if (change.Property == IsPressedProperty && !IsPressed) CancelLongPress();
+        if (change.Property == LongClickCommandProperty || change.Property == LongClickCommandParameterProperty
+            || change.Property == LongClickLabelProperty || change.Property == InteractionModeProperty
+            || change.Property == IsInteractionEnabledProperty || change.Property == IsEffectivelyEnabledProperty)
+            RefreshLongClickAutomation();
         if (change.Property.Name.StartsWith("Animated", StringComparison.Ordinal)) return;
         if (change.Property.OwnerType == typeof(ListItem) || change.Property.OwnerType == typeof(SegmentedListItem)
             || change.Property == IsEffectivelyEnabledProperty || change.Property == PaddingProperty
@@ -394,7 +412,7 @@ public class ListItem : Button
     {
         if (key is null) { CancelLongPress(); _longTriggered = false; }
         else if (_keyLongPresses.ContainsKey(key.Value)) return;
-        if (LongClick is null && LongClickCommand is null) return;
+        if (_longClick is null && LongClickCommand is null) return;
         var gesture = key is null ? null : new KeyLongPress();
         if (gesture is not null) _keyLongPresses.Add(key!.Value, gesture);
         var scope = AnimationScope.Get(this);
@@ -410,9 +428,7 @@ public class ListItem : Button
                 if (!RowEnabled || !Interactive) return;
                 if (gesture is not null) gesture.Triggered = true;
                 else _longTriggered = true;
-                LongClick?.Invoke(this, EventArgs.Empty);
-                if (LongClickCommand?.CanExecute(LongClickCommandParameter) == true)
-                    LongClickCommand.Execute(LongClickCommandParameter);
+                InvokeLongClick();
             }
             finally
             {
@@ -430,13 +446,30 @@ public class ListItem : Button
         _keyLongPresses.Clear();
     }
 
+    private void InvokeLongClick()
+    {
+        _longClick?.Invoke(this, EventArgs.Empty);
+        if (LongClickCommand?.CanExecute(LongClickCommandParameter) == true)
+            LongClickCommand.Execute(LongClickCommandParameter);
+    }
+    private void LongClickCanExecuteChanged(object? sender, EventArgs e) => RefreshLongClickAutomation();
+    private void RefreshLongClickAutomation() => (ControlAutomationPeer.FromElement(this) as ListItemPeer)?.RefreshLongClick();
+
     protected override AutomationPeer OnCreateAutomationPeer() => new ListItemPeer(this);
     private sealed class ListItemPeer : ButtonAutomationPeer, IToggleProvider, ISelectionItemProvider
     {
         private readonly ListItem owner;
+        private readonly LongClickPeer _longClick;
+        // Core Desktop ComposeAccessible only exports named long-click actions. The native
+        // provider has one Invoke slot, so this additional action is a virtual child.
+        internal bool HasLongClick => owner.IsAttachedToVisualTree() && owner.Interactive
+            && owner.LongClickLabel is not null && (owner._longClick is not null || owner.LongClickCommand is not null);
+        internal bool CanLongClick => HasLongClick && owner.RowEnabled
+            && (owner._longClick is not null || owner.LongClickCommand?.CanExecute(owner.LongClickCommandParameter) == true);
         public ListItemPeer(ListItem owner) : base(owner)
         {
             this.owner = owner;
+            _longClick = new(this, owner);
             owner.PropertyChanged += (_, e) =>
             {
                 if (e.Property == IsCheckedProperty)
@@ -447,6 +480,16 @@ public class ListItem : Button
                 else if (e.Property == LongClickLabelProperty)
                     RaisePropertyChangedEvent(AutomationElementIdentifiers.HelpTextProperty, e.OldValue, e.NewValue);
             };
+        }
+        internal void RefreshLongClick()
+        {
+            InvalidateChildren();
+            _longClick.Refresh();
+        }
+        protected override IReadOnlyList<AutomationPeer>? GetChildrenCore()
+        {
+            var children = base.GetChildrenCore() ?? [];
+            return HasLongClick ? [..children, _longClick] : children;
         }
         protected override string? GetHelpTextCore() => owner.LongClickLabel ?? base.GetHelpTextCore();
         protected override bool IsEnabledCore() => owner.RowEnabled;
@@ -471,6 +514,28 @@ public class ListItem : Button
         public void Select() => owner.OnClick();
         public void AddToSelection() => Select();
         public void RemoveFromSelection() { }
+    }
+
+    private sealed class LongClickPeer(ListItemPeer parent, ListItem owner) : ControlAutomationPeer(owner), IInvokeProvider
+    {
+        private string? _name = owner.LongClickLabel;
+        internal void Refresh()
+        {
+            var name = owner.LongClickLabel;
+            if (_name != name) RaisePropertyChangedEvent(AutomationElementIdentifiers.NameProperty, _name, name);
+            _name = name;
+        }
+        public void Invoke() { if (parent.CanLongClick) owner.InvokeLongClick(); }
+        protected override AutomationPeer? GetParentCore() => parent;
+        protected override IReadOnlyList<AutomationPeer>? GetChildrenCore() => [];
+        protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Button;
+        protected override string GetClassNameCore() => "ListItemLongClickAction";
+        protected override string? GetAutomationIdCore() => "ListItem.LongClick";
+        protected override string? GetNameCore() => owner.LongClickLabel;
+        protected override bool IsEnabledCore() => parent.CanLongClick;
+        protected override bool IsKeyboardFocusableCore() => false;
+        protected override bool HasKeyboardFocusCore() => false;
+        protected override void SetFocusCore() { }
     }
 }
 

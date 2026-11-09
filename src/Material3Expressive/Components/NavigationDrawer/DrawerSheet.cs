@@ -26,6 +26,14 @@ public abstract class DrawerSheet : ContentControl
     public static readonly StyledProperty<double> TonalElevationProperty = MaterialSurface.TonalElevationProperty.AddOwner<DrawerSheet>();
     public Thickness WindowInsets { get => GetValue(WindowInsetsProperty); set => SetValue(WindowInsetsProperty, value); }
     public double TonalElevation { get => GetValue(TonalElevationProperty); set => SetValue(TonalElevationProperty, value); }
+    protected DrawerSheet() => MaterialWindowInsets.EnsureScope(this);
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
+    }
+
     internal DrawerState? AnimationState => (this as DismissibleDrawerSheet)?.State;
     private DrawerState? _observedState;
     private MaterialSurface? _surface;
@@ -55,6 +63,7 @@ public abstract class DrawerSheet : ContentControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == WindowInsetsProperty) SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
         if (change.Property == DismissibleDrawerSheet.StateProperty) ObserveState();
         if (change.Property == FlowDirectionProperty || change.Property == ContainerWidthProperty) UpdateScale();
     }

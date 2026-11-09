@@ -15,9 +15,10 @@ git clone https://github.com/Shirasagi0012/Material3Expressive.Avalonia.git
 cd Material3Expressive.Avalonia
 ```
 
-当前仓库不使用 Git 子模块。ComposeAnimation、MaterialShapes、MaterialSkiaShadow 和
-MaterialTypography.Roboto 直接随仓库提供，主库通过仓内 ProjectReference 消费它们。
-MaterialColorUtilities、MaterialSymbols Rounded 与 SmoothScroll 使用 `Shirasagi0012.*` NuGet 包；
+当前仓库不使用 Git 子模块。ComposeAnimation、MaterialShapes、MaterialSkiaShadow、
+MaterialTypography.Roboto 和 SmoothScroll.Avalonia 直接随仓库提供，主库通过仓内 ProjectReference 消费它们。
+SmoothScroll 的固定来源、仓内扩展和迁移边界见[模块说明](../modules/SmoothScroll.Avalonia/README.md)。
+MaterialColorUtilities、MaterialSymbols Rounded 使用 `Shirasagi0012.*` NuGet 包；
 不需要相邻依赖仓库、旧 submodule 目录或预先执行本地打包脚本。
 
 NuGet 依赖统一从 nuget.org 获取，无需配置包源身份验证。
@@ -39,7 +40,7 @@ dotnet run --project src/Material3Expressive.Catalog --no-restore -- --text-fiel
 
 仓库的 [发布工作流](../.github/workflows/publish-nuget.yml)通过手动运行选择 ref，
 使用各项目 csproj 声明的版本，打包 ComposeAnimation Runtime/Avalonia/TestSupport、
-MaterialShapes、Shadow、Roboto 与主库，再按依赖顺序推送至 nuget.org，并上传打包生成的符号包。
+MaterialShapes、Shadow、Roboto、SmoothScroll Interaction/Controls 与主库，再按依赖顺序推送至 nuget.org，并上传打包生成的符号包。
 工作流不会从 tag 名推导版本。
 
 发布使用 [NuGet Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)

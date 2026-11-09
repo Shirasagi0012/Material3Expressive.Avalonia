@@ -55,7 +55,8 @@ internal sealed class MaterialSliderLayout : Panel
     }
     protected override Size ArrangeOverride(Size finalSize)
     {
-        if (Children.Count != 2 || Children[0] is not SliderTrack painter || Children[1] is not MaterialSliderTrack track) return finalSize;
+        if (Children.Count != 2 || Children[0] is not (SliderTrack or LegacySliderTrack) || Children[1] is not MaterialSliderTrack track) return finalSize;
+        var painter = Children[0];
         var scale = Scale;
         var width = Pixels(finalSize.Width); var height = Pixels(finalSize.Height);
         var thumbWidth = Pixels(track.DesiredSize.Width); var thumbHeight = Pixels(track.DesiredSize.Height);
@@ -75,7 +76,7 @@ internal sealed class MaterialSliderLayout : Panel
 
 internal sealed class MaterialSliderTrack : Track
 {
-    internal SliderTrack? Painter;
+    internal Control? Painter;
     private readonly SliderThumbPresenter _focusRing = new() { IsHitTestVisible = false, ZIndex = 1 };
     public MaterialSliderTrack() => VisualChildren.Add(_focusRing);
     protected override Size ArrangeOverride(Size finalSize)
@@ -91,9 +92,10 @@ internal sealed class MaterialSliderTrack : Track
         var tw = Pixels(thumb.DesiredSize.Width); var th = Pixels(thumb.DesiredSize.Height);
         var length = Math.Max(0, (vertical ? height - th : width - tw));
         var fraction = Maximum == Minimum ? 0 : (float)Math.Clamp((Value - Minimum) / (Maximum - Minimum), 0, 1);
-        var corner = double.IsNaN(painter.TrackCornerSize) ? Pixels(vertical ? painter.Bounds.Width : painter.Bounds.Height) / 2
-            : Pixels(painter.TrackCornerSize);
-        var ticks = painter.TickFractions;
+        var corner = painter is SliderTrack modern
+            ? double.IsNaN(modern.TrackCornerSize) ? Pixels(vertical ? painter.Bounds.Width : painter.Bounds.Height) / 2 : Pixels(modern.TrackCornerSize)
+            : 0;
+        var ticks = painter is SliderTrack current ? current.TickFractions : ((LegacySliderTrack)painter).TickFractions;
         var offset = ticks.Length > 0 && fraction != 0 && fraction != 1
             ? SliderMath.Round((length - corner * 2) * fraction) + corner : SliderMath.Round(length * fraction);
         var reverse = vertical ? !IsDirectionReversed : IsDirectionReversed;

@@ -147,6 +147,24 @@ DrawingImage 的变更沿 MaterialIcon 已有 Invalidated 订阅传播；没有�
 后者仍未实现：Avalonia VisualBrush 不传播任意源子树的绘制失效，公共 Effect 也没有整体颜色滤镜入口；
 不采用持续重录制或静态截图降低动态内容语义。
 
+2026-11-09 本轮授权复核了这一边界，保留上述理由。当前 Avalonia / Avalonia.Skia 12.1.5 的
+NuGet nuspec 均指向 `5825bf8c66fba0c11e67c980d8ece6444576bffa`，调查按该提交读取，未使用 HEAD。
+其 `VisualBrush` 仅在刷子属性变化时将录制内容标脏，没有订阅任意源子树的 `InvalidateVisual`；
+`IEffect` 标记为不可由客户端实现，效果边界计算与 Skia 后端也只处理 blur / drop-shadow。
+因此公开的效果类型或 VisualBrush 不能直接承接固定上游 `record { drawContent() }` 后的整层颜色滤镜。
+
+原生 `BitmapCache` 是不同路径：它通过 compositor 跟踪后代 dirty region，在透明离屏目标重绘，
+因而不是静态截图，也不需要逐帧轮询。不过它先按根 DPI / RenderAtScale 栅格化，再以 DrawBitmap
+应用父级变换；Core 的 `SkikoGraphicsLayer` 则录制 RenderNode 内容并以 layerPaint 的 colorFilter
+回放。缓存后再缩放或旋转会改变栅格化顺序，现有 FAB 显隐自身就有缩放，不能把此路径视作等价移植。
+跨两个自定义绘制节点开关离屏层还依赖两节点裁剪、访问与异常恢复始终成对，未建立这样的框架契约。
+
+可保持真实子树、原生失效和设备空间绘制顺序的方案，是在同一 Avalonia 基线上新增不可变 SrcIn
+TintEffect、零扩张边界及 Skia SaveLayer 颜色滤镜支持；滤镜层需将继承 opacity 归一后绘制子树，
+恢复时一次应用原 opacity，避免重叠内容被逐项重复调制。UI 线程只提交颜色值，渲染线程处理不可变
+效果与 Skia 资源，不读取 Control。此方案仍需依赖源码改动及双端验证；本轮没有为一个 FAB 入口
+引入整个 Avalonia fork，没有新增公共子树 tint API，也没有把未执行的方案记为通过。
+
 `ToggleFabIconTests` 验证默认尺寸、过渡跟随、自定义函数、密度取整、重挂、底层值恢复及图片语义。
 `toggle-fab-icon` 双端用例覆盖三尺寸、三图片来源、选中态、RTL、受限布局、半透明重叠图像、
 默认/自定义动画反向、图片替换与 DrawingImage 形状变更。

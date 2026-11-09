@@ -38,9 +38,9 @@ public class PickerRegressionTests
         try
         {
             ContentPresenter Title() => picker.GetVisualDescendants().OfType<ContentPresenter>().Single(p => p.Name == "PART_Title");
-            Assert.Equal(range ? "Select dates" : "Select date", Title().Content);
+            Assert.Equal(range ? "Select dates" : "Select date", Assert.IsAssignableFrom<DatePickerTitle>(Title().Content).Text);
             picker.SetValue(DatePicker.CultureProperty, CultureInfo.GetCultureInfo("zh-CN")); Draw(window);
-            Assert.Equal("选择日期", Title().Content);
+            Assert.Equal("选择日期", Assert.IsAssignableFrom<DatePickerTitle>(Title().Content).Text);
             picker.SetValue(DatePicker.TitleProperty, "Application title");
             picker.SetValue(DatePicker.CultureProperty, CultureInfo.GetCultureInfo("pt-PT")); Draw(window);
             Assert.Equal("Application title", Title().Content);

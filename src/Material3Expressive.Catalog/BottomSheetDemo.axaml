@@ -16,14 +16,23 @@
       <TextBlock x:Name="Status" Text="Hidden" TextWrapping="Wrap" />
     </StackPanel>
     <m3:BottomSheet x:Name="Sheet" DismissRequested="OnDismissed">
-      <Border x:Name="SheetContent" Height="400" Padding="24,8,24,24">
+      <ScrollViewer x:Name="SheetContent" Height="400" Padding="24,8,24,24"
+                    HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
           <TextBlock Text="Your next destination" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
           <TextBlock Text="The content stays in the main visual tree. There is no modal scrim and the page remains interactive outside the sheet." TextWrapping="Wrap" />
           <Button Content="Done" Click="OnHide" HorizontalAlignment="Left" />
           <CheckBox Content="Allow dragging; Done remains available" IsChecked="{Binding GesturesEnabled, ElementName=Sheet, Mode=TwoWay}" />
+          <TextBlock Text="Touch-scroll upward to expand the sheet, then scroll this list. Pull downward at the start to collapse; release to settle." TextWrapping="Wrap" />
+          <ItemsControl ItemsSource="{ReflectionBinding Destinations}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <m3:ListItem Content="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
-      </Border>
+      </ScrollViewer>
     </m3:BottomSheet>
   </Grid>
 </Window>

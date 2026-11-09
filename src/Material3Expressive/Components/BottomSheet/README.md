@@ -117,11 +117,28 @@ await Sheet.State.HideAsync();
 放在有明确可用宽高的 Grid 等容器中，不要放进沿垂直方向无限测量的 StackPanel 或 ScrollViewer。
 外层容器负责裁剪移动到其边界外的内容。短内容的部分展开位置与完全展开位置相同；内容增长后会保持完全展开。
 
-内含滚动内容时，应用需把嵌套滚动的前置、剩余位移和速度交给 `OnPreScroll`、`OnPostScroll`、
-`OnPreFlingAsync`、`OnPostFlingAsync`（DIP 与 DIP/s）；目前没有自动 ScrollViewer 接线。
+三种面板默认自动连接内容中唯一的纵向物理 `ScrollViewer`。向上触摸先展开面板，再滚动正文；
+反向时正文先回到顶部，剩余位移收起面板。释放后按实际剩余速度执行面板吸附；关闭
+`GesturesEnabled` / `SheetSwipeEnabled` 只禁止面板消费，正文仍可滚动。
+正文的水平滚动须设为 `Disabled`；逻辑滚动、双轴及多个并列主视口不自动连接。
+树内 `BottomSheet.IsScrollConnected` 可查询接线状态，替换内容、状态及卸载时自动重接或释放。
+
+```xml
+<m3:BottomSheet>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel><!-- 可滚动的业务内容 --></StackPanel>
+  </ScrollViewer>
+</m3:BottomSheet>
+```
+
+内容默认得到扣除手柄后的有限可用高度；需要较短面板时可给 ScrollViewer 设置 Height 或 MaxHeight。
+自定义宿主仍可把嵌套滚动前置、剩余位移和速度交给 `OnPreScroll`、`OnPostScroll`、
+`OnPreFlingAsync`、`OnPostFlingAsync`（DIP 与 DIP/s）。迁移已有手动接线时，把三种面板的
+`AutoConnectScroll` 设为 false，避免同一笔输入被自动和手动协议重复分发。
 模态面板要求 Window 模板包含 `PART_VisualLayerManager`，默认 Material 窗口主题已提供；
 面板使用当前客户区，不创建独立窗口。系统/IME 安全边距仍需应用通过 `WindowInsets` 提供。
 Catalog 用 `--bottom-sheet`、`--bottom-sheet-scaffold` 或 `--modal-bottom-sheet` 启动。
+`--bottom-sheet` 的目的地列表演示真实滚动正文与面板联动。
 
 内部机制与验证范围见 [INTERNALS.md](INTERNALS.md)。
 

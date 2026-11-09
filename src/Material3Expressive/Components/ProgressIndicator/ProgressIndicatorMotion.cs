@@ -49,7 +49,7 @@ internal static class ProgressIndicatorMotion
     }
 }
 
-public static class ProgressIndicatorDefaults
+public static partial class ProgressIndicatorDefaults
 {
     public static SpringSpec<float> ProgressAnimationSpec => new(1, 50, .001f);
 }

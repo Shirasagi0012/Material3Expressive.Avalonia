@@ -129,7 +129,7 @@ Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择�
 - 年份列表仍未移植 Compose LazyList 的完整滚动协议；两类月份列表没有跨组件 nested scroll、远距离 teleport/预取或平台 overscroll。
 - 标题日期使用 `ddd, MMM d`，未对照 `DatePickerFormatter` 的完整 skeleton。
 - 真实 DatePicker 双端仍有标题本地化、文字/图标、日期网格与总高度 1 DIP 差异；本轮保留失败证据，不调整容差或将其视为已接受。
-- 范围标题仍共用单日的 120 DIP 最小高度与左边距；固定 `DateRangePicker` 使用 128-60 DIP 最小高度、64 DIP 起始边距及三个独立标题文字。范围标题字体的模板优先级也尚未修复。这些既有几何差异会影响真实范围视口与切月时刻，不能用非文字滚动用例的通过覆盖。
+- 范围标题仍共用单日的 120 DIP 最小高度与左边距；固定 `DateRangePicker` 使用 128-60 DIP 最小高度、64 DIP 起始边距。三个独立标题文字已由下述公开内容单元补齐；范围标题字体的模板优先级仍未修复。这些既有几何差异会影响真实范围视口与切月时刻，不能用非文字滚动用例的通过覆盖。
 - 无障碍遍历顺序、触摸滑动阈值和全部区域的输入格式未逐项对照上游测试。
 
 逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs`。
@@ -160,6 +160,41 @@ Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择�
 稳定帧复测 `date-formatter-verified`：36 例、84 个样本的标题描述与起止日期读数全部精确一致，
 零执行错误且重复稳定；84 张图仍全部 different。已检查稳定帧，仍见字体/图标、月份标题与日期网格布局差异，
 不是 formatter 字符串差异。未把这些视觉问题或默认格式缺口记为已接受。
+
+**公开标题与大标题内容（2026-11-09）**
+
+本轮维护者授权新增四个可独立复用的控件，直接对应固定 AndroidX/Core 的
+`DatePickerDefaults.DatePickerTitle/DatePickerHeadline` 与
+`DateRangePickerDefaults.DateRangePickerTitle/DateRangePickerHeadline`；两份相应函数已逐份读取。
+`DatePickerHeaderContent.cs` 复用既有译表、Culture 与 IDatePickerFormatter，不创建第二套日期状态。
+标题按显示模式选择文案；单日 headline 保留一行及 polite 描述；范围 headline 按上游调用顺序分别
+请求起止视觉和详细文本，保持 null 占位与空字符串的区别，用三个 TextBlock、4 DIP 间距和垂直居中呈现。
+局部 Row 面板按剩余宽度依次测量，不以水平 StackPanel 的无限宽测量替代；排列直接复用已有
+MaterialHorizontalArrangement.SpacedBy(4)，在物理像素中夹取耗尽宽度后的间距，范围 peer 合并为一个 Text 节点。
+Typography 与外层 Padding 由调用方提供，颜色默认经主题 Token 配置，显式 Foreground 仍可覆盖。
+
+DateEntryController 的默认内容迁入这些公开组件，配置变更复用实例，完整 picker 继续负责选择合法性。
+独立范围 headline 不归一化起止输入，因为上游该内容函数不负责状态校验。原 Title/Headline 及模板优先级不变；
+已有自定义模板仍接收原字符串数据。模板内部 PART_Headline.Content 的默认值现在是控件，读取内部结构的
+调用方应迁为读取 DatePickerHeadline 或范围三个实际文本；仓内 formatter 回归已迁移。
+范围默认分隔符从旧拼接的 en dash 改为上游 ASCII '-'，字形和三槽间距属于新增内容实现的必要变化。
+
+默认 DateFormatter=null 继续沿用完整 picker 已有的 .NET 日期显示；它不等同 Core skeleton formatter，
+该既有未完成差异未在本轮接受。自定义 formatter 两端直接接收同一日期/Locale，替换时不改选择或草稿。
+`DatePickerHeaderContentTests` 覆盖独立/集成入口、模式、区域、null/empty、RTL、4 DIP 间距、合并语义和模板恢复；
+与 formatter、范围键盘/导航及日期输入回归共 33/33 通过，Catalog Release 构建通过。
+随后补齐耗尽宽度的排列回归，新增 Header 与 formatter 定向 13/13 通过；没有修改共享排列能力。
+`date-header` 独立双端族保留真实文字与完整截图，覆盖单日/范围、两模式、空/部分/完整选择、formatter
+空结果/替换、区域/RTL、有限宽度和默认 formatter。
+
+`date-header-public-final` 完成 30 例、38 个样本，零执行错误且全部重复/额外截图稳定。
+26 个自定义 formatter 用例的 204 项文本、描述、polite、宽高事实全部相等；四个默认 formatter 用例
+仅视觉文本事实不同（例如 Core `Feb 10, 2024`、本地 `Sat, Feb 10`），详细日期描述相等。
+38 张图全部 different；已打开同文字的单日/范围、有限宽度及默认格式双端图像，前者仍有字形栅格差异，
+后者还直接显示既有格式差异。这些视觉问题不视为通过，不放宽容差或以自定义 formatter 覆盖默认入口。
+复用共享排列后的最终 `date-header-arranged` 再次完成全部 30 例（38 样本）：零错误、全部稳定，
+224 项事实相等，仍仅默认 formatter 的四项 headline 文本不同；全部图像差异原样记录。
+最终范围布局包含上述耗尽宽度行为回归；这些用例不宣称日期默认 skeleton 或字体后端已补齐。
 
 ## 范围纵向月份验证（2026-11-09）
 

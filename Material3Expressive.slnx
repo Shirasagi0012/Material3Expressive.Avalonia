@@ -3,6 +3,9 @@
     <Project Path="examples/Reply/Reply.csproj" />
   </Folder>
   <Folder Name="/modules/">
+    <Project Path="modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Controls/SmoothScroll.Avalonia.Controls.csproj" />
+    <Project Path="modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Interaction/SmoothScroll.Avalonia.Interaction.csproj" />
+    <Project Path="modules/SmoothScroll.Avalonia/tests/SmoothScroll.Avalonia.Tests/SmoothScroll.Avalonia.Tests.csproj" />
     <Project Path="modules/ComposeAnimation/Catalog/Catalog.csproj" />
     <Project Path="modules/ComposeAnimation/ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj" />
     <Project Path="modules/ComposeAnimation/ComposeAnimation.Runtime/ComposeAnimation.Runtime.csproj" />

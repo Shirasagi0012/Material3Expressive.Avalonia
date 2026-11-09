@@ -34,15 +34,19 @@ void OnCheckedChange(object? sender, ListItemCheckedChangeEventArgs e)
 `IsInteractionEnabled="False"` 用于禁用整行交互、切换禁用颜色和 automation 状态，槽内按钮仍可用。
 `IsEnabled="False"` 则沿用 Avalonia 禁用整个子树的行为。Command.CanExecute 阻止该命令激活，不负责禁用子树或改变整行颜色。
 Space / Enter 在释放时激活；鼠标左键和键盘支持 500ms 长按，通过 LongClick / LongClickCommand 接收，长按后不再触发该次短按。
-LongClickCommandParameter 与 LongClickLabel 分别提供参数和说明。
+LongClickCommandParameter 与 LongClickLabel 分别提供参数和辅助技术动作名称。
 
-LongClickLabel 作为辅助技术说明。需要辅助技术直接调用时，组合一个同命令按钮：
+设置 LongClickLabel 并注册 LongClick 或 LongClickCommand 后，辅助技术可以直接调用这个具名长按动作：
 
 ```xml
-<m3:ListItem Content="文件" InteractionMode="Click" LongClickCommand="{Binding MoreCommand}" LongClickLabel="更多操作">
-  <m3:ListItem.TrailingContent><Button Content="更多操作" Command="{Binding MoreCommand}" /></m3:ListItem.TrailingContent>
-</m3:ListItem>
+<m3:ListItem Content="文件" InteractionMode="Click"
+             LongClickCommand="{Binding MoreCommand}" LongClickLabel="更多操作" />
 ```
+
+调用立即执行，不需要等待 500ms，也不触发行点击、选择或按压反馈。名称继续作为整行的辅助技术说明。
+未设置名称、移除全部回调或改为 None 模式后不提供该动作；禁用行时动作也不可执行。
+只有命令且 CanExecute 为 false 时，长按动作不可用；另有 LongClick 事件处理器时仍可执行事件。
+该动作不增加可见控件或 Tab 停靠点，槽内的独立按钮仍然保留。
 
 ## 内容槽与定制
 
@@ -121,8 +125,8 @@ source.Emit(new MaterialInteractionEvent.DragStop(drag));
 ## 使用限制与注意事项
 
 复杂 SupportingContent 模板需要自行核对多行高度。分组的索引、总数与间距由外部容器维护。
-最小交互留白仅影响布局。需要辅助技术调用长按命令时，可提供同命令的槽内按钮。
-[Catalog 示例](../../../Material3Expressive.Catalog/ListItemDemo.axaml)包含普通、分组、选择与焦点反馈。
+最小交互留白仅影响布局。辅助技术的具体呈现由平台决定；请为长按提供清晰且本地化的 LongClickLabel。
+[Catalog 示例](../../../Material3Expressive.Catalog/ListItemDemo.axaml)包含普通、分组、选择、具名长按动作与焦点反馈。
 
 内部机制、移植差异与验证范围见 [INTERNALS.md](INTERNALS.md)。
 

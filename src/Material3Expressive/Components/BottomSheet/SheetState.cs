@@ -83,6 +83,10 @@ public sealed class SheetState : AvaloniaObject
     internal bool HiddenEnabled => _enabled.Contains(SheetValue.Hidden);
     internal float OffsetPx => _offset;
     internal float MinimumAnchor => _anchors.Length == 0 ? float.NaN : _anchors.Min(a => a.Position);
+    internal float MaximumAnchor => _anchors.Length == 0 ? float.NaN : _anchors.Max(a => a.Position);
+    // dispatchRawDelta changes offset only, not the current anchor or velocity. The
+    // physical-scroll participant has already performed the same Float clamp.
+    internal void ApplyScrollOffset(float offset) { _offset = offset; Refresh(); }
     internal void Attach(BottomSheet owner)
     {
         if (_owner == owner) return;

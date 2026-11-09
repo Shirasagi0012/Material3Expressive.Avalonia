@@ -29,13 +29,13 @@ public class DatePickerFormatterTests
         try
         {
             var headline = picker.GetVisualDescendants().OfType<ContentPresenter>().Single(p => p.Name == "PART_Headline");
-            Assert.Equal(range ? "A10 – A20" : "A10", headline.Content);
+            Assert.Equal(range ? "A10 - A20" : "A10", HeadlineText(headline));
             Assert.Contains("A-description-10", AutomationProperties.GetName(headline));
             var day = picker.GetVisualDescendants().OfType<Button>().First(b => Equals(b.Tag, new DateOnly(2024, 2, 10)));
             var calendar = day.GetVisualAncestors().OfType<DateMonthPanel>().Single();
             Assert.Equal("A-description-10", AutomationProperties.GetName(day));
             picker.SetValue(DatePicker.DateFormatterProperty, new Formatter("B")); Flush(window);
-            Assert.Equal(range ? "B10 – B20" : "B10", headline.Content);
+            Assert.Equal(range ? "B10 - B20" : "B10", HeadlineText(headline));
             Assert.Equal("B-description-10", AutomationProperties.GetName(day));
             Assert.Contains(calendar, picker.GetVisualDescendants());
             if (range) Assert.Contains(picker.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "B-month-2");
@@ -55,10 +55,10 @@ public class DatePickerFormatterTests
         try
         {
             var headline = picker.GetVisualDescendants().OfType<ContentPresenter>().Single(p => p.Name == "PART_Headline");
-            Assert.Equal("Selected date", headline.Content);
+            Assert.Equal("Selected date", HeadlineText(headline));
             Assert.Contains(picker.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "-"));
             picker.DateFormatter = new EmptyFormatter(); Flush(window);
-            Assert.Equal("", headline.Content);
+            Assert.Equal("", HeadlineText(headline));
             picker.Headline = "Application heading"; Flush(window);
             Assert.Equal("Application heading", headline.Content);
             Assert.Null(AutomationProperties.GetName(headline));
@@ -93,6 +93,12 @@ public class DatePickerFormatterTests
         public string? FormatDate(DateOnly? date, CultureInfo culture, bool forContentDescription = false) => prefix is null || date is null ? null
             : forContentDescription ? $"{prefix}-description-{date.Value.Day}" : $"{prefix}{date.Value.Day}";
     }
+    private static string? HeadlineText(ContentPresenter presenter) => presenter.Content switch
+    {
+        TextBlock text => text.Text,
+        Control control => string.Join(" ", control.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text)),
+        _ => presenter.Content?.ToString()
+    };
     private sealed class EmptyFormatter : IDatePickerFormatter
     {
         public string? FormatMonthYear(DateOnly? month, CultureInfo culture) => "";

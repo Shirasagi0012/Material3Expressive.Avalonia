@@ -23,6 +23,11 @@
       <Button Content="开启／禁用用户滚动" Click="ToggleUserScrolling" />
     </StackPanel>
     <TextBlock Text="Multi-browse" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="保存位置并回到开头" Click="SaveClassicPositions" />
+      <Button Content="恢复保存位置" Click="RestoreClassicPositions" />
+    </StackPanel>
+    <TextBlock Text="位置保存当前项目及页内比例；保存后可调整窗口宽度，再恢复查看。" TextWrapping="Wrap" />
     <TextBlock Text="项目交替使用非对称切角、百分比圆角和传统圆角；遮罩缩小时轮廓随之重算。" TextWrapping="Wrap" />
     <m3:HorizontalCarousel x:Name="MultiBrowse" Height="160" ItemWidth="250" ItemSpacing="12" />
     <Slider Minimum="0" Maximum="{Binding MaximumScrollOffset, ElementName=MultiBrowse}"

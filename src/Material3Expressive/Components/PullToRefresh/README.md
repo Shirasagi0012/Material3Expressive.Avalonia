@@ -1,10 +1,42 @@
 # Pull to refresh
 
-下拉刷新的圆箭头、Expressive 形状指示器和自定义内容容器。宿主通过 `PullToRefreshState` 驱动距离，独立设置刷新状态。
+自动连接正文滚动的下拉刷新容器、圆箭头、Expressive 形状指示器和自定义内容容器。
+`PullToRefreshBox` 处理拖动及释放，应用负责实际刷新工作与 `IsRefreshing`。
 
 ## 基础用法
 
-加载 MaterialTheme 并初始化窗口动画作用域后，将指示器放在内容上方：
+加载 MaterialTheme 并初始化窗口动画作用域后，在有限高度中包裹一个纵向 ScrollViewer：
+
+```xml
+<m3:PullToRefreshBox xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+                    x:Name="RefreshBox" Height="360"
+                    IsRefreshing="{Binding IsRefreshing}"
+                    RefreshRequested="RefreshRequested">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Hidden">
+    <!-- 真实可滚动正文 -->
+  </ScrollViewer>
+</m3:PullToRefreshBox>
+```
+
+```csharp
+private async void RefreshRequested(object? sender, EventArgs e)
+{
+    ViewModel.IsRefreshing = true;
+    try { await ViewModel.ReloadAsync(); }
+    finally { ViewModel.IsRefreshing = false; }
+}
+```
+
+到正文顶部后继续向下拉，严格越过阈值并释放才触发一次请求。`IsRefreshing=false` 自动隐藏。
+系统取消已开始的拖动同样以零速度结束：未越阈值回弹，越阈值仍请求刷新。
+`RefreshEnabled=false` 仅阻止新的拉动消费，不禁用正文；按上游规则，已累积的拉动仍处理释放。
+不指定 `State` 时，`ActualState` 提供容器拥有的内置状态。`IsScrollConnected` 可诊断实际接入状态。
+容器默认拉伸正文，以便 Avalonia ScrollViewer 得到有限视口；自定义布局可设置内容对齐。
+
+已有 nested-scroll 宿主也可以只使用指示器，将它放在内容上方：
 
 ```xml
 <Grid xmlns="https://github.com/avaloniaui"
@@ -50,6 +82,21 @@ CornerRadius；形状同时用于背景、阴影和内容裁剪，不改变距�
 
 ## 内容槽与定制
 
+`PullToRefreshBox.Indicator` 可替换默认圆形指示器。自定义槽负责绑定相同状态与刷新标志：
+
+```xml
+<m3:PullToRefreshBox x:Name="ExpressiveRefresh" IsRefreshing="{Binding IsRefreshing}">
+  <m3:PullToRefreshBox.Indicator>
+    <m3:PullToRefreshLoadingIndicator State="{Binding #ExpressiveRefresh.ActualState}"
+                                    IsRefreshing="{Binding #ExpressiveRefresh.IsRefreshing}" />
+  </m3:PullToRefreshBox.Indicator>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"><!-- 正文 --></ScrollViewer>
+</m3:PullToRefreshBox>
+```
+
+容器的 `RefreshThreshold` 控制实际手势阈值；指示器的 `MaxDistance` 独立控制视觉位移，均默认 80 DIP。
+容器不自动重写自定义槽的绑定、大小或对齐。普通外部状态和派生状态均可用于 `State`。
+
 自定义内容使用 `PullToRefreshIndicatorBox` 的 `Content` / `ContentTemplate`，保留同一位移、顶部裁剪和阴影规则：
 
 ```xml
@@ -81,7 +128,7 @@ Indicator.State = new BouncyRefreshState();
 Catalog 下方的显式滚动示例使用这一高回弹状态。
 “预览越阈值回弹”按钮让右侧圆箭头保持拉动模式，展示距离动画反复跨越阈值时的透明度过渡；再次点击可中断重播。
 
-## 外部状态
+**外部状态**
 
 `State` 也接受实现 `IPullToRefreshState` 的普通 ViewModel：发布 `DistanceFraction`、`IsAnimating`
 的 `INotifyPropertyChanged` 通知，并实现 `SnapToAsync`、`AnimateToThresholdAsync`、`AnimateToHiddenAsync`。
@@ -122,8 +169,15 @@ Indicator.IsRefreshing = false;
 behavior 只能连接一个挂载的指示器；挂载时根据 `IsRefreshing` 初始化距离，换 behavior 或卸载会取消它拥有的任务。
 刷新请求不会自动完成业务刷新。回弹被刷新状态、其他 State 操作或卸载中断时，`OnPreFlingAsync` 可能抛出 `OperationCanceledException`。
 
-当前入口不自动接管 ScrollViewer 的滚动与触摸释放。宿主必须提供实际消费顺序与释放速度，不能仅把 `ScrollChanged` 当成 nested-scroll。
-Catalog 的 **Pull to refresh indicators** 同时提供距离滑块和显式 pre/post/release 按钮示例。
+自动容器只接入内容中的唯一纵向物理 Material ScrollViewer，横轴须为 Disabled；多个并列视口、
+逻辑滚动内容和其他呈现器不会自动连接。嵌套 ScrollViewer 不作为第二个候选；它自己的滚动仍由原生 chaining 规则处理。
+它可与标准 Scaffold 的普通/搜索 AppBar 共用正文视口，按祖先次序进行 pre、正文、反序 post。
+触摸/笔采用固定 Core 的 18 DIP 纵向阈值，首笔越阈值输入只扣除这段距离。
+普通桌面滚轮按 Core 默认行为不产生 pre-fling，不能把滚轮 idle 当作刷新释放。
+鼠标与触控板仍遵循现有滚动呈现器输入能力，不声明未测试设备事件等价。
+
+显式 `PullToRefreshScrollBehavior` 入口仍由宿主提供实际消费顺序与释放速度，不能仅把 `ScrollChanged` 当成 nested-scroll。
+Catalog 同时提供真实触摸自动容器、距离滑块和显式 pre/post/release 按钮示例。
 
 动画需在指示器挂载后调用；构造初值或 `SnapToAsync` 可在挂载前使用。操作被新动画、Snap、取消令牌或最后一个消费者卸载中断时，任务取消，保留当前距离。同一 State 可供同窗口的多个指示器使用，不能跨窗口同时使用。
 

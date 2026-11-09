@@ -7,6 +7,34 @@ using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
+// Column's unweighted children are measured in declaration order against the
+// remaining finite height. StackPanel's infinite main axis prevents a scroll body.
+internal sealed class BottomSheetContentLayout : Panel
+{
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var width = 0d; var height = 0d;
+        foreach (var child in Children)
+        {
+            child.Measure(new Size(availableSize.Width, Math.Max(0, availableSize.Height - height)));
+            width = Math.Max(width, child.DesiredSize.Width);
+            height += child.DesiredSize.Height;
+        }
+        return new Size(width, height);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        var y = 0d;
+        foreach (var child in Children)
+        {
+            child.Arrange(new Rect(0, y, finalSize.Width, child.DesiredSize.Height));
+            y += child.DesiredSize.Height;
+        }
+        return finalSize;
+    }
+}
+
 internal sealed class BottomSheetLayout : Panel
 {
     internal BottomSheet? Owner { get; set; }

@@ -23,6 +23,8 @@ public sealed class BottomSheetScaffoldState
 /// <summary>A persistent bottom sheet, body, top bar and snackbar host in one finite-height layout.</summary>
 public class BottomSheetScaffold : ContentControl
 {
+    public static readonly StyledProperty<bool> AutoConnectScrollProperty = BottomSheet.AutoConnectScrollProperty.AddOwner<BottomSheetScaffold>();
+    public bool AutoConnectScroll { get => GetValue(AutoConnectScrollProperty); set => SetValue(AutoConnectScrollProperty, value); }
     public static readonly StyledProperty<MaterialShape?> SheetShapeProperty = AvaloniaProperty.Register<BottomSheetScaffold, MaterialShape?>(nameof(SheetShape));
     /// <summary>Explicit sheet outline; null uses SheetCornerRadius.</summary>
     public MaterialShape? SheetShape { get => GetValue(SheetShapeProperty); set => SetValue(SheetShapeProperty, value); }

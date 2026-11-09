@@ -67,6 +67,35 @@
           <TextBlock Margin="24" Text="A permanent sheet shares the available width with this page." TextWrapping="Wrap" />
         </m3:PermanentNavigationDrawer>
       </TabItem>
+      <TabItem Header="Nested insets">
+        <Grid RowDefinitions="Auto,*" RowSpacing="12">
+          <StackPanel Spacing="8">
+            <Button Content="Toggle parent safe-area padding" Click="ToggleParentInsets" HorizontalAlignment="Left" />
+            <TextBlock Text="The parent, sheet and nested Scaffold receive complete insets. Each layer adds only the space still needed."
+                       TextWrapping="Wrap" />
+          </StackPanel>
+          <m3:MaterialWindowInsetsPadding x:Name="InsetsHost" Grid.Row="1" Insets="8,6,12,10">
+            <m3:PermanentNavigationDrawer>
+              <m3:PermanentNavigationDrawer.DrawerContent>
+                <m3:PermanentDrawerSheet Width="280" WindowInsets="16,12,24,20">
+                  <m3:Scaffold x:Name="NestedInsetsScaffold" ContentWindowInsets="16,12,24,20">
+                    <Border Padding="{Binding ContentPadding, ElementName=NestedInsetsScaffold}"
+                            m3:MaterialWindowInsets.ConsumePadding="{Binding ContentPadding, ElementName=NestedInsetsScaffold}">
+                      <StackPanel Spacing="8">
+                        <TextBlock Text="Drawer content" Margin="16,8" m3:MaterialText.Style="{m3:Typography TitleSmall}" />
+                        <m3:NavigationDrawerItem Content="Inbox" IsSelected="True" Click="Navigate" />
+                        <m3:NavigationDrawerItem Content="Sent" Click="Navigate" />
+                      </StackPanel>
+                    </Border>
+                  </m3:Scaffold>
+                </m3:PermanentDrawerSheet>
+              </m3:PermanentNavigationDrawer.DrawerContent>
+              <TextBlock Margin="24" Text="Change the parent padding or switch LTR / RTL. The sheet keeps physical safe-area edges, and its Scaffold does not add them again."
+                         TextWrapping="Wrap" />
+            </m3:PermanentNavigationDrawer>
+          </m3:MaterialWindowInsetsPadding>
+        </Grid>
+      </TabItem>
     </TabControl>
   </Grid>
 </Window>

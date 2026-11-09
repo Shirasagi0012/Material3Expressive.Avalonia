@@ -50,8 +50,24 @@ AppBarCustomItem。自定义项的 Content / ContentTemplate 与 MenuContent / M
 AppBarColumn 使用完全相同的项目 API，例如 `new AppBarColumn { MaxHeight = 144 }`。
 
 每个栏拥有独立的只读 MenuState（IsShowing、Show、Dismiss）。OverflowIndicatorTemplate 可替换
-默认 MoreVert 按钮和提示，其 DataContext 是该 MenuState。自定义按钮的事件中可直接调用
-`((AppBarMenuState)((Control)sender!).DataContext!).Show()`。默认英文提示可通过此模板本地化。
+默认 MoreVert 按钮和提示，其 DataContext 是该 MenuState。公开 `AppBarOverflowIndicator` 可在模板内或栏外使用，
+通过显式 `MenuState` 点击切换开闭；没有状态时只显示按钮与提示。`Description` 同时提供提示与可访问名称。
+例如将默认提示本地化并使用独立配色：
+
+```xml
+<m3:AppBarRow.OverflowIndicatorTemplate>
+  <DataTemplate x:DataType="m3:AppBarMenuState">
+    <m3:AppBarOverflowIndicator MenuState="{Binding}" Description="更多操作"
+        ContainerColor="#E8DEF8" ContentColor="#1D192B"
+        DisabledContainerColor="#E6E0E9" DisabledContentColor="#79747E" />
+  </DataTemplate>
+</m3:AppBarRow.OverflowIndicatorTemplate>
+```
+
+将该属性元素放入已有 `AppBarRow`。栏外使用 `<m3:AppBarOverflowIndicator MenuState="{Binding MenuState, ElementName=Actions}" />`。
+`Shape` 接受 `MaterialShape`，`InteractionSource` 与 IconButton 使用相同的共享反馈源。
+默认容器透明，图标跟随环境 `Foreground`；禁用图标的透明度使用禁用 Token 替换，显式禁用颜色则原样使用。
+`IsEnabled="False"` 禁止菜单切换，仍保留工具提示；默认英文 `Description` 由应用按需要本地化。
 Row 支持 RTL 的逻辑起点，Column 从上到下、横向对齐逻辑起点。
 
 菜单复用独立 DropdownMenu 的窗口内宿主、焦点、Escape、外部点击和退出保留；窗口初始化见

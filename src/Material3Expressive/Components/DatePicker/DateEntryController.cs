@@ -63,6 +63,9 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private DateEntryContent? _switcher;
     private DateRangeMonthList? _rangeList;
     private ContentPresenter? _title, _headline;
+    private readonly DatePickerTitle _defaultTitle = range ? new DateRangePickerTitle() : new DatePickerTitle();
+    private readonly Control _defaultHeadline = range ? new DateRangePickerHeadline() : new DatePickerHeadline();
+    private IDisposable? _titleColorBinding, _headlineColorBinding;
     private Button? _toggle;
     private bool _updating, _writingInput, _years;
     private DateOnly _month;
@@ -83,9 +86,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private string Text(string key, params object[] args) => DateTimeStrings.Get(key, Culture, args);
 
     private IDatePickerFormatter? DateFormatter => owner.GetValue(DatePicker.DateFormatterProperty);
-    private string? FormatDate(DateOnly? date, bool description = false) => DateFormatter is { } formatter
-        ? formatter.FormatDate(date, Culture, description)
-        : date?.ToString(description ? "D" : "ddd, MMM d", Culture);
+    private string? FormatDate(DateOnly? date, bool description = false) =>
+        DatePickerHeaderText.Format(date, Culture, DateFormatter, description);
     private string FormatMonth(DateOnly month) => DateFormatter is { } formatter
         ? formatter.FormatMonthYear(month, Culture) ?? "-"
         : month.ToString("Y", Culture);
@@ -102,6 +104,10 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         _switcher = scope.Get<DateEntryContent>("PART_Body");
         _title = scope.Get<ContentPresenter>("PART_Title");
         _headline = scope.Get<ContentPresenter>("PART_Headline");
+        _titleColorBinding?.Dispose();
+        _headlineColorBinding?.Dispose();
+        _titleColorBinding = _defaultTitle.Bind(TextBlock.ForegroundProperty, _title.GetObservable(TextBlock.ForegroundProperty), BindingPriority.Template);
+        _headlineColorBinding = _defaultHeadline.Bind(TextBlock.ForegroundProperty, _headline.GetObservable(TextBlock.ForegroundProperty), BindingPriority.Template);
         _toggle = scope.Get<Button>("PART_ModeToggle");
 
         _switcher.Range = range;
@@ -235,26 +241,28 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private void UpdateHeader()
     {
         if (_title is null || _headline is null || _toggle is null) return;
-        _title.Content = owner.GetValue(DatePicker.TitleProperty) ?? (Mode == DatePickerDisplayMode.Input
-            ? Text(range ? "DateRangeInputTitle" : "DateInputTitle")
-            : Text(range ? "DateRangePickerTitle" : "DatePickerTitle"));
+        _defaultTitle.DisplayMode = Mode;
+        _defaultTitle.Culture = Culture;
+        _defaultHeadline.SetValue(DatePicker.DisplayModeProperty, Mode);
+        _defaultHeadline.SetValue(DatePicker.CultureProperty, Culture);
+        _defaultHeadline.SetValue(DatePicker.DateFormatterProperty, DateFormatter);
+        if (_defaultHeadline is DateRangePickerHeadline rangeHeadline) rangeHeadline.SelectedRange = Selection;
+        else ((DatePickerHeadline)_defaultHeadline).SelectedDate = Selection.Start;
 
-        _title.ContentTemplate = owner.GetValue(DatePicker.TitleTemplateProperty);
-
-        string Format(DateOnly? date, string empty) => FormatDate(date) ?? empty;
-
-        _headline.Content = owner.GetValue(DatePicker.HeadlineProperty) ?? (range
-            ? $"{Format(Selection.Start, Text("DateRangePickerStartHeadline"))} – {Format(Selection.End, Text("DateRangePickerEndHeadline"))}"
-            : Format(Selection.Start, Text(Mode == DatePickerDisplayMode.Input ? "DateInputHeadline" : "DatePickerHeadline")));
+        var titleTemplate = owner.GetValue(DatePicker.TitleTemplateProperty);
+        var headlineTemplate = owner.GetValue(DatePicker.HeadlineTemplateProperty);
+        _title.Content = owner.GetValue(DatePicker.TitleProperty)
+            ?? (titleTemplate is null ? _defaultTitle : _defaultTitle.LocalizedTitle);
+        _title.ContentTemplate = titleTemplate;
+        // Existing custom templates continue receiving their string data context. Only
+        // the default visual now reuses the public, independently usable content.
+        _headline.Content = owner.GetValue(DatePicker.HeadlineProperty) ?? (headlineTemplate is null
+            ? _defaultHeadline : _defaultHeadline is DateRangePickerHeadline pair
+                ? $"{pair.StartText} – {pair.EndText}" : ((DatePickerHeadline)_defaultHeadline).HeadlineText);
 
         if (owner.GetValue(DatePicker.HeadlineProperty) is null && owner.GetValue(DatePicker.HeadlineTemplateProperty) is null)
         {
-            var empty = Text(Mode == DatePickerDisplayMode.Input ? "DateInputNoInputDescription" : "DatePickerNoSelectionDescription");
-            var start = FormatDate(Selection.Start, true) ?? empty;
-            var description = range
-                ? $"{Text("DateRangePickerStartHeadline")}: {start}, {Text("DateRangePickerEndHeadline")}: {FormatDate(Selection.End, true) ?? empty}"
-                : Text(Mode == DatePickerDisplayMode.Input ? "DateInputHeadlineDescription" : "DatePickerHeadlineDescription", start);
-            AutomationProperties.SetName(_headline, description);
+            AutomationProperties.SetName(_headline, AutomationProperties.GetName(_defaultHeadline));
             AutomationProperties.SetLiveSetting(_headline, AutomationLiveSetting.Polite);
         }
         else

@@ -1,6 +1,6 @@
 # Menu
 
-库提供独立 DropdownMenu / DropdownMenuPopup，以及 Avalonia 原生 MenuFlyout / Menu 的 Material 主题。
+库提供独立 DropdownMenu / DropdownMenuPopup、带开闭动画的 MaterialMenuFlyout，以及 Avalonia 原生 MenuFlyout / Menu 的 Material 主题。
 先完成[公共接入](../../../../docs/GETTING_STARTED.md)并初始化窗口动画作用域。
 
 ## 基础用法
@@ -39,6 +39,7 @@ private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 | DropdownMenuPopup + DropdownMenuGroup | 组合多组内容、组间距及滚动容器 |
 | DropdownMenuItem | 默认 Baseline，显式 MaterialExpressiveDropdownMenuItemTheme 可选 Expressive 外观 |
 | CheckableDropdownMenuItem / SelectableDropdownMenuItem | 默认 Expressive，由应用写回 IsChecked / IsSelected |
+| MaterialMenuFlyout / 原生 MenuItem | 完整顶级开闭动画，保留原生选择、键盘、命令及关闭行为 |
 | 原生 MenuFlyout / MenuItem | 原生选择、组互斥、键盘及关闭行为 |
 | 原生 Menu | 水平菜单栏，沿用原生访问键和子菜单 |
 
@@ -46,12 +47,13 @@ private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 勾选项目通过 CheckedChangeRequested.Value 请求新值，单选通过 Click / Command 写回选择。尾部快捷键文本用于展示。
 普通菜单支持上下键导航，Popup 支持 Tab、Escape / Back 和焦点恢复，相关行为可通过 IsPopupFocusable、DismissOnBack、DismissOnPointerOutside、ConsumePointerInputOutside 配置。
 
-原生 flyout 默认使用 Vertical / Standard。设置 `MenuAppearance.ColorStyle="Vibrant"` 切换配色，设置 FlyoutPresenterTheme 选择 Baseline。
+原生 flyout 默认使用 Vertical / Standard。使用 `MaterialMenuFlyout` 开启缩放和淡入淡出动画；
+设置 `MenuAppearance.ColorStyle="Vibrant"` 切换配色，设置 FlyoutPresenterTheme 选择 Baseline。
 
 ```xml
 <Button Content="原生菜单">
   <Button.Flyout>
-    <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
+    <m3:MaterialMenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
       <MenuItem Header="只读" ToggleType="CheckBox" IsChecked="True" StaysOpenOnClick="True"
                 m3:MenuAppearance.SupportingText="保护文件内容"
                 m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" />
@@ -59,12 +61,18 @@ private void Copy(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         <MenuItem Header="名称" ToggleType="Radio" GroupName="Sort" IsChecked="True" />
         <MenuItem Header="日期" ToggleType="Radio" GroupName="Sort" />
       </MenuItem>
-    </MenuFlyout>
+    </m3:MaterialMenuFlyout>
   </Button.Flyout>
 </Button>
 ```
 
 后续片段沿用基础示例命名空间。Baseline 的资源名为 MaterialBaselineMenuTheme，默认 Vertical 为 MaterialVerticalMenuTheme。
+`MaterialMenuFlyout` 继承 `MenuFlyout`，可继续使用 `Button.Flyout`、`ContextFlyout`、`ShowAt(anchor)`、
+`Hide()` 和 `IsOpen` 绑定。`IsOpen` 表达目标状态；只读 `IsPresented` 在退出完成前保持 true。
+退出中向同一锚点 `ShowAt` 或将 `IsOpen` 设为 true 会反向进入；向另一个锚点 `ShowAt` 会结束旧呈现，
+再从新锚点进入。`Closing` 可取消关闭，`Closed` 在退出完成后触发；锚点卸载立即释放弹层。
+无需修改菜单项目、命令或选择模型；从原生 `MenuFlyout` 迁移仅需更换 flyout 类型。
+`Opening` 会在退出中重开时触发，`Opened` 只表示实际弹层建立，不随同一弹层的反向过渡再次触发。
 原生项目的业务选择使用 IsChecked，IsSelected 表达导航位置。InputGesture、Command、StaysOpenOnClick 和 GroupName 遵循原生语义。
 Vertical 项的 CheckBox / Radio 在未提供 Icon 时会展开、淡入选中勾，取消选择时反向退出；快速切换保留正在运行的过渡。
 提供 Icon 后按 IsChecked 直接替换普通图标与勾，运行中增删 Icon 也会切换对应分支。Baseline 保持静态勾选外观。
@@ -201,8 +209,9 @@ DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 
 ## 使用限制与注意事项
 
-独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。原生 MenuItem 主题路径尚未接入显式 Shape；平台系统 inset 和预测返回尚未提供。
-原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。原生 flyout 的组级形变和开闭动画尚未提供。
+独立菜单使用当前窗口的 PopupOverlayLayer，自定义窗口模板需提供 PART_VisualLayerManager。平台系统 inset 和预测返回尚未提供。
+原生菜单主层和子菜单采用无阴影外观，独立菜单保留 Material 阴影。MaterialMenuFlyout 的开闭动画仅覆盖顶级弹层，
+子菜单开闭动画及原生 flyout 的组级形变尚未提供。普通 MenuFlyout 保留原有静态弹层。
 菜单栏沿用 Alt 访问键与方向键，当前原生版本的 F10 激活尚未实现。公开菜单栏 keyed 主题仍有待确认，维护状态见内部契约。
 
 [MenuDemo](../../../Material3Expressive.Catalog/MenuDemo.axaml)展示独立和原生菜单，[MenuBarDemo](../../../Material3Expressive.Catalog/MenuBarDemo.axaml)展示菜单栏。

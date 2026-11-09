@@ -86,6 +86,29 @@ Increase/Decrease Button 的原生模板契约。以下资源片段放在视图 
 默认画笔部件 `SliderTrack` 的 `DrawTick` / `DrawStopIndicator` 回调接收轨道局部 DIP 坐标及实际状态颜色。
 替换完整模板需要自行保留这些视觉与交互连接。
 
+连续圆头轨道使用 `MaterialLegacySliderTheme`。它保留整条非活动轨道，再叠加活动范围和刻度，
+不留拇指间隙、不画终点标记；半透明活动颜色会与下层轨道叠加。原生绑定、键盘和自动化规则保持不变：
+
+```xml
+<Slider Theme="{StaticResource MaterialLegacySliderTheme}" Minimum="0" Maximum="1"
+        Value="0.25" TickFrequency="0.25" SmallChange="0.25" />
+```
+
+单值的方向、反向及 `SliderAppearance.Colors` / `TrackHeight` / `TickSize` 仍可使用。
+圆头会沿轨道两端外扩半个轨道高度，父级裁剪时需为这部分保留空间。
+区间滑块可直接替换绘制槽；默认读取该区间的状态与颜色，也可显式设置 `State` / `Colors`：
+
+```xml
+<m3:RangeSlider RangeStart="0.25" RangeEnd="0.75" Steps="3">
+  <m3:RangeSlider.Track>
+    <m3:LegacySliderTrack />
+  </m3:RangeSlider.Track>
+</m3:RangeSlider>
+```
+
+独立使用 `LegacySliderTrack` 时设置 `State` 为已有 `RangeSliderState`；控件只绘制、不处理输入。
+Catalog 的 Sliders 区域同时提供单值和区间示例。
+
 ## 区间状态与完成通知
 
 ```xml

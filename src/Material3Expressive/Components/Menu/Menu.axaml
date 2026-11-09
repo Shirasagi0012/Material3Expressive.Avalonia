@@ -154,6 +154,8 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialBaselineMenuTheme" TargetType="MenuFlyoutPresenter">
+      <Setter Property="m3:NativeMenuMotion.ScaleAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" />
+      <Setter Property="m3:NativeMenuMotion.AlphaAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="m3:MenuThemeProperties.ItemTheme" Value="{StaticResource MaterialBaselineMenuItemTheme}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.BaselinePadding}}" />
@@ -410,6 +412,8 @@
       </Style>
     </ControlTheme>
     <ControlTheme x:Key="MaterialVerticalMenuTheme" TargetType="MenuFlyoutPresenter">
+      <Setter Property="m3:NativeMenuMotion.ScaleAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" />
+      <Setter Property="m3:NativeMenuMotion.AlphaAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}" />
       <Setter Property="ClipToBounds" Value="False" />
       <Setter Property="m3:MenuThemeProperties.ItemTheme" Value="{StaticResource MaterialVerticalMenuItemTheme}" />
       <Setter Property="Padding" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.VerticalPadding}}" />

@@ -15,7 +15,8 @@ namespace Material3Expressive.Parity;
 public sealed record ExpandedSearchBarConfig(bool Expanded = true, bool Dark = false, bool Rtl = false,
     int HostWidth = 420, int HostHeight = 600, double ContentHeight = 40, double InputWidth = 360,
     double InputHeight = 56, bool Custom = false, string Action = "none", string Motion = "default", bool Anchor = true,
-    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false, bool AppBar = false, string Shape = "none", string DropdownShape = "none", bool StableShapeDefaults = false);
+    double TonalElevation = 0, double ShadowElevation = 0, bool Gap = false, bool NoScrim = false, bool FullScreen = false, bool Insets = false, bool Contained = false, bool FilledInput = false, bool AppBar = false, string Shape = "none", string DropdownShape = "none", bool StableShapeDefaults = false,
+    bool DismissOnEscape = true, bool DismissOnPointerOutside = true, bool EnableDismissalAfterAttempt = false);
 
 [ParitySuite("expanded-search-bar")]
 public sealed class ExpandedSearchBarCases
@@ -87,6 +88,8 @@ public sealed class ExpandedSearchBarCases
         if (c.DropdownShape != "none" && popup is ExpandedDockedSearchBarWithGap shapedGap)
             shapedGap.DropdownShape = MaterialShapeCases.CreateShape(c.DropdownShape);
         popup.State = state; popup.InputField = input; popup.Content = results;
+        if (popup is ExpandedFullScreenSearchBar fullScreen) fullScreen.DismissOnEscape = c.DismissOnEscape;
+        popup.DismissOnPointerOutside = c.DismissOnPointerOutside;
         if (popup is ExpandedFullScreenSearchBar full && c.Insets) full.WindowInsets = new(12, 20, 24, 16);
         if (popup is ExpandedDockedSearchBarWithGap gap)
         {
@@ -168,6 +171,22 @@ public sealed class ExpandedSearchBarCases
             });
             At(16000);
             if (c.Gap && c.Action == "outside") Change(17000, "outside-release", () => host.Input("up", new(c.HostWidth - 4, c.HostHeight - 4)));
+            if (c.EnableDismissalAfterAttempt)
+            {
+                Change(33000, "enable-dismissal", () =>
+                {
+                    if (popup is ExpandedFullScreenSearchBar fullScreen) fullScreen.DismissOnEscape = true;
+                    popup.DismissOnPointerOutside = true;
+                });
+                At(48000);
+                Change(49000, "retry", () =>
+                {
+                    if (c.Action == "escape") host.Window.KeyPress(Key.Escape, 0, PhysicalKey.Escape, null);
+                    else { host.Input("up", new(c.HostWidth - 4, c.HostHeight - 4)); host.Input("down", new(c.HostWidth - 4, c.HostHeight - 4)); }
+                });
+                if (c.Gap && c.Action == "outside") Change(65000, "retry-release", () => host.Input("up", new(c.HostWidth - 4, c.HostHeight - 4)));
+                At(80000, 128000, 256000, 512000, 1024000); return;
+            }
             At(32000, 64000, 128000, 256000, 512000, 1024000); return;
         }
         Change(1000, "expand", () => _ = state.AnimateToExpandedAsync());

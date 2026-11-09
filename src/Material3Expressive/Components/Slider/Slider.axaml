@@ -28,6 +28,18 @@
         <Setter Property="DisabledInactiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledInactiveTrackColor}}" />
         <Setter Property="DisabledInactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
     </Style>
+    <Style Selector="m3|LegacySliderTrack">
+        <Setter Property="TrackHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackHeight}}" />
+        <Setter Property="TickSize" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.StopIndicatorSize}}" />
+        <Setter Property="ActiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveTrackColor}}" />
+        <Setter Property="ActiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackColor}}" />
+        <Setter Property="InactiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.InactiveTrackColor}}" />
+        <Setter Property="InactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.ActiveTrackColor}}" />
+        <Setter Property="DisabledActiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
+        <Setter Property="DisabledActiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledInactiveTrackColor}}" />
+        <Setter Property="DisabledInactiveTrackColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledInactiveTrackColor}}" />
+        <Setter Property="DisabledInactiveTickColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.DisabledActiveTrackColor}}" />
+    </Style>
     <Styles.Resources>
         <ControlTheme x:Key="MaterialSliderTrackButtonTheme" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
@@ -91,6 +103,26 @@
             </Setter>
         </ControlTheme>
         <ControlTheme x:Key="{x:Type Slider}" TargetType="Slider" BasedOn="{StaticResource MaterialSliderTheme}" />
+        <ControlTheme x:Key="MaterialLegacySliderTheme" TargetType="Slider" BasedOn="{StaticResource MaterialSliderTheme}">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:MaterialSliderLayout MinimumMeasureLength="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureLength}}"
+                                            MinimumMeasureThickness="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.MinimumMeasureThickness}}">
+                        <m3:LegacySliderTrack Name="PART_TrackVisual" IsHitTestVisible="False"
+                            Colors="{TemplateBinding m3:SliderAppearance.Colors}"
+                            TrackHeight="{TemplateBinding m3:SliderAppearance.TrackHeight}"
+                            TickSize="{TemplateBinding m3:SliderAppearance.TickSize}" />
+                        <m3:MaterialSliderTrack Name="PART_Track" Orientation="{TemplateBinding Orientation}"
+                            Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                            Value="{TemplateBinding Value, Mode=TwoWay}" IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                            <Track.DecreaseButton><Button Name="PART_DecreaseButton" Theme="{StaticResource MaterialSliderTrackButtonTheme}" /></Track.DecreaseButton>
+                            <Track.IncreaseButton><Button Name="PART_IncreaseButton" Theme="{StaticResource MaterialSliderTrackButtonTheme}" /></Track.IncreaseButton>
+                            <Thumb Name="PART_Thumb" Theme="{StaticResource MaterialSliderThumbTheme}" />
+                        </m3:MaterialSliderTrack>
+                    </m3:MaterialSliderLayout>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
         <ControlTheme x:Key="{x:Type m3:RangeSlider}" TargetType="m3:RangeSlider">
             <Setter Property="ClipToBounds" Value="False" />
             <Setter Property="ThumbWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+Slider.HandleWidth}}" />

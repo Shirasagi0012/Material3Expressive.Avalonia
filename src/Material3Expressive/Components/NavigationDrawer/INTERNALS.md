@@ -32,9 +32,16 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 Modal 在本地布局中覆盖页面并绘制 scrim；Dismissible 推动保留原测量宽度的页面；
 Permanent 为页面分配抽屉之外的剩余宽度。容器不裁剪推出的页面，未使用 Popup 或窗口级模态宿主。
 Sheet 自动宽度限于 240–360 DIP，显式 Width 保留上游先行 `Modifier.width` 的约束语义；
-填充可用高度，物理 `WindowInsets` 通过已有转换器接入。Modal 默认 LargeEnd 圆角与
+填充可用高度，物理 `WindowInsets` 通过共享消费作用域和模板 `MaterialWindowInsetsBorder` 接入。Modal 默认 LargeEnd 圆角与
 SurfaceContainerLow，标准 Sheet 默认矩形 Surface，默认 tonal elevation 为 0。
 Item 最小背景高度 56 DIP，标签采用 LabelLarge；12 DIP 的外侧 ItemPadding 是调用方的布局选择。
+
+固定两仓 `DrawerSheet` 的内部 Column 使用 `windowInsetsPadding(windowInsets)`。Sheet owner 先把
+调用方的逻辑 ConsumePadding 加入祖先消费，再对 ConsumeInsets 取物理并集，最后仅应用 WindowInsets
+尚未消费的部分。owner 发布累计消费，使直接内容与 ContentTemplate 生成内容都继承相同环境；
+模板边框只负责实际布局，不重复建立消费作用域。测量时按当前 density 刷新舍入；RTL 只在边框处
+抵消 Avalonia 的原生镜像，公开 Insets 始终为物理边。卸载、换内容和移入新作用域沿共享生命周期重接。
+树内 ModalNavigationDrawer 保留声明祖先消费，不采用独立 Dialog 的清零规则。
 
 `CurrentValue` 是最后已完成的状态，拖动/动画途中保持该值；`TargetValue` 是当前目标，
 `CurrentOffset` 为逻辑起始轴 DIP，首次布局前为 NaN。内部按实际密度使用 Float 物理像素，
@@ -72,6 +79,11 @@ Item 的图标可由内容或模板提供；只设置 IconTemplate 也使图标 
 2026-10-04 维护者确认上述内容槽、State、Sheet 和外部选择 API：用 Avalonia 内容/模板表达 Compose lambda，
 保持状态由应用持有，物理 WindowInsets 由宿主传入、默认零，不建立第二套 inset / overlay。
 Modal 仍在本地布局中覆盖，不因名字带 Modal 而套用窗口级 Dialog/Popup 的焦点陷阱。
+
+本轮维护者明确授权新增能力和必要共享接入，补齐三种 Sheet 的嵌套 Insets 消费。原决定保留宿主提供
+物理 Insets、默认零且不另建 inset 框架的理由；现直接使用已存在的共享能力。旧实现直接把完整 Insets
+作为 Padding，只覆盖孤立 Sheet；没有将重复留白视为已接受差异。公开 API 不变，原先自行扣减祖先
+消费的调用方应改传完整 Insets，仓内 Catalog 提供组合示例。共享规则见 [决定 §38](../../../../docs/DECISIONS.md#38-物理-insets-并集与自动留白容器)。
 
 同日确认平台边界：Avalonia BackRequested 没有 predictive-back 连续进度流，因此实现离散 BackRequested
 和抽屉内 Escape KeyUp，尚未实现预测返回的进度变形及取消恢复。
@@ -117,6 +129,14 @@ predictive-back 连续变形/取消恢复尚未实现；焦点陷阱与关闭后
 真实字体排版、系统触摸投递、硬件触摸和屏幕阅读器未经验收。用几何标记替代文字的 parity 不证明真实文字一致。
 
 ## 验证入口
+
+`NavigationDrawerInsetsTests` 覆盖三种 Sheet 的祖先扣除、逻辑 add/物理 union 顺序、动态方向与 Insets、
+直接/模板/替换内容、卸载重挂和三种容器内嵌 Scaffold。`navigation-drawer-insets` 双端族以实际三种
+容器和 Sheet 覆盖有无后代消费、父级/Sheet 自身消费、动态替换及 RTL，同时读取 Sheet、内容和标记几何。
+运行 `./tests/VisualParity/parity.ps1 self-test --family navigation-drawer-insets`；实际结果以新生成报告为准。
+`drawer-insets-delivery` 的 36 例、66 个采样均为严格 equal，执行错误为零，重复采集与额外截图稳定；
+已检查实际双端内容替换/RTL 图像。新增行为测试 18/18，既有抽屉及 Sheet 形状回归 51/51 通过。
+该结果只证明上述嵌套布局与消费范围，不扩展到真实系统 Insets 来源、文字或预测返回。
 
 2026-11-05 本轮状态替换修复由 `NavigationDrawerTests` 45 项通过验证，包含 Modal/Dismissible × LTR/RTL
 的拖动中替换、旧指针继续移动/释放、新状态布局前安全性及后续新拖动，并保留子按钮按压。

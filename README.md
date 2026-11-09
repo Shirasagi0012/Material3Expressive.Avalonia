@@ -29,9 +29,10 @@
 - `modules/MaterialShapes`：形状库、Gallery、测试和文档。
 - `modules/ComposeAnimation`：Runtime、Avalonia、TestSupport、Catalog、测试和文档。
 - `modules/MaterialSkiaShadow`、`modules/MaterialTypography.Roboto`：阴影与字体模块。
+- `modules/SmoothScroll.Avalonia`：固定来源的物理滚动模块与异步释放协议。
 - `tests`：控件测试与 VisualParity。
 
-以上模块均由本仓库直接管理。MaterialColorUtilities、MaterialSymbols、SmoothScroll.Avalonia
+以上模块均由本仓库直接管理。MaterialColorUtilities、MaterialSymbols
 保留独立仓库，本项目只消费 NuGet 包；具体版本见 `Directory.Packages.props`。
 
 ## 本地开发

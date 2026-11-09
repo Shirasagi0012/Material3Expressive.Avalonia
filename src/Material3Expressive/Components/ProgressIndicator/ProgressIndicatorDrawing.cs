@@ -32,7 +32,7 @@ internal static class ProgressPaint
 
 internal sealed class PlainProgressDrawOperation(Size size, float scale, bool circular, bool indeterminate,
     float progress, Color color, Color trackColor, ProgressIndicatorStroke stroke, float gapSize, bool rtl,
-    float[] fractions, float sweepProgress, float rotation, float stopSize) : ICustomDrawOperation
+    float[] fractions, float sweepProgress, float rotation) : ICustomDrawOperation
 {
     public Rect Bounds { get; } = new Rect(size).Inflate(Math.Max(stroke.Width / 2, 1 / scale));
     public bool HitTest(Point point) => false;
@@ -72,14 +72,6 @@ internal sealed class PlainProgressDrawOperation(Size size, float scale, bool ci
                     var trackStart = progress + Math.Min(progress, gap);
                     if (trackStart <= 1) Line(trackStart, 1, track);
                     Line(0, progress, active);
-                    if (stopSize > 0)
-                    {
-                        var stop = Math.Min(stopSize, height);
-                        var offset = Math.Min((height - stop) / 2, 6 * scale);
-                        if (rtl) { canvas.Save(); canvas.Scale(-1, 1, width / 2, height / 2); }
-                        ProgressPaint.Stop(canvas, active, width - stop - offset, height / 2, stop, stroke.Cap == PenLineCap.Round);
-                        if (rtl) canvas.Restore();
-                    }
                 }
                 else
                 {

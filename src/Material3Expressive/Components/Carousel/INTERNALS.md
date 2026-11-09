@@ -16,6 +16,7 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 为逻辑依据，Core `a9e4
 | `Arrangement` / `multiBrowseKeylineList` / `uncontainedKeylineList` / `heroKeylineList` | `CarouselArrangement` / `CarouselKeylines` |
 | `KeylineList` / `Strategy` / `getSnapPositionOffset` | `CarouselKeylineList` / `CarouselStrategy` |
 | 三种 Horizontal Carousel / `carouselItem` | `HorizontalCarousel.Variant` / `CarouselPanel` / `CarouselItem` |
+| `CarouselState.Saver` / 初始 currentItemOffsetFraction | `CarouselPosition` / `CapturePosition` / `RestorePosition` |
 | `LazyLayoutBeyondBoundsProviderModifierNode` / `PagerBeyondBoundsState` / Core `RootNodeOwner.handleFocusKeys` | `CarouselPanel.MoveFocus` / `HorizontalCarousel.OnKeyDown` |
 | `PagerMeasure.measurePager` / `createPagesBeforeList` / `createPagesAfterList` | `CarouselPanel.Virtualization`：页范围、容器生成/回收与焦点页保留 |
 | `PagerState.performScroll` / `PagerMeasureResult.copyWithScrollDeltaWithoutRemeasure` | `CarouselScrollPosition` / `CarouselPanel.LayoutStateAt` |
@@ -68,11 +69,21 @@ PageUp/PageDown 对应固定 AndroidX/Core `ScrollableNode.onKeyEvent`，由聚�
 
 视口缩小按 ContentInViewNode.onRemeasured 检查旧布局中的焦点矩形；RTL 预先扣除视口尺寸差，只有原本最大可见且现在被遮挡的焦点启动跟随。显式请求优先于跟随目标，焦点离开、导航、卸载或变为最大可见时结束跟随。尺寸/步长/吸附位置变化保留旧当前页与页内比例，按新的 Pager 网格取整重建位置；不能保留旧绝对像素偏移而改变所选项目。放大视口不启动新的跟随动画。
 
+位置恢复沿用相同的 Pager 整数网格重建公式，先约束项目索引，再取整 snap 与 fraction 的差值；
+不先把两项分别取整。恢复请求取消当前交互与动画，在首个非空且有效的 measure 消费一次，
+空集合和模板重建保留待恢复值；外部 ScrollOffset 或导航取代它。CapturePosition 读取待恢复值或最近布局发布值。
+
 Core 的 afterFrame 不等同于本地强制完成一次全部布局：增量 Pager placement 延后到 draw；强制重测先应用整数页位置，图层平移仍沿用上一轮 draw。滚入循环在消费前保留真实目标矩形，按是否重测补上实际页位移，在该阶段判定请求并计算下一目标，之后才完成本地可视布局。此顺序由双端逐帧跟踪确认；直接使用最终可视矩形会令 RTL MultiBrowse 少滚一页。整数页的 RTL 排列先于 Float 图层平移，不重新结合表达式。
 
 Pager 的绝对页坐标与实际视口 offset 分开计算边界；无法复用增量布局时，按当前页与 fraction 重建位置并重测。fraction 的半页钳制仍保留，不能仅累加物理 offset，否则 Uncontained 末端惯性会越过参考最终位置。
 
 ## 3. 已确认决定与已知差异
+
+本轮维护者授权补齐缺失 API：CarouselState.Saver 的 page/fraction 以不可变 CarouselPosition 暴露，
+不引入独立 CarouselState owner 或持久化服务。上游 Saver 另存 pageCount 是为独立 PagerState 提供临时计数，
+rememberCarouselState 随即换成当前 itemCount lambda；本地 ItemsControl 已拥有当前集合，因此只保存位置，
+恢复时始终读取当前 Items.Count。此前仅能绑定绝对 ScrollOffset，重建到不同视口时无法表达同一逻辑位置。
+此新增入口不删除原 API，JsonConstructor 允许应用直接序列化值；未提供保存滚动速度或继续旧动画的承诺。
 
 此前 MultiAspect 移植已获授权使用可模板化内容控件承载 modifier 的职责，提供独立数值读数供布局适配；不另建列表或通用 Pager 框架。
 沿用仓库圆角路径；此前共享 SurfaceOutline 已新增显式路径描边分支，对应上游 Outline.Generic 的离屏双宽描边和反向路径擦除，详见 [共享决定 §29](../../../../docs/DECISIONS.md#29-carousel-路径描边)。Avalonia 内容变换参与原生命中测试，内容交互位置随显示移动；Compose draw translate 本身不重排 semantics / 输入坐标，真实辅助技术和复杂交互尚需专项核验。

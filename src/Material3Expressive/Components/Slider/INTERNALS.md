@@ -23,6 +23,7 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（`v1.13.0
 | 单值布局与原生输入契约连接 | [Slider.axaml](Slider.axaml)、[MaterialSliderLayout.cs](MaterialSliderLayout.cs) 的 MaterialSliderLayout / MaterialSliderTrack |
 | `RangeSlider` / `RangeSliderState`、键盘、slop 与 semantics | [RangeSlider.cs](RangeSlider.cs)、[SliderState.cs](SliderState.cs)、[SliderAutomationPeer.cs](SliderAutomationPeer.cs) |
 | Range 布局、不等宽 Thumb 修正 | [SliderLayout.cs](SliderLayout.cs) |
+| Deprecated `SliderDefaults.Track(SliderPositions)` | [LegacySliderTrack.cs](LegacySliderTrack.cs)、`MaterialLegacySliderTheme` |
 
 原生单值交互依据项目 Avalonia 12.1.2，对应上游 tag commit
 `d3c867a9e2de379249b03dbeb3495bd7f076a81a`；不要把原生行为误写为 Compose 行为。
@@ -41,6 +42,14 @@ Track/Thumb 使用最终绘制颜色；默认禁用 Thumb 在 Surface 上合成�
 DrawTick/DrawStopIndicator 的坐标属于轨道局部 DIP，不是整个 owner 或物理像素。
 
 ## Range 状态、输入与自动化
+
+`LegacySliderTrack` 保留旧公开重载的独立算法：整条 inactive round-cap stroke，随后 active stroke，
+最后按首次出现顺序分组绘制 ticks；包含端点 tick 与零长度 active stroke，半透明颜色仍真实叠加。
+默认尺寸继续来自同一 InactiveTrackHeight / StopIndicatorSize Token，不恢复历史数值常量。
+没有现代轨道的 gap、stop marker 或离散圆角位置补偿；Range 自定义槽已按无 alignment line 布局，
+原生主题的内部布局对应选择零补偿。Float 物理像素计算后转换 DIP，RTL 由 painter 单独处理。
+Range 的 State 替换和方向变化即使不改变测量尺寸，也必须使内部 SliderLayout 重新排列两端；
+仅让 owner 重新 Measure 不会更新已经有效的子布局。
 
 RangeSlider.State 非空时拥有范围和值；便捷属性只驱动内部 State。构造先约束、排序而不吸附，
 setter 先受另一端约束再吸附，顺序不能交换。OnValueChange 存在时只发请求，无回调则直接写 State。
@@ -92,6 +101,11 @@ Range 的显式 State 与调用者写回职责、内容模板方案同日获确�
 
 ## 尚未实现与未经验证
 
+本轮依据维护者对缺失变体/API 的明确授权新增独立 LegacySliderTrack 与命名原生主题。
+旧重载的 SliderPositions 只存储绘制 fractions，不承担输入；本地直接观察现有 RangeSliderState 或原生 Slider，
+不重建已移除的单值状态 owner，也不改变 2026-10-03 原生交互决定。无破坏性迁移。
+纵向原生主题将相同画法沿轴转置；固定上游旧 Track 本身只有横向，纵向属于沿用本地原生方向适配。
+
 此前延期 InsetRing 的原因是共享 Ripple 尚无配置与呈现能力；该能力现已由其他组件引入。
 2026-11-06 本轮维护者明确授权自主补齐 API、基础能力与修订历史决定，故补齐此分支；保留 2026-10-03 原生单值输入决定。
 AndroidX/Core 固定 Slider.kt 的焦点实现一致。环复用共享呈现器，直接订阅范围端点源；原生单值将原生 Focus/Unfocus、Thumb hover 与 drag 转成内部配对事件，不接管输入。禁用、替换 Thumb 与卸载结束对应活动事件，保留 RippleNode 在 hover/focus 交错中的事件顺序。
@@ -119,6 +133,15 @@ Range 的原生自动化和焦点目标仍是核心 presenter，未另增自动�
 后续需明确组件源绑定的提交边界，影响示例中 RangeSlider / SliderThumb / TooltipLabel 三者的共同换源。
 
 ## 验证入口
+
+`LegacySliderTrackTests` 覆盖原生输入/刻度、无离散圆角补偿、Range 槽状态替换与重挂、Token 和只读绘制。
+`LegacySliderTrackCases.cs/.kt` 的 `legacy-slider-track` 通过真实旧 Track 重载验证连续/离散、单值/范围、
+空范围/端点、禁用、RTL、半透明叠加及动态状态/颜色/方向/重挂；不以现代 gap=0 作为参考。
+命令：`./tests/VisualParity/parity.ps1 self-test -NoRestore --family legacy-slider-track`。
+原生纵向复用的行为有 headless 覆盖，固定上游没有该旧重载的纵向对照入口；真实桌面输入仍未经验证。
+当前 `legacy-slider-track-verified` 的 52 例、88 个采样全部 equal，原图逐像素相等，
+执行错误为零、重复及额外截图稳定。已检查透明叠加、零长度圆头和动态范围/方向的实际配对图。
+相关行为回归 88 项通过（新增 8 项），Catalog 构建通过；首次失败与修正前的布局回归产物保留。
 
 2026-11-07 本轮授权补齐单值 `SliderAppearance.InteractionSource`。原先将单值交互源保持为模板私有，
 是为了保留 2026-10-03 的原生输入 owner；但这阻止了现有 TooltipLabel 与原生 Slider 的组合。

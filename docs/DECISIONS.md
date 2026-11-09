@@ -319,7 +319,7 @@
 - **原决定**：NavigationBar / Rail / CommandBar 于 2026-10-15 采用 AnimatedState 的帧前采样与速度接续，目标是复用长期状态及属性贡献，不再为每个控件包装任务。当时明确未证明固定 Compose 中断轨迹一致；原由保留在组件说明与 ComposeAnimation 的 ANIMATED_STATE 设计文档。
 - **证据**：固定 AndroidX `f3ed195f…` / Core `a9e47e8…` 的 `animation-core/AnimateAsState.kt` 通过 SideEffect 更新；`restartAnimation` 在新 `animateTo` 前取消旧 Job，`Animatable.endAnimation` 清零速度和 lastFrameTime。当前导航源禁用场景复现 128ms alpha 197/165；只改帧末提交解决首次禁用，但 256ms 恢复仍为 161/189。再保留取消顺序后，两处颜色读数相等，原超差图像进入既有门禁。
 - **决定**：为 AnimatedState 增加显式 `AnimationCommitPhase.AfterFrame` 及独立 `AnimationInterruptionMode.Restart`；每种阶段共享根队列与唤醒，复用既有 FrameClock/dispatcher 的帧末边界。旧动画先采样；Restart 等其取消清理后再起新运行，从新真实帧计时。重入、断开、Scope 恢复与异常仍走原有所有权协议。
-- **用法及范围**：`AnimatedState.Create(owner, initialColor, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)`。NavigationBar/Rail 与复用它们轨迹的 CommandBar 切换项、AppBarWithSearch 的容器颜色采用此组合。其他调用方及原重载继续 BeforeFrame + Continue；不扩大到 Transition、动画输入状态或完整 Compose 重组。
+- **用法及范围**：`AnimatedState.Create(owner, initialColor, AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart)`。NavigationBar/Rail 与复用它们轨迹的 CommandBar 切换项、AppBarWithSearch 的容器颜色、PullToRefresh 箭头阈值透明度采用此组合。Pull 箭头的真实释放反向及旧 257ms 用例证明，仅帧末提交仍会沿用裸 Animatable 的旧速度/时间；复用 Restart 后四条旧轨迹进入现有门禁。距离状态本身仍保留原可中断弹簧，不改变其速度语义。其他调用方及原重载继续 BeforeFrame + Continue；不扩大到 Transition、动画输入状态或完整 Compose 重组。
 - **替代方案**：统一延迟所有动画会破坏已有布局目标合同；组件各自 NextFrame/Stop 会重复状态合并、异常和生命周期；只延后首帧不能保留取消顺序，不能修复反向轨迹。两个选项分别表达提交与中断，避免把速度策略隐含在阶段名称里。
 - **显隐入口扩展（2026-11-09 本轮授权）**：原范围不含 Transition，是为了不改变其显式状态/时钟所有权，理由仍保留。新 FloatingToolbar 公开过渡工厂的双端用例明确复现默认 AnimatedVisibility.Visible 比 Core boolean composable 提前一帧；新增宿主级 TargetCommitPhase，默认 BeforeFrame 保留即时目标，AfterFrame 复用同一根队列合并并捕获本地 Visible 请求。固定 Core AnimatedVisibility(bool)→updateTransition.animateTo 在 composition 更新目标，随后注册帧循环；新模式只投影此提交边界，Source 仍独立拥有目标和时钟，不改 Runtime.Transition.UpdateTarget。内部工具栏移除自己的下一帧等待并采用显式新模式；DatePicker/Expander 及其他默认调用方不需迁移。帧末重入属于下一批，卸载/换源撤销队列；行为与真实两端工厂用例验证，仍不提供完整重组运行时。
 - **兼容及边界**：原有公共构造函数和全部工厂重载签名保留，无外部强制迁移。采用新模式才改变时序。非帧输入后的原生 enabled 即时读数与 Core 重组缓存仍分别保留；不为它们延迟原生交互，也不将残留差异改记为通过。真实消费者、模块行为回归和双端 self-test 是验证依据，未改变基线或容差。
@@ -427,7 +427,7 @@
 - **Chip 固定重载接入**：四类 Chip 与 Elevated 外观新增 `Shape`，对应固定 Chip.kt 的 shape 入口；显式 Shape 优先于 Shapes，取消圆角播放器，清除后恢复当前选择状态。保留原 Shapes 仅管形变、颜色/间距/图标动画独立的维护者决定，不以本次形状入口捆绑切换这些行为，无破坏性迁移。
 - **图标按钮接入**：六种 IconButton 主题复用 MaterialButton.Shape/PressedShape，IconToggleButton 新增 CheckedShape；同族切角的三状态继续使用原播放器。普通路径切换按 Core 的 focusRingShape 身份变化重建 indication；RTL 显式形状缩放补偿原生子树镜像，保证波纹首次绘制后保留物理中心。圆角分支未扩大变更范围。
 - **原生 ToggleButton 接入**：四种主题同样接入 MaterialButton.Shape/PressedShape，CheckedShape 置于既有 ToggleButtonAppearance；保留固定 ToggleButton.kt 的 FastSpatial 规格、三状态优先级和边框动画。原生先切换 IsChecked 再 Click 的已确认适配不变，未改变颜色、尺寸或圆角 API，无迁移步骤。
-- **下拉刷新接入**：PullToRefreshIndicatorBox.Shape 对应固定 PullToRefresh.kt 的 IndicatorBox shape 参数，复用 Surface 路径，不改变外层顶部裁剪、平移和高度条件。两个内置指示器继承此属性是本地便利入口（固定上游这两个函数不公开 shape），已由本轮授权采纳；自动滚动容器所缺的 pre-fling 协议仍未实现，不以本次接入宣称完成。
+- **下拉刷新接入**：PullToRefreshIndicatorBox.Shape 对应固定 PullToRefresh.kt 的 IndicatorBox shape 参数，复用 Surface 路径，不改变外层顶部裁剪、平移和高度条件。两个内置指示器继承此属性是本地便利入口（固定上游这两个函数不公开 shape），已由本轮授权采纳；当时自动滚动容器所缺的 pre-fling 协议尚未实现，不以形状接入宣称完成。后续实际协议与自动容器见 §39。
 - **拖动手柄与分段按钮接入（2026-11-08 本轮授权）**：两者复用既有 MaterialShape，无破坏性迁移。DragHandle 的三态路径直接切换，固定源码以 graphicsLayer 裁剪形状、indication 使用无形状参数的 ripple；Surface 新增内部 ResetIndicationOnShapeChange，手柄显式关闭，避免误取消仍存活的波纹/hover。其他调用方默认保留原行为。SegmentedButton 的 Surface chrome 因 physical place 内容布局固定 LTR，新增内部 ShapeLayoutDirection 仅为轮廓生成传入真实逻辑方向，实际树镜像仍以 Surface.FlowDirection 为准，不改变内容布局或创建第二套路径管线。
 - **列表项六状态形状（同轮授权）**：ListItem / SegmentedListItem 以六个 MaterialShape 可选属性覆盖原六圆角状态，复用现有配置 key、优先级、反向与第三目标动画。CornerShape/AnimatedCornerRadius 新增圆角与切角的类型判定，按固定 Interpolatable.lerp 在不同族之间选择较近端点，同族仍逐角插值；原有纯圆角和纯切角消费者不变。Surface.SetAnimatedCorners 扩展为可向切角绘制传入同一动画的已求值角，先由 ListItem 接入，后由本轮菜单分组和菜单项复用。ListItem 自己维护 indication 身份，关闭 Surface 的重复重建；无公开动画 API 或破坏性迁移。
 - **菜单分组形状（同轮授权）**：DropdownMenuGroup 新增 Shape/InactiveShape，分别覆盖原圆角；复用上述混合类型动画和 Surface 外部切角求值。保持 hover 历史、source 替换及 shape key 语义，不扩大到弹层和菜单项的形状 API，无破坏性迁移。
@@ -508,3 +508,59 @@ MaterialWindowInsetsPadding，Dialog 根消费清零，声明 owner 自身的 ad
 两行各自使用已有 AppliedInsets 并集；模板替换、换槽与卸载释放绑定恢复原继承链，不增加公共 API。
 该能力不迁移逻辑/视觉树、不更改布局尺寸，也不将某行已消费的垂直 Insets 传给另一行。
 无签名迁移；原先手工从子内容请求中扣除消费的调用方应改传完整 Insets。示例和双端证据由各组件文档维护。
+
+三种 DrawerSheet 后续同样复用已消费 Insets 的 scope/AppliedInsets/内容发布。固定两仓 NavigationDrawer.kt
+的 ModalNavigationDrawer 在原内容树中绘制 Sheet，不创建独立 Dialog，因此继承声明祖先消费；
+不能套用 ModalWideNavigationRail 的弹层清零。公开 WindowInsets 保持请求值，模板只应用剩余值。
+36 个双端用例及 66 个采样事实严格相等，覆盖三种 Sheet、RTL、嵌套与动态消费更新，详见组件 INTERNALS。
+
+## 39. 物理滚动共享参与与异步释放
+
+2026-11-09 本轮维护者明确授权必要共享能力、依赖职责调整与历史决定修订。§18 原先仅让 AppBar
+占用 SmoothScroll 的单个参与槽，因为依赖只提供同步 pre/post 与惯性完成通知；PullToRefresh 原先因此
+只开放显式策略。该理由成立，不能以 ScrollChanged 或 OnIdle 模拟上游可等待的 pre-fling。
+
+本轮将原 NuGet 12.0.0.1 对应的固定源码 `429c3c685a1e630337024c2500a9814b96fcc10c`
+导入 modules/SmoothScroll.Avalonia（保留 MIT 与原说明），本地补丁版本 12.0.0.2，项目和打包工作流迁移为
+ProjectReference。新增异步释放事务：先发送之前的位移快照，在 UI 调用消费者并等待消费速度，随后原惯性
+使用剩余量；合成线程不等待 Task。新输入、取消、重配与卸载废弃旧事务，忽略取消的迟到结果也不能启动旧惯性。
+原两参数 ConfigureVerticalScroll 签名保留；无消费者仍使用原路径。异常由 UI ScrollReleaseFailed 报告，
+无订阅者重新抛出，不能压缩成成功零消费。
+
+原事务只提供 pre-fling，足以支持 PullToRefresh，但不能完成固定 SheetDefaults 的正文释放后吸附。
+本轮继续依据维护者对基础能力和历史决定修订的明确授权，增加可选
+`postFling(consumed, available, cancellationToken)`。同一释放代次贯穿 pre、正文惯性、post；
+正文报告实际碰边或自然衰减终点的剩余速度，有序排空最后位移快照后才调用 UI，不能从 OnIdle 伪造零速度。
+Coordinator 由内向外调用 post，consumed 仅累计正文和更内层 post，不包含 pre 消费；全部完成后才启动
+参与者 idle/settling。新输入、取消、重配和卸载同样终止整个代次，迟到返回不能接管新输入。
+既有重载保留，无 post 消费者的原路径保留；BottomSheet 自动连接为首个实际消费者。
+FloatingToolbar 随后接入同一事务，在工具栏与正文最近共同视觉祖先处观察正文累计消费，
+以 post-fling 的可用速度调用原有吸附；不消费滚动位移，也不另造释放检测。
+
+主库内部 MaterialScrollCoordinator 统一管理一个物理视口的参与槽。各组件拥有自己的算法；按视觉祖先
+outer→inner 执行 pre，正文后 inner→outer 执行 post，向外传播正文与内层 post 的累计消费。
+范围与合成视觉输出仍只有一个 AppBar owner；PullToRefresh 只累计距离并经有序 UI 快照驱动状态。
+仅注册/移除目标参与者，保留其他参与者的动画与范围。没有新增公共通用 nested-scroll 框架。
+
+固定 PullToRefresh.kt 的 Float 像素距离、.5 倍率、张力、严格越阈值与释放顺序由显式和自动入口共享。
+Double 协议边界钳制浮点舍入造成的超额消费，整笔速度消费保留原 Double 值；不修改内部上游 Float 算法。
+组件操作捕获 owner/state/作用域代次，换源、卸载或同步刷新回调中替换内容后，旧异步结果不写入新会话。
+换 State 取消旧本地操作是生命周期适配；固定上游 update 只替换引用，因此保留累积距离，不额外 Snap 新 State。
+
+首个真实触摸双端用例证明原 SmoothScroll 会丢弃整笔首次越阈值位移。新增可选 VerticalTouchSlop，
+PullToRefreshBox 连接时贡献固定 Core 的 18 DIP，仅纵向 touch/pen 扣除 slop 后立即投递余量；断开恢复
+原属性来源。默认普通滚动行为不变。仅自动接入唯一纵向物理视口，逻辑/双轴/歧义视口不报告已连接。
+Core 默认普通滚轮不 dispatchPreFling，保留这一边界；原 SmoothScroll 的普通滚轮惯性仍是 §18 既有适配。
+真实拖动取消则不同：固定 Core processDragCancel 以零速度调用 onDragStopped。仅有异步释放消费者时，
+捕获丢失走同一零速度释放事务，使已拉出状态完成回弹/阈值请求；显式取消与卸载继续使旧事务失效。
+
+BottomSheet 的真实输入证明：视口跟随面板移动后，缓存旧局部坐标会丢失下一笔触摸位移。
+依据固定 Core HitPathTracker 的同空间坐标转换，模块保留根坐标，并在每次移动时将前后位置重投影到
+同一个当前局部空间；速度累计使用实际输入位移，缩放中心仍用当前局部坐标。1×/2× 密度与 slop 前移动有回归。
+固定 Core Desktop 采用 Lsq2，ACTION_UP 不入样本，距离最后 MOVE 超过 40ms 清空速度。
+模块原先只在 MOVE 检查停顿，UP 会复用旧速度；本轮为实际释放加同一 40ms 判定，删除重复速度缓存回退。
+16/40ms 保留速度、41/128ms 清零均由真实输入回归覆盖；没有重写原快速速度估计和正文惯性曲线。
+
+迁移：主库源码消费者不需改调用；显式 PullToRefreshScrollBehavior 保留，新自动用法见组件 README。
+直接依赖旧 SmoothScroll NuGet 的仓内工程已改项目引用；发布包仍以实际发布的模块版本为准，未执行发布。
+新增真实输入/共享视口/生命周期测试与双端触摸套件；结果与尚存差异由组件 INTERNALS 记录，不修改比较容差。

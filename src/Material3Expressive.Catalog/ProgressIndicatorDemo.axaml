@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:local="using:Material3Expressive.Catalog"
         x:Class="Material3Expressive.Catalog.ProgressIndicatorDemo"
         Title="Progress indicators" Width="560" Height="760">
   <ScrollViewer>
@@ -13,6 +14,13 @@
         <m3:CircularProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
         <m3:CircularWavyProgressIndicator Progress="{Binding #ProgressSlider.Value}" />
       </StackPanel>
+      <TextBlock Text="Reusable stop drawing" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <TextBlock Text="A composite stop after progress, and the same default marker in an independent drawing control."
+                 TextWrapping="Wrap" />
+      <m3:LinearProgressIndicator x:Name="ComposedStop" Height="20" StrokeCap="Square"
+                                  Progress="{Binding #ProgressSlider.Value}" />
+      <local:ProgressStopPreview x:Name="IndependentStop" Height="28" />
+      <Button Content="Reverse stop direction" Click="ReverseStopDirection" HorizontalAlignment="Left" />
       <TextBlock Text="Indeterminate" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:LinearProgressIndicator IsIndeterminate="True" />
       <m3:LinearWavyProgressIndicator IsIndeterminate="True" />

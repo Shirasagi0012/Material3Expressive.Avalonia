@@ -4,6 +4,21 @@
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
   <StackPanel Margin="24" Spacing="16">
     <TextBlock Text="Pull to refresh" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+    <TextBlock Text="自动下拉刷新：触摸或笔在列表顶部向下拖动，超过阈值后释放。刷新状态由应用控制，点击完成按钮收回指示器。" TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="完成自动刷新" Click="CompleteAutomaticRefresh" />
+      <CheckBox Content="允许下拉" IsChecked="{Binding #Automatic.RefreshEnabled, Mode=TwoWay}" />
+    </StackPanel>
+    <m3:PullToRefreshBox x:Name="Automatic" Height="240" RefreshRequested="AutomaticRefreshRequested">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+        <StackPanel Spacing="12" Margin="16">
+          <Border Height="100" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.PrimaryContainer}}" CornerRadius="16"><TextBlock Text="最近更新" Margin="20" /></Border>
+          <Border Height="100" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SecondaryContainer}}" CornerRadius="16"><TextBlock Text="收藏内容" Margin="20" /></Border>
+          <Border Height="100" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.TertiaryContainer}}" CornerRadius="16"><TextBlock Text="更多内容" Margin="20" /></Border>
+          <Border Height="100" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}" CornerRadius="16"><TextBlock Text="滚动后回到顶部再下拉" Margin="20" /></Border>
+        </StackPanel>
+      </ScrollViewer>
+    </m3:PullToRefreshBox>
     <TextBlock Text="拖动距离滑块观察箭头和形状变化。超过 1 是越过阈值；刷新、停止与快速反向均保留过渡。"
                TextWrapping="Wrap" />
     <Slider x:Name="Distance" Minimum="0" Maximum="3" Value="1" ValueChanged="DistanceChanged" />
@@ -33,7 +48,7 @@
         </Grid>
       </Border>
     </Grid>
-    <TextBlock Text="本页由宿主显式驱动距离和刷新状态。指示器本身不接管 ScrollViewer 的滚动与刷新请求。"
+    <TextBlock Text="上方自动容器接入真实滚动；下面的独立指示器由距离滑块驱动。指示器本身不接管 ScrollViewer。"
                TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
     <TextBlock Text="自定义弹簧与显式 nested-scroll 宿主" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
     <StackPanel Orientation="Horizontal" Spacing="8">

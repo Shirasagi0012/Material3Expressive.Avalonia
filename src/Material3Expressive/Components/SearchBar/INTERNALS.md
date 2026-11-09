@@ -76,7 +76,7 @@
 
 
 - **授权范围**：本次任务明确授权上游语义内新增组件及非破坏性组件 API；没有新增公共共享框架或改动既有共享决定。
-- **尚未实现**：任意 PopupProperties、移动端软键盘抑制及 IME Insets。独立弹层的内容槽不代表这些输入/平台协议已实现。
+- **尚未实现**：任意 PopupProperties 的 focusable、clippingEnabled、平台尺寸及输入穿透选项；移动端软键盘抑制及 IME Insets。平台关闭策略已按下节接入，独立弹层的内容槽不代表其余输入/平台协议已实现。
 - **未经验证**：触摸输入、复杂多弹层返回栈、屏幕阅读器遍历顺序及带间隙滑动的任意自定义 Keyframes 等规格；已双端验证的自定义规格为 tween、spring、snap 与独立内容淡入淡出。桌面单窗口 Escape、基本多容器顺序与 handled 事件有行为测试。
 - **共享适配**：动画尺寸沿用 ComposeAnimation 的 DIP/double 计算，Compose 的 IntSize 中间帧可能在像素取整上不同；不将检测到的视觉差异登记为新批准的近似。
 
@@ -121,6 +121,39 @@ Core -17.1870956 / Avalonia -39.8286819 DIP。该差异未获接受，不能在 
 **输入验证边界。** 主键夹具现在使用与 Compose 相同的逻辑毫秒。旧 Headless 鼠标入口使用墙钟，
 所以下文历史“直接拖动相等”不再代表当前结论。禁用策略行为测试明确暂停超过 40ms 后释放以隔离速度影响；
 立即释放的差异保留在上述真实双端用例中。夹具依据见 [VisualParity DECISIONS](../../../../tests/VisualParity/DECISIONS.md#主键指针时间与原生路由2026-11-05)。
+
+### 新版展开容器关闭策略（本轮授权）
+
+固定 AndroidX/Core `ExpandedDockedSearchBarImpl` 向真实 Popup 传递 `properties`，全屏实现向
+`BasicEdgeToEdgeDialog` 传递 DialogProperties。Core `BasicEdgeToEdgeDialog.skiko.kt` 保留
+`dismissOnBackPress` 和 `dismissOnClickOutside`，只固定平台宽度、Insets、scrim 和原生动画。
+本地原先无公开入口，总是收起；2026-11-09 按用户自主实现 API 的明确授权，为全部新版展开容器增加
+`DismissOnPointerOutside`，仅为全屏及 contained 增加 `DismissOnEscape`、`DismissOnBack`，复用既有 Dialog 属性身份与命名，
+不新建平台属性包装。Core 的 dismissOnBackPress 在桌面对应 Escape；Avalonia 还可收到独立
+TopLevel.BackRequested，故沿已有 Dialog 适配分别配置。宿主 Back 仅由行为测试验证，不声称桌面 Core 有对应设备事件。
+停靠和间隙的 `DockedSearchBarLayoutImpl` 还有独立 `BackHandler(enabled=state.isExpanded)`，
+会先于 Popup 的返回处理器关闭，因此即使 PopupProperties 禁用返回仍会收起。这一事实由初版双端运行发现后核对固定源码，
+本地保留独立返回行为，不为这两种容器增加无法对应上游行为的 Escape/Back 开关；首版失败产物保留。
+
+SearchBarPopupPresenter 继续拥有模态输入、焦点和关闭时点，组件在收到原因后读取当前策略；
+关闭入口仍启动 presentation lifetime 内的原动画，状态阈值与取消不变。禁用关闭不改变模态输入隔离，
+不清焦、不回传外部点击，也不阻止应用直接收起。属性不必重建模板或弹层，State/模板更换及重挂仍由原生命周期清理。
+
+有色 gap scrim 是固定 SearchBar.kt 内部 `clickable(onClick=onDismiss)`，与 Popup 边界外点击不同，
+因此拆出内部 ScrimInvoked 事件，始终在真实 click 后请求收起。无罩外部区域继续在 PointerPressed 请求，
+只该路径服从 DismissOnPointerOutside。不能用属性关闭内部 scrim 来推断等价支持 PopupProperties。
+本次没有删除或改名 API；README/Catalog 提供关闭策略及显式返回用法。
+
+`SearchDismissalPolicyTests` 覆盖两种全屏变体的 Escape/Back 独立策略、运行中切换、停靠/间隙的无罩与有罩点击、
+下层输入隔离、模板/State/重挂。独立双端 `search-dismissal-policy` 复用真实四种组件和既有几何输入，
+逐帧比较禁止、允许及运行中启用关闭后的状态、弹层生命周期与图像，不把属性值本身当行为证据。
+
+本轮验证：新行为测试 8 项及既有相关回归共 52/52 通过，Release Parity/Catalog 与固定依赖严格校验参考端构建通过。
+`search-dismissal-policy-final` 为 21 例、211 个采样、零执行错误：13 例 equal，8 例仍有间隙结果槽的退出几何差异；
+全部状态属性严格相等。211 张双端图像中 190 张逐像素相等、21 张在既定容差内，无图像超差。
+已检查实际全屏收起与 gap 遮罩波纹图像；隐藏结果子节点仍存在上文已记录的中间帧位移差异（例如 64ms 的 2.5 DIP），未补偿。
+20 例重复及额外截图稳定；`outside.gap-scrim.enable-later` 的 Core 额外被动截图在 retry-release、80ms、128ms 变化，
+Core 重复采集与 Avalonia 两项自检均稳定。首版 `search-dismissal-policy` 保留错误门控停靠返回的证据，不修改容差、采样或参考组件。
 
 ## 4. 验证入口
 

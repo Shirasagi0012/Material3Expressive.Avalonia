@@ -7,6 +7,8 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
 两端 ListItem.kt、ListItemDefaults.kt、tokens/ListTokens.kt、tokens/ReorderListTokens.kt 在这些版本相同。
 入口位于 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`，仅新 ListItem / SegmentedListItem 的四类重载属于本轮范围。
 桌面输入依据 Core foundation/Clickable.kt 的 CombinedClickableNode，长按时间来自平台 ViewConfiguration（500ms）。
+具名辅助技术动作另核对 Core `ui/ui/src/desktopMain/kotlin/androidx/compose/ui/platform/a11y/ComposeAccessible.kt` 的
+`updateAccessibleActions`：OnLongClick 只有 label 非 null 时进入桌面动作表。
 
 | 上游职责 | 本地位置 |
 | --- | --- |
@@ -39,6 +41,12 @@ RTL 由模板布局镜像；CornerRadius 是物理角，默认六状态及分组
 禁用时原生 press/focus/hover 发出取消/结束事件，外部源的拖拽不会被整行 enabled 改变误删。
 combinedClickable 在 composition 中取消输入，形状及状态层按上游的后续帧顺序响应。
 
+`ListItemPeer` 在真实内容的 automation 子节点后追加缓存的长按 ActionPeer，保留原有 Invoke / Toggle / SelectionItem。
+动作出现条件是已挂载、交互模式、非 null 的 LongClickLabel，且事件或命令至少有一项。空字符串保留上游非 null 判定。
+调用直接复用长按回调，不启动计时器、生成 Press、获取焦点或自动改变选择值。
+事件增删、名称/命令/参数、模式、有效禁用及挂载变化更新动作树；命令 CanExecuteChanged 订阅随挂载/替换释放。
+旧 peer 引用每次调用重新核验，不会绕过禁用、已移除回调或卸载；可用事件独立于命令的 CanExecute。
+
 MaterialInteractionSource 以开始事件对象身份配对，状态层读取最后存活的非 press 交互，形状读取聚合 flags。
 输入控制器处理取消与嵌套按钮所有权；ListItem 负责长按普通时间延时、选择回调和 Enter 的释放激活。
 Core CombinedClickable 不在鼠标按下时请求行焦点，故仅取消行本身的 Pointer focus 请求，保留键盘和子控件焦点。
@@ -61,7 +69,12 @@ AnimatedShape 在重定向时将 progress 重设为 0，轮廓可能暂时不动
 - 两控件和显式 InteractionMode；受控 IsSelected / IsChecked；多选以 CheckedChangeRequested 回传，外部容器提供分组间距。
 - IsInteractionEnabled 对应上游 enabled，IsEnabled 保留 Avalonia 子树禁用语义。
 - 原先只确认 CornerRadius 六状态形变；任意 Shape 延期的原因是缺少共享路径/裁剪能力。2026-11-08 本轮维护者授权修订该边界，现复用共享 Surface 和 AnimatedCornerRadius，增加六个可选 MaterialShape 属性，每个状态独立覆盖圆角。原有 Shapes / 分组默认和调用方不需要迁移。
-- LongClickLabel 映射 HelpText；辅助技术直接动作使用槽内同命令按钮。Avalonia 12.1.2 没有第二个 Invoke 动作入口。
+- 原先只把 LongClickLabel 映射 HelpText，并要求使用槽内同命令按钮，因为 Avalonia 没有第二个具名 Invoke 槽。
+  本轮维护者明确授权缺失交互与历史决定修订；现采用已有 BottomSheet 的虚拟动作节点适配方式，补齐桌面具名长按。
+  HelpText 保留，现有属性、事件和命令无迁移；原来额外组合的同命令按钮可继续保留，也可由调用方移除。
+  平台差异：UIA 将长按表示为无布局/Tab 停靠点的子按钮；Core 在同一 AccessibleAction 表中追加动作。
+  禁用的 UIA 动作保留节点但不执行，沿用本地列表原生自动化规则；固定 Core 原始 semantics lambda 在 disabled 时仍可执行。
+  双端记录这一差异，不以读取 disabled 后跳过 Core 调用伪造相等。
 - supporting 多行只自动识别普通文本；复杂模板合并首末基线的限制保留，本轮不新增显式行数属性。
 
 配对交互源、继承最小交互尺寸和内部关闭 tonal 着色的共享决定见 [DECISIONS](../../../../docs/DECISIONS.md)。
@@ -74,18 +87,30 @@ Surface 的内部外部角值入口现也支持切角；ListItem 自己维护 ri
 模板替换清除旧 Surface 轮廓，最终 Bounds 发布后再次解析百分比，避免子布局仍读到上一轮容器尺寸。
 
 未经验证的范围包括真实桌面辅助技术与字体栅格。焦点环边缘保留已观测到的栅格差异，精确像素及容差内结果分别报告。
+长按回调把 Click 切换为 MultipleSelection 并同时选中时，固定 Core 在新的重载调用点重新建立颜色状态，
+本地同一控件保留颜色过渡；新双端在 16/64ms 观察到颜色不同、160ms 后相等。此模式切换差异尚未对齐，
+不属于上述具名动作的 UIA 适配决定；动作、回调与最终选择状态均相同。
 
 ## 4. 验证入口
 
 - `ListItemTests` 和 `Fixtures/ListItem.axaml` 覆盖五槽、受控选择、长按、嵌套按钮、分组、尺寸环境及生命周期。
+- `ListItemLongClickAutomationTests` 覆盖具名动作、三种交互模式、受控选择、禁用、事件/标签/命令替换、旧 peer、嵌套按钮和卸载订阅。
+- 双端 `ListItemLongClickCases.cs/.kt` 的 `list-item-long-click` 直接调用两端 automation / semantics，检查实际动作表、名称、回调计数、模式切换动画及禁用差异。
 - `InsetFocusRingTests` 覆盖普通和分段项的模式切换、波纹保留、形变、重挂和主题首帧。
 - 双端 `ListItemCases` 的族名为 `list-item`，`FocusRingCases` 包含 `focus-ring.dynamic.list-item.*` 与 `segmented-list-item.*`。
 
 ```powershell
-dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~ListItemTests|FullyQualifiedName~InsetFocusRingTests'
+dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --filter 'FullyQualifiedName~ListItemTests|FullyQualifiedName~ListItemLongClickAutomationTests|FullyQualifiedName~InsetFocusRingTests'
 ./tests/VisualParity/parity.ps1 self-test --family list-item
+./tests/VisualParity/parity.ps1 self-test --family list-item-long-click
 ./tests/VisualParity/parity.ps1 self-test --family focus-ring
 ```
+
+具名长按验证产物：`artifacts/visual-parity/runs/list-item-long-click-actions/summary.md`。
+22 例零执行错误，重复捕获与额外截图全部稳定；14 equal、8 different。
+其中 6 个禁用动作场景只有实际回调计数不同（Core 1、本地 0），图像逐像素相同，属于上节明确的禁用 provider 适配；
+另 2 个模式切换场景的 16/64ms 图像颜色差异仍保留，已检查实际双端原图。所有动作存在性、名称、禁用及选择读数相等。
+相关新旧行为测试 34/34 通过，Catalog 构建成功；这些检查不覆盖真实系统屏幕阅读器。
 
 本轮 `list-item-paths-final` 双端 self-test 完成 137 例，122 equal、15 withinTolerance、0 different、
 执行错误 0；新增 66 例路径状态/动画场景全部匹配且重复稳定。全部 137 例中已有 `dynamic.key-long`

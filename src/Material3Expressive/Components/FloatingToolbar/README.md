@@ -133,13 +133,17 @@ toolbar.ScrollBehavior = behavior;
 toolbar.ScrollSource = scrollViewer;
 ```
 
-ScrollSource 观察实际已消费 OffsetDelta，不额外消费输入。公开状态 `FloatingToolbarState` 中
+`ScrollSource` 指向同一窗口中启用 Material 物理滚动的纵向 `ScrollViewer` 时，自动连接实际消费位移及释放后的吸附。
+滚动容器应设置 `HorizontalScrollBarVisibility="Disabled"`；`IsScrollConnected` 报告自动连接是否生效。
+连接不额外消费输入，正文滚动结束后，工具栏会继续处理剩余速度并吸附到展开或退出位置。
+程序化设置正文 `Offset` 不伪造用户滚动；四个退出方向都使用正文的纵向消费。公开状态 `FloatingToolbarState` 中
 OffsetLimit、Offset、ContentOffset 的单位是 DIP，速度是 DIP/s，向上为负。
 一个 behavior 只能连接一个可见工具栏；切换或卸载时会清理旧 settling 和订阅。
 
-当前自动接入没有原生 nested-scroll 剩余 fling velocity 回调；自定义宿主如需结束后的 settling，
-应在已挂载工具栏上调用 `await behavior.OnPostFlingAsync(remainingVelocity)`，没有剩余速度可传 0。
+逻辑滚动、双轴或其他原生模板保留原来的 `OffsetDelta` 观察，不提供自动释放吸附；此时 `IsScrollConnected=False`。
+自定义宿主在已挂载工具栏上调用 `await behavior.OnPostFlingAsync(remainingVelocity)`，没有剩余速度可传 0。
 手动输入距离时用 OnPostScroll，避免与 ScrollSource 对同一距离重复报告。
+新内容拖动、替换来源或行为、启用触摸探索及卸载会取消旧吸附。默认普通滚轮沿用平台策略，不额外制造触摸释放。
 
 只想根据阈值改变 Expanded 时，可使用独立展开辅助订阅：
 

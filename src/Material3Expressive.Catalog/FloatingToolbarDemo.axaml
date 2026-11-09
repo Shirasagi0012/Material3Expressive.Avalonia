@@ -51,8 +51,8 @@
       </m3:VerticalFloatingToolbar>
     </Grid>
     <Grid Height="160" ClipToBounds="True">
-      <ScrollViewer x:Name="ScrollContent"><StackPanel Spacing="16">
-        <TextBlock Text="Scroll to hide the toolbar" />
+      <ScrollViewer x:Name="ScrollContent" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden"><StackPanel Spacing="16">
+        <TextBlock Text="Drag to hide the toolbar; release to snap it into place" TextWrapping="Wrap" />
         <Border Height="600" Background="#EADDFF" />
       </StackPanel></ScrollViewer>
       <m3:HorizontalFloatingToolbar x:Name="ScrollingToolbar" VerticalAlignment="Bottom" Margin="16" ScrollSource="{Binding #ScrollContent}">

@@ -64,6 +64,8 @@ public partial class PullToRefreshDemo : Window
         catch (OperationCanceledException) { } // Refresh state can supersede release settling.
     }
     private void CompleteRefresh(object? sender, RoutedEventArgs e) => Gesture.IsRefreshing = false;
+    private void AutomaticRefreshRequested(object? sender, EventArgs e) => Automatic.IsRefreshing = true;
+    private void CompleteAutomaticRefresh(object? sender, RoutedEventArgs e) => Automatic.IsRefreshing = false;
     private async void PreviewBounce(object? sender, RoutedEventArgs e)
     {
         try

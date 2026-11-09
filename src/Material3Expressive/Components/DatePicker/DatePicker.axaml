@@ -1,6 +1,29 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
     <Styles.Resources>
+        <ControlTheme x:Key="{x:Type m3:DatePickerTitle}" TargetType="m3:DatePickerTitle">
+            <Setter Property="Text" Value="{Binding LocalizedTitle, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextColor}}" />
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:DatePickerHeadline}" TargetType="m3:DatePickerHeadline">
+            <Setter Property="Text" Value="{Binding HeadlineText, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="MaxLines" Value="1" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineColor}}" />
+        </ControlTheme>
+        <ControlTheme x:Key="{x:Type m3:DateRangePickerHeadline}" TargetType="m3:DateRangePickerHeadline">
+            <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderHeadlineColor}}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <m3:DateRangeHeadlinePanel>
+                        <TextBlock Name="PART_Start" Text="{TemplateBinding StartText}" TextWrapping="Wrap" />
+                        <TextBlock Name="PART_Delimiter" Text="-" TextWrapping="Wrap" />
+                        <TextBlock Name="PART_End" Text="{TemplateBinding EndText}" TextWrapping="Wrap" />
+                    </m3:DateRangeHeadlinePanel>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
         <ControlTheme x:Key="MaterialDateDayTheme" TargetType="Button">
             <Setter Property="m3:MaterialInteraction.IsInteractive" Value="True" />
             <Setter Property="Background" Value="Transparent" />

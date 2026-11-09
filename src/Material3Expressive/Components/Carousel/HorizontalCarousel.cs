@@ -56,6 +56,27 @@ public partial class HorizontalCarousel : ItemsControl
     private AnimationChildScope? _animationScope;
     private CancellationTokenSource? _scrollCancellation;
     private readonly CarouselScrollPosition _scrollPosition = new();
+    private CarouselPosition? _pendingPosition;
+
+    /// <summary>Captures the current logical item and its offset fraction, independently of viewport size.</summary>
+    public CarouselPosition CapturePosition() => _pendingPosition ?? new(CurrentItem, (float)CurrentItemOffsetFraction);
+
+    /// <summary>Restores a logical position at the next valid layout. May be called before mounting or
+    /// before items arrive. A nonempty collection clamps the index to its current size.</summary>
+    public void RestorePosition(CarouselPosition position)
+    {
+        VerifyAccess();
+        CancelPointer(false);
+        CancelScroll();
+        _pendingPosition = position;
+        _panel?.InvalidateMeasure();
+    }
+
+    internal bool TryTakeRestoredPosition(out CarouselPosition position)
+    {
+        if (_pendingPosition is not { } pending) { position = default; return false; }
+        position = pending; _pendingPosition = null; return true;
+    }
 
     protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey) => new CarouselItem();
     protected override bool NeedsContainerOverride(object? item, int index, out object? recycleKey) => NeedsContainer<CarouselItem>(item, out recycleKey);
@@ -81,7 +102,7 @@ public partial class HorizontalCarousel : ItemsControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ScrollOffsetProperty) _panel?.InvalidateArrange();
+        if (change.Property == ScrollOffsetProperty) { _pendingPosition = null; _panel?.InvalidateArrange(); }
         else if (change.Property == VariantProperty || change.Property == ItemWidthProperty || change.Property == ItemSpacingProperty ||
             change.Property == MinSmallItemWidthProperty || change.Property == MaxSmallItemWidthProperty ||
             change.Property == ContentPaddingProperty || change.Property == FlowDirectionProperty)
@@ -103,6 +124,7 @@ public partial class HorizontalCarousel : ItemsControl
         VerifyAccess();
         CancelPointer(false);
         CancelScroll();
+        _pendingPosition = null;
         var panel = RequirePanel();
         SetCurrentValue(ScrollOffsetProperty, panel.OffsetForItem(index));
     }
@@ -118,6 +140,7 @@ public partial class HorizontalCarousel : ItemsControl
         var panel = RequirePanel();
         CancelPointer(false);
         CancelScroll();
+        _pendingPosition = null;
         index = Math.Clamp(index, 0, Math.Max(0, ItemCount - 1));
         if (panel.PreJumpPosition(index, ScrollOffset) is { } preJump)
         {
@@ -199,6 +222,7 @@ public partial class HorizontalCarousel : ItemsControl
         cancellationToken.ThrowIfCancellationRequested();
         var panel = RequirePanel();
         CancelScroll();
+        _pendingPosition = null;
         var density = (float)(TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
         _scrollPosition.Rebase(Math.Clamp(ScrollOffset, 0, MaximumScrollOffset), density);
         var mode = FlingMode == CarouselFlingMode.Default
@@ -237,6 +261,22 @@ public partial class HorizontalCarousel : ItemsControl
             }
         }
     }
+}
+
+/// <summary>A carousel's logical position. Persist this value with the page's application state;
+/// the receiving carousel supplies the current collection and layout.</summary>
+public readonly record struct CarouselPosition
+{
+    [System.Text.Json.Serialization.JsonConstructor]
+    public CarouselPosition(int item, float offsetFraction = 0)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(item);
+        if (!float.IsFinite(offsetFraction) || offsetFraction is < -.5f or > .5f)
+            throw new ArgumentOutOfRangeException(nameof(offsetFraction), "The item offset fraction must be between -0.5 and 0.5.");
+        Item = item; OffsetFraction = offsetFraction;
+    }
+    public int Item { get; }
+    public float OffsetFraction { get; }
 }
 
 /// <summary>Current keyline mask, in DIP. The item's content retains its full layout size.</summary>

@@ -59,6 +59,7 @@ internal sealed class SearchBarPopupPresenter : ModalPresenter
     private SearchBarPopupPositioner? _positioner;
     private IDisposable? _scrimBackground;
     internal event EventHandler? OutsidePressed;
+    internal event EventHandler? ScrimInvoked;
     protected override bool BypassFlowDirectionPolicies => true;
     public SearchBarPopupPresenter()
     {
@@ -83,7 +84,7 @@ internal sealed class SearchBarPopupPresenter : ModalPresenter
     }
     private void ScrimClicked(object? sender, RoutedEventArgs e)
     {
-        if (ReferenceEquals(e.Source, _scrimButton)) OutsidePressed?.Invoke(this, EventArgs.Empty);
+        if (ReferenceEquals(e.Source, _scrimButton)) ScrimInvoked?.Invoke(this, EventArgs.Empty);
     }
     internal void SetScrim(Color color, float progress)
     {

@@ -4,7 +4,9 @@
 
 固定基线见 [upstream-baseline.json](../../../../docs/upstream-baseline.json)，AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。
 Material3 路径为 `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`，两端 `Menu.kt` 内容一致。桌面弹层行为另取 Core 的 `Popup.skiko.kt`、`SkikoMenu.skiko.kt`。
-原生适配以 Avalonia 12.1.2 的 Popup、MenuFlyoutPresenter、MenuItem 和焦点实现为依据。
+早期原生适配以 Avalonia 12.1.2 的 Popup、MenuFlyoutPresenter、MenuItem 和焦点实现为依据。
+本轮顶级 MaterialMenuFlyout 开闭适配已按实际依赖 Avalonia 12.1.5 的源码提交
+`5825bf8c66fba0c11e67c980d8ece6444576bffa` 核对 PopupFlyoutBase、MenuFlyout、MenuFlyoutPresenter 与 Popup。
 
 | 上游符号 / 职责 | 本地类型 / 成员 |
 | --- | --- |
@@ -15,6 +17,7 @@ Material3 路径为 `compose/material3/material3/src/commonMain/kotlin/androidx/
 | baseline / expressive item content | 独立项目两套主题、`DropdownMenuItemLayout`、`MenuArrangement` |
 | checkable / selectable item、leading AnimatedVisibility | 受控项目子类与 `DropdownMenuLeadingIcon` |
 | 原生菜单的表面及项目 | `Menu.axaml`、`MenuItemChrome`、`MenuThemeProperties` |
+| 固定 Menu.kt appearance + 原生弹层生命周期 | `MaterialMenuFlyout`、私有 MotionPresenter、NativeMenuMotion 主题输入 |
 | MenuDefaults 与 Menu / Standard / Vibrant / Segmented Token | `MenuTokenSource`、`Comp.Menu` 与主题绑定 |
 | `MenuDefaults.DropdownMenuGroupLabel` / `DropdownMenuItemTrailingLabel` | 两个同名 ContentControl、`DropdownMenuLabels.cs` 与主题 |
 
@@ -120,7 +123,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
 - 菜单栏的公开 `MaterialMenuBarItemTheme` 名称仍待维护者确认，可选容器式菜单栏也处于未实现提议阶段。
-- 独立容器、分组、专用菜单项已接入任意 Shape / CutCornerShape（见下文），原生 MenuItem 的 Expressive 主题现已接入（见下文）。横向 Arrangement 已接入独立 Expressive 项（见下文）；系统平台 inset 与预测返回仍未实现。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
+- 独立容器、分组、专用菜单项已接入任意 Shape / CutCornerShape（见下文），原生 MenuItem 的 Expressive 主题现已接入（见下文）。横向 Arrangement 已接入独立 Expressive 项（见下文）；系统平台 inset 与预测返回仍未实现。MaterialMenuFlyout 已接入顶级开闭动画（见下文）；原生子菜单动效、独立分组与组形变仍未实现。
 - `menu-source` 的部分 Core 重复及额外截图存在最大单通道 1 的不稳定像素，稳定性门禁保留失败。原生无阴影外观与上游仍有已接受差异，历史暗色圆角边缘结果不能作为当前 Surface 裁剪的隔离证据。
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
@@ -272,3 +275,34 @@ EnsureIsolatedApplication 初始化阶段遇到 Dispatcher 线程访问异常，
 同批复核的另一个既有 outgoing-label 用例遇到相同初始化异常，单独运行两种参数均通过。
 这保留为测试环境不稳定记录，不能把多次运行拼成一次完整全绿；新菜单行为测试实际通过。
 原始 TRX 保留在 tests/Material3Expressive.Tests/TestResults/porting-20261109-*.trx。
+
+## 原生顶级弹层开闭动画（2026-11-09 本轮授权）
+
+此前原生菜单保留 Avalonia 的立即关闭，理由是原生选择、命令、焦点、定位和生命周期必须继续由框架管理；
+仅修改 Presenter 的进入样式无法延迟关闭或支持退出中重开。此理由仍有效，本轮维护者明确授权新增组件/API
+及必要框架适配，新增派生 `MaterialMenuFlyout`，普通 `MenuFlyout` 行为不变。Catalog 的三种原生示例已迁移。
+业务项目与调用方式兼容；需要动画的调用方将 `MenuFlyout` 类型替换为 `MaterialMenuFlyout`，不改 MenuItem。
+
+12.1.5 的 `PopupFlyoutBase.HideCore` 可覆写，底层 Popup 的 Closing 是 internal；公开 flyout Closing 的取消
+会让 IsOpenChanged 恢复 true。因此不能用公开 Closing 附加一个异步处理器表达关闭目标。
+派生类用 IsOpen 保存目标、IsPresented 保存实际弹层生命周期；覆写 ShowAtCore / HideCore，退出完成再调用
+base.HideCore(false)。原生 MenuFlyoutPresenter.Close 直接写 Popup.IsOpen=false，私有派生 Presenter 仅将
+该关闭请求转给 owner.Hide，仍清除原生 SelectedIndex。Popup light-dismiss 经 OnClosing 延后实际拆卸，
+不替换原生菜单的输入处理器、命令、勾选、互斥、主题、ItemsSource 或自动化树。
+
+动画直接复用 ComposeAnimation Transition：scale .8→1 使用 Comp.Menu.ShapeAnimation（FastSpatial），
+alpha 0→1 使用 ColorAnimation（FastEffects），默认可见阈值均为 .01；alpha 小于 1 时裁剪至层边界。
+主题将这两个既有 Token 写入 Presenter 的内部附加输入，未创建新动画框架。实际原生 Popup 的屏幕矩形与
+锚点矩形交给既有 CalculateTransformOrigin，RTL 将物理 pivot 转为镜像子树坐标；定位候选仍由原生框架决定。
+同一锚点退出重开保留 Transition 当前值/速度。换锚点或锚点卸载释放旧作用域与原生弹层；换锚点新建进入状态。
+
+固定 Menu.kt 外层 MutableTransitionState 与内部 Transition 生命周期分离：进入尚未提交 CurrentState 时关闭，
+先移除内部 Transition，onDisposed 提交前一目标，再于下一帧重建退出。本地保留这一状态顺序和内容可见性；
+为保住原生焦点与关闭订阅，这一帧仅隐藏 Presenter，底层原生 Popup 壳不拆卸。这是本轮明确采用的框架生命周期适配。
+Closing 在请求退出时触发且可取消；Closed 在最终拆卸触发。反向时 Opening 再次触发，Opened 不重复报告尚未拆卸的 Popup。
+平台阴影关闭的原理由与既有决定保持不变。子菜单开闭动画、组级形变、真实桌面 PopupRoot 后端及 DPI 切换未由此单元补齐。
+
+NativeMenuMotionTests 使用真实 overlay Popup、手动帧时钟及原生输入检查 Baseline/Vertical、退出反向、命令、
+Escape、外部点击、取消关闭、原生勾选、换锚点与卸载。双端 native-menu-motion 对应固定 Core 的真实
+DropdownMenu / DropdownMenuPopup，采集实际层 alpha/scale、内容几何及输入结果；并覆盖 RTL 与窗口边缘。
+构建、执行结果和差异检查待本轮运行后补录，不能将本节实现说明视为一致性结论。

@@ -36,6 +36,46 @@
       </Style>
     </ControlTheme>
 
+    <ControlTheme x:Key="{x:Type m3:AppBarOverflowIndicator}" TargetType="m3:AppBarOverflowIndicator">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:TooltipBox AnchorPosition="Above">
+            <m3:TooltipBox.Tooltip>
+              <m3:PlainTooltip Content="{TemplateBinding Description}" AutomationProperties.Name="{TemplateBinding Description}" />
+            </m3:TooltipBox.Tooltip>
+            <m3:IconButton x:Name="PART_Button" Theme="{StaticResource MaterialStandardIconButtonTheme}"
+                           IsEnabled="{TemplateBinding IsEnabled}"
+                           Width="{TemplateBinding Width}" Height="{TemplateBinding Height}"
+                           MinWidth="{TemplateBinding MinWidth}" MinHeight="{TemplateBinding MinHeight}"
+                           m3:MaterialButton.Shape="{TemplateBinding Shape}"
+                           InteractionSource="{TemplateBinding InteractionSource}"
+                           AutomationProperties.Name="{TemplateBinding Description}">
+              <m3:IconButton.Background>
+                <MultiBinding Converter="{x:Static m3:AppBarOverflowIndicatorTheme.ContainerBrushConverter}" Priority="Template">
+                  <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="ContainerColor" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="DisabledContainerColor" RelativeSource="{RelativeSource TemplatedParent}" />
+                </MultiBinding>
+              </m3:IconButton.Background>
+              <m3:IconButton.Foreground>
+                <MultiBinding Converter="{x:Static m3:AppBarOverflowIndicatorTheme.ContentBrushConverter}" Priority="Template">
+                  <Binding Path="IsEffectivelyEnabled" RelativeSource="{RelativeSource Self}" />
+                  <Binding Path="ContentColor" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="DisabledContentColor" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <m3:Token Key="{x:Static m3:MaterialTokens+Sys+State.DisabledContentOpacity}" />
+                </MultiBinding>
+              </m3:IconButton.Foreground>
+              <Canvas Width="24" Height="24" IsHitTestVisible="False">
+                <Path Data="{x:Static m3:AppBarOverflowIndicatorTheme.MoreVert}" Fill="{Binding Foreground, ElementName=PART_Button}" />
+              </Canvas>
+            </m3:IconButton>
+          </m3:TooltipBox>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
     <ControlTheme x:Key="{x:Type m3:AppBarRow}" TargetType="m3:AppBarRow">
       <!-- Compose permits the reserved indicator to extend past a smaller bar constraint. -->
       <Setter Property="ClipToBounds" Value="False" />
@@ -44,10 +84,7 @@
       <Setter Property="ItemsPanel"><ItemsPanelTemplate><m3:AppBarItemsPanel /></ItemsPanelTemplate></Setter>
       <Setter Property="OverflowIndicatorTemplate">
         <DataTemplate>
-          <m3:TooltipBox AnchorPosition="Above">
-            <m3:TooltipBox.Tooltip><m3:PlainTooltip Content="More options" /></m3:TooltipBox.Tooltip>
-            <m3:AppBarOverflowButton Symbol="MoreVert" Theme="{StaticResource AppBarIconTheme}" AutomationProperties.Name="More options" />
-          </m3:TooltipBox>
+          <m3:AppBarOverflowIndicator MenuState="{Binding}" />
         </DataTemplate>
       </Setter>
       <Setter Property="Template">

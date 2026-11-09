@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using ComposeAnimation;
@@ -8,7 +9,8 @@ namespace Material3Expressive.Catalog;
 
 public partial class BottomSheetDemo : Window
 {
-    public BottomSheetDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
+    public string[] Destinations { get; } = Enumerable.Range(1, 18).Select(index => $"Destination {index}").ToArray();
+    public BottomSheetDemo() { AnimationScope.Initialize(this); InitializeComponent(); DataContext = this; }
     private async void OnShow(object? sender, RoutedEventArgs e) => await Run(Sheet.State.ShowAsync());
     private async void OnExpand(object? sender, RoutedEventArgs e) => await Run(Sheet.State.ExpandAsync());
     private async void OnPartial(object? sender, RoutedEventArgs e) => await Run(Sheet.State.PartialExpandAsync());

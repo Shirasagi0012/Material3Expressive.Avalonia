@@ -7,9 +7,10 @@
 
 [ScrollViewer.axaml](ScrollViewer.axaml) 保留原生 owner，`PART_ContentPresenter` 使用
 `SmoothScroll.Avalonia.Controls.ScrollViewerPresenter`；原生 API 合约对应项目固定 Avalonia
-12.1.2。SmoothScroll 当前通过 `Shirasagi0012.SmoothScroll.Avalonia` 包引用，准确版本见
-[中央版本](../../../../Directory.Packages.props)及[项目引用](../../Material3Expressive.csproj)，
-不能再按旧文档要求子模块 ProjectReference。依赖准备只维护在[公共接入](../../../../docs/GETTING_STARTED.md)。
+12.1.5。SmoothScroll 原 NuGet 12.0.0.1 缺少异步释放事务；2026-11-09 本轮明确授权下，
+从该制品 nuspec 的固定源码提交导入 [仓内模块](../../../../modules/SmoothScroll.Avalonia/README.md)，
+通过 ProjectReference 使用本地补丁 12.0.0.2。固定来源、许可证及新增协议保留在模块目录，
+不回到旧子模块浮动 HEAD。依赖准备只维护在[公共接入](../../../../docs/GETTING_STARTED.md)。
 
 模板必须保留 `PART_HorizontalScrollBar` / `PART_VerticalScrollBar`，让 Avalonia 接入 range、value、
 paging、visibility、AllowAutoHide 和 deferred drag。Grid 的 Auto 行列预留可见滚动条厚度；
@@ -20,7 +21,8 @@ owner 的 Content/Template、Padding、背景、内容对齐、Offset、chaining
 ## 输入与合成接入
 
 普通指针、直接滚轮与惯性逐帧位移共用 SmoothScroll tracker 增量消费入口；
-AppBar 可作为纵向 pre/post 参与者，没有参与者时 pre/post 消费为零，横纵位移一起提交。
+AppBar 与 PullToRefresh 通过内部 MaterialScrollCoordinator 共用纵向参与槽，按实际祖先顺序
+执行 pre、正文、反序 post；没有参与者时 pre/post 消费为零，横纵位移一起提交。
 正文、程序化定位动画和几何校正使用有效范围。普通 touch/pen 保留弹性回弹，AppBar 主正文
 按现有夹取规则处理；直接 Offset、BringIntoView 和程序化定位动画不经过 pre/post。
 
@@ -29,6 +31,11 @@ AppBar 可作为纵向 pre/post 参与者，没有参与者时 pre/post 消费�
 屏幕组合及共享职责的确认依据见[普通物理滚动与 AppBar 的合成接入](../../../../docs/DECISIONS.md#普通物理滚动与-appbar-的合成接入)，
 不要把这项决定扩展成修改原生所有滚动事件、布局坐标或程序化定位语义的许可。
 [AppBar 维护说明](../AppBar/INTERNALS.md)保留组件相关消费顺序、嵌套注册与验证入口。
+
+PullToRefreshBox 连接时临时贡献 `VerticalTouchSlop=18 DIP`，仅垂直 touch/pen 使用固定 Core 的
+阈值识别与首次余量投递；释放或换视口后恢复原属性来源。普通滚动器保留原生阈值策略。
+异步释放仅在有消费者时启用：先传递最新位移，再等待 UI pre-fling，返回剩余速度；合成线程不阻塞。
+普通滚轮沿用原路径，不能用 idle 推断刷新释放。具体语义与未覆盖范围见 PullToRefresh INTERNALS。
 
 ## 验证与边界
 

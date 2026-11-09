@@ -65,19 +65,6 @@ public sealed class AppBarMenuState : AvaloniaObject
     public void Dismiss() => SetAndRaise(IsShowingProperty, ref _isShowing, false);
 }
 
-internal sealed class AppBarOverflowButton : IconButton
-{
-    protected override Type StyleKeyOverride => typeof(IconButton);
-    protected override void OnClick()
-    {
-        if (DataContext is AppBarMenuState state)
-        {
-            if (state.IsShowing) state.Dismiss(); else state.Show();
-        }
-        base.OnClick();
-    }
-}
-
 // The wrapper is hidden when unplaced, but its content remains measurable, just like an
 // unplaced Compose measurable. Visibility belongs to the wrapper, never to caller content.
 internal sealed class AppBarSlot : ContentPresenter

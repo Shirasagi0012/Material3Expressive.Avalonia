@@ -40,13 +40,14 @@
                 </TextBox.InnerRightContent>
             </TextBox>
         </m3:ExposedDropdownMenuBox>
-        <TextBlock Text="MenuFlyout" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock Text="MaterialMenuFlyout · animated native menus" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
+        <TextBlock Text="Native commands, check states and keyboard navigation; the top-level popup animates on open and close." TextWrapping="Wrap" />
         <TextBlock Text="Vertical Standard / Vertical Vibrant / Baseline" TextWrapping="Wrap" />
         <CheckBox x:Name="NativePrecision" Content="Precision sizing for native menus" />
         <StackPanel Orientation="Horizontal" Spacing="16">
             <Button Content="Standard">
                 <Button.Flyout>
-                    <MenuFlyout>
+                    <m3:MaterialMenuFlyout>
                         <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C"
                                   m3:MenuAppearance.SupportingText="Copy the current selection" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
@@ -66,12 +67,12 @@
                                 <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
                             </MenuItem>
                         </MenuItem>
-                    </MenuFlyout>
+                    </m3:MaterialMenuFlyout>
                 </Button.Flyout>
             </Button>
             <Button Content="Vibrant">
                 <Button.Flyout>
-                    <MenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
+                    <m3:MaterialMenuFlyout m3:MenuAppearance.ColorStyle="Vibrant">
                         <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C"
                                   m3:MenuAppearance.SupportingText="Copy the current selection" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
@@ -88,12 +89,12 @@
                                 <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
                             </MenuItem>
                         </MenuItem>
-                    </MenuFlyout>
+                    </m3:MaterialMenuFlyout>
                 </Button.Flyout>
             </Button>
             <Button Content="Baseline">
                 <Button.Flyout>
-                    <MenuFlyout FlyoutPresenterTheme="{StaticResource MaterialBaselineMenuTheme}">
+                    <m3:MaterialMenuFlyout FlyoutPresenterTheme="{StaticResource MaterialBaselineMenuTheme}">
                         <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
                         <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" Click="OnToggle" />
@@ -108,7 +109,7 @@
                                 <MenuItem Header="Descending" Icon="{m3:Symbol ArrowDownward}" Click="OnAction" />
                             </MenuItem>
                         </MenuItem>
-                    </MenuFlyout>
+                    </m3:MaterialMenuFlyout>
                 </Button.Flyout>
             </Button>
         </StackPanel>

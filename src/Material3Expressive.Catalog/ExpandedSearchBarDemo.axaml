@@ -17,6 +17,11 @@
         <Button Content="切角 / 默认形状" Click="ToggleShape" />
         <Button Content="焦点环 / 常规" Click="ToggleFocusFeedback" />
       </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <CheckBox x:Name="AllowEscape" Content="Escape 关闭" IsChecked="True" IsCheckedChanged="DismissalPolicyChanged" />
+        <CheckBox x:Name="AllowOutside" Content="弹层外点击关闭" IsChecked="True" IsCheckedChanged="DismissalPolicyChanged" />
+      </StackPanel>
+      <TextBlock Text="开关控制平台关闭请求；带罩变体的遮罩仍是独立关闭按钮。输入框返回按钮和选择结果始终可收起。" TextWrapping="Wrap" />
       <m3:SearchBar x:Name="CollapsedSearch" State="{StaticResource SearchState}">
         <m3:SearchBarInputField x:Name="SearchAnchor" State="{StaticResource SearchState}" PlaceholderText="搜索组件"
                                 Text="{Binding Text, ElementName=Query, Mode=TwoWay}" SearchRequested="SearchSubmitted" />

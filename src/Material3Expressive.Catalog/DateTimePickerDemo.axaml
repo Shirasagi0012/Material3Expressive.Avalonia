@@ -27,6 +27,17 @@
         </WrapPanel>
         <TextBlock Text="Range calendar: swipe vertically and release for continuous inertia, or use the wheel. Each month heading has localized previous / next month accessibility actions. Tab leaves the calendar; Shift+Tab returns to its header. Navigation keeps the selected dates." TextWrapping="Wrap" />
         <TextBlock Text="TimePicker · TimeInput · TimeScroll — shared valid value" FontSize="20" />
+        <TextBlock Text="Reusable date headers — bound to the same selection, mode, language and formatter" FontSize="20" />
+        <WrapPanel>
+          <StackPanel Margin="0,0,32,0" Spacing="8">
+            <m3:DatePickerTitle DisplayMode="{Binding #Date.DisplayMode}" Culture="{Binding #Date.Culture}" m3:MaterialText.Style="{m3:Typography LabelLarge}" />
+            <m3:DatePickerHeadline SelectedDate="{Binding #Date.SelectedDate}" DisplayMode="{Binding #Date.DisplayMode}" Culture="{Binding #Date.Culture}" DateFormatter="{Binding #Date.DateFormatter}" m3:MaterialText.Style="{m3:Typography HeadlineMedium}" />
+          </StackPanel>
+          <StackPanel Spacing="8">
+            <m3:DateRangePickerTitle DisplayMode="{Binding #Range.DisplayMode}" Culture="{Binding #Range.Culture}" m3:MaterialText.Style="{m3:Typography LabelLarge}" />
+            <m3:DateRangePickerHeadline SelectedRange="{Binding #Range.SelectedRange}" DisplayMode="{Binding #Range.DisplayMode}" Culture="{Binding #Range.Culture}" DateFormatter="{Binding #Range.DateFormatter}" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+          </StackPanel>
+        </WrapPanel>
         <TextBlock Text="Keyboard: activate an hour/minute selector, use arrows to move around the dial, Enter/Space to choose, and Tab or Shift+Tab to leave. In 24-hour mode, arrows connect both rings." TextWrapping="Wrap" />
         <TextBlock Text="Pointer: tap a five-minute mark or drag to any minute. Choosing an hour advances after the selector animation; drag release advances immediately. Switch fields during the transition to try interruption." TextWrapping="Wrap" />
         <CheckBox Name="TouchExploration" Content="Touch exploration enabled — keep the hour selected on the dial and during text entry" />

@@ -33,6 +33,7 @@ public class ModalBottomSheet : ContentControl
     public static readonly StyledProperty<SheetState> StateProperty = BottomSheet.StateProperty.AddOwner<ModalBottomSheet>();
     public static readonly StyledProperty<double> SheetMaxWidthProperty = BottomSheet.SheetMaxWidthProperty.AddOwner<ModalBottomSheet>();
     public static readonly StyledProperty<bool> GesturesEnabledProperty = BottomSheet.GesturesEnabledProperty.AddOwner<ModalBottomSheet>();
+    public static readonly StyledProperty<bool> AutoConnectScrollProperty = BottomSheet.AutoConnectScrollProperty.AddOwner<ModalBottomSheet>();
     public static readonly StyledProperty<object?> DragHandleProperty = BottomSheet.DragHandleProperty.AddOwner<ModalBottomSheet>();
     public static readonly StyledProperty<IDataTemplate?> DragHandleTemplateProperty = BottomSheet.DragHandleTemplateProperty.AddOwner<ModalBottomSheet>();
     public static readonly StyledProperty<Thickness> WindowInsetsProperty = BottomSheet.WindowInsetsProperty.AddOwner<ModalBottomSheet>();
@@ -48,6 +49,7 @@ public class ModalBottomSheet : ContentControl
     public SheetState State { get => GetValue(StateProperty); set => SetValue(StateProperty, value ?? throw new ArgumentNullException(nameof(value))); }
     public double SheetMaxWidth { get => GetValue(SheetMaxWidthProperty); set => SetValue(SheetMaxWidthProperty, value); }
     public bool GesturesEnabled { get => GetValue(GesturesEnabledProperty); set => SetValue(GesturesEnabledProperty, value); }
+    public bool AutoConnectScroll { get => GetValue(AutoConnectScrollProperty); set => SetValue(AutoConnectScrollProperty, value); }
     public object? DragHandle { get => GetValue(DragHandleProperty); set => SetValue(DragHandleProperty, value); }
     public IDataTemplate? DragHandleTemplate { get => GetValue(DragHandleTemplateProperty); set => SetValue(DragHandleTemplateProperty, value); }
     public Thickness WindowInsets { get => GetValue(WindowInsetsProperty); set => SetValue(WindowInsetsProperty, value); }

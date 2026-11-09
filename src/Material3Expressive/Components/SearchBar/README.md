@@ -85,6 +85,22 @@ FullScreenSearch.State = state;
 
 普通全屏使用 `new SearchBarState()`；contained 工厂使用 FastSpatial 和独立的延迟内容淡入。需要自定义规格时仍使用 `SearchBarState` 的完整构造函数。返回按钮或选择结果后调用 `AnimateToCollapsedAsync()`。Catalog 的 **Search popup with gap**、**Full-screen search**、**Contained search** 提供完整示例，对应启动参数 `--search-gap`、`--search-full-screen`、`--search-contained`。
 
+四种新版展开容器提供可绑定的 `DismissOnPointerOutside`，全屏与 contained 还提供 `DismissOnEscape`、`DismissOnBack`，默认均为 true，
+运行中修改立即作用于后续请求。它们分别控制弹层边界外的指针按下、未处理的 Escape 与宿主返回请求；
+不会阻止应用直接调用 `State.AnimateToCollapsedAsync()`。例如保留搜索草稿，要求用户明确返回：
+
+```xml
+<m3:ExpandedFullScreenSearchBar State="{StaticResource SearchState}"
+                               DismissOnEscape="False" DismissOnBack="False"
+                               DismissOnPointerOutside="False" />
+```
+
+输入和结果槽按前面示例提供，返回按钮调用状态的收起方法。停靠与间隙变体沿固定上游内部返回处理器始终响应 Escape/返回，不提供这两个开关。
+`WithGap` 的有色遮罩属于弹层内部的可点击内容，
+仍在点击释放时关闭，不受 `DismissOnPointerOutside` 控制；将 `DropdownScrimColor="Transparent"` 后，外部按下才由该开关控制。
+全屏覆盖客户区，因此同一窗口内通常没有可供点击的“弹层外”区域。关闭外部点击不让事件穿透到下层页面。
+Catalog 各新版搜索窗口提供外部点击策略开关，全屏窗口同时启用 Escape 开关。
+
 搜索顶栏可代替上述收起表面，继续和独立展开弹层共享状态：
 
 ```xml

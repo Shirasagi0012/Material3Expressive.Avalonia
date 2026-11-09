@@ -45,6 +45,8 @@ jobs:
                     modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj
                     modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj
                     modules/MaterialTypography.Roboto/MaterialTypography.Roboto.csproj
+                    modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Interaction/SmoothScroll.Avalonia.Interaction.csproj
+                    modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Controls/SmoothScroll.Avalonia.Controls.csproj
                     src/Material3Expressive/Material3Expressive.csproj
                   )
                   for project in "${projects[@]}"; do
@@ -79,6 +81,8 @@ jobs:
                     Shirasagi0012.MaterialShapes
                     Shirasagi0012.Material3Expressive.Avalonia.Shadow
                     Shirasagi0012.MaterialTypography.Roboto
+                    Shirasagi0012.SmoothScroll.Avalonia.Interaction
+                    Shirasagi0012.SmoothScroll.Avalonia
                     Shirasagi0012.Material3Expressive.Avalonia
                   )
                   for package in "${packages[@]}"; do

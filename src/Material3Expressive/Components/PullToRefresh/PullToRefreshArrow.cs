@@ -25,20 +25,24 @@ internal sealed class PullToRefreshArrow : Control
     public Color Color { get => GetValue(ColorProperty); set => SetValue(ColorProperty, value); }
     public MaterialSpring? EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
     private AnimationChildScope? _scope;
-    private Animatable<float>? _alpha;
-    private bool _alphaUpdatePending;
+    private AnimatedState<float>? _alpha;
     internal float Alpha { get; private set; }
     protected override bool BypassFlowDirectionPolicies => true;
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         _scope = AnimationScope.Get(this).CreateChild("Pull arrow alpha");
-        _alpha = new Animatable<float>(new FloatConverter(), DistanceFraction >= 1 ? 1 : .3f, .01f);
+        // animateFloatAsState samples the old run before SideEffect, then cancels that run
+        // before animateTo. Restart preserves the displayed value, not its velocity/timebase.
+        _alpha = AnimatedState.Create(_scope, DistanceFraction >= 1 ? 1f : .3f,
+            AnimationCommitPhase.AfterFrame, AnimationInterruptionMode.Restart,
+            visibilityThreshold: .01f, label: "Pull arrow alpha");
         _scope.SubscribeValue(_alpha, value => { Alpha = value; InvalidateVisual(); });
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _scope?.Dispose(); _scope = null; _alpha = null; _alphaUpdatePending = false;
+        _alpha?.Dispose(); _alpha = null;
+        _scope?.Dispose(); _scope = null;
         base.OnDetachedFromVisualTree(e);
     }
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -46,24 +50,10 @@ internal sealed class PullToRefreshArrow : Control
         base.OnPropertyChanged(change);
         if (change.Property == DistanceFractionProperty || change.Property == EffectsAnimationProperty)
         {
-            if (_scope is { } scope && _alpha is { } alpha && EffectsAnimation is { Stiffness: > 0 })
+            if (_alpha is { } alpha && EffectsAnimation is { Stiffness: > 0 } spec)
             {
                 var target = DistanceFraction >= 1 ? 1f : .3f;
-                if (alpha.TargetValue != target && !_alphaUpdatePending)
-                {
-                    _alphaUpdatePending = true;
-                    _ = scope.Launch(async ct =>
-                    {
-                        // animateFloatAsState commits its latest target in SideEffect,
-                        // after recomposition and the old animation's frame sample.
-                        if (!await scope.WaitForFrameEndAsync(ct)) return;
-                        _alphaUpdatePending = false;
-                        var latest = DistanceFraction >= 1 ? 1f : .3f;
-                        if (alpha.TargetValue != latest && EffectsAnimation is { Stiffness: > 0 } latestSpec)
-                            await alpha.AnimateToAsync(scope, latest,
-                                new SpringSpec<float>(latestSpec.DampingRatio, latestSpec.Stiffness, .01f), cancellationToken: ct);
-                    }, "Pull arrow alpha composition");
-                }
+                alpha.UpdateTarget(target, new SpringSpec<float>(spec.DampingRatio, spec.Stiffness, .01f));
             }
             if (change.Property == DistanceFractionProperty)
                 ControlAutomationPeer.FromElement(this)?.RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty,

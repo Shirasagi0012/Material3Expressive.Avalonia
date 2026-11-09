@@ -75,7 +75,8 @@ public class AppBarOverflowTests
         using var clock = new MotionTestClockScope();
         var bar = new AppBarRow { MaxItemCount = 1, Items = { new AppBarAction { Label = "A" }, new AppBarAction { Label = "B" } } };
         var window = DialogTests.Show(bar); Flush(window);
-        var button = bar.GetVisualDescendants().OfType<AppBarOverflowButton>().Single();
+        var button = bar.GetVisualDescendants().OfType<AppBarOverflowIndicator>().Single()
+            .GetVisualDescendants().OfType<IconButton>().Single();
         var point = button.TranslatePoint(new Point(24, 24), window)!.Value;
         window.MouseDown(point, MouseButton.Left); window.MouseUp(point, MouseButton.Left); Advance(clock, window, 80);
         Assert.True(bar.MenuState.IsShowing); Assert.True(bar.Layout!.Menu.IsPresented);

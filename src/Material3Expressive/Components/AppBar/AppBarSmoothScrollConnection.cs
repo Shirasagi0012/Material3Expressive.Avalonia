@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Rendering.Composition;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation;
+using Material3Expressive.Foundation.Input;
 using SmoothScroll.Avalonia.Controls;
 using SmoothScroll.Avalonia.Interaction;
 using SmoothScroll.Avalonia.Composition;
@@ -32,6 +33,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     private readonly TopAppBarState? _topState;
     private readonly BottomAppBarState? _bottomState;
     private readonly IDisposable _registration;
+    private MaterialScrollCoordinator.Registration? _scrollRegistration;
     private InteractionTracker? _tracker;
     private CompositionVector3Output? _offsets, _appearance;
     private CompositionColorOutput? _color;
@@ -152,11 +154,13 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         _viewer.PropertyChanged += ViewerChanged;
         _viewer.AddHandler(InputElement.PointerPressedEvent, BeforeInput, RoutingStrategies.Tunnel, true);
         _viewer.AddHandler(InputElement.PointerWheelChangedEvent, BeforeInput, RoutingStrategies.Tunnel, true);
-        _registration = presenter.AttachVerticalScroll(Attach);
+        _registration = MaterialScrollCoordinator.Register(presenter, scope, Attach, ownsBounds: true);
     }
 
-    private IDisposable Attach(InteractionTracker tracker)
+    private IDisposable Attach(MaterialScrollCoordinator.Registration registration)
     {
+        _scrollRegistration = registration;
+        var tracker = registration.Tracker;
         ++_generation;
         _tracker = tracker;
         _offsets = CompositionVector3Output.Create(tracker.Compositor);
@@ -175,7 +179,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
             if (weak.TryGetTarget(out var owner))
                 owner.ApplySnapshot(snapshot);
         });
-        tracker.ConfigureVerticalScroll(
+        registration.Configure(
             new ParticipantFactory(config, initial, _offsets.Writer, _appearance.Writer, _color.Writer, Publish),
             CanConsumeAtBoundary);
         Update();
@@ -246,7 +250,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
 
         ++_generation;
         var state = ReadState();
-        _tracker.RunOnScrollParticipant(participant =>
+        _scrollRegistration!.Run(participant =>
             ((AppBarScrollParticipant)participant).SetState(state));
     }
 
@@ -318,7 +322,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
         if (_configuration == config)
             return;
         _configuration = config;
-        _tracker.RunOnScrollParticipant(participant =>
+        _scrollRegistration!.Run(participant =>
             ((AppBarScrollParticipant)participant).Configure(config));
     }
 
@@ -424,7 +428,7 @@ internal sealed class AppBarSmoothScrollConnection : IDisposable
     private void Detach()
     {
         ++_generation;
-        _tracker?.ConfigureVerticalScroll(null);
+        _scrollRegistration = null;
         _tracker = null;
         _topChrome?.SetComposition(null, null);
         _topChrome = null;

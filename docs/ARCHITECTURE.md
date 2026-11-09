@@ -27,6 +27,18 @@
 - **Rendering**：可变字体图标渲染、几何路径生成与颜色算法桥接。
 - **Overlays**：窗口内对话框宿主、模态遮罩与弹层管理。
 
+物理 ScrollViewer 的合成接入由内部 `MaterialScrollCoordinator` 统一占用一个 SmoothScroll
+参与槽。按视觉祖先顺序执行 outer→inner pre、正文、inner→outer post；AppBar 独占范围与合成输出，
+PullToRefresh 只拥有自己的距离与刷新状态。累计消费不重复包含 pre。仓内 SmoothScroll 模块的异步
+释放事务先排空位移快照，再在 UI 调用 pre-fling，完成后把剩余速度交回原惯性；新输入、取消和卸载
+使旧事务失效。普通栏没有释放消费者时保持原同步路径。范围与依据见 [决定 §39](DECISIONS.md#39-物理滚动共享参与与异步释放)。
+有 post-fling 消费者时，同一事务继续经过正文惯性，以真实剩余速度从内向外调用 UI post-fling，
+全部完成后才发 idle/settling。BottomSheet 自动连接其唯一纵向物理正文，锚点与 Float 位移由组件拥有，
+确认、状态与吸附留在原 SheetState，不新增第二套滚动或动画引擎。
+FloatingToolbar 在工具栏与正文最近共同视觉祖先处观察已消费位移，并在正文释放后调用既有吸附行为；
+它不消费正文位移。触摸坐标按同一当前视口变换重投影，避免面板随拖动移动时丢失下一笔位移。
+释放时间超过最后移动 40ms 时速度为零，判定复用固定 Core 的停止边界；快速惯性的原平台参数保持。
+
 ---
 
 ## Token 与主题资源系统
@@ -45,7 +57,8 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 `MaterialWindowInsets.ConsumePadding` 把逻辑 Padding 累加到祖先消费；`ConsumeInsets` 对物理四边取并集。
 两者只传播事实。`MaterialWindowInsetsPadding` 实际应用祖先尚未消费的 Insets，再向子树发布消费，
 对应 Foundation windowInsetsPadding。Scaffold / AppBar 读取同一环境；普通/Flexible BottomAppBar 也向内容发布自身消费；NavigationBar、ShortNavigationBar、普通 NavigationRail、普通 WideNavigationRail
-也会应用并向真实内容发布消费。搜索顶栏发布完整消费；普通双行顶栏分别在上行发布全部边、下行发布水平边。
+也会应用并向真实内容发布消费。三种 NavigationDrawerSheet 应用剩余 Insets 并向内容发布消费，
+ModalNavigationDrawer 的内联 Sheet 继承祖先消费。搜索顶栏发布完整消费；普通双行顶栏分别在上行发布全部边、下行发布水平边。
 模板槽的逻辑父级绕过实际布局消费节点时，使用内部消费源绑定并在换槽/卸载时释放，调用方自己的 add/union 顺序不变。
 其他组件需按其上游明确接入。
 同一元素同时提供两种消费时先 add 再 union；复杂顺序用嵌套元素表达，不从控件位置猜测消费。
@@ -56,7 +69,7 @@ ModalWideNavigationRail 的内联栏继承声明祖先消费，独立 Dialog 弹
 
 ## 横向内容排列
 
-`MaterialHorizontalArrangement` 提供固定 Foundation Horizontal 的物理像素排列，当前由 Chip、ButtonGroup、BottomAppBar、独立及原生 Expressive 菜单项消费。
+`MaterialHorizontalArrangement` 提供固定 Foundation Horizontal 的物理像素排列，当前由 Chip、ButtonGroup、BottomAppBar、独立及原生 Expressive 菜单项、DateRangePickerHeadline 消费。
 内置六种分布、Absolute、带正负间距与逻辑对齐的 SpacedBy，以及不可变派生实现；Spacing 在测量时解析为像素，
 Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则、权重/最小尺寸和 RTL 原生镜像转换，不是公共通用 Row。
 配置、迁移和范围见 [决定 §36](DECISIONS.md#36-组件横向排列能力)。

@@ -13,7 +13,8 @@ AndroidX `f3ed195f0c9ef9eafe437351d974c9ec49ecc2ea` 与 Core `a9e47e8aa04c95cfe5
 | `Indicator` / `CircularArrowProgressIndicator` | `PullToRefreshIndicator` / `PullToRefreshArrow` | 箭头与现有 CircularProgressIndicator Crossfade |
 | `LoadingIndicator` | `PullToRefreshLoadingIndicator` | 现有 ContainedLoadingIndicator 的确定/不确定重载 Crossfade |
 | `ArrowValues` / `drawArrow` | 同名内部计算和 Skia 绘制 | Float 运算、超阈值张力和物理像素箭头 |
-| `PullToRefreshModifierNode` | `PullToRefreshScrollBehavior` | 显式 pre/post scroll、pre-fling、刷新请求及回弹 |
+| `PullToRefreshBox` | 同名 ContentControl | 正文与默认/自定义 Indicator 槽，自动连接唯一纵向物理视口 |
+| `PullToRefreshModifierNode` | `PullToRefreshScrollBehavior` / `PullToRefreshScrollParticipant` | 共享 Float 距离算法，显式与合成 pre/post，UI pre-fling、刷新请求及回弹 |
 
 ## 2. 关键机制与架构契约
 
@@ -37,7 +38,9 @@ Compose 的 LTRB 极值转换成 Avalonia 的 xywh 时需为宽度和变换留�
 尺寸、默认圆角、颜色、高度和 Effects spring 从主题提供，不在属性元数据复制默认值；Expressive 尺寸和颜色引用 LoadingIndicator Token。
 
 刷新 Crossfade 与箭头阈值透明度复用 ComposeAnimation。透明度目标在 fraction≥1 时为 1，否则为 .3；同一侧连续改变距离不能重启动画。
-箭头按 `animateFloatAsState` 的 SideEffect 提交顺序，在旧动画当帧采样后取最新目标；帧间多次跨越阈值只提交最终目标。
+箭头复用 `AnimatedState` 的 AfterFrame + Restart：按 `animateFloatAsState` 的 SideEffect 提交顺序，
+在旧动画当帧采样后取最新目标；帧间多次跨越阈值只提交最终目标。中断先取消旧任务，再从当前显示值
+以零速度和新首帧启动，不沿用裸 Animatable 的旧速度/时间基准；距离状态自己的可中断弹簧语义不受影响。
 旧内容保留到 Crossfade 结束才卸载，取消其持续动画。动画对 Avalonia 属性以 Animation 优先级绑定，释放恢复底层属性源。
 Expressive 确定模式在 fraction>1 时整体额外旋转 `-(fraction-1)*180°`，模式切换创建各自的 LoadingIndicator 状态。
 其内部画布保持 LoadingIndicator Token 的 requiredSize，在小父约束内居中溢出，由外层形状裁剪。
@@ -48,35 +51,39 @@ Crossfade 启用 Avalonia 完整图层透明度合成；内容仅在透明度小
 pre 仅消费向上的 UserInput，post 消费剩余输入并发布比例；side effect、禁用或 State 动画中不消费。
 释放不检查 enabled，严格 `adjustedDistance > threshold` 才发出请求；向上速度或未拉动时消费为零。
 刷新状态变化按重组提交边界合并，旧帧先采样，随后执行阈值/隐藏动画；finally 保留上游清零和阈值赋值顺序。
-behavior 是组件专属显式适配，不注册 ScrollViewer，不改变既有 AppBar 合成参与者协议。
+显式 behavior 不注册 ScrollViewer；自动 Box 的数值参与器在组合线程消费位移，通过有序快照在 UI
+发布相同状态。首次越阈值的 touch/pen 输入仅扣除固定 Core 的 18 DIP slop。Double 协议出口夹取
+Float 舍入产生的微小超额，内部距离运算不变。共享参与与异步释放见[决定 §39](../../../../docs/DECISIONS.md#39-物理滚动共享参与与异步释放)。
+Box 默认拉伸内容以给 Avalonia ScrollViewer 有限视口，这是相对于 Compose 默认 TopStart 的布局适配，
+不改滚动算法；外部可覆盖内容对齐。自定义 Indicator 拥有自己的状态绑定与 MaxDistance。
+State 替换保留累计距离、不 Snap 新状态；取消旧本地 scope 并用代次隔离迟到任务属于框架生命周期适配，
+不声称固定上游 update 本身执行取消。刷新事件中同步移除或换源后，旧回调不再动画新状态。
+已开始的拖动取消遵循固定 Core `DragGestureNode.processDragCancel` 的零速度 onDragStopped，
+故拉动未越阈值会回弹、超阈值仍请求刷新。仅有实际异步释放消费者时启用这一捕获丢失路径；
+卸载或显式 CancelScroll 仍废弃事务，不从已卸载 owner 触发请求。
 
 箭头保留上游不寻常的两个运算：外层 rotate 的参数是未乘 360 的 rotation；箭头局部角度为 endAngle 减物理像素 strokeWidth。
 不能因视觉直觉将它们改为其他角度。Skia 图元在实际密度的物理像素中构造，并消费合成层 CurrentOpacity。
 
 ## 3. 已确认决定与已知差异
 
-- **授权范围**：本次任务授权上游语义内新增组件及非破坏性组件 API；未新增公共共享框架。
-- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox` 与自动保存/恢复适配。自定义回弹已可通过派生状态表达。
+- **授权范围**：本轮维护者明确授权缺失组件、API、必要共享能力及历史决定修订；未新增公共共享状态框架。
+- **尚未实现**：自动保存/恢复适配；自动连接逻辑、双轴或多个并列视口。自定义回弹可通过派生或外部状态表达。
 - **显式容器形状**：本轮剩余移植授权下新增 IndicatorBox.Shape，直接映射固定上游该函数的 shape 参数，经共享 Surface 统一背景、阴影和内容裁剪。内部 Layout 的顶部 clip、位移和条件阴影不变。内置两种 Indicator 通过继承获得此本地便利入口；其 Compose 快捷函数没有 shape 参数，双端参考使用 IndicatorBox 自定义内容组合。
-- **未经验证**：实际触摸、屏幕阅读器客户端和非 Windows 平台。State 的消费者生命周期是现有作用域模式的组件接入，不代表自动滚动已实现。
+- **未经验证**：实体触屏/触控笔、屏幕阅读器客户端和非 Windows 平台。原生 raw-touch 现已覆盖，不能推广为实体设备验收。
 - **已接受差异**：没有为本组件新增像素或时序容差；共享适配仅在已有决定的适用范围内复用。
 
 **未解决观测**：回弹途中在 209ms 卸载，Compose 在该帧采样后重组移除，保留 fraction `0.44828412`；
 Avalonia 立即卸载，保留最后 208ms 的 `0.45967421`。两端任务均取消、停止动画、无剩余图片或捕获错误。
 `pull-refresh-scroll.detach` 保留该精确差异，未删除卸载帧、延迟所有事件或修改比较规则；这不是已接受差异。
 
-**自动接入的依赖缺口**：原方案等待维护者决定滚动所有权；本轮维护者已明确授权基础能力与历史决定修订，
-因此不再等待逐项批准。锁定 SmoothScroll 12.0.0.1 制品（nuspec commit `429c3c685a1e630337024c2500a9814b96fcc10c`）
-的 `IScrollMovementParticipant` 只有同步 pre/post、frame/idle/cancel 等通知。非零释放直接进入内部 InertiaState，
-OnIdle 在惯性结束才调用；公开接口不能异步暂停释放并返回剩余速度。AttachVerticalScroll 也只有一个槽，已被 AppBar 使用。
-该证据来自锁定 DLL，未替换依赖版本；不能把 OnIdle、ScrollChanged 或首帧惯性冒充 pre-fling。
-完整接入需要先补依赖释放事务与统一参与者所有权，现仍未实现，授权本身不消除该协议缺口。
-原生 ScrollViewer 不提供 Compose 的异步 pre-fling 剩余速度协议；
-现有 SmoothScroll/AppBar 参与者在合成线程处理位移，不能从 UI 的 ScrollChanged 可靠重建释放消费。
-推荐在既有参与者协议中明确释放事务、UI 刷新回调与合成状态的边界，再提供形如
-`<m3:PullToRefreshBox IsRefreshing="{Binding IsRefreshing}" RefreshRequested="Refresh"><ScrollViewer ... /></m3:PullToRefreshBox>`
-的容器入口（已获本轮自主实施授权，尚未实现）。影响包括与 AppBar 的消费次序、嵌套所有权和跨线程取消。
-卸载末帧问题也需明确重组提交与原生立即卸载之间的契约，不以组件私自延长已卸载控件的生命期解决。
+**自动接入的原限制与修订**：原来 SmoothScroll 12.0.0.1（固定 nuspec commit
+`429c3c685a1e630337024c2500a9814b96fcc10c`）只有同步 pre/post 和惯性后的 OnIdle，且单个参与槽
+已由 AppBar 占用，故只能提供显式 behavior。这一原理由保留。2026-11-09 本轮明确授权后，实际导入
+该固定源码，补齐异步释放事务和内部统一参与者所有权，完成自动 Box，未用 OnIdle/ScrollChanged 冒充释放。
+回调前排空位移快照，等待 UI 状态操作后返回剩余速度；新输入、换源和卸载取消旧事务。祖先 pre、正文、
+反向 post 的次序适用于标准 AppBar 共存；逻辑/双轴/歧义视口明确不连接。普通 Core 滚轮默认不发 pre-fling，
+沿用这一边界，不将滚轮 idle 解释成刷新。卸载末帧差异仍保留，不延长已卸载控件的生命期来补采样。
 
 ## 4. 验证入口
 
@@ -89,7 +96,7 @@ OnIdle 在惯性结束才调用；公开接口不能异步暂停释放并返回�
 - `tests/Material3Expressive.Tests/PullToRefreshTests.cs`：距离、动画中断、共享消费者、换源、透明度、Crossfade、资源更新、尺寸约束及卸载。
 - `PullToRefreshCases.cs` / `.kt`：传统/Expressive、距离阶段、明暗、RTL、受限空间、颜色与距离覆盖、自定义内容及刷新/反向/卸载；含半透明绘制和帧内目标合并。
 - `./tests/VisualParity/parity.ps1 self-test --family pull-to-refresh`；实际结果以生成报告为准。
-- Catalog：`PullToRefreshDemo`，示范宿主显式控制距离与刷新状态。
+- Catalog：`PullToRefreshDemo`，示范真实自动正文、显式控制距离、外部状态与刷新状态。
 - 自定义运动：`pull-to-refresh.custom-motion.*` 覆盖传统/Expressive 的高回弹、反向/Snap 和卸载重挂；`pull-refresh-scroll.custom-motion.*` 验证滚动策略调用派生操作。行为测试另检查显式取消、共享消费者及任务释放。
 
 自定义运动验证的当前结果：指示器 59 例、滚动 17 例均无捕获错误且重复/额外截图稳定；原有指示器 53 例仍在既有门禁内，
@@ -130,9 +137,27 @@ Crossfade 绘制顺序修正另检查既有消费者：SegmentedButton 的反向
 16 例通过不能推导所有自定义动画、旧有卸载末帧差异已解决。
 
 行为验证含内置与外部状态、三种模板、换源退订、全属性通知、运行状态的消费门槛、异步取消；
-与日期 formatter 合计 42 项通过。Catalog 构建通过。自动 nested-scroll 接入仍未实现。
+与日期 formatter 合计 42 项通过。该轮未包含自动 nested-scroll；当前自动容器验证见下文。
 
 本轮接口迁移后的原有 `pull-state-interface-regression` 75 例：4 equal、68 withinTolerance、3 different，
 均重复稳定且执行错误为零。different 为 circular.custom-motion.state 的 257ms 箭头截图，以及
 circular/loading.custom-motion.state-detach 的卸载回弹状态/图像；后两项的历史边界仍见上文。
 此处保留真实差异，不把接口行为测试通过推广为全部动画轨迹对齐。
+
+**自动容器与释放验证**：`pull-box-final` 使用真实两端触摸、相同颜色和默认开启的正文惯性，
+共 15 例、225 个采样，零捕获错误；2 equal、5 withinTolerance、8 different。
+圆形/Expressive 的释放、取消与 RTL 拉动均通过现有门禁；阈值、请求次数和可见距离一致。
+新的原生触摸测试覆盖 1×/2× slop、正文先消费/向上先回收、禁用、换源、视口替换、
+Scaffold AppBar 共存、捕获取消与卸载；生命周期测试另覆盖忽略取消的外部状态、同步重入及 Float/Double 边界。
+
+未解决的 8 例分别为两种指示器的正文/反向惯性、卸载与刷新 Crossfade。正文/反向的本地 Offset
+受原 SmoothScroll 合成计时影响，重复/额外截图不稳定，不能宣称该物理惯性轨迹已验证一致。
+卸载仍是 Core 在 208ms 采样后移除、本地立即移除（保留 fraction .5046552 / .7345495）；两端均停止动画。
+刷新状态与距离相等，但 176–800ms 的 Crossfade/不确定进度图像仍超差；已查看实际图像，未接受为视觉偏离。
+其他 11 例重复稳定。原始 `pull-box-first`、`pull-box-slop`、`pull-box-delivery` 和 `pull-box-matched-inputs`
+保留输入阈值、执行屏障、配色及惯性配置的证据，不以改时间或容差取得新结论。
+
+箭头本身的剩余中断已由既有 AfterFrame + Restart 解决：旧 `pull-arrow-restart-state` 的 257ms
+最大 1× 通道差从 22 降到 6；同组 bounce/conflation/progress 三条回归也全部在既有门禁内且稳定。
+新自动释放的 208ms 同样通过。先前 WaitForFrameEnd 修的是提交批次，本次复用 Restart 补齐取消重启，
+不改变共享算法、动画参数或距离状态的速度接续。

@@ -28,11 +28,11 @@
              It also moves the resolved render stack onto the repository's pinned SkiaSharp 4
              baseline so variable fill, weight, grade and optical size remain available. -->
         <PackageReference Include="Shirasagi0012.MaterialSymbols.Avalonia.Rounded" />
-        <PackageReference Include="Shirasagi0012.SmoothScroll.Avalonia" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../../modules/ComposeAnimation/ComposeAnimation.Avalonia/ComposeAnimation.Avalonia.csproj" />
+        <ProjectReference Include="../../modules/SmoothScroll.Avalonia/src/SmoothScroll.Avalonia.Controls/SmoothScroll.Avalonia.Controls.csproj" />
 
         <ProjectReference Include="../../modules/MaterialShapes/MaterialShapes/MaterialShapes.csproj" />
         <ProjectReference Include="../../modules/MaterialSkiaShadow/MaterialSkiaShadow.csproj"/>

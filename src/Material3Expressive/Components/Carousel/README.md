@@ -51,6 +51,7 @@ MultiAspect 不拥有滚动容器。在已加载 MaterialTheme 的应用中，�
 - `ItemSpacing` 是项目间距；`ContentPadding` 的左右值表示逻辑起始／末尾留白，RTL 时交换物理侧。上下值为内容区域留白。
 - `ScrollOffset` 可绑定连续的逻辑滚动距离；`MaximumScrollOffset`、`CurrentItem` 和 `CurrentItemOffsetFraction` 是只读布局结果。
 - 布局完成后调用 `ScrollToItem(index)` 或 `await AnimateScrollToItemAsync(index)`；后者可传 `IAnimationSpec<float>` 和取消令牌。新的导航会取消旧动画，卸载也会取消。
+- `CapturePosition()` 保存当前项目及页内比例；`RestorePosition(position)` 可在挂载前或重新加载页面时调用，第一次有效布局按当前视口、项目尺寸和集合重建位置，不要求保留原 ScrollOffset。
 - 触屏／笔拖动使用 18 DIP 阈值，释放后按 `FlingMode` 吸附或衰减。`Default` 为 MultiBrowse / CenteredHero 选择 `SingleAdvance`，为 Uncontained 选择 `NoSnap`；也可显式选择 `MultiBrowse` 多项惯性吸附。
 - `FlingAsync(velocity)` 接受逻辑方向的 DIP/s，返回未消费速度。`SnapAnimationSpec` / `DecayAnimationSpec` 可替换 fling 规格，规格内部值使用物理像素；不影响程序导航的单独规格。
 - 水平滚轮输入自动合并并平滑滚动，结束后使用当前 `FlingMode`；纵向输入留给外层滚动区。RTL 自动反转逻辑方向，静止时首尾向外的事件可继续传递。
@@ -72,6 +73,20 @@ MultiAspect 不拥有滚动容器。在已加载 MaterialTheme 的应用中，�
 - 只读、可绑定的 `ActualDrawInfo` 提供当前遮罩起点、终点、尺寸和视差距离，单位为 DIP。
 
 ## 内容槽与定制
+
+位置可与页面数据一起保存，也支持 `System.Text.Json` 往返。恢复会取消旧的拖动、惯性和导航动画：
+
+```csharp
+CarouselPosition saved = carousel.CapturePosition();
+var nextPageCarousel = new HorizontalCarousel { ItemsSource = destinations };
+nextPageCarousel.RestorePosition(saved);
+```
+
+`CarouselPosition.Item` 为非负索引，`OffsetFraction` 为 -0.5 到 0.5 的有限 float；
+应用需要指定初始页内位置时可直接 `new CarouselPosition(3, .25f)`。
+集合为空时保留待恢复位置，首个非空布局按当前集合约束索引和边界；项目数来自目标控件，
+不会用保存时的数据集覆盖新的 ItemsSource。之后显式写 ScrollOffset 或导航会取代待恢复请求。
+捕获读取最近一次布局结果，刚更改尺寸或位置时应先完成布局。Catalog 提供保存、回到开头与恢复按钮。
 
 `HorizontalCarousel` 支持 `ItemsSource`、`ItemTemplate` 和 `ItemContainerTheme`，按视口创建并复用 `CarouselItem`。在容器主题中设置 `CornerRadius`、`BorderBrush`、`BorderThickness`；内容保留完整宽度，仅改变可见遮罩。可在内容中放图片、文字或按钮。
 

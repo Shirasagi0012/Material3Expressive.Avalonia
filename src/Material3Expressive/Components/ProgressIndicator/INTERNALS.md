@@ -69,6 +69,36 @@ Avalonia 不允许 Render 内 InvalidateVisual。订阅初始值由当前绘制�
 
 ## 一致性边界与验证
 
+### 公开终点绘制入口（2026-11-09）
+
+固定两仓 `ProgressIndicator.kt` blob 均为 `dccbe93c001e98857d38ec638ed2a72df6696f44`。
+本轮授权补齐 `ProgressIndicatorDefaults.drawStopIndicator`：此前本地只有内部绘制与替换回调，
+调用方覆盖回调后无法复用上游默认 marker，也不能在其他绘制内容中独立组合。
+新增 `DrawStopIndicator(DrawingContext, Control owner, double stopSize, Color, PenLineCap)`；owner
+提供 DrawScope 原本包含的当前 size / density / direction，避免再传一份可能不一致的环境参数。
+普通线形默认 stop 同样调用公开入口，波浪 stop 仍保留其随进度裁去重叠部分的独立算法。
+没有破坏现有回调签名或改变动画/automation；原 no-op 隐藏与 null 恢复默认的用法保持有效。
+
+保留 Float 物理像素运算：stop 取 stopSize.toPx 与实际高度较小值，尾端间距为
+min((height-stop)/2, 6dp)，Round 为圆，其余为方。源内容不必是进度条；自定义绘制操作只捕获
+UI 线程求得的值，不在渲染线程读取 owner。操作边界包含窄容器中自然溢出的 marker，避免错误裁剪。
+Avalonia 普通 Control 自动镜像坐标，已有 ProgressIndicator 则 bypass；入口扣除祖先链的原生
+HasMirrorTransform 奇偶性后执行上游翻转，结果都在物理正确的逻辑尾端，不抵消显式 RenderTransform。
+
+`ProgressStopIndicatorTests` 以实际像素验证三端帽、两种镜像策略、1x/2x 密度、两方向、限幅、
+零大小、颜色/owner opacity、重挂、窄容器外绘制的清除，以及进度后绘制和不确定模式抑制；
+与既有 Progress 测试共 42 项通过。
+双端 `progress-stop-indicator` 直接调用固定公开函数，覆盖独立 Canvas 与复合回调、窄/高/限幅/零尺寸、
+运行时大小/颜色/opacity/方向、卸载重挂、no-op/default/复合回调切换。
+
+`progress-stop-indicator-verified` 完成 42 例 / 68 个采样点：41 equal、1 withinTolerance、
+0 different、0 执行错误，全部重复捕获与额外被动截图稳定；结构化几何精确相等。
+剩余一例是动态 RTL 复合回调中半透明进度端帽边缘的 raster 差异，既有 1x 比较最大通道差为 1，
+没有修改容差。已查看真实双端 PNG；Release Catalog 与捕获端、固定 Gradle 参考端构建通过。
+首轮 `progress-stop-indicator-delivery` 的 4 个 different 保留：原因是夹具使用同名 LightGray，
+但 Core 值为 #CCCCCC，Avalonia 为 #D3D3D3；后来仅将两端输入写为明确的 #CCCCCC 后重新采集，
+未更改生产算法、删除失败用例或修改参考图。真实桌面和非 Skia 后端不在本单元验证范围内。
+
 [ProgressIndicatorTests](../../../../tests/Material3Expressive.Tests/ProgressIndicatorTests.cs) 覆盖
 尺寸、automation、Token/显式值优先级、模式默认值、卸载/重挂和兄弟隔离。
 [ProgressIndicatorCases.cs](../../../../tests/VisualParity/Material3Expressive.Parity/Cases/ProgressIndicatorCases.cs)

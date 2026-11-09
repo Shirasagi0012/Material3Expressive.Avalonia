@@ -91,6 +91,18 @@ public sealed class AppBarDemo : Window
         content.Children.Add(overflowRow);
         content.Children.Add(overflowColumn);
         content.Children.Add(overflowStatus);
+        var independentIndicator = new AppBarOverflowIndicator
+        {
+            MenuState = overflowRow.MenuState, Description = "Open the row's overflow actions",
+            Shape = new CutCornerShape(8), ContainerColor = Color.Parse("#E8DEF8"),
+            ContentColor = Color.Parse("#1D192B"), DisabledContainerColor = Color.Parse("#E6E0E9"),
+            DisabledContentColor = Color.Parse("#79747E"),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        var enableIndicator = new CheckBox { Content = "Enable the independent overflow indicator", IsChecked = true };
+        enableIndicator.IsCheckedChanged += (_, _) => independentIndicator.IsEnabled = enableIndicator.IsChecked == true;
+        content.Children.Add(new TextBlock { Text = "Independent overflow indicator — shares the row's menu state and has its own shape, colors and tooltip." });
+        content.Children.Add(independentIndicator); content.Children.Add(enableIndicator);
         // The default scene has one physical viewport, allowing the bars and body to share
         // compositor scrolling. Keep the existing nested-input demo available explicitly.
         if (_nested.IsChecked == true)

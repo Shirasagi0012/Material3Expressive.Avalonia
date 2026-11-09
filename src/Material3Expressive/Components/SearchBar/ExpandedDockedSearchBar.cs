@@ -30,6 +30,7 @@ public class ExpandedDockedSearchBar : ContentControl
     public static readonly StyledProperty<Color> DividerColorProperty = DockedSearchBar.DividerColorProperty.AddOwner<ExpandedDockedSearchBar>();
     public static readonly StyledProperty<double> TonalElevationProperty = MaterialSurface.TonalElevationProperty.AddOwner<ExpandedDockedSearchBar>();
     public static readonly StyledProperty<double> ShadowElevationProperty = MaterialSurface.ShadowElevationProperty.AddOwner<ExpandedDockedSearchBar>();
+    public static readonly StyledProperty<bool> DismissOnPointerOutsideProperty = Dialog.DismissOnPointerOutsideProperty.AddOwner<ExpandedDockedSearchBar>();
     public static readonly DirectProperty<ExpandedDockedSearchBar, bool> IsPresentedProperty = AvaloniaProperty.RegisterDirect<ExpandedDockedSearchBar, bool>(nameof(IsPresented), bar => bar.IsPresented);
     internal static readonly StyledProperty<MotionSpring?> ExpandAnimationProperty = SearchBar.ExpandAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
     internal static readonly StyledProperty<MotionSpring?> CollapseAnimationProperty = SearchBar.CollapseAnimationProperty.AddOwner<ExpandedDockedSearchBar>();
@@ -47,6 +48,8 @@ public class ExpandedDockedSearchBar : ContentControl
     public Color DividerColor { get => GetValue(DividerColorProperty); set => SetValue(DividerColorProperty, value); }
     public double TonalElevation { get => GetValue(TonalElevationProperty); set => SetValue(TonalElevationProperty, value); }
     public double ShadowElevation { get => GetValue(ShadowElevationProperty); set => SetValue(ShadowElevationProperty, value); }
+    /// <summary>Whether a press outside the popup bounds requests collapse. A gap variant's clickable scrim is inside the popup and remains independent.</summary>
+    public bool DismissOnPointerOutside { get => GetValue(DismissOnPointerOutsideProperty); set => SetValue(DismissOnPointerOutsideProperty, value); }
     public bool IsPresented { get => _isPresented; private set => SetAndRaise(IsPresentedProperty, ref _isPresented, value); }
     private bool _isPresented;
     private CancellationTokenSource? _presentationLifetime;
@@ -89,6 +92,7 @@ public class ExpandedDockedSearchBar : ContentControl
             _presenter.Close(true);
             _presenter.DismissRequested -= OnDismiss;
             _presenter.OutsidePressed -= OnOutsidePressed;
+            _presenter.ScrimInvoked -= OnScrimInvoked;
             _presenter.Closed -= OnClosed;
         }
         _root?.Children.Remove(_popup);
@@ -105,6 +109,7 @@ public class ExpandedDockedSearchBar : ContentControl
             _root?.Children.Remove(_presenter);
             _presenter.DismissRequested += OnDismiss;
             _presenter.OutsidePressed += OnOutsidePressed;
+            _presenter.ScrimInvoked += OnScrimInvoked;
             _presenter.Closed += OnClosed;
         }
         _root?.Children.Add(_popup);
@@ -169,9 +174,17 @@ public class ExpandedDockedSearchBar : ContentControl
     }
     private void OnDismiss(object? sender, DismissRequestedEventArgs e)
     {
-        if (_activeState is { } state && _presentationLifetime is { } lifetime) _ = state.AnimateToCollapsedAsync(lifetime.Token);
+        if (AllowsDismissal(e.Reason)) OnScrimInvoked(sender, EventArgs.Empty);
     }
+    // DockedSearchBarLayoutImpl owns an unconditional BackHandler even when the enclosing
+    // PopupProperties disable its own back handler. Full-screen Dialog has no such handler.
+    private protected virtual bool AllowsDismissal(DismissReason reason) => reason is DismissReason.Escape or DismissReason.Back ||
+        reason == DismissReason.PointerOutside && DismissOnPointerOutside;
     private void OnOutsidePressed(object? sender, EventArgs e)
+    {
+        if (DismissOnPointerOutside) OnScrimInvoked(sender, e);
+    }
+    private void OnScrimInvoked(object? sender, EventArgs e)
     {
         if (_activeState is { } state && _presentationLifetime is { } lifetime) _ = state.AnimateToCollapsedAsync(lifetime.Token);
     }

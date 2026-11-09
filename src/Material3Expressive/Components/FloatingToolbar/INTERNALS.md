@@ -56,9 +56,21 @@ OffsetLimit 不自动重钳制 Offset。默认 spline/snap 先在实际 density 
 自定义动画规格使用公开 DIP。衰减后的 snap、上游有符号 delta 比较及剩余速度返回都需保留。
 直接拖动按 ExitDirection 投影，但释放速度不再随退出方向反转第二次。
 
-ScrollSource 观察实际 ScrollChanged 的 OffsetDelta 并转换符号，不消费额外输入。
-OnPostFlingAsync 仅由自定义宿主显式调用；设置新 behavior、detach 或触摸探索启用时取消 settling
-与订阅。behavior 只能有一个可见 owner，不能共享其运行时状态。
+ScrollSource 对同窗口的单轴物理 ScrollViewer 通过 `FloatingToolbarScrollConnection` 注册到既有
+MaterialScrollCoordinator；注册 owner 是栏与来源的最近共同可视 Control 祖先，对应 Compose 中承载正文与浮动栏
+的 nestedScroll 宿主，而非任意兄弟栏的深度。post 消费包含正文和内层 post，不包含 pre；本组件返回零位移消费。
+compositor 完成每笔事务后，通过有序通知在 UI 以原 Float DIP 算法更新 ContentOffset/Offset。
+正文释放的真实剩余速度在相同队列后进入 OnPostFlingAsync，返回值沿用上游 settleFloatingToolbar 将其
+remainingVelocity 作为 nested consumption 的现有契约；没有重新解释为 available-minus-returned。
+Touch/pen 使用固定 Core 的 18 DIP slop；新输入取消旧 settling，普通 wheel 不制造 post-fling。
+源、behavior、共同祖先、模板与触摸探索改变时释放旧注册，晚到通知按 attach 代次丢弃。
+非物理/逻辑/双轴来源保留原 ScrollChanged OffsetDelta 兼容观察及显式 OnPostFlingAsync。
+behavior 只能有一个可见 owner，不能共享其运行时状态。
+
+2026-10-04 的显式 fling 决定因原依赖不能交付 nested 剩余速度而成立。2026-11-09 本轮维护者明确授权
+缺失交互、共享能力及历史决定修订，现仓内 SmoothScroll 已提供 pre→正文惯性→post 异步释放，因此仅扩展
+符合上面条件的 ScrollSource。没有删除显式 API；`IsScrollConnected` 让调用方区分两条路径。
+物理正文继续采用共享决定 §18 的原有惯性算法；本连接不宣称它已与 Core 的正文 fling 轨迹一致。
 
 展开辅助策略读取应用 Expanded；同步回调后立即读回，其他外部变化在下一次实际滚动前观察。
 通知不改 Expanded、不隐藏整个工具栏；阈值/方向固定在订阅期，释放后才可换配置。

@@ -341,6 +341,34 @@ public class PullToRefreshTests
     }
 
     [AvaloniaFact]
+    public async Task ReversingArrowAlphaStartsFromTheSampledValueWithAFreshSpring()
+    {
+        using var clock = new MotionTestClockScope();
+        var indicator = Create(false, .8f);
+        var window = Show(indicator); clock.SendFrame(TimeSpan.Zero);
+        var arrow = indicator.GetVisualDescendants().OfType<PullToRefreshArrow>().Single();
+        await indicator.State!.SnapToAsync(1.2f); Flush(window);
+        Frames(clock, window, 16, 64);
+        Assert.InRange(arrow.Alpha, .3f, 1f);
+        await indicator.State.SnapToAsync(.8f); Flush(window);
+        Frames(clock, window, 80, 80); // Sample the old run before committing the reverse target.
+        var sampled = arrow.Alpha;
+        var reference = new Animatable<float>(new FloatConverter(), sampled, .01f);
+        var motion = arrow.EffectsAnimation!.Value;
+        var reverse = reference.AnimateToAsync(AnimationScope.Get(arrow), .3f,
+            new SpringSpec<float>(motion.DampingRatio, motion.Stiffness, .01f));
+        for (var time = 96; time <= 640; time += 16)
+        {
+            Frames(clock, window, time, time);
+            Assert.Equal(reference.Value, arrow.Alpha);
+            if (time == 96) Assert.Equal(sampled, arrow.Alpha);
+        }
+        Assert.True(reverse.IsCompletedSuccessfully);
+        Assert.Equal(.3f, arrow.Alpha);
+        window.Close(); Assert.Equal(0, clock.PendingFrameCount);
+    }
+
+    [AvaloniaFact]
     public void CustomContentAndDynamicTokensRetainTheirBindingsAndLayout()
     {
         var marker = new Border { Width = 12, Height = 12, Background = Brushes.Red };

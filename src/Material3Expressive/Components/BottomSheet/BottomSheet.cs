@@ -20,7 +20,7 @@ using Material3Expressive.Foundation.Rendering;
 namespace Material3Expressive.Components;
 
 /// <summary>A bottom sheet in the current visual tree. Place it in a finite-height overlay host.</summary>
-public class BottomSheet : ContentControl
+public partial class BottomSheet : ContentControl
 {
     public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<BottomSheet>();
     /// <summary>Explicit outline; null uses the themed CornerRadius.</summary>
@@ -78,6 +78,7 @@ public class BottomSheet : ContentControl
     protected override bool RegisterContentPresenter(ContentPresenter presenter) => presenter.Name == "PART_DragHandle" || base.RegisterContentPresenter(presenter);
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        DisconnectScroll();
         CancelPointer();
         if (_layout is not null) _layout.Owner = null;
         if (_handle is not null) _handle.Click -= HandleClick;
@@ -95,9 +96,12 @@ public class BottomSheet : ContentControl
         base.OnAttachedToVisualTree(e); AttachState();
         _topLevel = TopLevel.GetTopLevel(this);
         _topLevel?.AddHandler(KeyDownEvent, EscapeDown, RoutingStrategies.Bubble);
+        LayoutUpdated += UpdateScrollConnection;
     }
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        LayoutUpdated -= UpdateScrollConnection;
+        DisconnectScroll();
         _topLevel?.RemoveHandler(KeyDownEvent, EscapeDown); _topLevel = null;
         CancelPointer();
         _effects?.Dispose(); _effects = null;
@@ -115,12 +119,15 @@ public class BottomSheet : ContentControl
             if (change.NewValue is ILogical newChild && (newChild.GetLogicalParent() is not { } parent || parent != TemplatedParent)) LogicalChildren.Add(newChild);
         }
         if (change.Property == DragHandleProperty || change.Property == DragHandleTemplateProperty) UpdateHandle();
-        if (change.Property == StateProperty) { CancelPointer(); AttachState(); }
+        if (change.Property == StateProperty) { DisconnectScroll(); CancelPointer(); AttachState(); }
         if (change.Property == StateProperty || change.Property == GesturesEnabledProperty || change.Property == IsEffectivelyEnabledProperty || change.Property == DragHandleProperty)
             (_handle as BottomSheetHandle)?.RefreshAutomation();
         if (change.Property == GesturesEnabledProperty && _pointer is { } pointer && _effects is { } scope)
             _ = scope.Launch(async ct => { if (!await scope.WaitForNextFrameAsync(ct)) return; if (_pointer == pointer && !GesturesEnabled) CancelPointer(); }, "Sheet gesture configuration");
         if (change.Property == IsEffectivelyEnabledProperty) CancelPointer();
+        if (change.Property == AutoConnectScrollProperty && this.IsAttachedToVisualTree()) UpdateScrollConnection(null, EventArgs.Empty);
+        if (change.Property == GesturesEnabledProperty || change.Property == IsEffectivelyEnabledProperty)
+            _scrollConnection?.UpdateConfiguration();
         if (change.Property == SheetMaxWidthProperty || change.Property == WindowInsetsProperty || change.Property == FlowDirectionProperty || change.Property == StandardPeekHeightProperty
             || change.Property == Foundation.Rendering.MaterialWindowInsets.ConsumedPaddingProperty) _layout?.InvalidateMeasure();
     }
@@ -134,6 +141,7 @@ public class BottomSheet : ContentControl
     }
     private void StateChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == SheetState.CurrentOffsetProperty) _scrollConnection?.StateChanged();
         if (e.Property == SheetState.CurrentValueProperty || e.Property == SheetState.HasExpandedStateProperty || e.Property == SheetState.HasPartiallyExpandedStateProperty)
             (_handle as BottomSheetHandle)?.RefreshAutomation();
         if (e.Property == SheetState.CurrentOffsetProperty || StandardPeekHeight is not null &&
@@ -189,6 +197,9 @@ public class BottomSheet : ContentControl
     private void PointerDown(object? sender, PointerPressedEventArgs e)
     {
         if (!CanDrag || _pointer is not null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        // The physical child owns touch slop, capture and velocity. Its nested connection
+        // moves the sheet before/after body consumption; do not run a second parent drag.
+        if (e.Pointer.Type is PointerType.Touch or PointerType.Pen && _scrollConnection?.Contains(e.Source) == true) return;
         _pointer = e.Pointer; _down = _last = e.GetPosition(_topLevel);
         _velocity.Reset(); _velocity.Add(e.Timestamp, (float)(_down.Y * LayoutHelper.GetLayoutScale(this)));
         if (State.IsAnimationRunning) StartDrag(e);

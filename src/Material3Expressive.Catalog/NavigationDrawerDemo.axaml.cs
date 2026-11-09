@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -15,6 +16,8 @@ public partial class NavigationDrawerDemo : Window
     public NavigationDrawerDemo() { AnimationScope.Initialize(this); InitializeComponent(); }
     private void ToggleTheme(object? sender, RoutedEventArgs e) => RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     private void ToggleDirection(object? sender, RoutedEventArgs e) => FlowDirection = FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+    private void ToggleParentInsets(object? sender, RoutedEventArgs e) =>
+        InsetsHost.Insets = InsetsHost.Insets.Top == 6 ? new Thickness(32) : new Thickness(8, 6, 12, 10);
     private void ReplaceStates(object? sender, RoutedEventArgs e)
     {
         Modal.State = new DrawerState(DrawerValue.Open);

@@ -18,6 +18,19 @@ namespace Material3Expressive.Catalog;
 
 public partial class CarouselDemo : Window
 {
+    private CarouselPosition[]? _savedPositions;
+    private void SaveClassicPositions(object? sender, RoutedEventArgs e)
+    {
+        var carousels = new[] { MultiBrowse, CenteredHero, Uncontained };
+        _savedPositions = carousels.Select(carousel => carousel.CapturePosition()).ToArray();
+        foreach (var carousel in carousels) carousel.ScrollToItem(0);
+    }
+    private void RestoreClassicPositions(object? sender, RoutedEventArgs e)
+    {
+        if (_savedPositions is not { } saved) return;
+        foreach (var pair in new[] { MultiBrowse, CenteredHero, Uncontained }.Zip(saved))
+            pair.First.RestorePosition(pair.Second);
+    }
     public CarouselDemo()
     {
         AnimationScope.Initialize(this);

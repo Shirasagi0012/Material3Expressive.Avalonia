@@ -16,7 +16,7 @@
             <m3:ModalBottomSheetPresenter x:Name="PART_Presentation" ClipToBounds="True">
               <m3:Scrim x:Name="PART_Scrim" />
               <m3:BottomSheet x:Name="PART_Sheet" State="{TemplateBinding State}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                  SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding GesturesEnabled}" BackHandlerEnabled="False"
+                  SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding GesturesEnabled}" AutoConnectScroll="{TemplateBinding AutoConnectScroll}" BackHandlerEnabled="False"
                   DragHandle="{TemplateBinding DragHandle}" DragHandleTemplate="{TemplateBinding DragHandleTemplate}" WindowInsets="{TemplateBinding WindowInsets}"
                   Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                   TonalElevation="{TemplateBinding TonalElevation}" />
@@ -47,7 +47,7 @@
             <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                 TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>
-                <StackPanel>
+                <m3:BottomSheetContentLayout>
                   <m3:TooltipBox x:Name="PART_Tooltip" HorizontalAlignment="Center">
                     <m3:BottomSheetHandle x:Name="PART_HandleButton" HorizontalAlignment="Center" Padding="0" MinWidth="0" MinHeight="0" Background="Transparent" FocusAdorner="{x:Null}" m3:MaterialInteraction.IsInteractive="True">
                       <Button.Template>
@@ -62,7 +62,7 @@
                   </m3:TooltipBox>
                   <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                                     HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
-                </StackPanel>
+                </m3:BottomSheetContentLayout>
               </Border>
             </m3:MaterialSurface>
           </m3:BottomSheetLayout>
@@ -88,7 +88,7 @@
                               HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />
             <m3:BottomSheet x:Name="PART_Sheet" State="{Binding State.BottomSheetState, RelativeSource={RelativeSource TemplatedParent}}"
                 StandardPeekHeight="{TemplateBinding SheetPeekHeight}" Content="{TemplateBinding SheetContent}" ContentTemplate="{TemplateBinding SheetContentTemplate}"
-                SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding SheetSwipeEnabled}" BackHandlerEnabled="False"
+                SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding SheetSwipeEnabled}" AutoConnectScroll="{TemplateBinding AutoConnectScroll}" BackHandlerEnabled="False"
                 DragHandle="{TemplateBinding SheetDragHandle}" DragHandleTemplate="{TemplateBinding SheetDragHandleTemplate}"
                 Background="{TemplateBinding SheetBackground}" Foreground="{TemplateBinding SheetForeground}" CornerRadius="{TemplateBinding SheetCornerRadius}" Shape="{TemplateBinding SheetShape}"
                 TonalElevation="{TemplateBinding SheetTonalElevation}" ShadowElevation="{TemplateBinding SheetShadowElevation}" />

@@ -55,9 +55,19 @@ public partial class ExpandedSearchBarDemo : Window
             Root.Children.Remove(SearchPopup);
             popup.State = State; popup.InputField = input; popup.Content = content; Root.Children.Add(popup);
         }
+        AllowEscape.IsEnabled = presentation is SearchPresentation.FullScreen or SearchPresentation.Contained;
         UpdateResults();
     }
     private void CloseSearch(object? sender, RoutedEventArgs e) => _ = State.AnimateToCollapsedAsync();
+    private void DismissalPolicyChanged(object? sender, RoutedEventArgs e)
+    {
+        if (Root is null || AllowEscape is null || AllowOutside is null) return;
+        foreach (var popup in Root.Children.OfType<ExpandedDockedSearchBar>())
+        {
+            if (popup is ExpandedFullScreenSearchBar fullScreen) fullScreen.DismissOnEscape = AllowEscape.IsChecked == true;
+            popup.DismissOnPointerOutside = AllowOutside.IsChecked == true;
+        }
+    }
     private void QueryChanged(object? sender, TextChangedEventArgs e) { if (Results is not null) UpdateResults(); }
     private void UpdateResults()
     {

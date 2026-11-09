@@ -8,6 +8,28 @@ Compose Multiplatform Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`（v1.13.0-
 
 ## AppBarRow / AppBarColumn
 
+`AppBarOverflowIndicator` 对应固定 `AppBarDsl.kt` 的同名公开函数；两仓固定实现相同。
+组合现有 TooltipBox、PlainTooltip 和 IconButton，显式绑定现有 AppBarMenuState，不从 DataContext 隐式查找状态。
+默认行/列模板也使用该入口。内部 MoreVert 路径直接翻译固定 `internal/Icons.kt`，不再使用字体图标代替。
+Shape 与 InteractionSource 转发已有能力；四个可空颜色属性表达 IconButtonColors 的四个通道，
+空值保留透明容器及环境内容色关系，禁用默认 alpha 是替换而非相乘。点击读取当时的 MenuState，
+换模板退订旧按钮，卸载的 Tooltip/交互源清理由已有组件负责。
+固定上游 enabled 只交给内部 IconButton。Avalonia 默认会把包装层 IsEnabled 传播到 Tooltip，
+因此该非交互包装层的 IsEnabledCore 保持 true，并将 IsEnabled 显式转交按钮；颜色读取按钮实际启用状态。
+包装层无激活动作，真实按钮提供 disabled 自动化语义；祖先禁用仍按 Avalonia 继承禁用整个组合。
+
+本轮维护者已授权新增组件 API 和必要职责调整，因此把原先仅供默认模板使用的内部按钮提升为公开组合入口。
+默认提示继续为英文，新增 Description 可显式本地化；没有新增通用颜色或菜单状态框架，没有公共破坏性迁移。
+验证入口为 AppBarOverflowIndicatorTests 和双端 `appbar-overflow-indicator`；实际结果见该族报告。
+
+`overflow-indicator-current` 的 42 例、354 个样本均成功采集，布局和菜单/启用状态读数全部相等；
+18 个静态配置与 4 个外部 hover/focus/press 时间线均在既有图像容差内且重复稳定。
+总图像分类为 26 withinTolerance、16 different。真实提示保留英文与固定 Roboto：已检查禁用 hover 的中间帧，
+两端均显示提示且不能激活菜单，但文字栅格仍超差；换交互源的 65ms 当帧旧波纹保留范围也不同。
+Core 的 8 个真实点击/状态替换用例在重复或额外截图中有波动；Avalonia 全部稳定。
+这些差异没有被接受为一致，也没有放宽容差。控件行为回归 25 项通过，覆盖真实键盘/指针、
+局部与祖先禁用、独立提示、换状态、四通道颜色、换源、换模板与卸载重挂。
+
 固定基线的 AppBarRow.kt、AppBarColumn.kt、AppBarDsl.kt 在 AndroidX 与 Core 的 Git blob
 逐一相同。`AppBarOverflowLayout` / `AppBarItemsPanel` 对应 `OverflowMeasurePolicy`：
 先预留指示器主轴尺寸，内容按完整 loose constraints 逐个测量，在第一个不合适的项目处停止；
