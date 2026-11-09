@@ -70,7 +70,7 @@ internal sealed class PullToRefreshIndicatorContent : Decorator
         private readonly bool _refreshing;
         private readonly RotateTransform _rotation = new();
         private IDisposable? _progressContribution;
-        private PullToRefreshState? _state;
+        private IPullToRefreshState? _state;
         private Visual[] _fadeAncestors = [];
         private static readonly DirectProperty<IndicatorPart, double> RotationProperty =
             AvaloniaProperty.RegisterDirect<IndicatorPart, double>("Rotation", part => part._angle);
@@ -149,9 +149,9 @@ internal sealed class PullToRefreshIndicatorContent : Decorator
                 _progressContribution = Child switch
                 {
                     PullToRefreshArrow arrow => arrow.Bind(PullToRefreshArrow.DistanceFractionProperty,
-                        _state.GetObservable(PullToRefreshState.DistanceFractionProperty), BindingPriority.Animation),
+                        new Binding(nameof(IPullToRefreshState.DistanceFraction)) { Source = _state, Priority = BindingPriority.Animation }),
                     ContainedLoadingIndicator loading => loading.Bind(LoadingIndicatorBase.ProgressProperty,
-                        new Binding(nameof(PullToRefreshState.DistanceFraction)) { Source = _state, Priority = BindingPriority.Animation }),
+                        new Binding(nameof(IPullToRefreshState.DistanceFraction)) { Source = _state, Priority = BindingPriority.Animation }),
                     _ => null
                 };
             }

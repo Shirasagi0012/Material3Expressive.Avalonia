@@ -4,23 +4,15 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Material3Expressive.Foundation.Rendering;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Components;
-
-public enum AppBarArrangement
-{
-    Start,
-    Center,
-    End,
-    SpaceBetween,
-    SpaceAround,
-    SpaceEvenly,
-    SpacedBy
-}
 
 /// <summary>Bottom actions, optional FAB, or a replacement custom content region.</summary>
 public class BottomAppBar : ItemsControl
 {
+    public BottomAppBar() => MaterialWindowInsets.EnsureScope(this);
+
     static BottomAppBar() => TemplateProperty.OverrideDefaultValue<BottomAppBar>(null);
     public static readonly StyledProperty<object?> FloatingActionButtonProperty =
         AvaloniaProperty.Register<BottomAppBar, object?>(nameof(FloatingActionButton));
@@ -38,10 +30,8 @@ public class BottomAppBar : ItemsControl
         AvaloniaProperty.Register<BottomAppBar, double>(nameof(TonalElevation));
     public static readonly StyledProperty<double> ExpandedHeightProperty =
         AvaloniaProperty.Register<BottomAppBar, double>(nameof(ExpandedHeight));
-    public static readonly StyledProperty<AppBarArrangement> HorizontalArrangementProperty =
-        AvaloniaProperty.Register<BottomAppBar, AppBarArrangement>(nameof(HorizontalArrangement));
-    public static readonly StyledProperty<double> SpacingProperty =
-        AvaloniaProperty.Register<BottomAppBar, double>(nameof(Spacing));
+    public static readonly StyledProperty<MaterialHorizontalArrangement?> HorizontalArrangementProperty =
+        AvaloniaProperty.Register<BottomAppBar, MaterialHorizontalArrangement?>(nameof(HorizontalArrangement));
     public static readonly StyledProperty<bool> TouchExplorationEnabledProperty =
         AvaloniaProperty.Register<BottomAppBar, bool>(nameof(TouchExplorationEnabled));
     public static readonly StyledProperty<BottomAppBarScrollBehavior?> ScrollBehaviorProperty =
@@ -97,16 +87,10 @@ public class BottomAppBar : ItemsControl
         set => SetValue(ExpandedHeightProperty, value);
     }
 
-    public AppBarArrangement HorizontalArrangement
+    public MaterialHorizontalArrangement? HorizontalArrangement
     {
         get => GetValue(HorizontalArrangementProperty);
         set => SetValue(HorizontalArrangementProperty, value);
-    }
-
-    public double Spacing
-    {
-        get => GetValue(SpacingProperty);
-        set => SetValue(SpacingProperty, value);
     }
 
     public bool TouchExplorationEnabled
@@ -140,6 +124,12 @@ public class BottomAppBar : ItemsControl
 
     private AppBarBottomChrome? _chrome;
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
@@ -149,6 +139,7 @@ public class BottomAppBar : ItemsControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == WindowInsetsProperty) SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
         if (change.Property == FloatingActionButtonProperty || change.Property == CustomContentProperty)
         {
             if (change.OldValue is Control old)
@@ -173,7 +164,8 @@ public class BottomAppBar : ItemsControl
 
         if (change.Property.OwnerType == typeof(BottomAppBar) || change.Property == BackgroundProperty ||
             change.Property == ForegroundProperty || change.Property == FlowDirectionProperty ||
-            change.Property == MaterialWindowInsets.ConsumedPaddingProperty)
+            change.Property == MaterialWindowInsets.ConsumedPaddingProperty ||
+            change.Property == MaterialWindowInsets.UnconsumedInsetsProperty)
             _chrome?.OwnerChanged(change);
     }
 

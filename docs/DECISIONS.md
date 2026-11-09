@@ -464,3 +464,31 @@
 原生 Expressive MenuItem 同轮通过 MenuAppearance.HorizontalArrangement 接入该能力，NativeMenuRow 的
 默认首尾布局继续由 null 保留。主内容行消费排列，尾部组合槽内部的快捷键/chevron 排列不被替换；
 Baseline/MenuBar 不采用此附加属性。不改变上文关于权重、intrinsic 公共 API 的范围。
+
+### BottomAppBar Arrangement 迁移（2026-11-09）
+
+本轮维护者明确授权缺失 API 与破坏性迁移。固定 AppBar.kt 的 FlexibleBottomAppBar 接收任意 Horizontal，
+故将 BottomAppBar.HorizontalArrangement 与两个排列 Token 接到现有共享类型，删除 AppBarArrangement 与 Spacing。
+原枚举只覆盖常用排列的理由保留；共享能力现已存在，继续维护局部算法反而遗漏绝对方向和自定义排列。
+默认 Start/SpaceBetween、槽与滚动职责不变；迁移为同名共享成员，固定间距改 SpacedBy/SpacedHorizontalArrangement。
+仓内 Catalog、配置测试与双端调用已迁移，不扩展本决定为完整 RowScope weight/alignment。
+
+## 37. 色调高度环境
+
+本轮维护者明确授权缺失 API 与共享能力。固定 ColorScheme.kt 的 LocalTonalElevationEnabled 是默认 true 的
+子树环境；此前只有 Surface 的内部 ApplyTonalElevation 特殊门控，应用无法表达该功能。
+新增 MaterialTonalElevation.IsEnabled 继承附加属性，所有现有 MaterialSurface 消费同一入口，不创建第二套绘制。
+开关只决定是否着色，累计高度和阴影独立；后代显式 true 使用完整累计值。内部非 Surface 容器的门控保留，
+不能以环境重新启用它。无破坏性迁移；ColorScheme 两仓库的 toString 差异不涉及该行为。
+
+## 38. 物理 Insets 并集与自动留白容器
+
+2026-11-09 本轮维护者明确授权共享能力与历史决定修订。§4 原先仅提供 ConsumePadding，
+是为了先保留 Scaffold 的调用方消费顺序，避免假设系统 Insets 服务。现在固定 Foundation WindowInsetsPadding.kt
+提供明确的 union 与 padding 算法，新增 ConsumeInsets 和 MaterialWindowInsetsPadding 完成这两个实际入口。
+复用原 PaddingScope 继承/重挂链，ConsumePadding 的 add 不变；同一元素的顺序明确为 add 后 union，
+自动容器应用剩余物理 Insets。新入口不读取 OS 状态，不改变 Scaffold 默认正文布局。
+同轮后续依据三个导航组件固定源码的 windowInsetsPadding 接入 NavigationBar、ShortNavigationBar、NavigationRail；
+消费归属控件，模板仅执行布局，以覆盖真实逻辑内容。普通 WideNavigationRail 后续按相同固定算法接入；ModalWideRail 因弹层搬移尚未纳入。
+底部 AppBar 后续同样接入发布阶段，使 Actions/FAB/CustomContent 不重复消费；顶栏双行 scope 尚未扩展。
+无签名迁移；原先手工从子内容请求中扣除消费的调用方应改传完整 Insets。示例和双端证据由各组件文档维护。

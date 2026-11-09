@@ -451,6 +451,54 @@
                         </Border>
                     </ScrollViewer>
                 </m3:Scaffold>
+                <TextBlock Text="嵌套窗口 Insets" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <Button Content="切换外层 Insets" Click="OnWindowInsetsClick" HorizontalAlignment="Left" />
+                <Border Height="180" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerHighest}}">
+                    <m3:MaterialWindowInsetsPadding x:Name="DemoInsetsPadding" Insets="12,24,20,16">
+                        <m3:MaterialWindowInsetsPadding Insets="20,32,28,24">
+                            <m3:Scaffold x:Name="DemoInsetsScaffold" ContentWindowInsets="20,32,28,24">
+                                <StackPanel Spacing="12" Margin="12">
+                                    <TextBlock Text="两层 Insets 按边取最大值，不重复留白。" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding ContentPadding, ElementName=DemoInsetsScaffold}" />
+                                </StackPanel>
+                            </m3:Scaffold>
+                        </m3:MaterialWindowInsetsPadding>
+                    </m3:MaterialWindowInsetsPadding>
+                </Border>
+                <TextBlock Text="导航容器消费 Insets" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                <m3:MaterialWindowInsetsPadding Insets="{Binding Insets, ElementName=DemoInsetsPadding}">
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Height="240">
+                        <m3:NavigationRail Grid.RowSpan="2" WindowInsets="20,32,28,24">
+                            <m3:NavigationRailItem Label="主页" IsSelected="True">
+                                <m3:NavigationRailItem.Icon><m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" /></m3:NavigationRailItem.Icon>
+                            </m3:NavigationRailItem>
+                        </m3:NavigationRail>
+                        <m3:ShortNavigationBar Grid.Column="1" WindowInsets="20,32,28,24">
+                            <m3:ShortNavigationBarItem Label="搜索" IsSelected="True">
+                                <m3:ShortNavigationBarItem.Icon><m3:MaterialSymbol Symbol="Search" Width="24" Height="24" /></m3:ShortNavigationBarItem.Icon>
+                            </m3:ShortNavigationBarItem>
+                        </m3:ShortNavigationBar>
+                        <m3:NavigationBar Grid.Column="1" Grid.Row="1" WindowInsets="20,32,28,24">
+                            <m3:NavigationBarItem Label="收藏" IsSelected="True">
+                                <m3:NavigationBarItem.Icon><m3:MaterialSymbol Symbol="Favorite" Width="24" Height="24" /></m3:NavigationBarItem.Icon>
+                            </m3:NavigationBarItem>
+                        </m3:NavigationBar>
+                    </Grid>
+                </m3:MaterialWindowInsetsPadding>
+                <m3:MaterialWindowInsetsPadding Insets="{Binding Insets, ElementName=DemoInsetsPadding}" Height="240">
+                    <m3:WideNavigationRail x:Name="DemoInsetsWideRail" WindowInsets="20,32,28,24">
+                        <m3:WideNavigationRail.Header>
+                            <Button Content="展开 / 收起" Click="OnInsetsWideRailClick" />
+                        </m3:WideNavigationRail.Header>
+                        <m3:WideNavigationRailItem Label="主页" IsSelected="True">
+                            <m3:WideNavigationRailItem.Icon>
+                                <m3:MaterialWindowInsetsPadding Insets="20,32,28,24">
+                                    <m3:MaterialSymbol Symbol="HomeAndGarden" Width="24" Height="24" />
+                                </m3:MaterialWindowInsetsPadding>
+                            </m3:WideNavigationRailItem.Icon>
+                        </m3:WideNavigationRailItem>
+                    </m3:WideNavigationRail>
+                </m3:MaterialWindowInsetsPadding>
                 <TextBlock Text="Divider" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <Separator />
                 <Separator Margin="16,0" m3:MaterialDivider.Thickness="2" m3:MaterialDivider.Color="#6750A4" />
@@ -546,7 +594,11 @@
                     <Border Grid.Column="1"
                             Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainerLow}}"
                             Padding="16">
-                        <TextBlock Text="Wide NavigationRail" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Wide NavigationRail" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+                            <Button Content="自定义目的地排列" Click="OnCustomRailArrangement" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+                            <TextBlock Text="在默认排列与末项靠底之间切换；下方模态栏使用同一排列。" TextWrapping="Wrap" />
+                        </StackPanel>
                     </Border>
                 </Grid>
                 <Grid ColumnDefinitions="Auto,*" Height="360">

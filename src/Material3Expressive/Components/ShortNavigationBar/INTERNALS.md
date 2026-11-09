@@ -68,7 +68,7 @@ Item 使用 Button 的事件/命令，但 Enter 与 Space 在 KeyUp 激活；IsS
 以下确认与历史观测依据来自[拆分前组件记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/ShortNavigationBar/README.md)；不以当前代码反推维护者授权。
 2026-10-03 维护者确认“采用推荐 API 与测量适配”：使用原生 ItemsControl 内容入口、组件局部固有尺寸查询，
 原因是 Avalonia 没有 Compose intrinsic API；范围仅为本族，不建立通用 intrinsic 能力，不统一 Short 与 Wide 的动画模型。
-WindowInsets 是宿主提供的物理 Thickness，桌面为零、RTL 不交换边，没有嵌套 inset 消费环境。
+WindowInsets 是宿主提供的物理 Thickness，桌面为零、RTL 不交换边，嵌套消费现已按下述决定接入。
 
 同日确认“采用原生 Width 语义并记录差异”：显式 Width 固定 Bar 宽度，各项仍按排列分配。
 固定 Compose 直接 Modifier.width / fillMaxWidth 会把 minWidth 传给每项，经 constraints.constrain
@@ -123,3 +123,17 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/ShortNavigationBar/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 2026-11-09：窗口 Insets 消费接入
+
+原实现直接应用宿主物理 Thickness，以避免在缺少共享能力时猜测 Compose 消费环境。
+本轮维护者已明确授权共享能力与历史决定修订；固定 AndroidX 与 Core 的对应源码均使用
+`windowInsetsPadding(windowInsets)`，现在共享 PaddingScope 能完整表达 subtract、apply、publish。
+控件自身持有消费作用域，模板 Border 只应用剩余 Insets；这样逻辑树中的真实 Item/Icon/Header
+也能继承消费，不会被模板内容边界截断。RTL 只在 Border 适配处转换，存储仍是物理边。
+
+`NavigationInsetsTests` 覆盖三类容器、RTL、祖先更新、清除与嵌套图标；双端新增
+`navigation-insets` 家族覆盖动态输入和真实内容几何。此决定不自动推广到独立弹层中的 ModalWideNavigationRail。
+
+本轮 `navigation-insets-delivery` 的 30 例全部 equal，执行错误为零且重复稳定；
+覆盖 24 静态、6 动态用例。相关行为回归 124/124，整仓构建通过。

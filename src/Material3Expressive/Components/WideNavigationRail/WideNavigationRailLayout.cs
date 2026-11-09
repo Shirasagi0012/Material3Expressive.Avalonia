@@ -245,6 +245,18 @@ internal sealed class WideNavigationRailItemsPanel : Panel
         var layoutScale = LayoutHelper.GetLayoutScale(this);
         var density = (float)layoutScale;
         var height = finalSize.Height * layoutScale;
+        if (Arrangement.IsCustom)
+        {
+            // Arbitrary callbacks use the actual measured Int sizes and separately rounded gap,
+            // exactly as WideNavigationRailLayout does before calling Arrangement.Vertical.
+            var measured = Children.Select(child => MathUtils.RoundToInt(child.DesiredSize.Height * layoutScale)).ToArray();
+            for (var i = 0; i < measured.Length - 1; i++) measured[i] += MathUtils.RoundToInt(Spacing);
+            var coordinates = Arrangement.Arrange(MathUtils.RoundToInt(height - HeaderOffset), measured, density);
+            for (var i = 0; i < Children.Count; i++)
+                Children[i].Arrange(new Rect(0, (coordinates[i] + HeaderOffset) / layoutScale,
+                    Children[i].DesiredSize.Width, Children[i].DesiredSize.Height));
+            return finalSize;
+        }
         var sizes = Children.Select(child => child.DesiredSize.Height * layoutScale).ToArray();
         for (var i = 0; i < sizes.Length - 1; i++) sizes[i] += Spacing;
         var center = Arrangement == NavigationRailArrangement.Center;

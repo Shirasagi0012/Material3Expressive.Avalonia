@@ -83,6 +83,30 @@ Arrangement 还有 Top、Bottom、SpaceBetween、SpaceAround、SpaceEvenly；它
 `NavigationRailArrangement.SpacedBy(8, Avalonia.Layout.VerticalAlignment.Center)`。
 标准 Center 相对整栏居中，有 Header 时其他排列使用 Header 下方空间；SpacedBy 的 Center 与标准 Center 不同。
 
+需要将某项靠底、反向或采用非均匀间距时，可以派生不可变 `NavigationRailArrangement`：
+
+```csharp
+sealed record FooterArrangement : NavigationRailArrangement
+{
+    public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, Span<int> positions)
+    {
+        var top = 0;
+        for (var index = 0; index < sizes.Length; index++)
+        {
+            positions[index] = index == sizes.Length - 1 ? Math.Max(top, totalSize - sizes[index]) : top;
+            top += sizes[index];
+        }
+    }
+}
+// Rail.Arrangement = new FooterArrangement();
+```
+
+回调接收整数物理像素，`density` 用于把自定义 DIP 值换算为像素。`sizes` 已含栏的项间距（末项除外），
+不应重复添加默认间距；写入的坐标始终从物理顶部起算，RTL 不反转纵向顺序。
+自定义排列使用 Header 下方空间，包括展开动画时的实时测量尺寸；只有内置 Center 特殊处理整栏居中。
+配置变化时替换排列对象；不在回调内修改控件或启动动画。普通与 Modal 使用同一接口。
+Catalog 的“自定义目的地排列”可切换末项靠底，并同步到模态示例。原有静态成员和 SpacedBy 不需要迁移。
+
 WindowInsets 为物理 Thickness，桌面默认零，RTL 不交换物理边；ContentPadding 为逻辑边，默认顶部 44 DIP。
 Background / Foreground / CornerRadius 控制容器。Item 可分别覆盖 SelectedIconColor、IndicatorColor、
 两种位置的 SelectedTextColorTopIconPosition / SelectedTextColorStartIconPosition，以及未选中和禁用内容色。
@@ -147,3 +171,14 @@ Modal 两个形态独立，继承的普通 Shape 不参与 Modal 模板。
 
 逻辑 start/end 遵循 FlowDirection，百分比跟随当前容器尺寸；对象属性变更即时更新 outline，
 不重置状态、目的地选择或展开动画。Catalog 普通 Rail 和隐藏式 Modal 提供切角示例。
+
+## 普通宽栏的嵌套 Insets
+
+`WideNavigationRail.WindowInsets` 自动扣除祖先已消费的物理 Insets，并向 Header 和项目内容发布本栏消费量。
+它可以放在 `MaterialWindowInsetsPadding` 内；项目内部再次请求相同 Insets 不会重复留白。
+展开与收起沿用同一消费链，`ContentPadding` 仍是独立的内容间距，不算窗口 Insets 消费。
+Catalog 的“导航容器消费 Insets”提供切换外层 Insets、展开与收起的组合。
+此前手工减去祖先消费量的调用方应改传完整 Insets。
+
+`ModalWideNavigationRail` 的独立弹层与内联占位尚未接入该消费协议，仍直接使用其 WindowInsets；
+普通宽栏的通过结果不代表模态路径已完成。

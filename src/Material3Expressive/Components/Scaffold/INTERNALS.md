@@ -97,3 +97,23 @@ Catalog 入口为 [MainWindow.axaml](../../../Material3Expressive.Catalog/MainWi
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/Scaffold/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 自动 Insets 容器与消费并集（2026-11-09）
+
+按本轮维护者新增共享能力授权，补齐固定 Foundation `WindowInsetsPadding.kt`：两仓库该文件 blob
+均为 `30732d3638164c8ac6233c4d6d9fa82ecfe2a398`。`MaterialWindowInsetsPadding` 对应
+InsetsPaddingModifierNode，继承 Decorator；物理 Insets 减祖先消费后应用，子约束减小、返回尺寸受父约束限制，
+子项放置保留原物理 left/top，即使 Insets 大于可用尺寸。使用现有 PaddingScope 传播而不建立另一棵消费树。
+
+`MaterialWindowInsets.ConsumeInsets` 对应 WindowInsets 重载的 union；既有 ConsumePadding 保留 PaddingValues
+重载的 add 与逻辑方向解析。两者在同一元素上的顺序固定为 add 后 union，其他顺序由嵌套元素表达。
+这是扩展历史“只传播手动 Padding”的范围；原方案限制是缺少 modifier 等价布局宿主，现在由新容器承担该职责，
+没有改变 Scaffold 正文默认不自动 padding 的决定。无破坏性迁移，也不修改未接入消费环境的旧 Rail/Bar。
+
+`WindowInsetsPaddingTests` 覆盖嵌套 max/add、RTL、重挂/换父、超大 Insets 和实际 Scaffold/BottomAppBar；
+相关 31 项测试通过。双端 `window-insets-padding` 保留普通、部分已消费、分数像素、超约束、RTL及动态消费场景。
+
+`window-insets-padding-verified` 20 例全部 equal、零执行错误、重复/额外截图稳定；
+包含动态方向与消费变更、分数物理像素、超大 Insets。首轮夹具正文缺少 fill 输入的失败报告保留在
+`window-insets-padding-delivery`；最终只补齐两端相同的填充输入，没有更改参考控件或容差。
+整仓 Debug 构建通过（`batch6-solution-build-verified.log`）。

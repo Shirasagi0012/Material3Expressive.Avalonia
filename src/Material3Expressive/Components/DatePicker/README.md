@@ -45,6 +45,28 @@ Catalog 的日期语言按钮会同时更新单日和范围选择器。
 日期范围用一次赋值更新起止，避免两个独立双向绑定产生中间状态。终点早于起点，或只有终点没有起点时，范围会整个清空。这与固定版本
 Compose 的 `setSelection` 相同。
 
+## 自定义日期显示
+
+`DateFormatter` 接受 `IDatePickerFormatter`，单日与范围共用同一接口。`FormatMonthYear`
+格式化月份标题，`FormatDate` 格式化已选日期；`forContentDescription` 为 true 时用于朗读描述。
+两者接收控件的 `Culture`，日期为可空 `DateOnly`。返回 null 使用默认占位文案，返回空字符串则保持为空。
+
+```csharp
+sealed class IsoDateFormatter : IDatePickerFormatter
+{
+    public string? FormatMonthYear(DateOnly? date, CultureInfo culture)
+        => date?.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+    public string? FormatDate(DateOnly? date, CultureInfo culture, bool forContentDescription = false)
+        => date?.ToString(forContentDescription ? "D" : "yyyy-MM-dd", culture);
+}
+// picker.DateFormatter = new IsoDateFormatter();
+```
+
+替换 formatter 会更新标题、月份、日按钮的无障碍描述和禁选日期错误文字，保留输入草稿、焦点和滚动位置。
+它不改变日期输入的解析规则。修改配置时替换 formatter 实例；接口不监听实例内部状态。
+显式 `Headline` / `HeadlineTemplate` 仍由应用负责标题内容与无障碍描述。
+Catalog 的 “Custom date format” 按钮展示单日和范围入口。
+
 ## 月份交互
 
 单日月历的左右按钮平滑切月；触摸横滑会连续移动月历，松手后吸附到当前或相邻月份。

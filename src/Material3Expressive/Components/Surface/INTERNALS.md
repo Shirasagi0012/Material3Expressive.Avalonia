@@ -215,3 +215,15 @@ RTL 列表新增非对称圆角暴露旧探针读取逻辑 TopLeft 而定义是�
 51 静态用例全部通过原门禁。列表 8/12、菜单 9/12、按钮动态 53/60 通过；Split 动态 20 例均仍有差异。
 8 个反向场景仍有 Compose.repeat 在 160ms 的 raster 变化，Avalonia repeat/extraImages 稳定。
 四个原先仅因 RTL 探针失败的列表用例已通过；未更改容差、参考输出或采样时刻。
+
+## 色调高度环境
+
+2026-11-09 本轮维护者授权补齐 `ColorScheme.kt.LocalTonalElevationEnabled`，新增继承附加属性
+`MaterialTonalElevation.IsEnabled`（默认 true），MaterialSurface 在现有颜色门控处消费。
+AndroidX/Core ColorScheme.kt 仅 toString 实现不同；applyTonalElevation 与环境默认值相同。
+关闭环境只跳过着色，不清零 LocalAbsoluteTonalElevation 对应的内部累计值，也不改变 shadow。
+后代可重新开启，按完整祖先累计高度着色；资源更新、重挂与移入其他环境沿 Avalonia 继承属性更新。
+内部 ApplyTonalElevation 仍表达 ListItem/PullToRefresh 等非 Surface 上游容器的专属门控，不能被环境重新开启。
+
+行为入口：TonalElevationEnvironmentTests；双端入口：tonal-elevation，覆盖四个 Surface 入口、明暗、继承/覆盖、
+自定义色、阴影和运行时开关/累计高度更新。没有改变已有 tint 公式、动画规格或比较容差。

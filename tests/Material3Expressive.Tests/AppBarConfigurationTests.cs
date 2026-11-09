@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -131,16 +132,16 @@ public class AppBarConfigurationTests
         {
             Assert.Equal(height, bar.ExpandedHeight); Assert.Equal(height, bar.Bounds.Height);
             Assert.Equal(flexible ? new Thickness(16, 0, 16, 0) : new Thickness(4, 4, 4, 0), bar.ContentPadding);
-            Assert.Equal(flexible ? AppBarArrangement.SpaceBetween : AppBarArrangement.Start, bar.HorizontalArrangement);
+            Assert.Equal(flexible ? MaterialHorizontalArrangement.SpaceBetween : MaterialHorizontalArrangement.Start, bar.HorizontalArrangement);
             var style = new Style { Setters = { new Setter(BottomAppBar.ContentPaddingProperty, new Thickness(3)),
-                new Setter(BottomAppBar.HorizontalArrangementProperty, AppBarArrangement.End) } };
+                new Setter(BottomAppBar.HorizontalArrangementProperty, MaterialHorizontalArrangement.End) } };
             bar.Styles.Add(style); bar.ApplyStyling(); Flush(window);
-            Assert.Equal(new Thickness(3), bar.ContentPadding); Assert.Equal(AppBarArrangement.End, bar.HorizontalArrangement);
+            Assert.Equal(new Thickness(3), bar.ContentPadding); Assert.Equal(MaterialHorizontalArrangement.End, bar.HorizontalArrangement);
             bar.Styles.Remove(style); Flush(window);
             bar.Resources[heightKey] = 100d; bar.Resources[paddingKey] = new Thickness(8, 2, 12, 4);
-            bar.Resources[elevationKey] = 6d; bar.Resources[arrangementKey] = AppBarArrangement.Center;
+            bar.Resources[elevationKey] = 6d; bar.Resources[arrangementKey] = MaterialHorizontalArrangement.Center;
             Flush(window); Assert.Equal(100, bar.ExpandedHeight); Assert.Equal(6, bar.TonalElevation);
-            Assert.Equal(AppBarArrangement.Center, bar.HorizontalArrangement); Assert.Equal(new Thickness(8, 2, 12, 4), bar.ContentPadding);
+            Assert.Equal(MaterialHorizontalArrangement.Center, bar.HorizontalArrangement); Assert.Equal(new Thickness(8, 2, 12, 4), bar.ContentPadding);
             bar.ExpandedHeight = 120; bar.ContentPadding = new Thickness(1); Flush(window);
             state.HeightOffset = -20; Flush(window); Assert.Equal(100, bar.Bounds.Height); Assert.Equal(120, bar.ExpandedHeight);
             bar.ClearValue(BottomAppBar.ExpandedHeightProperty); bar.ClearValue(BottomAppBar.ContentPaddingProperty); Flush(window);

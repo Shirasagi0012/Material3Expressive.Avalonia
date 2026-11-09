@@ -145,6 +145,11 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException) when (_scaffoldSnackbarRequests.IsCancellationRequested) { }
     }
+    private async void OnInsetsWideRailClick(object? sender, RoutedEventArgs e) => await DemoInsetsWideRail.State.ToggleAsync();
+
+    private void OnWindowInsetsClick(object? sender, RoutedEventArgs e) =>
+        DemoInsetsPadding.Insets = DemoInsetsPadding.Insets.Top == 24 ? new Avalonia.Thickness(32, 48, 40, 36) : new Avalonia.Thickness(12, 24, 20, 16);
+
     private void OnScaffoldDirectionClick(object? sender, RoutedEventArgs e) =>
         DemoScaffold.FlowDirection = DemoScaffold.FlowDirection == Avalonia.Media.FlowDirection.LeftToRight
             ? Avalonia.Media.FlowDirection.RightToLeft : Avalonia.Media.FlowDirection.LeftToRight;
@@ -222,6 +227,26 @@ public partial class MainWindow : Window
         if (sender is ShortNavigationBarItem destination && destination.FindAncestorOfType<ShortNavigationBar>() is { } bar)
             foreach (var item in bar.Items.OfType<ShortNavigationBarItem>())
                 item.IsSelected = ReferenceEquals(item, destination);
+    }
+
+    private void OnCustomRailArrangement(object? sender, RoutedEventArgs e)
+    {
+        var arrangement = DemoWideNavigationRail.Arrangement is FooterRailArrangement
+            ? NavigationRailArrangement.Top : new FooterRailArrangement();
+        DemoWideNavigationRail.Arrangement = arrangement;
+        DemoHiddenModalRail.Arrangement = arrangement;
+    }
+    private sealed record FooterRailArrangement : NavigationRailArrangement
+    {
+        public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, Span<int> positions)
+        {
+            var top = 0;
+            for (var index = 0; index < sizes.Length; index++)
+            {
+                positions[index] = index == sizes.Length - 1 ? Math.Max(top, totalSize - sizes[index]) : top;
+                top += sizes[index];
+            }
+        }
     }
 
     private async void OnToggleWideRail(object? sender, RoutedEventArgs e)

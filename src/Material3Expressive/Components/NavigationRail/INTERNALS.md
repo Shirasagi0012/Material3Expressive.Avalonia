@@ -129,3 +129,17 @@ Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndi
 原 2026-10-15 选择了 AnimatedState 默认帧前提交与速度接续，当时未验证固定上游的中断轨迹。
 本轮依据用户扩大授权重新决定采用帧后提交及取消后重启；保留共享状态、规格、属性贡献和模板生命周期。
 详见 NavigationBar 的共享选择动画说明与 docs/DECISIONS §25；默认 AnimatedState 行为仍保留。
+
+## 2026-11-09：窗口 Insets 消费接入
+
+原实现直接应用宿主物理 Thickness，以避免在缺少共享能力时猜测 Compose 消费环境。
+本轮维护者已明确授权共享能力与历史决定修订；固定 AndroidX 与 Core 的对应源码均使用
+`windowInsetsPadding(windowInsets)`，现在共享 PaddingScope 能完整表达 subtract、apply、publish。
+控件自身持有消费作用域，模板 Border 只应用剩余 Insets；这样逻辑树中的真实 Item/Icon/Header
+也能继承消费，不会被模板内容边界截断。RTL 只在 Border 适配处转换，存储仍是物理边。
+
+`NavigationInsetsTests` 覆盖三类容器、RTL、祖先更新、清除与嵌套图标；双端新增
+`navigation-insets` 家族覆盖动态输入和真实内容几何。此决定不自动推广到独立弹层中的 ModalWideNavigationRail。
+
+本轮 `navigation-insets-delivery` 的 30 例全部 equal，执行错误为零且重复稳定；
+覆盖 24 静态、6 动态用例。相关行为回归 124/124，整仓构建通过。

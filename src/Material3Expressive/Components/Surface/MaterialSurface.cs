@@ -13,6 +13,7 @@ using Avalonia.Metadata;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Motion;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSkiaShadow;
@@ -480,7 +481,7 @@ public sealed class MaterialSurface : Control
         }
         else if ((change.Property == FlowDirectionProperty || change.Property == ShapeLayoutDirectionProperty) && _chrome is not null) UpdateShape();
 
-        if (change.Property == ApplyTonalElevationProperty || change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
+        if (change.Property == ApplyTonalElevationProperty || change.Property == MaterialTonalElevation.IsEnabledProperty || change.Property == BackgroundProperty || change.Property == TonalSurfaceColorProperty
             || change.Property == TonalSurfaceTintColorProperty)
         {
             UpdateEffectiveBackground();
@@ -905,7 +906,7 @@ public sealed class MaterialSurface : Control
     // the same solid fill as an untinted surface.
     private IBrush? ResolveEffectiveBackground()
     {
-        if (!ApplyTonalElevation || Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
+        if (!ApplyTonalElevation || !MaterialTonalElevation.GetIsEnabled(this) || Background is not ISolidColorBrush solid || _absoluteTonalElevation <= 0)
             return Background;
 
         if (TonalSurfaceColor is not { } surface || solid.Color != surface ||

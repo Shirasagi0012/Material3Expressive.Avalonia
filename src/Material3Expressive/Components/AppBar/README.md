@@ -121,14 +121,25 @@ BottomAppBar 默认高 80 DIP，FlexibleBottomAppBar 默认高 64 DIP。
 清空后恢复默认槽。模板优先于直接自定义内容。
 
 ```xml
-<m3:FlexibleBottomAppBar HorizontalArrangement="SpacedBy" Spacing="12">
+<m3:FlexibleBottomAppBar>
+  <m3:FlexibleBottomAppBar.HorizontalArrangement>
+    <m3:SpacedHorizontalArrangement Space="12" Alignment="Center" />
+  </m3:FlexibleBottomAppBar.HorizontalArrangement>
   <m3:IconButton Symbol="Search" />
   <m3:IconButton Symbol="Favorite" />
 </m3:FlexibleBottomAppBar>
 ```
 
-HorizontalArrangement 还支持 Start、Center、End、SpaceBetween、SpaceAround、SpaceEvenly。
-Spacing 只用于 SpacedBy，允许负间距。自定义内容根负责自己的内部排列。
+HorizontalArrangement 支持 Start、Center、End、SpaceBetween、SpaceAround、SpaceEvenly，
+以及 Absolute.Left / Right / Center / SpaceBetween / SpaceAround / SpaceEvenly 字符串。
+绝对排列保留物理项目顺序；普通排列遵循 RTL。SpacedHorizontalArrangement.Space 允许负间距，
+Alignment 控制整组逻辑对齐，Mirror="False" 保留物理项目顺序。
+C# 使用 `MaterialHorizontalArrangement.SpacedBy(12, HorizontalAlignment.Center)`；
+自定义不可变 record 可派生该类型，实现物理像素排列。自定义内容根负责自己的内部排列。
+
+迁移：旧 `AppBarArrangement` 改为 `Material3Expressive.Foundation.MaterialHorizontalArrangement` 的同名成员；
+旧 `HorizontalArrangement="SpacedBy" Spacing="12"` 改为上面的对象元素。
+Spacing 属性已删除，两个 Arrangement Token 也改为共享排列类型。Catalog 的 AppBar 窗口提供排列选择与 RTL 切换。
 
 `WindowInsets` 使用物理 left/top/right/bottom，桌面默认零；`ContentPadding` 使用逻辑 start/top/end/bottom。
 Top 的普通容器色使用 `Background`，滚动端色使用 `ScrolledContainerColor`；内容槽使用
@@ -237,3 +248,13 @@ TouchExplorationEnabled 需由宿主连接辅助服务；它仅关闭底栏直�
 Catalog 的 [AppBarDemo](../../../Material3Expressive.Catalog/AppBarDemo.cs) 可通过 `--app-bars` 打开，
 Nested scrolling 展示独立内层列表/编辑区；切换该选项会重置正文和栏位置。
 源码职责、未决问题和验证入口见 [INTERNALS.md](INTERNALS.md)。
+
+## 底栏内容的 Insets 消费
+
+普通及 Flexible 底栏的 `WindowInsets` 扣除祖先已消费部分后，会向 Actions、FAB、CustomContent
+发布自身消费量。内容再次请求相同 Insets 不会重复留白，`ContentPadding` 仍单独处理。
+外层可以使用 `MaterialWindowInsetsPadding` 或 `MaterialWindowInsets.ConsumeInsets`。
+Catalog 的 AppBar 窗口提供普通/Flexible 底栏及父级 Insets 切换示例。
+
+原调用方若已经手工从内容的窗口 Insets 中减去底栏消费量，应改为传入完整 Insets。
+顶栏已有祖先消费扣除，但双行标题各自的消费传播尚未接入，不能据此推断顶栏内容也具备该能力。

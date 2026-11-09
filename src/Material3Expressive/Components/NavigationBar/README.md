@@ -88,8 +88,24 @@ label.InteractionSource = source;
 
 ## 使用边界
 
-导航条不管理页面或路由，也没有 Compose 的嵌套 inset 消费环境。替换 ItemsPanel 或整个模板可能改变
+导航条不管理页面或路由。替换 ItemsPanel 或整个模板可能改变
 等宽布局、命中区和反馈。真实文字、字体图标、桌面人工操作与屏幕阅读器体验尚不能由几何 parity 推断。
 
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 包含真实标签、图标和外部选择示例。
 布局、确认依据和测试入口见 [INTERNALS.md](INTERNALS.md)。
+
+## 嵌套窗口 Insets
+
+`WindowInsets` 自动扣除祖先通过 `MaterialWindowInsets.ConsumePadding`、`ConsumeInsets` 或
+`MaterialWindowInsetsPadding` 已消费的部分，再把本控件实际应用的消费量传给项目内容和 Header。
+例如外层处理了 12 DIP 顶部 Insets，本控件请求 20 DIP 时仅再添加 8 DIP。
+物理四边与 RTL 无关，动态修改与重挂会重新计算。宿主仍负责提供系统 Insets。
+
+```xml
+<m3:MaterialWindowInsetsPadding Insets="12,24,20,16">
+  <m3:NavigationBar WindowInsets="20,32,28,24" />
+</m3:MaterialWindowInsetsPadding>
+```
+
+此前调用方若手工扣除了祖先 Insets，请改为传入完整窗口 Insets，避免重复扣除。
+Catalog 的“导航容器消费 Insets”提供三种导航容器的嵌套示例。

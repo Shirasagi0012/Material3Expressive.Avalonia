@@ -240,3 +240,36 @@ Modal `collapsedShape` / `expandedShape` 都是任意 Shape，当前共享 Mater
 
 额外运行无显式形状的 `wide-reverse-control` 与 `modal-wide-reverse-control`：两者仍 different，
 与对应新形状用例的全部测量点分别 10/10、12/12 样本完全相同，确认这些读数差异并非 Shape 接入引入。
+
+## 任意纵向排列（2026-11-09）
+
+本轮维护者授权新增 API：`NavigationRailArrangement` 从 sealed record 开放为可派生不可变 record，
+公开 Arrange(density, totalSize, sizes, positions)，对应固定 Arrangement.Vertical。保留全部旧成员和相等性，
+无需破坏性迁移。没有为唯一实际消费方新建通用 Column 框架。
+
+固定 WideNavigationRailLayout 在测量每项之后，给非末项加已取整的动画间距，再调用排列。
+自定义分支按此传入整数物理像素，不尝试猜测应用算法的连续插值；内置排列继续使用已确认的连续公式与端点残差。
+自定义 Center 算法也不等于标准 Center 的身份，因此仍以 Header 下方空间为总高。
+Modal 通过现有 Arrangement 绑定传入浮层，保留同一个应用对象。动态替换只触发布局，保留状态和项目身份。
+
+`CustomRailArrangementTests` 验证回调坐标、反序、动态换回默认、展开及模态转移。
+`rail-arrangement` / `modal-rail-arrangement` 双端使用真实 WideNavigationRail / ModalWideNavigationRail，
+覆盖自定义内缩/反序、空/单项、约束、LTR/RTL、展开反向和中途替换；结果见本轮报告。
+
+本轮 `rail-arrangement-verified`：25 例中静态 19 例全部 equal，6 个展开/反向/中途换排列时间线 different，
+均重复稳定、零执行错误；展开终点恢复一致。`modal-rail-arrangement-delivery` 的 8 个静态模态场景全部 equal。
+动画失配包含既有状态 currentValue 与尺寸/位置轨迹，未将自定义静态通过扩大为动画一致。
+相关控件行为测试 46 项通过，Catalog 构建通过；没有更改参考、规格或容差。
+
+## 2026-11-09：普通宽栏 Insets 消费
+
+本轮维护者明确授权共享能力与历史决定修订。原先直接应用物理 Insets 的路径避免了在共享环境缺失时
+建立局部模拟；现在共享 PaddingScope 已能表达固定 `WideNavigationRail.kt` 的 windowInsetsPadding。
+AndroidX/Core 对应文件同 blob `ad1a3a9502bc477ec1ed0daecf33f1ea56e437e9`。
+普通宽栏在 owner 上发布消费，内部 Border 应用剩余量，项目逻辑内容与 Header 同时继承。
+Modal 在内联/独立弹层间搬移内容，需要各呈现宿主独立的消费作用域，因此明确覆盖内部
+ConsumesInlineInsets=false；不把声明 owner 上的消费错误地当作弹层消费。
+ContentPadding、宽度动画与状态职责不变，没有改写既有动画轨迹。
+
+本轮 navigation-insets-wide-delivery 共 50 例全部 equal（其中普通宽栏新增 20 例），执行错误为零、重复稳定。
+相关普通/模态宽栏及自定义排列行为回归 56/56，整仓构建通过。

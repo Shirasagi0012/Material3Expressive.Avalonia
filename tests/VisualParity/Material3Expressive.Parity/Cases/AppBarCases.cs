@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -123,6 +124,13 @@ public sealed class AppBarCases
         Sample("initial");
         switch (c.Action)
         {
+            case "arrangement":
+                Change(1000, "absolute", () => ((BottomAppBar)scene.Bar).HorizontalArrangement = MaterialHorizontalArrangement.Absolute.Left);
+                Change(17000, "direction", () => scene.Root.FlowDirection = c.Rtl ? FlowDirection.LeftToRight : FlowDirection.RightToLeft);
+                Change(33000, "overlap", () => ((BottomAppBar)scene.Bar).HorizontalArrangement = MaterialHorizontalArrangement.SpacedBy(-8, HorizontalAlignment.Right));
+                Change(49000, "custom", () => ((BottomAppBar)scene.Bar).HorizontalArrangement = ResolveArrangement("custom", c.Spacing));
+                Change(65000, "restore", () => ((BottomAppBar)scene.Bar).HorizontalArrangement = ResolveArrangement(c.Arrangement, c.Spacing));
+                break;
             case "scroll":
                 Change(1000, "up-pre", () => scene.Scroll(-25, -25));
                 Change(17000, "up-boundary", () => scene.Scroll(-50, -50));
@@ -164,6 +172,25 @@ public sealed class AppBarCases
                 Times(96000, 160000, 240000, 400000, 800000); break;
         }
         Advance(900000); Sample("idle", false);
+    }
+    private static MaterialHorizontalArrangement ResolveArrangement(string name, double spacing) => name switch
+    {
+        "spacedBy" => MaterialHorizontalArrangement.SpacedBy(spacing),
+        "spaced-center" => MaterialHorizontalArrangement.SpacedBy(spacing, HorizontalAlignment.Center),
+        "spaced-end" => MaterialHorizontalArrangement.SpacedBy(spacing, HorizontalAlignment.Right),
+        "absolute-spaced" => MaterialHorizontalArrangement.Absolute.SpacedBy(spacing, HorizontalAlignment.Center),
+        "custom" => new InsetArrangement(),
+        _ => MaterialHorizontalArrangement.Parse(name)
+    };
+    private sealed record InsetArrangement : MaterialHorizontalArrangement
+    {
+        public override double Spacing => 3.25;
+        public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, FlowDirection direction, Span<int> positions)
+        {
+            var inset = MathUtils.DipToPx(5, density);
+            SpacedBy(Spacing, HorizontalAlignment.Center).Arrange(density, totalSize - 2 * inset, sizes, direction, positions);
+            for (var i = 0; i < positions.Length; i++) positions[i] += inset;
+        }
     }
     private sealed class Scene
     {
@@ -212,10 +239,8 @@ public sealed class AppBarCases
                 bar.WindowInsets = Thickness(config.Insets); bar.TonalElevation = config.Elevation;
                 if (config.Padding is not null) bar.ContentPadding = Thickness(config.Padding);
                 if (config.ExpandedHeight is { } height) bar.ExpandedHeight = height;
-                bar.HorizontalArrangement = config.Arrangement switch { "center" => AppBarArrangement.Center, "end" => AppBarArrangement.End,
-                    "spaceBetween" => AppBarArrangement.SpaceBetween, "spaceAround" => AppBarArrangement.SpaceAround,
-                    "spaceEvenly" => AppBarArrangement.SpaceEvenly, "spacedBy" => AppBarArrangement.SpacedBy, _ => AppBarArrangement.Start };
-                bar.Spacing = config.Spacing;
+                bar.HorizontalArrangement = ResolveArrangement(config.Arrangement, config.Spacing);
+
                 if (config.Fab) bar.FloatingActionButton = Make("fab", 56, 56);
                 if (config.Custom) bar.CustomContent = new Fill { Children = { Make("custom", 80, 24) } };
                 for (var i = 0; i < config.Actions; i++) bar.Items.Add(Make($"action-{i}", 48, 48));

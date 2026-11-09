@@ -39,8 +39,8 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<Thickness> BottomWindowInsets = new("md.comp.bottom-app-bar.window-insets");
             public static readonly MaterialTokenKey<double> BottomTonalElevation = new("md.comp.bottom-app-bar.tonal-elevation");
             public static readonly MaterialTokenKey<double> FlexibleBottomTonalElevation = new("md.comp.bottom-app-bar.flexible.tonal-elevation");
-            public static readonly MaterialTokenKey<Components.AppBarArrangement> BottomArrangement = new("md.comp.bottom-app-bar.arrangement");
-            public static readonly MaterialTokenKey<Components.AppBarArrangement> FlexibleBottomArrangement = new("md.comp.bottom-app-bar.flexible.arrangement");
+            public static readonly MaterialTokenKey<Foundation.MaterialHorizontalArrangement> BottomArrangement = new("md.comp.bottom-app-bar.arrangement");
+            public static readonly MaterialTokenKey<Foundation.MaterialHorizontalArrangement> FlexibleBottomArrangement = new("md.comp.bottom-app-bar.flexible.arrangement");
             public static readonly MaterialTokenKey<Foundation.Motion.SpringSpec> ContainerColorAnimation = new("md.comp.app-bar.container-color.animation");
             public static readonly MaterialTokenKey<Color> ContainerColor = new("md.comp.app-bar.container.color");
             public static readonly MaterialTokenKey<Color> ScrolledContainerColor = new("md.comp.app-bar.scrolled-container.color");

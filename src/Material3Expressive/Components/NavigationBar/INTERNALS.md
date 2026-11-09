@@ -75,7 +75,7 @@ WindowInsets 为宿主提供的物理 Thickness、桌面默认零，保留外部
 
 ## 一致性边界
 
-- 尚未提供 Compose 的嵌套 inset 消费环境；不能把 Scaffold 的 ConsumePadding 自动推广到此 Bar
+- 嵌套 Insets 原先未接入；本轮按下述固定上游依据接入共享消费链
 - 旧双端完整自检的结构化事实全部相等，图像在退选、按压中禁用、RTL 按压有容差内差异。
   退选 16ms 的原始 4× 图有 32 个边缘像素不同，最大通道差 4；另外两项各 2 像素、最大差 1。
   当时重新采集双端并自检稳定，未修改容差；这是特定采样的历史观测，不是严格像素一致或当前回归结果
@@ -132,3 +132,17 @@ Bar 与 Rail 使用 [SelectionIndicatorAnimation](../NavigationBar/SelectionIndi
 本轮依据用户扩大授权重新决定：四条轨迹显式采用帧后提交及取消后重启；保留旧动画在提交帧的最后采样，
 新动画清零速度、从下一真实帧计时。动画参数、值连续性、模板释放及属性贡献不变。
 默认 AnimatedState API 的旧行为仍保留，其他消费者不随本决定自动迁移；详细依据见共享决定 §25。
+
+## 2026-11-09：窗口 Insets 消费接入
+
+原实现直接应用宿主物理 Thickness，以避免在缺少共享能力时猜测 Compose 消费环境。
+本轮维护者已明确授权共享能力与历史决定修订；固定 AndroidX 与 Core 的对应源码均使用
+`windowInsetsPadding(windowInsets)`，现在共享 PaddingScope 能完整表达 subtract、apply、publish。
+控件自身持有消费作用域，模板 Border 只应用剩余 Insets；这样逻辑树中的真实 Item/Icon/Header
+也能继承消费，不会被模板内容边界截断。RTL 只在 Border 适配处转换，存储仍是物理边。
+
+`NavigationInsetsTests` 覆盖三类容器、RTL、祖先更新、清除与嵌套图标；双端新增
+`navigation-insets` 家族覆盖动态输入和真实内容几何。此决定不自动推广到独立弹层中的 ModalWideNavigationRail。
+
+本轮 `navigation-insets-delivery` 的 30 例全部 equal，执行错误为零且重复稳定；
+覆盖 24 静态、6 动态用例。相关行为回归 124/124，整仓构建通过。

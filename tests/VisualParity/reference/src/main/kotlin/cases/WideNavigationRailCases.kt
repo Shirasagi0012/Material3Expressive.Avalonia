@@ -61,7 +61,12 @@ class WideNavigationRailCases {
             fun event(time:Long,action:String,position:Offset) { advance(time); host.input(action,position); host.draw(); host.frame(time) }
             sample("initial")
             when(config.action) {
-                "shape-change" -> {
+                "arrangement-change" -> {
+                mutate(1000,"custom-reverse"){scene.arrangement="custom-reverse"};times(16000)
+                mutate(17000,"expand-custom"){scene.scope.launch{scene.state.expand()}};times(32000,64000,96000)
+                mutate(97000,"custom-inset"){scene.arrangement="custom-inset"};times(112000,160000,400000,800000)
+            }
+            "shape-change" -> {
                     mutate(1000,"rounded-shape") { scene.shape="round-percent" }; times(16000)
                     mutate(17000,"default-shape") { scene.shape="default" }; times(32000)
                 }
@@ -117,6 +122,7 @@ class WideNavigationRailCases {
     }
 
     private class Scene(val config:WideNavigationRailConfig) {
+        var arrangement by mutableStateOf(config.arrangement)
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
@@ -140,7 +146,7 @@ class WideNavigationRailCases {
                             if(config.height!=null) modifier=modifier.height(config.height.toFloat().dp)
                             WideNavigationRail(modifier=modifier,state=state,shape=resolveSheetShape(shape) ?: WideNavigationRailDefaults.shape,
                                 header=if(config.header) ({ Marker(null,config.headerWidth,config.headerHeight,false,null) }) else null,
-                                arrangement=arrange(config.arrangement),
+                                arrangement=arrange(arrangement),
                                 windowInsets=if(config.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else WideNavigationRailDefaults.windowInsets,
                                 contentPadding=if(config.customPadding) PaddingValues(start=7.dp,top=13.dp,end=11.dp,bottom=5.dp) else WideNavigationRailDefaults.ContentPadding) {
                                 if(!config.empty) {
@@ -218,6 +224,7 @@ class WideNavigationRailCases {
     }
     companion object {
         private fun arrange(value:String):Arrangement.Vertical=when(value) {
+            "custom-inset"->CustomRailArrangement(false); "custom-reverse"->CustomRailArrangement(true);
             "center"->Arrangement.Center; "bottom"->Arrangement.Bottom; "space-between"->Arrangement.SpaceBetween;
             "space-around"->Arrangement.SpaceAround; "space-evenly"->Arrangement.SpaceEvenly;
             "spaced-top"->Arrangement.spacedBy(8.dp); "spaced-center"->Arrangement.spacedBy(8.dp,Alignment.CenterVertically);
@@ -228,3 +235,14 @@ class WideNavigationRailCases {
     }
 }
 
+
+internal data class CustomRailArrangement(val reverse:Boolean):Arrangement.Vertical {
+    override fun Density.arrange(totalSize:Int,sizes:IntArray,outPositions:IntArray) {
+        var cursor=12.dp.roundToPx()
+        for(slot in sizes.indices) {
+            val index=if(reverse)sizes.size-slot-1 else slot
+            outPositions[index]=cursor
+            cursor+=sizes[index]+9.25.dp.roundToPx()
+        }
+    }
+}

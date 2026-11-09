@@ -72,7 +72,7 @@ Item 的选中、未选中、禁用内容色分别由 `SelectedIconColor` / `Sel
 Rail 的 `Background` / `Foreground` 控制容器和环境色，Foreground 也供 ripple 使用，不替代 Item 状态色。
 动态主题统一定制见[公共接入](../../../../docs/GETTING_STARTED.md)。
 
-`WindowInsets` 是物理 left/top/right/bottom，桌面默认零，RTL 不交换物理边；此入口不提供嵌套 inset 消费。
+`WindowInsets` 是物理 left/top/right/bottom，桌面默认零，RTL 不交换物理边。
 Rail 默认上/下留白各 4 DIP、项间距 4 DIP、Header 到第一项 16 DIP。需要展开布局、横向标签或不同整组排列时，
 使用 Wide Rail 的公开入口，不以替换窄 Rail 布局面板模拟。
 
@@ -94,3 +94,19 @@ label.InteractionSource = source;
 该组件不管理应用路由，也不提供可展开或模态行为。真实文字/Material Symbols 的双端栅格、桌面人工交互
 及屏幕阅读器体验仍需单独验收。默认动画与布局的实现边界见 [INTERNALS.md](INTERNALS.md)。
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 Header、真实目的地与外部选择。
+
+## 嵌套窗口 Insets
+
+`WindowInsets` 自动扣除祖先通过 `MaterialWindowInsets.ConsumePadding`、`ConsumeInsets` 或
+`MaterialWindowInsetsPadding` 已消费的部分，再把本控件实际应用的消费量传给项目内容和 Header。
+例如外层处理了 12 DIP 顶部 Insets，本控件请求 20 DIP 时仅再添加 8 DIP。
+物理四边与 RTL 无关，动态修改与重挂会重新计算。宿主仍负责提供系统 Insets。
+
+```xml
+<m3:MaterialWindowInsetsPadding Insets="12,24,20,16">
+  <m3:NavigationRail WindowInsets="20,32,28,24" />
+</m3:MaterialWindowInsetsPadding>
+```
+
+此前调用方若手工扣除了祖先 Insets，请改为传入完整窗口 Insets，避免重复扣除。
+Catalog 的“导航容器消费 Insets”提供三种导航容器的嵌套示例。

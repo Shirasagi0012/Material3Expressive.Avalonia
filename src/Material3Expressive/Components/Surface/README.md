@@ -31,6 +31,22 @@
 - `TonalElevation` 改变表面色，并在嵌套 Surface 中累积；只有背景为当前主题精确 Surface 颜色的纯色画刷才着色，SurfaceContainer 或自定义颜色不变
 - tonal elevation 与 shadow elevation 相互独立；增加其中一个不会自动增加另一个
 
+通过 `MaterialTonalElevation.IsEnabled` 为子树打开或关闭色调高度。默认 True，支持 Binding；
+更深层可显式设为 True 重新启用。关闭时仍累计 TonalElevation，ShadowElevation 不受影响。
+
+```xml
+<StackPanel m3:MaterialTonalElevation.IsEnabled="False">
+  <m3:MaterialSurface TonalElevation="3" Padding="16">
+    <m3:MaterialSurface TonalElevation="2" Padding="16" m3:MaterialTonalElevation.IsEnabled="True">
+      <TextBlock Text="以累计高度 5 着色" />
+    </m3:MaterialSurface>
+  </m3:MaterialSurface>
+</StackPanel>
+```
+
+此环境也作用于使用 Surface 绘制的组件。组件背景不是主题 Surface 色时仍保持原色；
+关闭再开启不会重置任何交互或高度动画。Catalog 的 Interactive surfaces 页面可切换观察。
+
 三个交互组件继承原生 Button 的 `Content` / `ContentTemplate`、`Click`、`Command`、`CommandParameter`
 和 `IsEnabled`，默认无 Padding、无圆角、无高度效果。它们保留 48 DIP 最小交互布局留白，
 可通过继承的 `MaterialInteractiveSize.Minimum` 调整；留白不扩大绘制表面。禁用不自动改变表面色或内容色。

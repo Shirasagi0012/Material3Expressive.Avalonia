@@ -26,6 +26,17 @@ public partial class DateTimePickerDemo : Window
         Date.Culture = culture;
         Range.Culture = culture;
     }
+    private void ToggleDateFormatter(object? sender, RoutedEventArgs e)
+    {
+        var formatter = Date.DateFormatter is null ? new IsoDateFormatter() : null;
+        Date.DateFormatter = formatter; Range.DateFormatter = formatter;
+    }
+    private sealed class IsoDateFormatter : Components.IDatePickerFormatter
+    {
+        public string? FormatMonthYear(DateOnly? month, System.Globalization.CultureInfo culture) => month?.ToString("yyyy-MM", culture);
+        public string? FormatDate(DateOnly? date, System.Globalization.CultureInfo culture, bool forContentDescription = false) =>
+            date?.ToString(forContentDescription ? "D" : "yyyy-MM-dd", culture);
+    }
     private void ToggleEntryMode(object? sender, RoutedEventArgs e)
     {
         Uncontained.IsVisible = !Uncontained.IsVisible;

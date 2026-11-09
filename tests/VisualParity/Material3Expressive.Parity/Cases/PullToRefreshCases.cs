@@ -14,7 +14,7 @@ namespace Material3Expressive.Parity;
 
 public sealed record PullToRefreshConfig(string Kind = "circular", double Fraction = 1, bool Refreshing = false,
     bool Dark = false, bool Rtl = false, double? Constraint = null, bool CustomColors = false,
-    double MaxDistance = 80, string Action = "none", bool Translucent = false, bool CustomMotion = false, bool CutShape = false);
+    double MaxDistance = 80, string Action = "none", bool Translucent = false, bool CustomMotion = false, bool CutShape = false, bool ExternalState = false);
 
 [ParitySuite("pull-to-refresh")]
 public sealed class PullToRefreshCases
@@ -62,7 +62,8 @@ public sealed class PullToRefreshCases
         host.Window.Resources[Sys.Color.SurfaceContainerHigh] = Color.Parse(c.Dark ? "#2B2930" : "#ECE6F0");
         host.Window.Resources[Sys.Color.PrimaryContainer] = Color.Parse(c.Dark ? "#4F378B" : "#EADDFF");
         host.Window.Resources[Sys.Color.OnPrimaryContainer] = Color.Parse(c.Dark ? "#EADDFF" : "#21005D");
-        var state = c.CustomMotion ? new CustomPullMotionState() : new PullToRefreshState((float)c.Fraction);
+        IPullToRefreshState state = c.ExternalState ? new ExternalPullState((float)c.Fraction)
+            : c.CustomMotion ? new CustomPullMotionState() : new PullToRefreshState((float)c.Fraction);
         PullToRefreshIndicatorBox indicator = c.Kind switch
         {
             "loading" => new PullToRefreshLoadingIndicator(),
@@ -114,6 +115,12 @@ public sealed class PullToRefreshCases
         Sample("initial");
         switch (c.Action)
         {
+            case "external-replace":
+                Change(1000, "new-state", () => indicator.State = state = new ExternalPullState(.6f)); At(16000, 64000);
+                Change(65000, "overshoot", () => _ = state.SnapToAsync(1.5f)); At(80000, 160000);
+                Change(161000, "detached", () => anchor.Children.Clear());
+                Change(177000, "external-update", () => _ = state.SnapToAsync(.9f));
+                Change(193000, "reattach", () => anchor.Children.Add(indicator)); At(208000, 400000); break;
             case "bounce":
                 Change(1000, "threshold", () => _ = state.AnimateToThresholdAsync());
                 At(16000, 48000, 96000, 144000, 240000, 400000, 800000, 1600000);
@@ -164,4 +171,19 @@ internal sealed class CustomPullMotionState : PullToRefreshState
         AnimateToAsync(1, new SpringSpec<float>(.2f), cancellationToken);
     public override Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) =>
         AnimateToAsync(0, new TweenSpec<float>(TimeSpan.FromMilliseconds(240)), cancellationToken);
+}
+
+// A separate observable model, with no AvaloniaObject or built-in Animatable dependency.
+internal sealed class ExternalPullState(float initial) : IPullToRefreshState
+{
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+    public float DistanceFraction { get; private set; } = initial;
+    public bool IsAnimating => false;
+    public Task SnapToAsync(float distanceFraction, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested(); DistanceFraction = distanceFraction;
+        PropertyChanged?.Invoke(this, new(nameof(DistanceFraction))); return Task.CompletedTask;
+    }
+    public Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) => SnapToAsync(1, cancellationToken);
+    public Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) => SnapToAsync(0, cancellationToken);
 }

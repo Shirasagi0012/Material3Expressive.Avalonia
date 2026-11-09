@@ -344,7 +344,7 @@ public class PullToRefreshTests
     public void CustomContentAndDynamicTokensRetainTheirBindingsAndLayout()
     {
         var marker = new Border { Width = 12, Height = 12, Background = Brushes.Red };
-        var indicator = new PullToRefreshIndicatorBox { State = new(1), Content = marker };
+        var indicator = new PullToRefreshIndicatorBox { State = new PullToRefreshState(1), Content = marker };
         var window = Show(indicator);
         Assert.Same(indicator, marker.Parent);
         Assert.Equal(40, indicator.Bounds.Width);
@@ -395,8 +395,8 @@ public class PullToRefreshTests
     }
 
     private static PullToRefreshIndicator Create(bool loading, float fraction) => loading
-        ? new PullToRefreshLoadingIndicator { State = new(fraction) }
-        : new PullToRefreshIndicator { State = new(fraction) };
+        ? new PullToRefreshLoadingIndicator { State = new PullToRefreshState(fraction) }
+        : new PullToRefreshIndicator { State = new PullToRefreshState(fraction) };
     private static PullToRefreshIndicatorLayout Layout(Control control) => control.GetVisualDescendants().OfType<PullToRefreshIndicatorLayout>().Single();
     private static MaterialSurface Surface(Control control) => control.GetVisualDescendants().OfType<MaterialSurface>().Single();
     private static MotionTestWindow Show(Control control)

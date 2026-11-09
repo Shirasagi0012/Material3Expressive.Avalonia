@@ -40,9 +40,18 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 
 ---
 
+## 窗口 Insets 消费
+
+`MaterialWindowInsets.ConsumePadding` 把逻辑 Padding 累加到祖先消费；`ConsumeInsets` 对物理四边取并集。
+两者只传播事实。`MaterialWindowInsetsPadding` 实际应用祖先尚未消费的 Insets，再向子树发布消费，
+对应 Foundation windowInsetsPadding。Scaffold / AppBar 读取同一环境；普通/Flexible BottomAppBar 也向内容发布自身消费；NavigationBar、ShortNavigationBar、普通 NavigationRail、普通 WideNavigationRail
+也会应用并向真实内容发布消费。其他组件需按其上游明确接入。
+同一元素同时提供两种消费时先 add 再 union；复杂顺序用嵌套元素表达，不从控件位置猜测消费。
+宿主仍负责 OS/IME Insets 来源。用法与验证见 [Scaffold](../src/Material3Expressive/Components/Scaffold/README.md#自动应用窗口-insets)。
+
 ## 横向内容排列
 
-`MaterialHorizontalArrangement` 提供固定 Foundation Horizontal 的物理像素排列，当前由 Chip、ButtonGroup、独立及原生 Expressive 菜单项消费。
+`MaterialHorizontalArrangement` 提供固定 Foundation Horizontal 的物理像素排列，当前由 Chip、ButtonGroup、BottomAppBar、独立及原生 Expressive 菜单项消费。
 内置六种分布、Absolute、带正负间距与逻辑对齐的 SpacedBy，以及不可变派生实现；Spacing 在测量时解析为像素，
 Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则、权重/最小尺寸和 RTL 原生镜像转换，不是公共通用 Row。
 配置、迁移和范围见 [决定 §36](DECISIONS.md#36-组件横向排列能力)。
@@ -69,6 +78,8 @@ Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则
 ## 表面容器与轮廓几何
 
 `MaterialSurface` 是全库统一的承载容器，承担背景、边框、阴影与圆角过渡：
+
+- **色调高度环境**：`MaterialTonalElevation.IsEnabled` 是默认 true 的继承开关，对应固定上游 LocalTonalElevationEnabled。关闭只跳过 Surface 色的着色，仍累计嵌套高度，不影响阴影；后代可显式重开。组件专属的非 Surface 着色门控保持独立。
 
 - **绘制管线**：底层先绘制阴影与背景几何，中间层处理内容与裁剪，顶层叠加交互反馈与内缩描边，避免内容圆角与阴影产生重叠伪影。
 - **几何与形状插值**：形状支持绝对像素与百分比混合定义，在动画过渡中按比例归一化，各绘制层共享同一轮廓。

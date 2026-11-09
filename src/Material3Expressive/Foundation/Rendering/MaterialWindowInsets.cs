@@ -7,25 +7,42 @@ using Avalonia.VisualTree;
 
 namespace Material3Expressive.Foundation.Rendering;
 
-/// <summary>Propagates padding already applied by a content/host container to nested Scaffolds.</summary>
+/// <summary>Propagates consumed padding and physical window insets to participating descendant layouts.</summary>
 public sealed class MaterialWindowInsets : AvaloniaObject
 {
     private MaterialWindowInsets() { }
     /// <summary>Logical start/top/end/bottom padding to add to ancestor consumption; applies no layout padding.</summary>
     public static readonly AttachedProperty<Thickness> ConsumePaddingProperty =
         AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("ConsumePadding");
+    /// <summary>Physical left/top/right/bottom insets already handled by the host; unions with ancestor consumption and applies no padding.</summary>
+    public static readonly AttachedProperty<Thickness> ConsumeInsetsProperty =
+        AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("ConsumeInsets");
+    // Insets applied by a participating control's own layout, after caller-supplied consumption.
+    internal static readonly AttachedProperty<Thickness> AppliedInsetsProperty =
+        AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("AppliedInsets");
+    internal static readonly AttachedProperty<Thickness> UnconsumedInsetsProperty =
+        AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("UnconsumedInsets");
     internal static readonly AttachedProperty<Thickness> ConsumedPaddingProperty =
         AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, Thickness>("ConsumedPadding", inherits: true);
     private static readonly AttachedProperty<PaddingScope?> ScopeProperty =
         AvaloniaProperty.RegisterAttached<MaterialWindowInsets, Control, PaddingScope?>("Scope");
 
-    static MaterialWindowInsets() => ConsumePaddingProperty.Changed.AddClassHandler<Control>((owner, _) =>
+    static MaterialWindowInsets()
+    {
+        ConsumePaddingProperty.Changed.AddClassHandler<Control>((owner, _) => EnsureScope(owner));
+        ConsumeInsetsProperty.Changed.AddClassHandler<Control>((owner, _) => EnsureScope(owner));
+        AppliedInsetsProperty.Changed.AddClassHandler<Control>((owner, _) => EnsureScope(owner));
+    }
+    internal static void EnsureScope(Control owner)
     {
         if (owner.GetValue(ScopeProperty) is not null) return;
         var scope = new PaddingScope(owner);
         owner.SetValue(ScopeProperty, scope);
         scope.Initialize();
-    });
+    }
+    internal static void Refresh(Control owner) => owner.GetValue(ScopeProperty)?.Update();
+    public static Thickness GetConsumeInsets(Control element) => element.GetValue(ConsumeInsetsProperty);
+    public static void SetConsumeInsets(Control element, Thickness value) => element.SetValue(ConsumeInsetsProperty, value);
     public static Thickness GetConsumePadding(Control element) => element.GetValue(ConsumePaddingProperty);
     public static void SetConsumePadding(Control element, Thickness value) => element.SetValue(ConsumePaddingProperty, value);
 
@@ -66,18 +83,28 @@ public sealed class MaterialWindowInsets : AvaloniaObject
         private void Changed(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
             if (e.Property == StyledElement.ParentProperty || e.Property == StyledElement.TemplatedParentProperty) Reparent();
-            else if (e.Property == ConsumePaddingProperty || e.Property == Visual.FlowDirectionProperty) Update();
+            else if (e.Property == ConsumePaddingProperty || e.Property == ConsumeInsetsProperty || e.Property == AppliedInsetsProperty || e.Property == Visual.FlowDirectionProperty) Update();
         }
-        private void Update()
+        public void Update()
         {
             var inherited = _parent?.GetValue(ConsumedPaddingProperty) ?? default;
             var padding = GetConsumePadding(owner);
             var scale = (float)LayoutHelper.GetLayoutScale(owner);
             double Rounded(double value) => MathUtils.DipToPx((float)value, scale) / (double)scale;
             var rtl = owner.FlowDirection == FlowDirection.RightToLeft;
-            owner.SetValue(ConsumedPaddingProperty, inherited + new Thickness(
+            var added = inherited + new Thickness(
                 Rounded(rtl ? padding.Right : padding.Left), Rounded(padding.Top),
-                Rounded(rtl ? padding.Left : padding.Right), Rounded(padding.Bottom)));
+                Rounded(rtl ? padding.Left : padding.Right), Rounded(padding.Bottom));
+            var insets = GetConsumeInsets(owner);
+            var consumed = new Thickness(
+                Math.Max(Rounded(insets.Left), added.Left), Math.Max(Rounded(insets.Top), added.Top),
+                Math.Max(Rounded(insets.Right), added.Right), Math.Max(Rounded(insets.Bottom), added.Bottom));
+            var applied = owner.GetValue(AppliedInsetsProperty);
+            var remaining = new Thickness(
+                Math.Max(0, Rounded(applied.Left) - consumed.Left), Math.Max(0, Rounded(applied.Top) - consumed.Top),
+                Math.Max(0, Rounded(applied.Right) - consumed.Right), Math.Max(0, Rounded(applied.Bottom) - consumed.Bottom));
+            owner.SetValue(UnconsumedInsetsProperty, remaining);
+            owner.SetValue(ConsumedPaddingProperty, consumed + remaining);
         }
     }
 }

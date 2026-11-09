@@ -19,13 +19,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class PullToRefreshConfig(val kind:String="circular",val fraction:Double=1.0,val refreshing:Boolean=false,
     val dark:Boolean=false,val rtl:Boolean=false,val constraint:Double?=null,val customColors:Boolean=false,
-    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false,val customMotion:Boolean=false,val cutShape:Boolean=false)
+    val maxDistance:Double=80.0,val action:String="none",val translucent:Boolean=false,val customMotion:Boolean=false,val cutShape:Boolean=false,val externalState:Boolean=false)
 
 @ParitySuite("pull-to-refresh")
 class PullToRefreshCases {
     @ParityScenario("indicator") suspend fun capture(writer:CaptureWriter) {
         val c=writer.readConfig<PullToRefreshConfig>()
-        val state=if(c.customMotion) CustomPullMotionState() else PullToRefreshState()
+        var state by mutableStateOf<PullToRefreshState>(if(c.externalState)ExternalPullState() else if(c.customMotion) CustomPullMotionState() else PullToRefreshState())
         state.snapTo(c.fraction.toFloat())
         var refreshing by mutableStateOf(c.refreshing)
         var present by mutableStateOf(true)
@@ -80,6 +80,13 @@ class PullToRefreshCases {
             fun at(vararg times:Long){times.forEach{advance(it);host.draw();sample("time-$it")}}
             sample("initial")
             when(c.action) {
+                "external-replace" -> {
+                    change(1000,"new-state"){state=ExternalPullState(.6f)};at(16000,64000)
+                    change(65000,"overshoot"){scope.launch{state.snapTo(1.5f)}};at(80000,160000)
+                    change(161000,"detached"){present=false}
+                    advance(177000);state.snapTo(.9f);writer.record(177000,"mutation","external-update");host.draw();host.frame(177000);host.frame(177000);sample("external-update")
+                    change(193000,"reattach"){present=true};at(208000,400000)
+                }
                 "bounce" -> {
                     change(1000,"threshold"){scope.launch{state.animateToThreshold()}}
                     at(16000,48000,96000,144000,240000,400000,800000,1600000)
@@ -134,4 +141,13 @@ internal class CustomPullMotionState : PullToRefreshState {
     override suspend fun animateToThreshold() { anim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy)) }
     override suspend fun animateToHidden() { anim.animateTo(0f, tween(240)) }
     override suspend fun snapTo(targetValue: Float) { anim.snapTo(targetValue) }
+}
+
+internal class ExternalPullState(initial:Float=0f):PullToRefreshState {
+    override var distanceFraction by mutableFloatStateOf(initial)
+        private set
+    override val isAnimating=false
+    override suspend fun snapTo(targetValue:Float){distanceFraction=targetValue}
+    override suspend fun animateToThreshold(){snapTo(1f)}
+    override suspend fun animateToHidden(){snapTo(0f)}
 }

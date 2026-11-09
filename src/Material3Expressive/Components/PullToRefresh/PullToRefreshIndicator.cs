@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -13,8 +14,8 @@ public class PullToRefreshIndicatorBox : ContentControl
     public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<PullToRefreshIndicatorBox>();
     /// <summary>An explicit container path; null retains CornerRadius. Translation and top-edge clipping are unchanged.</summary>
     public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
-    public static readonly StyledProperty<PullToRefreshState?> StateProperty =
-        AvaloniaProperty.Register<PullToRefreshIndicatorBox, PullToRefreshState?>(nameof(State));
+    public static readonly StyledProperty<IPullToRefreshState?> StateProperty =
+        AvaloniaProperty.Register<PullToRefreshIndicatorBox, IPullToRefreshState?>(nameof(State));
     public static readonly StyledProperty<bool> IsRefreshingProperty =
         AvaloniaProperty.Register<PullToRefreshIndicatorBox, bool>(nameof(IsRefreshing));
     public static readonly StyledProperty<double> MaxDistanceProperty =
@@ -30,7 +31,7 @@ public class PullToRefreshIndicatorBox : ContentControl
     public static readonly StyledProperty<double> ContainerHeightProperty =
         AvaloniaProperty.Register<PullToRefreshIndicatorBox, double>(nameof(ContainerHeight));
 
-    public PullToRefreshState? State { get => GetValue(StateProperty); set => SetValue(StateProperty, value); }
+    public IPullToRefreshState? State { get => GetValue(StateProperty); set => SetValue(StateProperty, value); }
     public bool IsRefreshing { get => GetValue(IsRefreshingProperty); set => SetValue(IsRefreshingProperty, value); }
     public double MaxDistance { get => GetValue(MaxDistanceProperty); set => SetValue(MaxDistanceProperty, value); }
     public double RefreshThreshold { get => GetValue(RefreshThresholdProperty); set => SetValue(RefreshThresholdProperty, value); }
@@ -41,8 +42,8 @@ public class PullToRefreshIndicatorBox : ContentControl
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public double ContainerHeight { get => GetValue(ContainerHeightProperty); set => SetValue(ContainerHeightProperty, value); }
     private readonly PullToRefreshState _localState = new();
-    private PullToRefreshState? _attachedState;
-    internal PullToRefreshState EffectiveState => State ?? _localState;
+    private IPullToRefreshState? _attachedState;
+    internal IPullToRefreshState EffectiveState => State ?? _localState;
     internal event Action? PresentationChanged;
 
     static PullToRefreshIndicatorBox()
@@ -87,7 +88,7 @@ public class PullToRefreshIndicatorBox : ContentControl
     private void AttachState()
     {
         var state = EffectiveState;
-        state.Attach(this);
+        if (state is PullToRefreshState builtIn) builtIn.Attach(this);
         _attachedState = state;
         state.PropertyChanged += StateChanged;
         PresentationChanged?.Invoke();
@@ -96,10 +97,14 @@ public class PullToRefreshIndicatorBox : ContentControl
     {
         if (_attachedState is not { } state) return;
         state.PropertyChanged -= StateChanged;
-        state.Detach(this);
+        if (state is PullToRefreshState builtIn) builtIn.Detach(this);
         _attachedState = null;
     }
-    private void StateChanged(object? sender, AvaloniaPropertyChangedEventArgs e) => PresentationChanged?.Invoke();
+    private void StateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName is nameof(IPullToRefreshState.DistanceFraction) or nameof(IPullToRefreshState.IsAnimating))
+            PresentationChanged?.Invoke();
+    }
 }
 
 /// <summary>The circular arrow and spinning progress pull-to-refresh indicator.</summary>

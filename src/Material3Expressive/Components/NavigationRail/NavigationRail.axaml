@@ -15,20 +15,14 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
-            <Border>
-              <Border.Padding>
-                <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
-                  <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
-                  <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
-                </MultiBinding>
-              </Border.Padding>
+            <m3:MaterialWindowInsetsBorder>
               <m3:NavigationRailLayout VerticalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.VerticalPadding}}"
                   HeaderItemSpacing="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.HeaderItemSpacing}}"
                   ContainerMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationRail.NarrowContainerWidth}}">
                 <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" />
                 <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
               </m3:NavigationRailLayout>
-            </Border>
+            </m3:MaterialWindowInsetsBorder>
           </m3:MaterialSurface>
         </ControlTemplate>
       </Setter>

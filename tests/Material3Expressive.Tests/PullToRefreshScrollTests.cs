@@ -116,7 +116,7 @@ public class PullToRefreshScrollTests
     private static (MotionTestWindow, PullToRefreshIndicator, PullToRefreshScrollBehavior) Show()
     {
         var behavior = new PullToRefreshScrollBehavior();
-        var indicator = new PullToRefreshIndicator { State = new(2), ScrollBehavior = behavior };
+        var indicator = new PullToRefreshIndicator { State = new PullToRefreshState(2), ScrollBehavior = behavior };
         var window = new MotionTestWindow { Width = 240, Height = 320 };
         window.Styles.Add((Avalonia.Styling.Styles)AvaloniaXamlLoader.Load(new Uri("avares://Material3Expressive/MaterialTheme.axaml")));
         window.Content = indicator; window.Show(); Flush(window);

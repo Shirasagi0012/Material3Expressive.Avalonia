@@ -52,6 +52,13 @@ class AppBarCases {
             fun times(vararg values:Long) { for(time in values) { advance(time); host.draw(); sample("time-$time") } }
             sample("initial")
             when(c.action) {
+                "arrangement" -> {
+                    change(1000,"absolute"){scene.arrangementName="absolute.left"}
+                    change(17000,"direction"){scene.rtl=!c.rtl}
+                    change(33000,"overlap"){scene.arrangementName="overlap-end"}
+                    change(49000,"custom"){scene.arrangementName="custom"}
+                    change(65000,"restore"){scene.arrangementName=c.arrangement}
+                }
                 "scroll" -> {
                     change(1000,"up-pre") { scene.scroll(-25f,-25f) }; change(17000,"up-boundary") { scene.scroll(-50f,-50f) }
                     change(33000,"up-body") { scene.scroll(-40f,-32f) }; change(49000,"down-body") { scene.scroll(20f,20f) }
@@ -104,6 +111,7 @@ class AppBarCases {
         val bar=Probe(); val markers=linkedMapOf<String,Probe>(); val colors=mutableMapOf<String,Color>()
         val top=TopAppBarState(-Float.MAX_VALUE,0f,0f); val bottom=BottomAppBarState(-Float.MAX_VALUE,0f,0f)
         var rtl by mutableStateOf(c.rtl); var insets by mutableStateOf(c.insets); var contentPadding by mutableStateOf(c.padding)
+        var arrangementName by mutableStateOf(c.arrangement)
         var height by mutableStateOf(c.expandedHeight); var custom by mutableStateOf(c.custom); var customColors by mutableStateOf(false)
         var canScroll=true; var atStart=false
         val dispatcher=NestedScrollDispatcher(); lateinit var scope:CoroutineScope; var flingJob:Job?=null
@@ -188,9 +196,17 @@ class AppBarCases {
                         modifier=modifier,tonalElevation=c.elevation.toFloat().dp,windowInsets=insets,contentPadding=contentPadding,scrollBehavior=scroll)
                 }
                 "flexibleBottom"-> {
-                    val arrangement=when(c.arrangement) { "center"->Arrangement.Center; "end"->Arrangement.End;
+                    val arrangement=when(arrangementName) { "center"->Arrangement.Center; "end"->Arrangement.End;
                         "spaceBetween"->Arrangement.SpaceBetween; "spaceAround"->Arrangement.SpaceAround; "spaceEvenly"->Arrangement.SpaceEvenly;
-                        "spacedBy"->Arrangement.spacedBy(c.spacing.toFloat().dp); else->Arrangement.Start }
+                        "spacedBy"->Arrangement.spacedBy(c.spacing.toFloat().dp);
+                        "spaced-center"->Arrangement.spacedBy(c.spacing.toFloat().dp,Alignment.CenterHorizontally);
+                        "spaced-end"->Arrangement.spacedBy(c.spacing.toFloat().dp,Alignment.End);
+                        "overlap-end"->Arrangement.spacedBy((-8).dp,Alignment.End);
+                        "absolute.left"->Arrangement.Absolute.Left; "absolute.right"->Arrangement.Absolute.Right;
+                        "absolute.center"->Arrangement.Absolute.Center; "absolute.spacebetween"->Arrangement.Absolute.SpaceBetween;
+                        "absolute.spacearound"->Arrangement.Absolute.SpaceAround; "absolute.spaceevenly"->Arrangement.Absolute.SpaceEvenly;
+                        "absolute-spaced"->Arrangement.Absolute.spacedBy(c.spacing.toFloat().dp,Alignment.CenterHorizontally);
+                        "custom"->AppBarInsetArrangement; else->Arrangement.Start }
                     FlexibleBottomAppBar(modifier=modifier,windowInsets=insets,
                         contentPadding=if(contentPadding==null) BottomAppBarDefaults.FlexibleContentPadding else padding(contentPadding),
                         horizontalArrangement=arrangement,expandedHeight=expanded ?: 64.dp,scrollBehavior=bottomBehavior) {
@@ -233,5 +249,14 @@ class AppBarCases {
         }
         fun padding(v:List<Double>?)=if(v==null) PaddingValues(0.dp) else PaddingValues(v[0].toFloat().dp,v[1].toFloat().dp,v[2].toFloat().dp,v[3].toFloat().dp)
         fun windowInsets(v:List<Double>?)=if(v==null) WindowInsets(0,0,0,0) else WindowInsets(v[0].toFloat().dp,v[1].toFloat().dp,v[2].toFloat().dp,v[3].toFloat().dp)
+    }
+}
+
+private object AppBarInsetArrangement : Arrangement.Horizontal {
+    override val spacing=3.25.dp
+    override fun Density.arrange(totalSize:Int,sizes:IntArray,layoutDirection:LayoutDirection,outPositions:IntArray){
+        val inset=5.dp.roundToPx()
+        with(Arrangement.spacedBy(spacing,Alignment.CenterHorizontally)){arrange(totalSize-2*inset,sizes,layoutDirection,outPositions)}
+        for(i in outPositions.indices)outPositions[i]+=inset
     }
 }

@@ -23,7 +23,13 @@ State 保存原始 Float，不额外钳制到 0–1。两个动画方法使用 A
 `PullToRefreshState` 可派生，三个操作均为 virtual；`AnimateToAsync` 接受有限动画规格，默认 null 仍走原默认弹簧。
 此非破坏性组件扩展在剩余移植任务授权内实现，不改变现有 `State` 属性类型，也不引入公共共享状态框架。
 上游自定义状态样例的 HighBouncy 阈值 spring 可直接用派生类表达；默认隐藏、Snap、速度、通知及共享消费者取消保持原实现。
-这覆盖复用距离 Animatable 的自定义运动，不等于可注入任意外部可观察状态的完整 Kotlin 接口；后者仍列为缺口。
+历史上此选择仅覆盖复用距离 Animatable 的自定义运动，为避免新增公共状态框架而未提供任意状态接口。
+2026-11-09 按本轮维护者对新增 API/破坏性迁移的明确授权修订：新增组件专属 `IPullToRefreshState`，
+直接表达固定上游接口的两个只读值和三个 suspend 操作；以 INotifyPropertyChanged 对应快照状态观察，
+Task/CancellationToken 对应调用方协程。无需引入通用状态框架，因此原先延后任意外部状态的理由不再阻碍实施。
+`State` 类型拓宽为接口，内置类型仍实现它并保留原生命周期；普通状态的资源由应用拥有。
+指示器只订阅/退订，滚动策略传递自己作用域的取消令牌。内容的 Animation 优先级绑定接受任意通知源。
+空属性名通知代表全部属性变化。迁移和示例见 README。
 
 图层位移为 `fraction * round(maxDistance * density) - measuredHeightPx`，再转换到 DIP。布局尺寸保持不变；
 裁剪只限制 y≥0，不能使用 ClipToBounds 把下方内容和侧边阴影裁掉。背景不应用 Surface 的 tonal elevation。
@@ -50,7 +56,7 @@ behavior 是组件专属显式适配，不注册 ScrollViewer，不改变既有 
 ## 3. 已确认决定与已知差异
 
 - **授权范围**：本次任务授权上游语义内新增组件及非破坏性组件 API；未新增公共共享框架。
-- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox`；任意外部距离状态接口与自动保存/恢复适配。自定义回弹已可通过派生状态表达。
+- **尚未实现**：自动连接 ScrollViewer 的 `PullToRefreshBox` 与自动保存/恢复适配。自定义回弹已可通过派生状态表达。
 - **显式容器形状**：本轮剩余移植授权下新增 IndicatorBox.Shape，直接映射固定上游该函数的 shape 参数，经共享 Surface 统一背景、阴影和内容裁剪。内部 Layout 的顶部 clip、位移和条件阴影不变。内置两种 Indicator 通过继承获得此本地便利入口；其 Compose 快捷函数没有 shape 参数，双端参考使用 IndicatorBox 自定义内容组合。
 - **未经验证**：实际触摸、屏幕阅读器客户端和非 Windows 平台。State 的消费者生命周期是现有作用域模式的组件接入，不代表自动滚动已实现。
 - **已接受差异**：没有为本组件新增像素或时序容差；共享适配仅在已有决定的适用范围内复用。
@@ -103,3 +109,24 @@ Windows Catalog 已实际操作阈值处释放、越阈值刷新、完成隐藏�
 Release 整仓构建通过；控件库 1958/1958（其中本组件 26 项）、ComposeAnimation 935/935、VisualParity 基础设施 124/124 通过。
 Crossfade 绘制顺序修正另检查既有消费者：SegmentedButton 的反向切换通过；TimePicker `selection-reverse.ltr` 在修正前后均存在差异，未将其记为通过。
 未通过改变参考提交、依赖锁或像素容差获取这些结果。
+
+## 外部状态验证（2026-11-09）
+
+新增 `external-pull-state-delivery` 18 例，三个容器都覆盖独立可观察状态、跨阈值、内容切换/反向、
+帧间合并、换源、卸载期间更新及重挂。18 例零执行错误、重复稳定；16 例在既有图像门禁内。
+圆箭头换源用例在 160ms 图片 different，其余几何和状态读数一致。
+
+已检查两端截图并定位固定 `CircularArrowProgressIndicator`：`remember { derivedStateOf { progress() ... } }`
+不以 progress 为 key，换 state 后透明度仍观察首次函数捕获的旧状态；绘制与位移则读取新状态。
+本轮维护者对语义决定的授权下，保留本地原有“全部呈现跟随当前 State”的行为，不让已替换的 ViewModel
+继续参与透明度或保持订阅。此处是明确选择的上游偏离，失败用例保留，不更改参考或容差。
+另一个失配为 Expressive 在 145ms 的反向 crossfade 图片，尚未接受；其他时刻通过。
+16 例通过不能推导所有自定义动画、旧有卸载末帧差异已解决。
+
+行为验证含内置与外部状态、三种模板、换源退订、全属性通知、运行状态的消费门槛、异步取消；
+与日期 formatter 合计 42 项通过。Catalog 构建通过。自动 nested-scroll 接入仍未实现。
+
+本轮接口迁移后的原有 `pull-state-interface-regression` 75 例：4 equal、68 withinTolerance、3 different，
+均重复稳定且执行错误为零。different 为 circular.custom-motion.state 的 257ms 箭头截图，以及
+circular/loading.custom-motion.state-detach 的卸载回弹状态/图像；后两项的历史边界仍见上文。
+此处保留真实差异，不把接口行为测试通过推广为全部动画轨迹对齐。

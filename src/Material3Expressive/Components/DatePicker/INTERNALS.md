@@ -99,3 +99,23 @@ Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择�
 `date-month-motion` 的 24 个双端用例直接对照固定 Core LazyRow + DatePickerDefaults 的真实 fling，使用相同几何内容独立检查位移；`date-month-scroll` 的 8 个用例操作真实 DatePicker，保留完整截图和选中/显示月份。
 报告：`artifacts/visual-parity/runs/date-motion-verified` 24 例全部相等且重复稳定。真实控件最终证据为 `date-month-routed-verified` 的六个非 RTL 触摸用例，以及 `date-touch-rtl-fast-verified` / `date-touch-rtl-slow-verified`；后两者修正了 Avalonia 本地原点在 RTL 下位于右边缘、旧用例触点落到控件外的问题，使用与 Core 相同的物理左上角定位。
 这八组真实控件时间线的月份与选中日期读数全部一致，重复稳定且零执行错误；外观仍全部 different，包含已有标题、文字/图标、网格与高度差异。`date-month-first`、`date-month-verified` 等早期失败报告保留。精确月份运动通过不代表整个 DatePicker 外观已完成。
+
+## 自定义日期 formatter（2026-11-09）
+
+本轮维护者授权新增 `IDatePickerFormatter`，直接对应固定 `DatePickerFormatter` 的两个操作、可空结果与描述标志；
+沿用已确认的 DateOnly/CultureInfo 边界，不将 UTC 毫秒引入公开 API。单日/范围标题、月份导航/范围月份标题、
+日期按钮的朗读描述与禁选日期错误消息均调用该接口。默认标题按上游保留 Polite live region 和本地化当前选择描述。
+替换实例只更新已实现的呈现节点，不重建日期输入或滚动容器；未实现的月份首次创建时读取当前 formatter。
+
+固定 Core 桌面 formatter 在 `PlatformDateFormat` 使用 Java MEDIUM/FULL 和 `LLLL yyyy`；AndroidX Android 分支使用 skeleton。
+本轮没有混用两者或宣称默认格式一致：未指定 formatter 时保留原有 .NET 格式，完整默认 skeleton 仍未完成。
+可空结果遵循上游占位规则；禁选错误中的 null 按 Kotlin 字符串插值显示 `null`，空字符串不回退。
+
+`DatePickerFormatterTests` 检查两个入口、默认回退、空字符串、草稿/焦点/选区保留和错误重格式化。
+`date-formatter` 双端用例覆盖 en-US/de-DE、两个模式、空/已选日期、null 返回和运行时替换，并同时保留首帧与稳定帧。
+初轮 `date-formatter-delivery` 36 例零执行错误且重复稳定，测得标题描述和选择值一致，但图片全部 different；
+真实截图显示 Core 首帧月历尚未进入及既有图标、排版差异。用例与失败证据保留，未放宽容差。
+
+稳定帧复测 `date-formatter-verified`：36 例、84 个样本的标题描述与起止日期读数全部精确一致，
+零执行错误且重复稳定；84 张图仍全部 different。已检查稳定帧，仍见字体/图标、月份标题与日期网格布局差异，
+不是 formatter 字符串差异。未把这些视觉问题或默认格式缺口记为已接受。

@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using System.Collections.Frozen;
 using Avalonia;
 using Avalonia.Layout;
@@ -38,8 +39,8 @@ public sealed class AppBarTokenSource : ITokenSource
         [Comp.AppBar.BottomWindowInsets] = default(Thickness),
         [Comp.AppBar.BottomTonalElevation] = 0d,
         [Comp.AppBar.FlexibleBottomTonalElevation] = 0d,
-        [Comp.AppBar.BottomArrangement] = AppBarArrangement.Start,
-        [Comp.AppBar.FlexibleBottomArrangement] = AppBarArrangement.SpaceBetween,
+        [Comp.AppBar.BottomArrangement] = MaterialHorizontalArrangement.Start,
+        [Comp.AppBar.FlexibleBottomArrangement] = MaterialHorizontalArrangement.SpaceBetween,
         [Comp.AppBar.ContainerColorAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault),
         [Comp.AppBar.ContainerColor] = new TokenRef(Sys.Color.Surface),
         [Comp.AppBar.ScrolledContainerColor] = new TokenRef(Sys.Color.SurfaceContainer),

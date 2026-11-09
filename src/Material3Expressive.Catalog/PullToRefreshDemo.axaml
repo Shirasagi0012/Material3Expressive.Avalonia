@@ -50,6 +50,14 @@
     <TextBlock Text="右侧预览保持箭头模式；回弹多次越过阈值时，箭头透明度随距离动画转向。再次点击可中断重播。" TextWrapping="Wrap" />
     <TextBlock Text="两个下拉刚好到阈值，第三次下拉后释放才请求刷新。此例的派生 State 使用高回弹弹簧进入阈值，隐藏仍使用默认弹簧。按钮模拟宿主的 pre/post 输入；释放示例显式传入零速度。"
                TextWrapping="Wrap" m3:MaterialText.Style="{m3:Typography BodySmall}" />
+    <TextBlock Text="外部可观察状态" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+    <TextBlock Text="此状态来自普通 ViewModel，直接发布距离，不依赖内置 Animatable。滑块更新两个指示器及箭头阈值/形状；刷新按钮保留指示器自己的内容切换动画。" TextWrapping="Wrap" />
+    <Slider Minimum="0" Maximum="2" Value="1" ValueChanged="ExternalDistanceChanged" />
+    <Button Content="切换外部状态刷新" Click="ToggleExternalRefresh" HorizontalAlignment="Left" />
+    <Grid Height="180" ColumnDefinitions="*,*">
+      <m3:PullToRefreshIndicator x:Name="ExternalCircular" />
+      <m3:PullToRefreshLoadingIndicator x:Name="ExternalExpressive" Grid.Column="1" />
+    </Grid>
   </StackPanel>
   </ScrollViewer>
 </Window>

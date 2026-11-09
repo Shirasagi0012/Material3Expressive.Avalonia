@@ -82,6 +82,14 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private string Text(string key, params object[] args) => DateTimeStrings.Get(key, Culture, args);
 
+    private IDatePickerFormatter? DateFormatter => owner.GetValue(DatePicker.DateFormatterProperty);
+    private string? FormatDate(DateOnly? date, bool description = false) => DateFormatter is { } formatter
+        ? formatter.FormatDate(date, Culture, description)
+        : date?.ToString(description ? "D" : "ddd, MMM d", Culture);
+    private string FormatMonth(DateOnly month) => DateFormatter is { } formatter
+        ? formatter.FormatMonthYear(month, Culture) ?? "-"
+        : month.ToString("Y", Culture);
+
     private CultureInfo Culture => owner.GetValue(DatePicker.CultureProperty);
     private int FirstYear => Math.Clamp(owner.GetValue(DatePicker.MinYearProperty), 1, 9999);
     private int LastYear => Math.Clamp(owner.GetValue(DatePicker.MaxYearProperty), FirstYear, 9999);
@@ -151,6 +159,25 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             _years = false;
             Build();
         }
+        else if (property == DatePicker.DateFormatterProperty)
+        {
+            // Formatting is presentation only: preserve the editor draft, focus, month strip and scroll position.
+            UpdateHeader();
+            if (_monthButton is not null) _monthButton.Content = FormatMonth(_month);
+            foreach (var reference in _months)
+                if (reference.TryGetTarget(out var month)) month.UpdateDescriptions(date => FormatDate(date, true) ?? "");
+            if (_rangeList is not null)
+                foreach (var label in _rangeList.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("date-month-title")))
+                    if (label.Tag is DateOnly month) label.Text = FormatMonth(month);
+            foreach (var box in _inputs.OfType<DateInputTextBox>())
+                if (box.RejectedDate is DateOnly invalidDate)
+                {
+                    var error = Text("DateInputInvalidNotAllowed", DateFormatter is { } formatter
+                        ? formatter.FormatDate(invalidDate, Culture) ?? "null" : invalidDate.ToString("d", Culture));
+                    MaterialTextField.SetSupportingText(box, error);
+                    MaterialTextField.SetErrorMessage(box, error);
+                }
+        }
         else if (property == DatePicker.CultureProperty
               || property == DatePicker.MinYearProperty
               || property == DatePicker.MaxYearProperty
@@ -212,11 +239,27 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
         _title.ContentTemplate = owner.GetValue(DatePicker.TitleTemplateProperty);
 
-        string Format(DateOnly? date, string empty) => date?.ToString("ddd, MMM d", Culture) ?? empty;
+        string Format(DateOnly? date, string empty) => FormatDate(date) ?? empty;
 
         _headline.Content = owner.GetValue(DatePicker.HeadlineProperty) ?? (range
             ? $"{Format(Selection.Start, Text("DateRangePickerStartHeadline"))} – {Format(Selection.End, Text("DateRangePickerEndHeadline"))}"
             : Format(Selection.Start, Text(Mode == DatePickerDisplayMode.Input ? "DateInputHeadline" : "DatePickerHeadline")));
+
+        if (owner.GetValue(DatePicker.HeadlineProperty) is null && owner.GetValue(DatePicker.HeadlineTemplateProperty) is null)
+        {
+            var empty = Text(Mode == DatePickerDisplayMode.Input ? "DateInputNoInputDescription" : "DatePickerNoSelectionDescription");
+            var start = FormatDate(Selection.Start, true) ?? empty;
+            var description = range
+                ? $"{Text("DateRangePickerStartHeadline")}: {start}, {Text("DateRangePickerEndHeadline")}: {FormatDate(Selection.End, true) ?? empty}"
+                : Text(Mode == DatePickerDisplayMode.Input ? "DateInputHeadlineDescription" : "DatePickerHeadlineDescription", start);
+            AutomationProperties.SetName(_headline, description);
+            AutomationProperties.SetLiveSetting(_headline, AutomationLiveSetting.Polite);
+        }
+        else
+        {
+            _headline.ClearValue(AutomationProperties.NameProperty);
+            _headline.ClearValue(AutomationProperties.LiveSettingProperty);
+        }
 
         _headline.ContentTemplate = owner.GetValue(DatePicker.HeadlineTemplateProperty);
         _headline.IsVisible = owner.GetValue(DatePicker.ShowHeadlineProperty);
@@ -346,7 +389,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
                 new FadeIn { InitialAlpha = 0.6, Spec = _switcher.EffectsSpec() },
             Exit = new ShrinkVertically { Spec = _switcher.SizeSpec(true) } + new FadeOut { Spec = _switcher.EffectsSpec(true) }
         };
-        month = Button(_month.ToString("Y", Culture), () => {
+        month = Button(FormatMonth(_month), () => {
             _years = !_years;
             yearVisibility.Visible = _years;
             previous.IsVisible = next.IsVisible = !_years;
@@ -400,7 +443,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     private void ShowDisplayedMonth()
     {
         if (_calendar is null || _monthButton is null || _previousMonth is null || _nextMonth is null) return;
-        _monthButton.Content = _month.ToString("Y", Culture);
+        _monthButton.Content = FormatMonth(_month);
         _monthStrip?.ShowMonth(_month);
         _previousMonth.IsEnabled = _monthStrip?.CanScrollPrevious ?? false;
         _nextMonth.IsEnabled = _monthStrip?.CanScrollNext ?? false;
@@ -434,7 +477,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         list.ItemsPanel = new FuncTemplate<Panel?>(() => new VirtualizingStackPanel());
         list.ItemTemplate = new FuncDataTemplate<DateOnly>((date, _) => {
             var panel = new StackPanel();
-            var label = new TextBlock { Text = date.ToString("Y", Culture) };
+            var label = new TextBlock { Text = FormatMonth(date), Tag = date };
             BindToken(label, Layoutable.MarginProperty, Comp.DatePickerModal.RangeMonthTitleMargin);
             label.Classes.Add("date-month-title");
             panel.Children.Add(label);
@@ -497,7 +540,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     {
         var panel = new DateMonthPanel(month, Culture, Selectable, Select, FocusDate,
             range ? null : () => _nextMonth?.Focus(NavigationMethod.Tab, KeyModifiers.Shift),
-            range ? null : () => _monthStrip?.IsScrollInProgress == true);
+            range ? null : () => _monthStrip?.IsScrollInProgress == true,
+            date => FormatDate(date, true) ?? "");
         BindToken(panel, Layoutable.MarginProperty, Comp.DatePickerModal.CalendarHorizontalPadding);
         panel.UpdateSelection(Selection);
         _months.RemoveAll(reference => !reference.TryGetTarget(out _));
@@ -648,11 +692,17 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
         string text = new(displayText.Where(Char.IsDigit).ToArray());
         DateOnly? parsed = null;
         string? error = null;
+        box.RejectedDate = null;
         if (text.Length == 0 || text.Length < digits.Length) error = null;
         else if (!DateOnly.TryParseExact(text, digits, Culture, DateTimeStyles.None, out DateOnly date))
             error = Text("DateInputInvalidForPattern", pattern.ToUpperInvariant());
         else if (date.Year < FirstYear || date.Year > LastYear) error = Text("DateInputInvalidYearRange", FirstYear, LastYear);
-        else if (!Selectable(date)) error = Text("DateInputInvalidNotAllowed", date.ToString("d", Culture));
+        else if (!Selectable(date))
+        {
+            box.RejectedDate = date;
+            error = Text("DateInputInvalidNotAllowed", DateFormatter is { } formatter
+                ? formatter.FormatDate(date, Culture) ?? "null" : date.ToString("d", Culture));
+        }
         else if (range && ((index == 0 && Selection.End is { } end && date > end) ||
                      (index == 1 && Selection.Start is { } start && date < start)))
             error = Text("DateRangeInputInvalidRangeInput");
@@ -688,6 +738,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     // operation, before base.CoerceText snapshots it, so inserting delimiters does not clear undo.
     private sealed class DateInputTextBox(string pattern) : TextBox
     {
+        internal DateOnly? RejectedDate { get; set; }
         private string? _unformatted;
         private readonly char _delimiter = pattern.First(c => c is not ('d' or 'M' or 'y'));
         private readonly int _digitCount = pattern.Count(c => c is 'd' or 'M' or 'y');
@@ -771,6 +822,12 @@ internal sealed class DateMonthPanel : Control
     private readonly int _offset;
     private DateRange _selection;
 
+    internal void UpdateDescriptions(Func<DateOnly, string> description)
+    {
+        foreach (var button in Children.OfType<Button>())
+            if (button.Tag is DateOnly date) AutomationProperties.SetName(button, description(date));
+    }
+
     internal DateMonthPanel(
         DateOnly month,
         CultureInfo culture,
@@ -778,7 +835,8 @@ internal sealed class DateMonthPanel : Control
         Action<DateOnly> select,
         Action<DateOnly> focus,
         Action? returnFocus = null,
-        Func<bool>? scrolling = null
+        Func<bool>? scrolling = null,
+        Func<DateOnly, string>? description = null
     )
     {
         _month = month;
@@ -789,7 +847,7 @@ internal sealed class DateMonthPanel : Control
             var button = new Button { Content = day.ToString(culture), IsEnabled = selectable(date), Tag = date };
             button.Bind(ThemeProperty, new DynamicResourceExtension("MaterialDateDayTheme"));
             button.Classes.Set("today", date == DateOnly.FromDateTime(DateTime.Now));
-            AutomationProperties.SetName(button, date.ToString("D", culture));
+            AutomationProperties.SetName(button, description?.Invoke(date) ?? date.ToString("D", culture));
             button.Click += (_, _) => select(date);
             Children.Add(button);
             button.KeyDown += (_, e) => {

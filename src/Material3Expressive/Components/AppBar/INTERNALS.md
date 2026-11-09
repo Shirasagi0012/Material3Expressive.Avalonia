@@ -145,8 +145,7 @@ Bottom 默认动作项与可选 `FloatingActionButton / FloatingActionButtonTemp
 CustomContent 或其模板非 null 时替换整个动作/FAB 区域，保留外部 padding、insets、背景、tonal elevation
 与隐藏布局。默认槽保留数据，失活时不参与布局、输入、Tab 或 automation，清空自定义槽后恢复；模板优先。
 Bottom 默认高度 80、逻辑 padding 4/4/4/0；Flexible 默认 64、16/0/16/0。
-HorizontalArrangement 支持 Start/Center/End/SpaceBetween/SpaceAround/SpaceEvenly/SpacedBy；最后一种用 Spacing
-（允许负间距）。自定义根自行决定内部排列。Flexible 继承基础槽；上游 Flexible 入口的 FAB 可放入自定义内容。
+HorizontalArrangement 消费共享 MaterialHorizontalArrangement，包含逻辑/绝对方向、带对齐的正负间距和自定义算法。自定义根自行决定内部排列。Flexible 继承基础槽；上游 Flexible 入口的 FAB 可放入自定义内容。
 
 隐藏底栏按上游缩小外部布局盒、在 (0,0) 放置完整 Surface；浮置栏可画到布局盒之外，Scaffold 停靠由窗口边缘裁剪。
 顶部直接拖动执行 heightOffset += delta，底部执行 -= delta；释放速度保留上游传入 settle 的原符号。
@@ -289,3 +288,31 @@ Scaffold 严格相等，两族普通重复与额外被动截图稳定，未改�
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/AppBar/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 底栏任意排列
+
+固定 AndroidX/Core AppBar.kt blob 相同：FlexibleBottomAppBar 直接将 Arrangement.Horizontal 传入 Row。
+原枚举与独立 Spacing 便于表达常用布局，但遗漏绝对方向、组对齐与自定义算法；2026-11-09 本轮维护者
+明确授权新增 API 和破坏性迁移后，改用现有 MaterialHorizontalArrangement，复用共享决定 §36。
+两个排列 Token 保留身份与默认 Start/SpaceBetween，类型改为共享对象。旧枚举与 Spacing 删除，仓内调用同步迁移。
+
+测量继续按 RowColumnMeasurePolicy 逐项分配剩余宽度，使用排列的 Spacing；摆放消费物理整数坐标后抵消
+Avalonia 的 RTL 子树镜像。运行中替换排列或 FlowDirection 使实际 ItemsPanel 重新测量/排列，卸载解除 owner 订阅。
+不改变底栏槽、FAB 留白、滚动或按钮输入 owner；CustomContent 继续自行排列。完整 RowScope weight/alignment 尚未提供。
+
+新增 AppBarArrangementTests 验证方向切换、清除后的主题恢复、动态项目及点击；appbar-arrangement 双端用例
+覆盖完整新排列集合、窄宽、负间距、空/单项与运行时切换。原 appbar 用例保留，测试结果见实际生成报告。
+
+## 2026-11-09：底栏向内容传播 Insets
+
+原先底栏只读取共享祖先消费，再在 Row 内应用剩余量；缺少完整 windowInsetsPadding 的发布阶段。
+本轮维护者明确授权共享能力和职责调整，依据固定 AppBar.kt 的两个底栏入口，在 BottomAppBar owner
+持有应用/消费作用域，Row 读取 UnconsumedInsets。Actions 的逻辑项、FAB 与 CustomContent
+因此继承同一总量，未增加组件局部消费机制。折叠外层布局仍按完整高度缩小，不改变滚动状态算法。
+顶栏双行分别应用全部/仅水平 Insets，必须在各内容 scope 明确处理；此次保留其原祖先扣除路径。
+
+本轮 navigation-insets-bottom-delivery 的 70 例全部 equal，其中两个底栏新增 20 例；错误为零且重复稳定。
+含 Actions/FAB/CustomContent 的消费与动态修改测试在 200 项相关回归中全部通过，整仓构建通过。
+原有 appbar-arrangement-regression 152 例中 interrupt.bottom/medium 的取消/完成/消费速度读数仍不同，
+几何及图片相同；现有 SettleAsync 在动画被取消后返回速度，与 Compose Job 取消状态不同。
+这是当前回归观察到的未接受差异，不能继续以旧 150 equal 的记录描述当前全矩阵。

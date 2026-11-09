@@ -126,12 +126,11 @@ internal sealed class AppBarBottomRow : Panel
         int Px(double value) => MathUtils.DipToPx((float)value, (float)scale);
         if (!double.IsFinite(availableSize.Width))
             throw new InvalidOperationException("BottomAppBar requires bounded width.");
-        var consumed = owner.GetValue(MaterialWindowInsets.ConsumedPaddingProperty);
-        var insets = owner.WindowInsets;
-        _left = Math.Max(0, Px(insets.Left) - Px(consumed.Left));
-        _right = Math.Max(0, Px(insets.Right) - Px(consumed.Right));
-        _top = Math.Max(0, Px(insets.Top) - Px(consumed.Top));
-        _bottom = Math.Max(0, Px(insets.Bottom) - Px(consumed.Bottom));
+        var insets = owner.GetValue(MaterialWindowInsets.UnconsumedInsetsProperty);
+        _left = Px(insets.Left);
+        _right = Px(insets.Right);
+        _top = Px(insets.Top);
+        _bottom = Px(insets.Bottom);
         var width = Math.Max(0, Px(availableSize.Width) - _left - _right);
         // Both upstream variants use windowInsetsPadding().height().padding(): padding
         // occupies the requested row height, while window insets surround that row.
@@ -193,14 +192,35 @@ internal sealed class AppBarBottomRow : Panel
 internal sealed class AppBarActionsPanel : StackPanel
 {
     public AppBarActionsPanel() => Orientation = Orientation.Horizontal;
+    private BottomAppBar? _owner;
+
+    static AppBarActionsPanel() => AffectsMeasure<AppBarActionsPanel>(FlowDirectionProperty);
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _owner = this.GetVisualAncestors().OfType<BottomAppBar>().FirstOrDefault();
+        if (_owner is not null) _owner.PropertyChanged += OwnerChanged;
+        InvalidateMeasure();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_owner is not null) _owner.PropertyChanged -= OwnerChanged;
+        _owner = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == BottomAppBar.HorizontalArrangementProperty) InvalidateMeasure();
+    }
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var owner = this.GetVisualAncestors()
-            .OfType<BottomAppBar>()
-            .FirstOrDefault();
+        var owner = _owner;
         var scale = LayoutHelper.GetLayoutScale(this);
-        var spacing = owner?.HorizontalArrangement == AppBarArrangement.SpacedBy ? MathUtils.DipToPx(owner.Spacing, scale) : 0;
+        var spacing = MathUtils.DipToPx(owner?.HorizontalArrangement?.Spacing ?? 0, scale);
         var maximum = double.IsFinite(availableSize.Width) ? MathUtils.DipToPx(availableSize.Width, scale) : int.MaxValue;
         var occupied = 0;
         var height = 0;
@@ -225,44 +245,24 @@ internal sealed class AppBarActionsPanel : StackPanel
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var owner = this.GetVisualAncestors()
-            .OfType<BottomAppBar>()
-            .FirstOrDefault();
-        var arrangement = owner?.HorizontalArrangement ?? AppBarArrangement.End;
+        var owner = _owner;
+        // TopAppBar shares this panel and has the fixed Arrangement.End action row.
+        var arrangement = owner is null ? MaterialHorizontalArrangement.End : owner.HorizontalArrangement;
+        if (arrangement is null) return finalSize; // Required theme input is not ready yet.
         var scale = LayoutHelper.GetLayoutScale(this);
         int Px(double value) => MathUtils.DipToPx((float)value, (float)scale);
         var size = Px(finalSize.Width);
         var widths = Children.Select(child => Px(child.DesiredSize.Width)).ToArray();
-        var free = size - widths.Sum();
-        var count = Children.Count;
-        var gap = arrangement switch
+        var positions = new int[widths.Length];
+        arrangement.Arrange(scale, size, widths, FlowDirection, positions);
+        for (var i = 0; i < widths.Length; i++)
         {
-            AppBarArrangement.SpaceBetween => count > 1 ? free / (float)(count - 1) : 0,
-            AppBarArrangement.SpaceAround => count > 0 ? free / (float)count : 0,
-            AppBarArrangement.SpaceEvenly => free / (float)(count + 1),
-            AppBarArrangement.SpacedBy => Px(owner!.Spacing),
-            _ => 0,
-        };
-        var current = arrangement switch
-        {
-            AppBarArrangement.Center => free / 2f,
-            AppBarArrangement.End => free,
-            AppBarArrangement.SpaceAround => gap / 2,
-            AppBarArrangement.SpaceEvenly => gap,
-            _ => 0,
-        };
-        for (var i = 0; i < count; i++)
-        {
-            if (arrangement == AppBarArrangement.SpacedBy)
-                current = Math.Min(current, size - widths[i]);
+            // Arrangement returns physical coordinates; Avalonia mirrors the containing subtree.
+            var x = FlowDirection == FlowDirection.RightToLeft ? size - positions[i] - widths[i] : positions[i];
             var height = Px(Children[i].DesiredSize.Height);
-            Children[i].Arrange(
-                new Rect(
-                    MathUtils.RoundToInt(current) / scale,
-                    MathUtils.RoundToInt((Px(finalSize.Height) - height) / 2f) / scale,
-                    widths[i] / scale,
-                    height / scale));
-            current += widths[i] + (arrangement == AppBarArrangement.SpacedBy ? Math.Min(gap, size - current - widths[i]) : gap);
+            Children[i].Arrange(new Rect(x / scale,
+                MathUtils.RoundToInt((Px(finalSize.Height) - height) / 2f) / scale,
+                widths[i] / scale, height / scale));
         }
 
         return finalSize;

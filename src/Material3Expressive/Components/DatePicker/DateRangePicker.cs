@@ -30,6 +30,16 @@ public class DateRangePicker : TemplatedControl
     public static readonly StyledProperty<CultureInfo> CultureProperty =
         DatePicker.CultureProperty.AddOwner<DateRangePicker>();
 
+    public static readonly StyledProperty<IDatePickerFormatter?> DateFormatterProperty =
+        DatePicker.DateFormatterProperty.AddOwner<DateRangePicker>();
+
+    /// <summary>Optional presentation formatter shared by both selected dates and all visible months.</summary>
+    public IDatePickerFormatter? DateFormatter
+    {
+        get => GetValue(DateFormatterProperty);
+        set => SetValue(DateFormatterProperty, value);
+    }
+
     public static readonly StyledProperty<Func<DateOnly, bool>?> IsDateSelectableProperty =
         DatePicker.IsDateSelectableProperty.AddOwner<DateRangePicker>();
 

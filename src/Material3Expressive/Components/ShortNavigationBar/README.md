@@ -76,7 +76,7 @@ Top 与 Start 的选中标签色分别使用 `SelectedTextColorTopIconPosition` 
 Bar 的 Foreground 默认来自 SurfaceContainer 对应的 OnSurface；自定义 Background 不会自动重选内容色，
 如需改变环境色应同时设置 Foreground。统一主题定制见[公共 Token 接入](../../../../docs/GETTING_STARTED.md)。
 
-`WindowInsets` 是宿主提供的物理 Thickness，默认零，RTL 不交换边；没有嵌套 inset 消费。
+`WindowInsets` 是宿主提供的物理 Thickness，默认零，RTL 不交换边。
 内嵌 Surface 继承环境的累积 tonal elevation，但 Short Bar 没有独立的 TonalElevation 参数。
 
 `ShortNavigationBarItem.InteractionSource` 接受 `MaterialInteractionSource`，null 使用内部源。可以与 TooltipLabel 共享：
@@ -101,3 +101,19 @@ label.InteractionSource = source;
 
 Catalog 入口在 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml)；
 测量规则、已确认适配和复现入口见 [INTERNALS.md](INTERNALS.md)。
+
+## 嵌套窗口 Insets
+
+`WindowInsets` 自动扣除祖先通过 `MaterialWindowInsets.ConsumePadding`、`ConsumeInsets` 或
+`MaterialWindowInsetsPadding` 已消费的部分，再把本控件实际应用的消费量传给项目内容和 Header。
+例如外层处理了 12 DIP 顶部 Insets，本控件请求 20 DIP 时仅再添加 8 DIP。
+物理四边与 RTL 无关，动态修改与重挂会重新计算。宿主仍负责提供系统 Insets。
+
+```xml
+<m3:MaterialWindowInsetsPadding Insets="12,24,20,16">
+  <m3:ShortNavigationBar WindowInsets="20,32,28,24" />
+</m3:MaterialWindowInsetsPadding>
+```
+
+此前调用方若手工扣除了祖先 Insets，请改为传入完整窗口 Insets，避免重复扣除。
+Catalog 的“导航容器消费 Insets”提供三种导航容器的嵌套示例。

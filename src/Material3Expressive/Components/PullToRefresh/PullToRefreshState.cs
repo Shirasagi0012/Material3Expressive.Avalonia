@@ -10,7 +10,7 @@ namespace Material3Expressive.Components;
 
 /// <summary>Hoisted pull distance, including overshoot beyond the refresh threshold.</summary>
 /// <remarks>Animated operations require a mounted indicator. SnapToAsync also works before mounting.</remarks>
-public class PullToRefreshState : AvaloniaObject
+public class PullToRefreshState : AvaloniaObject, IPullToRefreshState
 {
     public static readonly DirectProperty<PullToRefreshState, float> DistanceFractionProperty =
         AvaloniaProperty.RegisterDirect<PullToRefreshState, float>(nameof(DistanceFraction), state => state.DistanceFraction);

@@ -1,4 +1,5 @@
 using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -14,6 +15,7 @@ namespace Material3Expressive.Catalog;
 public partial class PullToRefreshDemo : Window
 {
     private readonly PullToRefreshState _state = new(1);
+    private readonly ExternalRefreshState _externalState = new();
     private readonly PullToRefreshScrollBehavior _scroll = new();
     private bool _ready;
     public PullToRefreshDemo()
@@ -21,6 +23,7 @@ public partial class PullToRefreshDemo : Window
         AnimationScope.Initialize(this);
         InitializeComponent();
         Circular.State = Expressive.State = _state;
+        ExternalCircular.State = ExternalExpressive.State = _externalState;
         Gesture.State = new BouncyRefreshState();
         BouncePreview.State = new BouncyRefreshState();
         Gesture.ScrollBehavior = _scroll;
@@ -72,6 +75,21 @@ public partial class PullToRefreshDemo : Window
     }
     private void ToggleTheme(object? sender, RoutedEventArgs e) =>
         RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
+
+    private void ExternalDistanceChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    { if (_ready) _externalState.DistanceFraction = (float)e.NewValue; }
+    private void ToggleExternalRefresh(object? sender, RoutedEventArgs e) =>
+        ExternalCircular.IsRefreshing = ExternalExpressive.IsRefreshing = !ExternalCircular.IsRefreshing;
+
+    private sealed partial class ExternalRefreshState : ObservableObject, IPullToRefreshState
+    {
+        [ObservableProperty] public partial float DistanceFraction { get; set; } = 1;
+        public bool IsAnimating => false;
+        public Task SnapToAsync(float distanceFraction, CancellationToken cancellationToken = default)
+        { cancellationToken.ThrowIfCancellationRequested(); DistanceFraction = distanceFraction; return Task.CompletedTask; }
+        public Task AnimateToThresholdAsync(CancellationToken cancellationToken = default) => SnapToAsync(1, cancellationToken);
+        public Task AnimateToHiddenAsync(CancellationToken cancellationToken = default) => SnapToAsync(0, cancellationToken);
+    }
 
     private sealed class BouncyRefreshState : PullToRefreshState
     {

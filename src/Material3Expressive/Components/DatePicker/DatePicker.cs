@@ -30,6 +30,16 @@ public class DatePicker : TemplatedControl
     public static readonly StyledProperty<CultureInfo> CultureProperty =
         AvaloniaProperty.Register<DatePicker, CultureInfo>(nameof(Culture), CultureInfo.CurrentCulture);
 
+    public static readonly StyledProperty<IDatePickerFormatter?> DateFormatterProperty =
+        AvaloniaProperty.Register<DatePicker, IDatePickerFormatter?>(nameof(DateFormatter));
+
+    /// <summary>Optional presentation formatter. Null retains the platform date formatting.</summary>
+    public IDatePickerFormatter? DateFormatter
+    {
+        get => GetValue(DateFormatterProperty);
+        set => SetValue(DateFormatterProperty, value);
+    }
+
     public static readonly StyledProperty<Func<DateOnly, bool>?> IsDateSelectableProperty =
         AvaloniaProperty.Register<DatePicker, Func<DateOnly, bool>?>(nameof(IsDateSelectable), null);
 

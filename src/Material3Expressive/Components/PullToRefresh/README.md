@@ -81,6 +81,23 @@ Indicator.State = new BouncyRefreshState();
 Catalog 下方的显式滚动示例使用这一高回弹状态。
 “预览越阈值回弹”按钮让右侧圆箭头保持拉动模式，展示距离动画反复跨越阈值时的透明度过渡；再次点击可中断重播。
 
+## 外部状态
+
+`State` 也接受实现 `IPullToRefreshState` 的普通 ViewModel：发布 `DistanceFraction`、`IsAnimating`
+的 `INotifyPropertyChanged` 通知，并实现 `SnapToAsync`、`AnimateToThresholdAsync`、`AnimateToHiddenAsync`。
+通知必须在 UI 线程发出；运行状态为 true 时，滚动策略不消费新的拖动输入。
+距离不额外限制到 0–1，超阈值的箭头张力与 Expressive 旋转保持原规则。
+
+外部实现负责自己的动画资源和生命周期，异步操作应遵守调用方取消令牌。指示器换源或卸载只退订外部状态，
+不会销毁应用共享的 ViewModel；滚动策略卸载仍取消由它发起的操作。内置 `PullToRefreshState`
+继续共享同窗口的动画作用域，最后一个消费者卸载时取消内置动画。
+Catalog 的“外部可观察状态”展示普通 `ObservableObject` 和 partial observable property 驱动两个指示器。
+
+迁移：`State` / `StateProperty` 的声明类型由 `PullToRefreshState` 改为 `IPullToRefreshState`。
+已有 `new PullToRefreshState(...)`、派生类和 XAML 资源无需修改。目标类型推断的 `State = new(1)`
+改为 `State = new PullToRefreshState(1)`；需要存储任意状态时使用接口类型；依赖内置 DirectProperty
+的代码保留明确的内置实例引用。仓内此类调用已迁移。
+
 ## 使用限制与注意事项
 
 有 nested-scroll 协议的宿主可以设置 `ScrollBehavior`，由它处理拖动张力、阈值和回弹：

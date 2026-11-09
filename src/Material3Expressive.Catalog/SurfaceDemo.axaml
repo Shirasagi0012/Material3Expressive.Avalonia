@@ -19,6 +19,17 @@
         </StackPanel>
       </m3:ClickableSurface>
       <TextBlock x:Name="Status" Text="No action yet" />
+      <TextBlock Text="Tonal elevation environment" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CheckBox x:Name="TonalEnabled" IsChecked="True" Content="Enable tonal tint in this group" />
+      <m3:MaterialSurface TonalElevation="3" CornerRadius="20" Padding="20"
+                          m3:MaterialTonalElevation.IsEnabled="{Binding #TonalEnabled.IsChecked}">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Parent elevation 3; children still accumulate elevation when tint is disabled." TextWrapping="Wrap" />
+          <m3:ClickableSurface TonalElevation="3" ShadowElevation="2" CornerRadius="12" Padding="16" Click="OnOpen" Content="Inherit the group setting" />
+          <m3:ClickableSurface TonalElevation="3" CornerRadius="12" Padding="16" Click="OnOpen"
+                               m3:MaterialTonalElevation.IsEnabled="True" Content="Always tinted at cumulative elevation 6" />
+        </StackPanel>
+      </m3:MaterialSurface>
       <TextBlock Text="Cut corners and shared outlines" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <CheckBox x:Name="CutRtl" Content="Right-to-left shapes" />
       <StackPanel x:Name="CutExamples" Orientation="Horizontal" Spacing="16">

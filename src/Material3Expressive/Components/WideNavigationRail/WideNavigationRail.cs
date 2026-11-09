@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -34,11 +35,13 @@ public class WideNavigationRail : ItemsControl
     private WideNavigationRailState? _boundState;
     internal WideNavigationRailLayout? RailLayout { get; private set; }
     internal bool LayoutExpanded { get => GetValue(LayoutExpandedProperty); private set => SetValue(LayoutExpandedProperty, value); }
+    internal virtual bool ConsumesInlineInsets => true;
     internal virtual bool ComputeLayoutExpanded => State.TargetValue == WideNavigationRailValue.Expanded;
     internal bool IsStateAttached => _boundState is not null;
 
     public WideNavigationRail()
     {
+        if (ConsumesInlineInsets) MaterialWindowInsets.EnsureScope(this);
         // A fresh state belongs to each default rail, rather than to property metadata.
         State = new WideNavigationRailState();
     }
@@ -63,6 +66,8 @@ public class WideNavigationRail : ItemsControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (ConsumesInlineInsets && change.Property == WindowInsetsProperty)
+            SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
         if (change.Property == StateAnimationProperty) _boundState?.Configure(this, StateAnimation);
         if (change.Property == StateProperty)
         {
@@ -70,6 +75,11 @@ public class WideNavigationRail : ItemsControl
             if (this.IsAttachedToVisualTree()) AttachState();
             UpdateExpansion();
         }
+    }
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (ConsumesInlineInsets) MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
     }
     private void AttachState()
     {

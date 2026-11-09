@@ -4,12 +4,16 @@ using Material3Expressive.Foundation;
 namespace Material3Expressive.Components;
 
 /// <summary>The fixed Compose Arrangement.Vertical forms, including spaced alignment.</summary>
-public sealed record NavigationRailArrangement
+/// <remarks>Custom implementations must be immutable; replace Arrangement to change configuration.
+/// Coordinates and child sizes are physical pixels, independent of layout direction.</remarks>
+public record NavigationRailArrangement
 {
-    internal enum Form { Top, Center, Bottom, SpaceBetween, SpaceAround, SpaceEvenly, Spaced }
+    internal enum Form { Custom, Top, Center, Bottom, SpaceBetween, SpaceAround, SpaceEvenly, Spaced }
     internal Form Kind { get; }
+    internal bool IsCustom => Kind == Form.Custom;
     internal double Spacing { get; }
     internal VerticalAlignment Alignment { get; }
+    protected NavigationRailArrangement() => Kind = Form.Custom;
     private NavigationRailArrangement(Form kind, double spacing = 0, VerticalAlignment alignment = VerticalAlignment.Top)
         => (Kind, Spacing, Alignment) = (kind, spacing, alignment);
 
@@ -21,7 +25,20 @@ public sealed record NavigationRailArrangement
     public static NavigationRailArrangement SpaceEvenly { get; } = new(Form.SpaceEvenly);
     public static NavigationRailArrangement SpacedBy(double spacing, VerticalAlignment alignment = VerticalAlignment.Top) => new(Form.Spaced, spacing, alignment);
 
+    /// <summary>Writes one physical top coordinate per child. Density converts DIP configuration to pixels.</summary>
+    /// <remarks>Sizes include the rail's animated inter-item gap except after the last child.
+    /// Custom arrangements receive the space below the header; only the standard Center uses the whole rail.</remarks>
+    public virtual void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, Span<int> positions)
+        => ArrangeStandard(totalSize, sizes.ToArray(), (float)density).CopyTo(positions);
+
     internal int[] Arrange(int totalSize, int[] sizes, float density)
+    {
+        var positions = new int[sizes.Length];
+        Arrange(density, totalSize, sizes, positions);
+        return positions;
+    }
+
+    private int[] ArrangeStandard(int totalSize, int[] sizes, float density)
     {
         var positions = new int[sizes.Length];
         if (sizes.Length == 0) return positions;

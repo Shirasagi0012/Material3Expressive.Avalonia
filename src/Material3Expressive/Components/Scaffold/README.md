@@ -82,3 +82,24 @@ Scaffold 不支持 intrinsic / wrap-content 测量，不自动接管系统栏或
 
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 FAB 位置、Bars、Snackbar 和 RTL。
 测量顺序、共享决定与跟踪测试见 [INTERNALS.md](INTERNALS.md)。
+
+## 自动应用窗口 Insets
+
+外层已提供物理窗口 Insets 时，可以用 `MaterialWindowInsetsPadding` 同时应用剩余留白并发布消费：
+
+```xml
+<m3:MaterialWindowInsetsPadding Insets="12,24,20,16">
+  <m3:Scaffold ContentWindowInsets="12,24,20,16">
+    <TextBlock Text="Scaffold 不会再次添加同一组 Insets" />
+  </m3:Scaffold>
+</m3:MaterialWindowInsetsPadding>
+```
+
+`Insets` 按物理 Left/Top/Right/Bottom 解释，RTL 不交换左右；控件只应用祖先尚未消费的部分。
+多个容器嵌套时逐边取最大值，动态绑定、清除和换父容器都会重新计算。它也适用于已读取消费环境的 AppBar。
+`MaterialWindowInsets.ConsumeInsets="..."` 只声明宿主已处理的物理 Insets，不增加布局留白；
+与逻辑 `ConsumePadding` 的逐层累加不同。同一元素同时设置两者时，先累加 Padding，再与 Insets 取最大值；
+需要其他操作顺序时用嵌套元素明确表达。
+
+系统安全区或 IME 数值仍由宿主提供。旧 NavigationBar/Rail 不会因这个新入口自动改变内部 Insets 协议。
+Catalog 的“嵌套窗口 Insets”展示两层容器、动态更换外层 Insets 和剩余 Scaffold.ContentPadding。

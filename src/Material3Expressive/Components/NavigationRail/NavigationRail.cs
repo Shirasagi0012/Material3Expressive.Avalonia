@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -21,6 +22,18 @@ public class NavigationRail : ItemsControl
     public IDataTemplate? HeaderTemplate { get => GetValue(HeaderTemplateProperty); set => SetValue(HeaderTemplateProperty, value); }
     /// <summary>Physical insets supplied by the host. Compose Desktop system-bar insets are zero.</summary>
     public Thickness WindowInsets { get => GetValue(WindowInsetsProperty); set => SetValue(WindowInsetsProperty, value); }
+
+    public NavigationRail() => MaterialWindowInsets.EnsureScope(this);
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == WindowInsetsProperty) SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
+    }
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
+    }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new NavigationRailAutomationPeer(this);
 

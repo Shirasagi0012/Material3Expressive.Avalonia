@@ -195,6 +195,7 @@ class ModalWideNavigationRailCases {
             }
         }
         private fun arrange(value:String):Arrangement.Vertical=when(value) {
+            "custom-inset"->CustomRailArrangement(false); "custom-reverse"->CustomRailArrangement(true);
             "center"->Arrangement.Center; "bottom"->Arrangement.Bottom; "space-between"->Arrangement.SpaceBetween;
             "space-around"->Arrangement.SpaceAround; "space-evenly"->Arrangement.SpaceEvenly;
             "spaced-center"->Arrangement.spacedBy(8.dp,Alignment.CenterVertically); else->Arrangement.Top

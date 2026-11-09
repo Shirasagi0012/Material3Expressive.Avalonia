@@ -20,15 +20,9 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" TextElement.Foreground="{TemplateBinding Foreground}">
-            <Border>
-              <Border.Padding>
-                <MultiBinding Priority="Template" Converter="{x:Static m3:WindowInsetsConverter.Instance}">
-                  <Binding Path="WindowInsets" RelativeSource="{RelativeSource TemplatedParent}" />
-                  <Binding Path="FlowDirection" RelativeSource="{RelativeSource TemplatedParent}" />
-                </MultiBinding>
-              </Border.Padding>
+            <m3:MaterialWindowInsetsBorder>
               <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
-            </Border>
+            </m3:MaterialWindowInsetsBorder>
           </m3:MaterialSurface>
         </ControlTemplate>
       </Setter>

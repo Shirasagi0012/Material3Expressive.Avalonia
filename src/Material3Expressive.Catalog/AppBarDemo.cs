@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -24,6 +25,7 @@ public sealed class AppBarDemo : Window
     private readonly ComboBox _variant = new() { ItemsSource = new[] { "TopAppBar", "CenterAlignedTopAppBar", "MediumTopAppBar", "LargeTopAppBar", "MediumFlexibleTopAppBar", "LargeFlexibleTopAppBar", "TwoRowsTopAppBar" }, SelectedIndex = 4 };
     private readonly ComboBox _behavior = new() { ItemsSource = new[] { "pinned", "enterAlways", "exitUntilCollapsed" }, SelectedIndex = 2 };
     private readonly CheckBox _flexible = new() { Content = "Docked toolbar (flexible bottom)" };
+    private readonly ComboBox _arrangement = new() { ItemsSource = new[] { "SpaceEvenly", "Centered spacing", "Absolute left", "Absolute spacing", "Overlap" }, SelectedIndex = 0 };
     private readonly CheckBox _custom = new() { Content = "Custom bottom content" };
     private readonly CheckBox _rtl = new() { Content = "RTL" };
     private readonly CheckBox _nested = new() { Content = "Nested scrolling" };
@@ -37,10 +39,11 @@ public sealed class AppBarDemo : Window
         body.Bind(Border.PaddingProperty, _screen.GetObservable(Scaffold.ContentPaddingProperty));
         body.Bind(MaterialWindowInsets.ConsumePaddingProperty, _screen.GetObservable(Scaffold.ContentPaddingProperty));
         _screen.Content = body;
-        var options = new WrapPanel { Margin = new Thickness(12), Children = { _variant, _behavior, _flexible, _custom, _rtl, _nested } };
+        var options = new WrapPanel { Margin = new Thickness(12), Children = { _variant, _behavior, _flexible, _arrangement, _custom, _rtl, _nested } };
         Content = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Children = { options, _screen } };
         Grid.SetRow(_screen, 1);
         _variant.SelectionChanged += (_, _) => UpdateBars(); _behavior.SelectionChanged += (_, _) => UpdateBars();
+        _arrangement.SelectionChanged += (_, _) => UpdateBottom();
         _flexible.IsCheckedChanged += (_, _) => UpdateBottom(); _custom.IsCheckedChanged += (_, _) => UpdateBottom();
         _rtl.IsCheckedChanged += (_, _) => _screen.FlowDirection = _rtl.IsChecked == true ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         _nested.IsCheckedChanged += (_, _) => UpdateContent();
@@ -58,6 +61,19 @@ public sealed class AppBarDemo : Window
             Text = "Scroll the content or drag a bar. Actions and FAB remain ordinary controls.",
             TextWrapping = TextWrapping.Wrap,
         });
+        content.Children.Add(new TextBlock { Text = "Nested bottom bar Insets — content consumes the same Insets without adding them twice." });
+        var requestedInsets = new Thickness(16, 12, 24, 20);
+        foreach (var flexible in new[] { false, true })
+        {
+            BottomAppBar preview = flexible ? new FlexibleBottomAppBar() : new BottomAppBar();
+            preview.WindowInsets = requestedInsets;
+            preview.Items.Add(new MaterialWindowInsetsPadding { Insets = requestedInsets, Child = Action(MaterialSymbolCodepoint.Search, "Search") });
+            preview.Items.Add(Action(MaterialSymbolCodepoint.Favorite, "Favorite"));
+            var insetHost = new MaterialWindowInsetsPadding { Insets = new Thickness(8, 6, 12, 10), Child = preview };
+            var toggle = new Button { Content = flexible ? "Flexible: toggle parent Insets" : "Bottom: toggle parent Insets" };
+            toggle.Click += (_, _) => insetHost.Insets = insetHost.Insets.Top == 6 ? new Thickness(32) : new Thickness(8, 6, 12, 10);
+            content.Children.Add(toggle); content.Children.Add(insetHost);
+        }
         var overflowStatus = new TextBlock { Text = "Use the actions or their overflow menu." };
         var overflowRow = CreateOverflowActions(overflowStatus);
         var overflowColumn = CreateOverflowActions(overflowStatus, vertical: true);
@@ -128,7 +144,14 @@ public sealed class AppBarDemo : Window
             // Docked toolbar, mirroring Compose's ExitAlwaysBottomAppBarSpacedEvenly sample:
             // SpaceEvenly, no horizontal content padding, IconButtons around an embedded
             // FilledIconButton of width 56 as the primary action.
-            bar.HorizontalArrangement = AppBarArrangement.SpaceEvenly;
+            bar.HorizontalArrangement = _arrangement.SelectedIndex switch
+            {
+                1 => MaterialHorizontalArrangement.SpacedBy(12, HorizontalAlignment.Center),
+                2 => MaterialHorizontalArrangement.Absolute.Left,
+                3 => MaterialHorizontalArrangement.Absolute.SpacedBy(12, HorizontalAlignment.Center),
+                4 => MaterialHorizontalArrangement.SpacedBy(-8, HorizontalAlignment.Right),
+                _ => MaterialHorizontalArrangement.SpaceEvenly
+            };
             bar.ContentPadding = new Thickness(0, bar.ContentPadding.Top, 0, bar.ContentPadding.Bottom);
             var primary = Action(MaterialSymbolCodepoint.Add, "Add");
             primary.Width = 56;

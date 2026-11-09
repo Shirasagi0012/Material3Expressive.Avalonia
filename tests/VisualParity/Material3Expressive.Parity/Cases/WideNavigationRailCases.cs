@@ -88,6 +88,7 @@ public sealed class WideNavigationRailCases
     static CaseData<WideNavigationRailConfig> Data(string id, WideNavigationRailConfig config) => new(id, id.Replace('.', ' '), config);
     internal static NavigationRailArrangement Arrange(string value) => value switch
     {
+        "custom-inset" => new CustomRailArrangement(false), "custom-reverse" => new CustomRailArrangement(true),
         "center" => NavigationRailArrangement.Center, "bottom" => NavigationRailArrangement.Bottom,
         "space-between" => NavigationRailArrangement.SpaceBetween, "space-around" => NavigationRailArrangement.SpaceAround,
         "space-evenly" => NavigationRailArrangement.SpaceEvenly,
@@ -129,6 +130,10 @@ public sealed class WideNavigationRailCases
         Sample("initial");
         switch (config.Action)
         {
+            case "arrangement-change":
+                Mutate(1000, "custom-reverse", () => scene.Rail!.Arrangement = Arrange("custom-reverse")); Times(16000);
+                Mutate(17000, "expand-custom", () => _ = scene.State.ExpandAsync()); Times(32000, 64000, 96000);
+                Mutate(97000, "custom-inset", () => scene.Rail!.Arrangement = Arrange("custom-inset")); Times(112000, 160000, 400000, 800000); break;
             case "shape-change":
                 Mutate(1000, "rounded-shape", () => scene.Rail!.Shape = BottomSheetCases.ResolveShape("round-percent")); Times(16000);
                 Mutate(17000, "default-shape", () => scene.Rail!.Shape = null); Times(32000); break;
@@ -294,3 +299,17 @@ public sealed class WideNavigationRailCases
     }
 }
 
+
+internal sealed record CustomRailArrangement(bool Reverse) : NavigationRailArrangement
+{
+    public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, Span<int> positions)
+    {
+        var cursor = (int)Math.Floor(12 * density + .5);
+        for (var slot = 0; slot < sizes.Length; slot++)
+        {
+            var index = Reverse ? sizes.Length - slot - 1 : slot;
+            positions[index] = cursor;
+            cursor += sizes[index] + (int)Math.Floor(9.25 * density + .5);
+        }
+    }
+}

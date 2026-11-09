@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation.Rendering;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -18,6 +19,18 @@ public class ShortNavigationBar : ItemsControl
     /// <summary>Physical host insets; Compose Desktop defaults to zero.</summary>
     public Thickness WindowInsets { get => GetValue(WindowInsetsProperty); set => SetValue(WindowInsetsProperty, value); }
     public ShortNavigationBarArrangement Arrangement { get => GetValue(ArrangementProperty); set => SetValue(ArrangementProperty, value); }
+
+    public ShortNavigationBar() => MaterialWindowInsets.EnsureScope(this);
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == WindowInsetsProperty) SetValue(MaterialWindowInsets.AppliedInsetsProperty, WindowInsets);
+    }
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        MaterialWindowInsets.Refresh(this);
+        return base.MeasureOverride(availableSize);
+    }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new ShortNavigationBarAutomationPeer(this);
     private sealed class ShortNavigationBarAutomationPeer(ShortNavigationBar owner) : ItemsControlAutomationPeer(owner), ISelectionProvider

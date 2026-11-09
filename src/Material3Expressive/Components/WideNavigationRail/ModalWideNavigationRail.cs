@@ -78,6 +78,9 @@ public class ModalWideNavigationRail : WideNavigationRail
     internal float PositionProgress => _position?.Value ?? (State.TargetValue == WideNavigationRailValue.Expanded ? 1 : 0);
     internal float ModalOffset => _offset?.Value ?? 0;
     internal float ScrimAlpha => _alpha?.Value ?? 0;
+    // The modal template moves content between an inline host and a separate popup.
+    // Its inset scopes must be ported at those hosts, not on the declaration owner.
+    internal override bool ConsumesInlineInsets => false;
     internal override bool ComputeLayoutExpanded => false;
     internal override IEnumerable<WideNavigationRailItem> NavigationItems =>
         (_topLevel is null ? (Visual)this : _overlay!).GetVisualDescendants().OfType<WideNavigationRailItem>();
