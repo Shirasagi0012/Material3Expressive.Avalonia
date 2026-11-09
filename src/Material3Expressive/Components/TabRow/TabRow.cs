@@ -25,7 +25,7 @@ public class TabRow : ItemsControl
     public bool IsScrollable { get => GetValue(IsScrollableProperty); set => SetValue(IsScrollableProperty, value); }
     public double EdgePadding { get => GetValue(EdgePaddingProperty); set => SetValue(EdgePaddingProperty, value); }
     public double MinTabWidth { get => GetValue(MinTabWidthProperty); set => SetValue(MinTabWidthProperty, value); }
-    /// <summary>The indicator template, laid out at the animated selected position. Null removes it.</summary>
+    /// <summary>The indicator template. A TabIndicatorLayout root owns layout; other roots follow the default animated selected position. Null removes it.</summary>
     public IControlTemplate? Indicator { get => GetValue(IndicatorProperty); set => SetValue(IndicatorProperty, value); }
     /// <summary>The bottom divider template. Null removes it.</summary>
     public IControlTemplate? Divider { get => GetValue(DividerProperty); set => SetValue(DividerProperty, value); }

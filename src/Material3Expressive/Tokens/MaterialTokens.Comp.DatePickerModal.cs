@@ -31,7 +31,6 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> YearCellWidth = new("md.comp.datepickermodal.year-cell-width");
             public static readonly MaterialTokenKey<double> YearCellHeight = new("md.comp.datepickermodal.year-cell-height");
             public static readonly MaterialTokenKey<double> YearScrollHeight = new("md.comp.datepickermodal.year-scroll-height");
-            public static readonly MaterialTokenKey<double> RangeMonthListHeight = new("md.comp.datepickermodal.range-month-list-height");
             public static readonly MaterialTokenKey<Thickness> RangeMonthTitleMargin = new("md.comp.datepickermodal.range-month-title-margin");
             public static readonly MaterialTokenKey<Thickness> InputMargin = new("md.comp.datepickermodal.input-margin");
             public static readonly MaterialTokenKey<double> InputSpacing = new("md.comp.datepickermodal.input-spacing");

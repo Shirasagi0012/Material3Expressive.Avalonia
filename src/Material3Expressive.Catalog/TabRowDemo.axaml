@@ -1,8 +1,17 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
+        xmlns:local="using:Material3Expressive.Catalog"
         x:Class="Material3Expressive.Catalog.TabRowDemo" Title="Material tabs" Width="640" Height="640">
   <ScrollViewer>
+    <ScrollViewer.Resources>
+      <ControlTemplate x:Key="ElasticIndicator">
+        <local:ElasticTabIndicator>
+          <Border Margin="5" BorderThickness="2" CornerRadius="5"
+                  BorderBrush="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.Primary}}" />
+        </local:ElasticTabIndicator>
+      </ControlTemplate>
+    </ScrollViewer.Resources>
     <StackPanel Margin="24" Spacing="20">
       <TextBlock Text="Primary tabs · application selection" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow SelectedIndex="0">
@@ -55,6 +64,36 @@
       <TabControl Height="100" m3:TabRowAppearance.IndicatorMatchContentSize="{Binding IsChecked, ElementName=MatchIndicator}">
         <TabItem Header="Inbox"><TextBlock Text="Change width while the indicator is moving." Margin="16" /></TabItem>
         <TabItem Header="Saved messages" />
+      </TabControl>
+      <TextBlock Text="Standalone indicators · size and shape" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <StackPanel Spacing="12">
+        <m3:PrimaryTabIndicator />
+        <m3:PrimaryTabIndicator IndicatorWidth="64" IndicatorHeight="10">
+          <m3:PrimaryTabIndicator.Shape><m3:CutCornerShape TopStart="6" BottomEnd="6" /></m3:PrimaryTabIndicator.Shape>
+        </m3:PrimaryTabIndicator>
+        <m3:SecondaryTabIndicator Width="180" IndicatorHeight="4" HorizontalAlignment="Left" />
+      </StackPanel>
+      <m3:TabRow SelectedIndex="0">
+        <m3:TabRow.Indicator>
+          <ControlTemplate>
+            <m3:PrimaryTabIndicator IndicatorWidth="NaN" IndicatorHeight="6" HorizontalAlignment="Stretch">
+              <m3:PrimaryTabIndicator.Shape><m3:CutCornerShape TopStart="4" TopEnd="4" /></m3:PrimaryTabIndicator.Shape>
+            </m3:PrimaryTabIndicator>
+          </ControlTemplate>
+        </m3:TabRow.Indicator>
+        <m3:Tab Content="Inbox" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Saved messages" Click="OnTabClick" />
+      </m3:TabRow>
+      <TextBlock Text="Custom indicator · independent animated edges" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <m3:TabRow Indicator="{StaticResource ElasticIndicator}" SelectedIndex="0">
+        <m3:Tab Content="Music" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Videos" Click="OnTabClick" />
+        <m3:Tab Content="Photos" Click="OnTabClick" />
+      </m3:TabRow>
+      <TabControl m3:TabRowAppearance.IsScrollable="True" m3:TabRowAppearance.Indicator="{StaticResource ElasticIndicator}" Height="100">
+        <TabItem Header="All albums"><TextBlock Margin="16" Text="Select tabs rapidly to reverse the elastic indicator." /></TabItem>
+        <TabItem Header="Recently added" /><TabItem Header="Favourites" /><TabItem Header="Downloaded" />
+        <TabItem Header="Shared albums" />
       </TabControl>
       <TextBlock Text="Scrollable tabs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow IsScrollable="True" SelectedIndex="0">

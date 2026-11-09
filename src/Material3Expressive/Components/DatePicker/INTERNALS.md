@@ -14,6 +14,7 @@
 | `DatePicker`、`DateInput`、`SwitchableDateEntryContent` | [DatePicker.cs](DatePicker.cs)、[DateEntryController.cs](DateEntryController.cs)、[DateEntryContent.cs](DateEntryContent.cs)                      |
 | `DateRangePicker`、`DateRangeInput`、`setSelection`     | [DateRangePicker.cs](DateRangePicker.cs)、[DateRange.cs](DateRange.cs)                                                                            |
 | 月网格、范围底色                                        | `DateMonthPanel`                                                                                                                                  |
+| `VerticalMonthsList`、Core `DefaultFlingBehavior`、`ContentInViewNode` | `DateRangeMonthList`：按实际月份高度虚拟化、纵向 spline 惯性、焦点滚入 |
 | `DatePickerModalTokens`、`DateInputModalTokens`         | [DatePickerModalTokenSource.cs](DatePickerModalTokenSource.cs)、[DateInputModalTokenSource.cs](DateInputModalTokenSource.cs) 与 Tokens 下同名文件 |
 | Core `material3/l10n` 的日期字符串                      | [DateTimeStrings.cs](../DateTimePicker/DateTimeStrings.cs)                                                                                        |
 
@@ -61,7 +62,23 @@ API。光标和选区按插入的分隔符映射；分隔符旁的 Backspace/Del
 ## 已确认的适配
 
 历史决定（2026-10-11）为缺少共享滚动能力时先提供可用入口，接受原生滚动和简化月份手势，不承诺拖动与惯性等于 Compose Foundation。
-2026-11-08 按本轮维护者明确授权修订单日月份部分：仓内已有 Float 动画、速度追踪和 SnapFling，固定 DatePicker 的月份是等宽 LazyRow，能够直接移植而不引入通用 Pager。范围纵向列表与年份列表仍保留原适配；TimeScroll 的后续实现见其自身文档。
+2026-11-08 按本轮维护者明确授权修订单日月份部分：仓内已有 Float 动画、速度追踪和 SnapFling，固定 DatePicker 的月份是等宽 LazyRow，能够直接移植而不引入通用 Pager。当时范围纵向列表与年份列表仍保留原适配，避免在尚无对应实测时把原生惯性声明为 Foundation 一致；TimeScroll 的后续实现见其自身文档。
+
+本轮维护者再次明确授权缺失交互、必要共享能力及历史决定修订，范围部分改为 `DateRangeMonthList`。
+固定 Core `Scrollable.desktop.kt` 的默认衰减是 spline，`DefaultFlingBehavior` 以 |velocity|>1 开始、
+每帧消费 value-last，余量绝对值超过 .5 物理像素停止，持续运动的 DurationScale 固定为 1；不做月份吸附。
+复用既有 SplineBasedDecay、VelocityTracker 与 MouseWheelScroll，滚轮平滑结束后不追加 fling。
+月份按首项索引、整数 offset 与 Float 余量布局，标题实测、日网格六行；末端回填前月，避免无限日期范围绝对坐标。
+保留焦点所在的视口外月份；日期获焦和 BringIntoView 使用最近边弹簧，每帧重算距离并保留重定向速度。
+超过触摸阈值后捕获，让日按钮取消点击；禁用、外部定位、卸载取消手势与运动。
+不增加公共 LazyList、嵌套滚动或预取框架，年份列表继续原适配。
+滚轮在边界可继续向外冒泡；触摸已被列表捕获后，未消费的拖动量没有跨控件 nested-scroll parent 协议，
+不能据本列表的双端运动通过推断嵌套滚动已经完成。
+
+布局迁移：原模板 StackPanel 丢失正文的最大高度，范围视口曾固定为本地 400 DIP Token。
+改用 Auto/Auto/* Grid 传递标题与分隔线之后的真实剩余约束；范围列表按固定 LazyColumn 要求有限高度。
+移除无上游依据的 `RangeMonthListHeight` Token，调用方用控件 Height/MaxHeight；Catalog 外层滚动示例已迁移。
+普通 DatePicker 仍按正文自然高度测量。该变更是本轮授权的布局约束迁移，并非调整双端基准。
 
 `DateMonthStrip` 按 firstVisibleItemIndex + 整数物理像素 offset 存放位置，保留 LazyList 的半像素累积；只实例化与视口相交的月份。视口外的日按钮不保留在控件树中。
 箭头和日期键盘跨月使用 `LazyLayoutScrollScope.animateScrollToItem` 的搜索/可见目标两阶段弹簧：目标首次可见时按整数 itemOffset 重启并保留速度/帧时间，最后精确定位。此内部入口只用于相邻月份，不提供通用远距离列表导航或预取协议。
@@ -86,9 +103,33 @@ Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择�
 
 ## 尚未实现或未验证
 
-- 范围月历与年份列表仍未移植 Compose LazyList 的完整滚动协议；单日月份没有跨组件 nested scroll、远距离 teleport/预取或平台 overscroll。
+范围月份标题的 `customScrollActions` 已接入 `DateRangeMonthHeading` 的两个虚拟 Invoke 子 peer，
+使用固定 AndroidX/Core `DateRangePicker.kt` 相同的前后可滚动判断与 firstVisibleItemIndex ± 1。
+两个动作在边界仍存在，不能执行时禁用；不向布局或 Tab 序列添加按钮。Avalonia 没有命名动作列表，
+本轮维护者授权以已有 BottomSheet 的虚拟动作表达复用此适配，并新增对应的两个 TryScroll 方法供应用调用。
+两入口在范围列表直接定位并接受末尾约束。首个可见月以完整月份容器（包含标题）判断。
+原外部 DisplayedMonth 改变会重建全部日历，无法保留动作持有的视口；现定位原实例而不重建。
+动作入口无签名迁移；高度约束迁移见上文。验证见 `DateRangeNavigationTests` 与 `date-range-navigation` 双端族；
+真实屏幕阅读器客户端尚未验证。
+
+`DateRangeCalendarPanel` 通过 Avalonia 12.1.5 的 `ICustomKeyboardNavigation` 返回 `(true, null)`，
+使原生 Tab 搜索从整个月历外继续，直接对应固定 `DateRangePickerContent.onPreviewKeyEvent` 的正反向逃逸。
+不在视觉或辅助技术树中添加哨兵；从外进入与日期方向键保留原生搜索。`DateRangeKeyboardTests` 覆盖有/无模式按钮与 RTL，
+`date-range-keyboard` 调用真实键盘及固定 Core 日期焦点语义。
+
+`date-range-navigation-verified` 的 8 例（48 个采样）命名动作、接受结果、首个可见月与起止日期全部一致，
+重复稳定、零执行错误；48 张图片仍不同。参考宿主同时设置并恢复平台 Locale 与 state.locale，
+前者提供动作译文，后者提供日期格式，不修改固定参考组件。
+`date-range-keyboard-final` 的 4 例（12 个采样）日历获焦、Tab 到后续控件及 Shift+Tab 回到标题/前一控件全部一致，
+同样重复稳定、零执行错误。已检查真实 RTL 图片，仍可见范围标题字形/顺序、标题高度、模式图标和月份排版差异。
+这些截图不作为整个范围选择器视觉一致的通过证据；首轮错误地查询 ContentDescription 的夹具失败记录也保留，
+固定 Day 实际将日期描述放在 SemanticsProperties.Text，改为真实字段后才取得上述焦点结果。
+最终夹具的前后焦点色块按 Compose Column 的 Start 对齐；两端 LTR/RTL 色块的实际像素边界均已核验相等。
+
+- 年份列表仍未移植 Compose LazyList 的完整滚动协议；两类月份列表没有跨组件 nested scroll、远距离 teleport/预取或平台 overscroll。
 - 标题日期使用 `ddd, MMM d`，未对照 `DatePickerFormatter` 的完整 skeleton。
 - 真实 DatePicker 双端仍有标题本地化、文字/图标、日期网格与总高度 1 DIP 差异；本轮保留失败证据，不调整容差或将其视为已接受。
+- 范围标题仍共用单日的 120 DIP 最小高度与左边距；固定 `DateRangePicker` 使用 128-60 DIP 最小高度、64 DIP 起始边距及三个独立标题文字。范围标题字体的模板优先级也尚未修复。这些既有几何差异会影响真实范围视口与切月时刻，不能用非文字滚动用例的通过覆盖。
 - 无障碍遍历顺序、触摸滑动阈值和全部区域的输入格式未逐项对照上游测试。
 
 逻辑检查在 `tests/Material3Expressive.Tests/DateTimeEntryTests.cs`。
@@ -119,3 +160,38 @@ Core 的 18 DIP 触摸阈值、排除鼠标按钮拖动、横向滚轮轴选择�
 稳定帧复测 `date-formatter-verified`：36 例、84 个样本的标题描述与起止日期读数全部精确一致，
 零执行错误且重复稳定；84 张图仍全部 different。已检查稳定帧，仍见字体/图标、月份标题与日期网格布局差异，
 不是 formatter 字符串差异。未把这些视觉问题或默认格式缺口记为已接受。
+
+## 范围纵向月份验证（2026-11-09）
+
+`DateRangeMonthMotionCases` 的 15 个用例将变量高度月份的滚动几何与真实 `DateRangePicker` 分开验证，
+所有输入与采样时间线双端相同。9 个非文字用例覆盖 spline 正反向释放、末端回填、真实触摸快/慢释放、
+滚轮、外部定位中断、部分可见月份中的日期获焦及视口缩小时的焦点保持；最终每例 23 个采样的几何、
+首项索引/offset 和全图均完全相等。6 个真实日期用例覆盖 LTR/RTL 的触摸、滚轮和中断；
+每例 23 个采样的首个可见月、起止日期是否选中均精确一致，图片仍全部不同。重复性检查全部稳定，执行错误为零。
+
+首轮 `date-range-month-motion-selftest` 保留了参考宿主输入环境错误的证据：`PlatformContext.Empty`
+提供固定 18 物理像素 touchSlop，在 4× 捕获中等价于 4.5 DIP；真实桌面的固定 Core
+`ComposeSceneMediator.DesktopViewConfiguration` 使用 `18.dp.toPx()`。本套件现在显式提供该桌面
+ViewConfiguration，其他属性继续委托默认配置；没有改变触点、组件源码、共享宿主或比较容差。
+修正后真实触摸的月份时间线与释放速度一致，非文字触摸全图也完全相等。
+
+焦点动画保留固定 `ContentInViewNode` / `UpdatableAnimationState` 的帧阶段语义。
+`LazyListMeasureResult.copyWithScrollDeltaWithoutRemeasure` 只在首项不变、首尾可见项边界仍严格容纳
+本次整数位移时走仅 placement 路径；`afterFrame` 此时读取绘制前的旧子项坐标，跨可见项边界的
+同步 remeasure 才立即提供新坐标。此前立即 `UpdateLayout` 读取新坐标，会错误地消除上游实际的
+小幅越过最近边现象并改变整条弹簧曲线。现按源码条件区分两条路径，未硬编码测试终点或采样时刻。
+视口缩小时只追踪原先最大可见的焦点；用户已滚出视口的焦点不会把月份拉回。
+
+证据目录按先后保留：`artifacts/visual-parity/runs/date-range-month-motion-desktop-selftest`
+完成全部 15 例，其两个 focus 条目仍记录修复前的差异；最终焦点证据位于
+`artifacts/visual-parity/runs/date-range-focus-verification/<case-id>`。
+该目录的 `dynamic.geometry.focus`、`dynamic.geometry.focus-resize` 和回归 `dynamic.geometry.fling`
+均全量相等；最终真实触摸证据是同目录的 `date-range-month-motion.dynamic.picker.touch.ltr`，
+其 69 项行为事实相等、23 张图片仍不同。已打开焦点过程及真实日期滚动后的双端图片检查：
+月份内容正确续接和裁剪，仍存在原有范围标题高度/边距、标题字形与字号、模式图标及月份排版差异。
+这些视觉缺口没有被非文字用例的通过覆盖，也没有记为已接受。
+
+最后一次源码修改后，`DateRangeMonthScrollTests` 12 例、`DateRangeKeyboardTests` 4 例和
+`DateRangeNavigationTests` 6 例合计 22/22 通过，日志为 `artifacts/date-range-final-tests.log`。
+范围列表仍没有跨控件触摸 nested-scroll parent 协议、远距离 teleport/预取或平台 overscroll；
+年份列表也仍使用原有适配。上述验证只覆盖本次月份视口、输入、惯性与焦点能力，不宣称这些共享协议已完成。

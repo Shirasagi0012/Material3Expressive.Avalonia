@@ -18,6 +18,7 @@ public static partial class MaterialTokens
             public static readonly MaterialTokenKey<double> MultiLineBaselineOffset = new("md.comp.tab-row.multi-line-baseline-offset");
             public static readonly MaterialTokenKey<double> BaselineExtraOffset = new("md.comp.tab-row.baseline-extra-offset");
             public static readonly MaterialTokenKey<double> PrimaryIndicatorMinWidth = new("md.comp.tab-row.primary-indicator-min-width");
+            public static readonly MaterialTokenKey<double> PrimaryIndicatorWidth = new("md.comp.tab-row.primary-indicator-width");
             public static readonly MaterialTokenKey<double> IconSize = new("md.comp.tab-row.icon-size");
 
             public static readonly MaterialTokenKey<double> EdgePadding = new("md.comp.tab-row.edge-padding");

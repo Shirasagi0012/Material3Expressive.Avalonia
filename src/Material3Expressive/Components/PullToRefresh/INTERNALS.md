@@ -65,11 +65,17 @@ behavior 是组件专属显式适配，不注册 ScrollViewer，不改变既有 
 Avalonia 立即卸载，保留最后 208ms 的 `0.45967421`。两端任务均取消、停止动画、无剩余图片或捕获错误。
 `pull-refresh-scroll.detach` 保留该精确差异，未删除卸载帧、延迟所有事件或修改比较规则；这不是已接受差异。
 
-**待维护者决定的自动接入**：原生 ScrollViewer 不提供 Compose 的异步 pre-fling 剩余速度协议；
+**自动接入的依赖缺口**：原方案等待维护者决定滚动所有权；本轮维护者已明确授权基础能力与历史决定修订，
+因此不再等待逐项批准。锁定 SmoothScroll 12.0.0.1 制品（nuspec commit `429c3c685a1e630337024c2500a9814b96fcc10c`）
+的 `IScrollMovementParticipant` 只有同步 pre/post、frame/idle/cancel 等通知。非零释放直接进入内部 InertiaState，
+OnIdle 在惯性结束才调用；公开接口不能异步暂停释放并返回剩余速度。AttachVerticalScroll 也只有一个槽，已被 AppBar 使用。
+该证据来自锁定 DLL，未替换依赖版本；不能把 OnIdle、ScrollChanged 或首帧惯性冒充 pre-fling。
+完整接入需要先补依赖释放事务与统一参与者所有权，现仍未实现，授权本身不消除该协议缺口。
+原生 ScrollViewer 不提供 Compose 的异步 pre-fling 剩余速度协议；
 现有 SmoothScroll/AppBar 参与者在合成线程处理位移，不能从 UI 的 ScrollChanged 可靠重建释放消费。
 推荐在既有参与者协议中明确释放事务、UI 刷新回调与合成状态的边界，再提供形如
 `<m3:PullToRefreshBox IsRefreshing="{Binding IsRefreshing}" RefreshRequested="Refresh"><ScrollViewer ... /></m3:PullToRefreshBox>`
-的容器入口（仅提议，未实现/未批准）。影响包括与 AppBar 的消费次序、嵌套所有权和跨线程取消。
+的容器入口（已获本轮自主实施授权，尚未实现）。影响包括与 AppBar 的消费次序、嵌套所有权和跨线程取消。
 卸载末帧问题也需明确重组提交与原生立即卸载之间的契约，不以组件私自延长已卸载控件的生命期解决。
 
 ## 4. 验证入口

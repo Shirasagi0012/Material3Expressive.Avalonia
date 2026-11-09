@@ -17,7 +17,7 @@ Avalonia 原生年月日滚轮、文本框和下拉日历使用另一套主题�
   <StackPanel Spacing="24">
     <m3:DatePicker SelectedDate="{Binding Date, Mode=TwoWay}"
                    DisplayMode="Picker" />
-    <m3:DateRangePicker SelectedRange="{Binding Dates, Mode=TwoWay}" />
+    <m3:DateRangePicker SelectedRange="{Binding Dates, Mode=TwoWay}" Height="640" />
   </StackPanel>
 </UserControl>
 ```
@@ -77,6 +77,18 @@ Catalog 的 “Custom date format” 按钮展示单日和范围入口。
 打开年份网格后聚焦当前显示年份；方向键移动焦点，Enter 选择年份。
 年份的 Shift+Tab 返回月份标题，Tab 离开年份网格；从月份标题按 Tab 可重新进入当前年份。
 
+范围月历的每个月份标题提供本地化的“显示上个月”和“显示下个月”无障碍动作。
+应用也可调用 `rangePicker.TryScrollToPreviousMonth()` / `TryScrollToNextMonth()`：
+从当前第一个可见月份向前或向后定位，保留已选日期和日历实例，不播放切月动画。
+到达对应边界、禁用、输入模式或未挂载时返回 false；接受定位请求时返回 true。
+设置范围控件的 `DisplayedMonth` 同样定位已有月历；末尾受剩余内容高度约束。
+Catalog 的 “Range: previous / next month” 演示这两个入口。
+
+范围月历支持连续纵向触摸拖动、释放惯性以及竖向滚轮，不吸附到月份边缘。
+拖动日期按钮时，超过手势阈值后取消日期点击；滚动中再次按下或设置 `DisplayedMonth` 会中断运动。
+从任意日期按 Tab 直接离开月历到后续控件；Shift+Tab 返回标题中的模式切换按钮，隐藏该按钮时返回前一个控件。
+左右与上下方向键继续在日期中导航。
+
 ## 对话框
 
 确认和取消使用 [DatePickerDialog](../DatePickerDialog/README.md)。对话框只提供表面和按钮，`DatePicker` 或
@@ -85,5 +97,9 @@ Catalog 的 “Picker dialogs” 页面在确认时才写回选中值；取消�
 
 ## 限制
 
-控件选择的是日期，不包含时分秒。范围月历与年份列表仍使用 Avalonia 滚动；单日月历已移植月份吸附，尚未提供通用 LazyList 的嵌套滚动协议。
+控件选择的是日期，不包含时分秒。范围月历需要有限高度：放在有界 Grid 中会使用标题下方的剩余高度；
+放在 StackPanel、WrapPanel 或外层 ScrollViewer 中时显式设置 `Height` / `MaxHeight`。
+迁移：原 `DatePickerModal.RangeMonthListHeight` Token 已移除，改用范围选择器的标准高度约束；
+范围日历不再固定为 400 DIP 的内部视口。单日月历的自然高度不变。
+年份列表仍使用 Avalonia 滚动；两种月历都尚未提供通用 LazyList 的嵌套滚动协议。
 视觉比较允许真实日期文字，但文字或像素不一致不代表已经接受为正确外观。维护说明见 [INTERNALS.md](INTERNALS.md)。

@@ -59,6 +59,14 @@ internal sealed class TabRowChrome : Panel
     internal ScrollViewer Scroller => (ScrollViewer)Children[1];
     internal TabRowContent Content => (TabRowContent)Scroller.Content!;
     internal Control Indicator => Children[2];
+    internal TabIndicatorLayout? CustomIndicator
+    {
+        get
+        {
+            ((TemplatedControl)Indicator).ApplyTemplate();
+            return Indicator.GetVisualChildren().OfType<TabIndicatorLayout>().FirstOrDefault();
+        }
+    }
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -81,6 +89,7 @@ internal sealed class TabRowChrome : Panel
             (e.GetOldValue<TabRowVariant>() == TabRowVariant.Legacy || e.GetNewValue<TabRowVariant>() == TabRowVariant.Legacy))
             Content.ResetVariantMotion();
         if (e.Property == TabRow.SelectedIndexProperty || e.Property == SelectingItemsControl.SelectedIndexProperty ||
+            e.Property == TabRowAppearance.IndicatorProperty ||
             e.Property == TabRowAppearance.IndicatorMatchContentSizeProperty || e.Property == TabRowAppearance.VariantProperty || e.Property == TabRowAppearance.IsScrollableProperty ||
             e.Property == TabRowAppearance.EdgePaddingProperty || e.Property == TabRowAppearance.MinTabWidthProperty)
         {
@@ -221,6 +230,7 @@ internal sealed class TabRowContent : Panel
 
     private Animatable<float>? _offset, _width, _scroll;
     private AnimationChildScope? _attachScope;
+    private AnimationChildScope? _indicatorScope;
     private int? _selectedForScroll;
     private float _scrollPrevious, _scrollFraction;
     private bool _resetScroll;
@@ -252,10 +262,16 @@ internal sealed class TabRowContent : Panel
     }
     private void ClearMotion()
     {
-        _offset = _width = _scroll = null; _selectedForScroll = null; _requested.Clear();
+        ClearIndicatorMotion();
+        _scroll = null; _selectedForScroll = null;
         _scrollPrevious = _scrollFraction = 0; _scrollGeneration++;
         _scrollRun?.Cancel(); _scrollRun?.Dispose(); _scrollRun = null;
         _attachScope?.Dispose(); _attachScope = null;
+    }
+    private void ClearIndicatorMotion()
+    {
+        _indicatorScope?.Dispose(); _indicatorScope = null;
+        _offset = _width = null; _requested.Clear();
     }
     internal void ResetVariantMotion()
     {
@@ -280,9 +296,25 @@ internal sealed class TabRowContent : Panel
         }
         chrome.Indicator.IsVisible = true;
         var position = positions[chrome.SelectedIndex];
-        var targetWidth = (float)(chrome.MatchContentSize ? position.ContentWidth : position.Width);
-        if (this.IsAttachedToVisualTree() && _attachScope is { } motion && !motion.Lifetime.IsCancellationRequested)
+        var scale = LayoutHelper.GetLayoutScale(this);
+        if (chrome.CustomIndicator is { } custom)
         {
+            ClearIndicatorMotion();
+            // TabIndicatorScope.tabIndicatorLayout receives the actual row constraints:
+            // fixed rows use one tab width; scrollable rows use selected content width.
+            // The custom layout can return a larger size, just like a Compose layout modifier.
+            var maximumWidth = chrome.Legacy ? desired.Width
+                : MathUtils.DipToPx(chrome.Scrollable ? position.ContentWidth : position.Width, scale) / scale;
+            var minimumWidth = chrome.Scrollable && !chrome.Legacy ? 0 : maximumWidth;
+            custom.SetLayoutContext(Array.AsReadOnly(positions), chrome.SelectedIndex, chrome.Scrollable,
+                new Size(minimumWidth, chrome.Legacy ? LayoutHeight : 0), new Size(maximumWidth, LayoutHeight));
+            chrome.Indicator.Measure(custom.MaximumSize);
+            return desired;
+        }
+        var targetWidth = (float)(chrome.MatchContentSize ? position.ContentWidth : position.Width);
+        if (this.IsAttachedToVisualTree() && _attachScope is { } attached && !attached.Lifetime.IsCancellationRequested)
+        {
+            var motion = _indicatorScope ??= attached.CreateChild("Default tab indicator");
             if (_offset is null)
             {
                 _offset = new Animatable<float>(new FloatConverter(), (float)position.Left, VisibilityThresholds.Float);
@@ -293,13 +325,12 @@ internal sealed class TabRowContent : Panel
             Animate(_width!, targetWidth, "Tab indicator width");
             Animate(_offset, (float)position.Left, "Tab indicator offset");
         }
-        var scale = LayoutHelper.GetLayoutScale(this);
         chrome.Indicator.Measure(new Size(Math.Max(0, MathUtils.DipToPx(_width?.Value ?? targetWidth, (float)scale)) / scale, LayoutHeight));
         return desired;
     }
     private void Animate(Animatable<float> track, float target, string label)
     {
-        if (!this.IsAttachedToVisualTree() || _attachScope is not { } motion || motion.Lifetime.IsCancellationRequested
+        if (!this.IsAttachedToVisualTree() || _indicatorScope is not { } motion || motion.Lifetime.IsCancellationRequested
             || (_requested.TryGetValue(track, out var requested) ? requested : track.TargetValue) == target) return;
         var spec = IndicatorAnimation;
         if (spec.Stiffness <= 0) return;
@@ -336,6 +367,25 @@ internal sealed class TabRowContent : Panel
         if (positions.Length == 0 || chrome.SelectedIndex < 0 || chrome.SelectedIndex >= positions.Length) return;
         var scale = LayoutHelper.GetLayoutScale(this);
         var position = positions[chrome.SelectedIndex];
+        if (chrome.CustomIndicator is { } custom)
+        {
+            var actual = custom.MeasuredSize;
+            var actualWidth = MathUtils.DipToPx(actual.Width, scale);
+            var actualHeight = MathUtils.DipToPx(actual.Height, scale);
+            var reportedWidth = Math.Clamp(actualWidth, MathUtils.DipToPx(custom.MinimumSize.Width, scale),
+                MathUtils.DipToPx(custom.MaximumSize.Width, scale));
+            var reportedHeight = Math.Clamp(actualHeight, MathUtils.DipToPx(custom.MinimumSize.Height, scale), MathUtils.DipToPx(LayoutHeight, scale));
+            var outerOffset = chrome.Scrollable && !chrome.Legacy
+                ? Math.Max(0, (MathUtils.DipToPx(position.Width, scale) - reportedWidth) / 2) : 0;
+            var customCoercion = (reportedWidth - actualWidth) / 2;
+            var horizontal = outerOffset + (FlowDirection == FlowDirection.RightToLeft
+                ? reportedWidth - actualWidth - customCoercion : customCoercion);
+            var rowY = (MathUtils.DipToPx(finalSize.Height, scale) - MathUtils.DipToPx(LayoutHeight, scale)) / 2;
+            var vertical = rowY + MathUtils.DipToPx(LayoutHeight, scale) - reportedHeight + (reportedHeight - actualHeight) / 2;
+            chrome.Indicator.Arrange(new Rect(horizontal / scale - chrome.Scroller.Offset.X,
+                vertical / scale, actualWidth / scale, actualHeight / scale));
+            return;
+        }
         var width = MathUtils.DipToPx(IndicatorWidth, (float)scale) / scale;
         if (chrome.Legacy)
         {

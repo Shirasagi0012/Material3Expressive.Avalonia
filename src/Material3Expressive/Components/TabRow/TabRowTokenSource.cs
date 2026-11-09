@@ -17,6 +17,7 @@ public sealed class TabRowTokenSource : ITokenSource
         [Comp.TabRow.MultiLineBaselineOffset] = 6d,
         [Comp.TabRow.BaselineExtraOffset] = 3d,
         [Comp.TabRow.PrimaryIndicatorMinWidth] = 24d,
+        [Comp.TabRow.PrimaryIndicatorWidth] = 24d,
         [Comp.TabRow.IconSize] = 24d,
         [Comp.TabRow.EdgePadding] = 52d,
         [Comp.TabRow.MinTabWidth] = 90d,

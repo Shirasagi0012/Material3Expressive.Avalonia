@@ -66,7 +66,7 @@
         </ControlTheme>
         <ControlTemplate x:Key="MaterialDateEntryTemplate" TargetType="TemplatedControl">
             <Border Background="{TemplateBinding Background}">
-                <StackPanel>
+                <Grid RowDefinitions="Auto,Auto,*">
                     <Grid MinHeight="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderContainerHeight}}" RowDefinitions="Auto,*">
                         <ContentPresenter Name="PART_Title" Margin="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.TitlePadding}}"
                                           Foreground="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.HeaderSupportingTextColor}}"
@@ -90,12 +90,12 @@
                                     Height="{m3:Token {x:Static m3:MaterialTokens+Comp+DatePickerModal.ModeToggleSize}}" />
                         </Grid>
                     </Grid>
-                    <Separator />
-                    <m3:DateEntryContent Name="PART_Body"
+                    <Separator Grid.Row="1" />
+                    <m3:DateEntryContent Grid.Row="2" Name="PART_Body"
                                          Spatial="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.SpatialDefault}}"
                                          Effects="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsDefault}}"
                                          FastEffects="{m3:Token {x:Static m3:MaterialTokens+Sys+Motion+Spring.EffectsFast}}" />
-                </StackPanel>
+                </Grid>
             </Border>
         </ControlTemplate>
         <ControlTheme x:Key="{x:Type m3:DatePicker}" TargetType="m3:DatePicker">

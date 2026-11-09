@@ -173,3 +173,22 @@ Chip 自定义颜色夹具另有选择器范围错误：`:disabled` 没有限定
 参考明确使用固定 Core 的 `Typography(fontFamily=...)` 30-role 构造和 Expressive motion，与本地 token 输入一致；
 无参 Typography 的兼容构造会把 emphasized 映射为普通角色，默认 MaterialTheme motion 为 Standard，不能拿这组不同输入反推产品参数。
 另为 ScrollField 自绘 Marker 禁用 Avalonia 自动镜像，使双端 Canvas 的物理坐标相同；窄宽度仍保留真实越界绘图，不隐藏裁剪问题。
+
+## SecureTextField 遮蔽呈现的必要文字覆盖
+
+原规则排除普通组件文字，是为了隔离字体排版与栅格后端，原理由保持有效。本轮维护者明确授权修订历史决定，
+新增 `secure-obfuscation` 的目标是默认末字符显示及 1500ms 隐藏，`secure-ime` 检查其真实组合输入状态，必须读取和捕获真实显示字符串。
+因此仅这两个 suite 使用合成的普通/补充字符，绝不从应用或用户数据取密码。两端实际输入相同，记录显示文本、
+原始 UTF-16 长度与焦点；通过公开 cursor color 入口禁用与该目标无关的光标闪烁，保留所有文字和装饰。
+真实文字栅格、禁用状态提交及代码点映射差异继续进入报告，不移动图像、不修改基准或容差。
+新字段已通过实际 shaping 后的 glyph cluster 投影完成默认补充字符的一 mask 显示，读数来自该 shaping 的原显示 runs，
+不把为原生 UTF-16 索引保留的安全占位文本误当作显示内容。键盘文字使用固定 Core 所需的 AWT KEY_TYPED；
+generic KeyDown 的 codePoint 并不触发桌面输入，不能把这类无效注入的空文本作为组件基准。
+
+`secure-ime` 将真实 PlatformContext.startInputMethod 请求交给固定 Core DesktopTextInputService2，
+使用上游 PlatformComponent.Empty 代替 OS 窗口，并发送真实 AWT InputMethodEvent；保留完整 adapter、
+request.editText 和 Foundation input transformation，不以程序 state.edit 模拟 IME。仅通过反射接入固定内部 adapter，
+平台类签名变化时必须重新核对固定源码，不能复制算法或悄悄换成手工事务。Avalonia 使用真实 TextInputMethodClient
+的 SetPreeditText；提交先清除预编辑，再发送原生 TextInput。两端记录实际已提交/组合 UTF-16 长度及显示文字。
+桌面 OS 的外部输入法窗口未参与，不能把这一验证宣称为真实系统 IME 验收。组合期间与取消后的已知差异进入报告，
+不调整字段、图像或容差以隐藏尚未移植的事务分类和原生下划线差异。

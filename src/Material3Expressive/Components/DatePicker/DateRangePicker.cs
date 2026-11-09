@@ -147,6 +147,12 @@ public class DateRangePicker : TemplatedControl
 
     internal DateEntryController Controller { get; }
 
+    /// <summary>Shows the month before the first visible month, if the calendar can scroll backward.</summary>
+    public bool TryScrollToPreviousMonth() => Controller.ScrollRangeMonth(-1);
+
+    /// <summary>Shows the month after the first visible month, if the calendar can scroll forward.</summary>
+    public bool TryScrollToNextMonth() => Controller.ScrollRangeMonth(1);
+
     public DateRangePicker()
     {
         Controller = new DateEntryController(this, true);

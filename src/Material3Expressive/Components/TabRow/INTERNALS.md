@@ -128,7 +128,7 @@ Legacy/新版之间切换对应上游替换组合函数，取消旧子作用域�
 
 ## 一致性边界
 
-- 六种 Row 用 Primary/Secondary/Legacy × IsScrollable 表达；完整任意 TabIndicatorScope 自定义布局尚未提供
+- 六种 Row 用 Primary/Secondary/Legacy × IsScrollable 表达；自定义指标布局使用模板根 TabIndicatorLayout
 - 原生主题只支持顶部水平 TabStripPlacement；其他方向不在范围内
 - 旧合并自检的静态用例严格相等，动态用例有按压/键盘采样的少量 raster 容差差异（1–4 像素、最大通道差 1），
   以及上述两个原生输入差异。双端重新采集、重复捕获与额外被动截图稳定，未改容差/遮罩/基线；不是本次验证结果
@@ -212,7 +212,7 @@ ScrollableRow_UserInputInterruptsCenteringAndDetachCancelsFrames 与真实多行
 旧实现将该参数固定为 Variant == Primary，保留了四种默认栏，却限制了自定义 Indicator。
 本轮按用户授权增加 nullable IndicatorMatchContentSize（独立普通属性、原生同名附加属性）；
 null 保留旧默认，显式 true/false 只切换 ContentWidth/Width 目标，沿用原来的 Animatable、取整与滚动定位。
-无需破坏性迁移。未引入新的指示器布局框架；任意 tabIndicatorLayout 仍未移植。
+无需破坏性迁移。默认位移/宽度策略与下述自定义布局入口分别负责自己的动画。
 
 行为测试覆盖两入口×固定/滚动、运行时切换/中断/恢复默认、Variant 改变和重挂。
 双端新增 indicator-width 配置覆盖两入口、两 Variant、固定/滚动、LTR/RTL、切换反转与选择反转。
@@ -227,3 +227,63 @@ null 保留旧默认，显式 true/false 只切换 ContentWidth/Width 目标，�
 其中四个新增原生滚动反转触发上述立即滚动；另两项原有 press.native / direction.native 保留报告。
 修复后独立 `tab-indicator-width-verified` 的新增 64 例全部 equal、执行错误 0、重复稳定，
 包含 32 个静态组合和 32 个宽度切换/反转组合；原始失败报告未覆盖或删除。
+
+### 自定义指示器布局
+
+此前 Indicator 只替换默认动画矩形内的绘制，原因是先沿用单一默认位置/宽度 owner，避免增加无实际消费方的布局 API。
+本轮维护者明确授权缺失 API 与历史决定修订；固定 AndroidX/Core 的 `TabIndicatorScope.tabIndicatorLayout`
+及 `TabSamples.kt/FancyAnimatedIndicatorWithModifier` 提供两个边缘独立运动的具体使用场景。
+新增 `TabIndicatorLayout : Decorator` 作为 Indicator 模板根，提供当前位置、选中项、滚动模式及 min/max 约束，
+由派生类重写测量/排列并拥有动画。它只是组件布局扩展点，不是通用 Compose Layout 或 Modifier 移植。
+
+固定栏传单个 Tab 的固定宽，滚动栏传 0..选中 contentWidth；上游回调的返回尺寸可越界，
+本地保存实际测量尺寸，单独计算报告尺寸 coercion、物理像素半差和 bottom placement。
+RTL 的原生镜像与 coercion 的整数余量分开处理；滚动时只减实际 ScrollViewer.Offset。
+Legacy 继续自己的完整 extent 约束和起点放置，不把新版 TabIndicatorScope 的约束套到旧布局。
+原生 TemplatedControl 在固定 Avalonia 12.1.5 制品中默认 ClipToBounds=true；PART_Indicator 显式关闭它，
+允许自定义内容跨出指标布局盒，最外层栏与滚动视口仍按原范围裁剪。
+默认动画有独立子作用域；切到自定义模板后释放该作用域，滚动作用域保留。恢复普通模板时从当前选择初始化。
+模板热替换可能由原生 LayoutManager 先单独测量新根；新根使栏重新测量，在真实上下文提供前不调用用户布局。
+自定义动画由模板根负责释放；DataContext 保留原 TabPositions，没有签名迁移。
+
+行为验证入口为 `TabIndicatorLayoutTests`；双端 `tab-indicator-layout` 直接调用真实 `tabIndicatorLayout`，
+覆盖两入口、固定/滚动、RTL、超约束尺寸、双边弹簧反转及布局期间内容增减；
+Catalog 使用相同上游样例的独立两边 spring。真实文字栅格和桌面手势仍按上面的未验证范围保留。
+
+`tab-custom-layout-current` 的 48 个新用例全部捕获成功且重复/额外截图稳定：44 equal、4 different。
+`TabIndicatorLayoutTests` 的 10 项与既有 TabRow/Legacy 的 38 项行为回归全部通过；Catalog 构建通过。
+32 个静态用例（正常、小于 minWidth、超宽、超高）与 8 个选择反向用例全部逐像素及结构相等。
+滚动栏在边缘仍运动时增减前项内容的四例，在 80/128ms 宽度差 0.5 DIP、480ms 差 0.25 DIP，
+选中项、约束、目标位置及 400/1000ms 的对应终段读数相等。该内容重测/动画重定向的帧次序差异仍未解决，
+没有放宽门禁、改变采样、补偿几何或移除失败场景，不属于已接受差异。
+默认指示器回归 `tab-custom-default-fixed` / `tab-custom-default-scroll` 两例均 equal、稳定、零错误。
+已检查真实双图确认自定义滚动指标能够越过自身布局盒，超约束尺寸仍受外层栏裁剪。
+
+### 独立 Primary / Secondary 指示器
+
+固定 AndroidX/Core `TabRowDefaults.PrimaryIndicator` 暴露 width、height、color、shape，
+`SecondaryIndicator` 暴露 height、color。此前只有行模板中的匿名 Border，能换背景与圆角，
+但没有独立入口、任意 Shape，且普通 Height 无法保留 requiredHeight 的受限布局语义。
+按本轮用户对缺失组件/API 的授权，新增 `PrimaryTabIndicator` / `SecondaryTabIndicator`；
+既有行默认模板继续不变，没有破坏性迁移。
+
+Primary 使用已有 MaterialSurface 与 MaterialShape；`IndicatorWidth` / `IndicatorHeight` 对应 requiredWidth/requiredHeight，
+本地 TabIndicatorSizeLayout 只负责此组件的实际尺寸与报告尺寸分离及物理像素居中余量。
+显式外部 Width/Height 仍约束报告尺寸；绘制不被内层模板裁剪，RTL 的整数剩余像素遵循 placeRelative。
+IndicatorWidth=NaN 对应 Dp.Unspecified，跟随实际分配宽度；配合 HorizontalAlignment=Stretch 接入已有行宽度动画。
+Secondary 对应 fillMaxWidth().height(height)，填可用宽、受外部高约束，只绘制矩形。
+颜色通过 Background 接入已有 IndicatorColor；默认宽使用新增 PrimaryIndicatorWidth=24 Token，
+该值来自公开 PrimaryIndicator 默认参数，独立于 tabIndicatorOffset 的 24 DIP 内容最小宽概念。
+默认形状/高度继续复用已有 IndicatorShape/IndicatorHeight，任意 Shape 使用现有 Surface 轮廓能力。
+
+行为入口为 `TabIndicatorDefaultsTests`，覆盖两端尺寸约束区别、RTL 余量、主题资源实时更新、
+显式属性优先级/清除、Shape 更换及独立/原生行模板跟随宽度动画。
+双端入口 `tab-indicator-defaults` 直接调用固定 Core 的公开 PrimaryIndicator/SecondaryIndicator，
+覆盖默认主题与方向、外部约束/扩大、亚像素取整、零尺寸、透明颜色、切角/百分比/路径及运行时变化。
+
+首轮 `tab-indicator-defaults-current` 为 30 equal / 3 different，均稳定且执行错误 0。
+三个差异来自 Secondary 的 HorizontalAlignment=Stretch 在显式 Width 下被 Avalonia 居中；
+上游 fillMaxWidth 在已受 width modifier 约束后仍从父布局起点放置。
+Secondary 改为起点对齐，其测量仍填可用宽度，修复后 `tab-indicator-defaults-verified` 的 33 例全部 equal、
+全部重复稳定、执行错误 0，原失败报告保留。已查看受限 Primary、RTL 自定义路径、显式宽 Secondary 的实际双图。
+六项新增行为与既有 48 项 Tab 回归、Catalog 构建通过；最后一次对齐修复已跑上述完整双端，新增定位断言也随本轮 2886 项全库测试通过。

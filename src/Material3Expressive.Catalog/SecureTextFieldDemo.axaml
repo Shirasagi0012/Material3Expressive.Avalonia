@@ -7,26 +7,26 @@
       <TextBlock Text="SecureTextField" FontSize="24" />
       <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="28" RowSpacing="24">
         <TextBlock Text="Filled" /><TextBlock Grid.Column="1" Text="Outlined" />
-        <TextBox Grid.Row="1" Name="FilledPassword" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+        <m3:SecureTextField Grid.Row="1" Name="FilledPassword" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
-                 m3:MaterialTextField.SupportingText="Paste and select all are available"
+                 m3:MaterialTextField.SupportingText="Last typed character stays visible for 1.5 seconds"
                  m3:MaterialTextField.LeadingIcon="{m3:Symbol Lock}">
           <m3:MaterialTextField.TrailingIcon><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealFilled" /></m3:MaterialTextField.TrailingIcon>
-        </TextBox>
-        <TextBox Grid.Row="1" Grid.Column="1" Name="OutlinedPassword" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+        </m3:SecureTextField>
+        <m3:SecureTextField Grid.Row="1" Grid.Column="1" Name="OutlinedPassword" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Password" PlaceholderText="Enter your password"
                  m3:MaterialTextField.SupportingText="Copy and cut stay blocked while revealed"
                  m3:MaterialTextField.LeadingIcon="{m3:Symbol Lock}">
           <m3:MaterialTextField.TrailingIcon><m3:IconButton Symbol="Visibility" Focusable="False" Click="RevealOutlined" /></m3:MaterialTextField.TrailingIcon>
-        </TextBox>
-        <TextBox Grid.Row="2" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
-                 m3:MaterialTextField.Label="PIN" PasswordChar="*" Text="1234" />
-        <TextBox Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+        </m3:SecureTextField>
+        <m3:SecureTextField Grid.Row="2" TextObfuscationMode="Hidden" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+                 m3:MaterialTextField.Label="Always hidden PIN" PasswordChar="*" Text="1234" />
+        <m3:SecureTextField Grid.Row="2" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Password" Text="example" m3:MaterialTextField.IsError="True"
                  m3:MaterialTextField.SupportingText="Check your password" />
-        <TextBox Grid.Row="3" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
+        <m3:SecureTextField Grid.Row="3" Theme="{StaticResource MaterialFilledSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Disabled" IsEnabled="False" Text="example" />
-        <TextBox Grid.Row="3" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
+        <m3:SecureTextField Grid.Row="3" Grid.Column="1" Theme="{StaticResource MaterialOutlinedSecureTextFieldTheme}"
                  m3:MaterialTextField.Label="Read-only" IsReadOnly="True" Text="example" />
       </Grid>
       <StackPanel Orientation="Horizontal" Spacing="12">

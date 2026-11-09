@@ -18,8 +18,14 @@
         <TextBlock Text="Date keyboard: open the year selector, use arrows and Enter, or Tab / Shift+Tab to leave and return. In the calendar, Left / Right skips disabled dates and animates across month boundaries." TextWrapping="Wrap" />
         <WrapPanel>
           <m3:DatePicker Name="Date" Margin="0,0,24,0" />
-          <m3:DateRangePicker Name="Range" Width="420" />
+          <m3:DateRangePicker Name="Range" Width="420" Height="600" />
         </WrapPanel>
+        <WrapPanel>
+          <Button Content="Range: previous month" Click="PreviousRangeMonth" Margin="0,0,12,0" />
+          <Button Content="Range: next month" Click="NextRangeMonth" />
+          <TextBlock Text="{Binding #Range.DisplayedMonth, StringFormat='First range month: {0:yyyy-MM}'}" Margin="12,0,0,0" VerticalAlignment="Center" />
+        </WrapPanel>
+        <TextBlock Text="Range calendar: swipe vertically and release for continuous inertia, or use the wheel. Each month heading has localized previous / next month accessibility actions. Tab leaves the calendar; Shift+Tab returns to its header. Navigation keeps the selected dates." TextWrapping="Wrap" />
         <TextBlock Text="TimePicker · TimeInput · TimeScroll — shared valid value" FontSize="20" />
         <TextBlock Text="Keyboard: activate an hour/minute selector, use arrows to move around the dial, Enter/Space to choose, and Tab or Shift+Tab to leave. In 24-hour mode, arrows connect both rings." TextWrapping="Wrap" />
         <TextBlock Text="Pointer: tap a five-minute mark or drag to any minute. Choosing an hour advances after the selector animation; drag release advances immediately. Switch fields during the transition to try interruption." TextWrapping="Wrap" />

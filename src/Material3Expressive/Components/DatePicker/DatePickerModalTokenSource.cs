@@ -30,7 +30,6 @@ public sealed class DatePickerModalTokenSource : ITokenSource
         [Comp.DatePickerModal.YearCellWidth] = 112.0d,
         [Comp.DatePickerModal.YearCellHeight] = 52.0d,
         [Comp.DatePickerModal.YearScrollHeight] = 335.0d,
-        [Comp.DatePickerModal.RangeMonthListHeight] = 400.0d,
         [Comp.DatePickerModal.RangeMonthTitleMargin] = new Thickness(24, 20, 0, 8),
         [Comp.DatePickerModal.InputMargin] = new Thickness(24, 24, 24, 16),
         [Comp.DatePickerModal.InputSpacing] = 8.0d,

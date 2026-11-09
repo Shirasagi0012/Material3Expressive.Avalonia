@@ -61,7 +61,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private Panel? _body;
     private DateEntryContent? _switcher;
-    private ItemsControl? _rangeList;
+    private DateRangeMonthList? _rangeList;
     private ContentPresenter? _title, _headline;
     private Button? _toggle;
     private bool _updating, _writingInput, _years;
@@ -148,6 +148,8 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             // Replacing the whole entry tears down its enter/exit scope. The month grid can change in place.
             if (!range && _calendar is { } && Mode == DatePickerDisplayMode.Picker)
                 ShowDisplayedMonth();
+            else if (range && _rangeList is { } list && Mode == DatePickerDisplayMode.Picker)
+                PositionRangeMonth(list, _month);
             else
                 Build();
         }
@@ -464,47 +466,27 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
 
     private void BuildRange()
     {
-        var content = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
+        var content = new DateRangeCalendarPanel { RowDefinitions = new RowDefinitions("Auto,*") };
         Control weekdays = WeekDays();
         content.Children.Add(weekdays);
         BindGridLengthToken(content.RowDefinitions[0], RowDefinition.HeightProperty,
             content, Comp.DatePickerModal.WeekdayRowHeight);
-        DateOnly[] items = Enumerable.Range(0, (LastYear - FirstYear + 1) * 12)
-           .Select(i => new DateOnly(FirstYear + i / 12, i % 12 + 1, 1))
-           .ToArray();
-        var list = new ItemsControl { ItemsSource = items };
-        _rangeList = list;
-        list.ItemsPanel = new FuncTemplate<Panel?>(() => new VirtualizingStackPanel());
-        list.ItemTemplate = new FuncDataTemplate<DateOnly>((date, _) => {
+        Control CreateMonth(DateOnly date)
+        {
             var panel = new StackPanel();
-            var label = new TextBlock { Text = FormatMonth(date), Tag = date };
+            var label = new DateRangeMonthHeading(ScrollRangeMonth, CanScrollRangeMonth, () => Culture)
+                { Text = FormatMonth(date), Tag = date };
             BindToken(label, Layoutable.MarginProperty, Comp.DatePickerModal.RangeMonthTitleMargin);
             label.Classes.Add("date-month-title");
             panel.Children.Add(label);
             panel.Children.Add(Month(date));
             return panel;
-        });
-        var scroll = new ScrollViewer {
-            Content = list, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-        };
-        BindToken(scroll, Layoutable.HeightProperty, Comp.DatePickerModal.RangeMonthListHeight);
-        Grid.SetRow(scroll, 1);
-        content.Children.Add(scroll);
-        _body!.Children.Add(content);
-        list.AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => {
-            list.ScrollIntoView(items[(_month.Year - FirstYear) * 12 + _month.Month - 1]);
-        });
-        scroll.ScrollChanged += (_, _) => {
-            if (_updating || !scroll.IsAttachedToVisualTree()) return;
-            (DateMonthPanel panel, Point? point) visible = list.GetVisualDescendants()
-               .OfType<DateMonthPanel>()
-               .Select(panel => (panel, point: panel.TranslatePoint(default, scroll)))
-               .Where(item =>
-                    item.point is { } point && point.Y + item.panel.Bounds.Height > 0 && point.Y < scroll.Viewport.Height)
-               .OrderBy(item => item.point!.Value.Y)
-               .FirstOrDefault();
-            if (visible.panel is null) return;
-            _month = visible.panel.Month;
+        }
+        DateRangeMonthList? list = null;
+        list = new DateRangeMonthList(new(FirstYear, 1, 1), new(LastYear, 12, 1), _month, CreateMonth, month =>
+        {
+            if (_updating || !ReferenceEquals(_rangeList, list) || list?.IsAttachedToVisualTree() != true) return;
+            _month = month;
             _updating = true;
             try
             {
@@ -514,7 +496,34 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
             {
                 _updating = false;
             }
-        };
+        });
+        _rangeList = list;
+        Grid.SetRow(list, 1);
+        content.Children.Add(list);
+        _body!.Children.Add(content);
+    }
+
+    private bool CanScrollRangeMonth(int direction) => Mode == DatePickerDisplayMode.Picker &&
+        owner.IsEffectivelyEnabled && _rangeList is { } list && list.IsAttachedToVisualTree() &&
+        (direction < 0 ? list.CanScrollPrevious : list.CanScrollNext);
+
+    internal bool ScrollRangeMonth(int direction)
+    {
+        if (!CanScrollRangeMonth(direction) || _rangeList is not { } list) return false;
+        // DateRangePicker.customScrollActions targets the first visible item, not the
+        // heading whose action was invoked. Both actions remain exposed at the bounds.
+        var index = (_month.Year - FirstYear) * 12 + _month.Month - 1;
+        PositionRangeMonth(list, new DateOnly(FirstYear, 1, 1).AddMonths(Math.Clamp(index + direction, 0, (LastYear - FirstYear + 1) * 12 - 1)));
+        return true;
+    }
+
+    private void PositionRangeMonth(DateRangeMonthList list, DateOnly month)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!ReferenceEquals(_rangeList, list) || !list.IsAttachedToVisualTree()) return;
+            list.ScrollToMonth(month);
+        }, DispatcherPriority.Loaded);
     }
 
     private Control WeekDays()
@@ -553,7 +562,7 @@ internal sealed class DateEntryController(TemplatedControl owner, bool range)
     {
         if (date.Year < FirstYear || date.Year > LastYear) return;
         var month = new DateOnly(date.Year, date.Month, 1);
-        if (range) _rangeList?.ScrollIntoView(month);
+        if (range) _rangeList?.BringMonthIntoView(month);
         else if (month != _month && _monthStrip is { } strip)
         {
             var forward = month > _month;

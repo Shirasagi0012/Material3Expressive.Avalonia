@@ -2,6 +2,39 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia">
   <Styles.Resources>
+    <ControlTheme x:Key="{x:Type m3:PrimaryTabIndicator}" TargetType="m3:PrimaryTabIndicator">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="IndicatorWidth" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryIndicatorWidth}}" />
+      <Setter Property="IndicatorHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorHeight}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorColor}}" />
+      <Setter Property="CornerRadius" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorShape}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:TabIndicatorSizeLayout IsPrimary="True" IndicatorWidth="{TemplateBinding IndicatorWidth}" IndicatorHeight="{TemplateBinding IndicatorHeight}">
+            <m3:MaterialSurface x:Name="PART_IndicatorSurface" Background="{TemplateBinding Background}" Shape="{TemplateBinding Shape}"
+                                CornerRadius="{TemplateBinding CornerRadius}" ApplyTonalElevation="False" />
+          </m3:TabIndicatorSizeLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="{x:Type m3:SecondaryTabIndicator}" TargetType="m3:SecondaryTabIndicator">
+      <Setter Property="ClipToBounds" Value="False" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="IndicatorHeight" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorHeight}}" />
+      <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorColor}}" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <m3:TabIndicatorSizeLayout IndicatorHeight="{TemplateBinding IndicatorHeight}">
+            <Border x:Name="PART_IndicatorSurface" Background="{TemplateBinding Background}" />
+          </m3:TabIndicatorSizeLayout>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
     <ControlTemplate x:Key="MaterialPrimaryTabIndicator">
       <Border Background="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorColor}}"
               Height="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.IndicatorHeight}}"
@@ -63,7 +96,7 @@
                   <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                 </m3:TabRowContent>
               </ScrollViewer>
-              <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding Indicator}" IsHitTestVisible="False"
+              <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding Indicator}" IsHitTestVisible="False" ClipToBounds="False"
                   DataContext="{Binding TabPositions, RelativeSource={RelativeSource AncestorType=m3:TabRow}}" />
             </m3:TabRowChrome>
           </m3:MaterialSurface>
@@ -172,7 +205,7 @@
                     <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                   </m3:TabRowContent>
                 </ScrollViewer>
-                <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding m3:TabRowAppearance.Indicator}" IsHitTestVisible="False"
+                <TemplatedControl x:Name="PART_Indicator" Template="{TemplateBinding m3:TabRowAppearance.Indicator}" IsHitTestVisible="False" ClipToBounds="False"
                     DataContext="{Binding (m3:TabRowAppearance.TabPositions), RelativeSource={RelativeSource AncestorType=TabControl}}" />
               </m3:TabRowChrome>
             </m3:MaterialSurface>

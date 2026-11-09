@@ -135,6 +135,58 @@ Row 把 Indicator 放在动画后的目标矩形内，其 DataContext 是只读 
 原生 TabItem 的单项 IndicatorTemplate 不在此主题中生效，应使用 Row 的统一模板槽。
 主题联动定制见[公共接入](../../../../docs/GETTING_STARTED.md)。
 
+需要独立控制两端运动、整项外框或跨标签绘制时，将 Indicator 模板的根设为 `TabIndicatorLayout` 的派生类。
+它是带一个 Child 的布局控件，重写 `MeasureIndicator` 和 `ArrangeIndicator`，使用只读 `TabPositions`、
+`SelectedIndex`、`IsScrollable`、`MinimumSize` / `MaximumSize` 计算实际布局。这样不再叠加默认位移/宽度动画，
+`IndicatorMatchContentSize` 也不参与此模板；标签选择与滚动居中仍由栏负责。
+
+固定栏给出单项宽度约束；滚动栏给出 0 到选中内容宽度的约束，不是整个栏宽。
+返回尺寸可超出约束，栏按实际尺寸和约束后的报告尺寸居中放置；Child 可以跨出布局盒绘制。
+子项 Arrange 的 X 是逻辑起点坐标，RTL 由 Avalonia 镜像，不需要再次反向。
+滚动栏还会在选中 Tab 内居中该布局盒，因此按完整 TabPosition.Left 定位时应扣除这段居中量。
+边界计算按实际布局密度取整；完整实现可直接参考 Catalog 的
+[ElasticTabIndicator.cs](../../../Material3Expressive.Catalog/ElasticTabIndicator.cs)。
+
+Catalog 的 **Custom indicator** 展示同一模板用于独立 TabRow 和原生 TabControl，
+两个边缘按移动方向采用不同弹簧，快速反向保留当前速度。自定义动画通过 `AnimationScope` 建立子作用域，
+在卸载时释放；重挂时按当前 TabPositions 初始化。普通 Border 指示器不需要改动或迁移。
+
+## 独立指示器与形状
+
+`PrimaryTabIndicator` 和 `SecondaryTabIndicator` 可独立显示，也可放入 Indicator 模板。
+Primary 默认绘制 24×3 DIP 的圆角形状；Secondary 默认填满可用宽度、高 3 DIP，保持方角。
+两者用 `Background` 设置颜色，默认随主题 Primary 更新。
+
+```xml
+<m3:PrimaryTabIndicator IndicatorWidth="64" IndicatorHeight="10" Background="Teal">
+  <m3:PrimaryTabIndicator.Shape>
+    <m3:CutCornerShape TopStart="6" BottomEnd="6" />
+  </m3:PrimaryTabIndicator.Shape>
+</m3:PrimaryTabIndicator>
+<m3:SecondaryTabIndicator Width="180" IndicatorHeight="4" HorizontalAlignment="Left" />
+```
+
+Primary 的 `Shape` 复用 `MaterialShape`，支持百分比圆角、切角和自定义路径；null 使用 `CornerRadius`。
+`IndicatorWidth` / `IndicatorHeight` 是实际绘制尺寸；普通 `Width` / `Height` 是外部布局尺寸，
+外部尺寸较小时 Primary 居中溢出，与上游 requiredWidth/requiredHeight 一致。
+Secondary 的 `IndicatorHeight` 遵守外部约束，不产生这种尺寸溢出。
+
+在普通行模板内跟随行已有的宽度动画时，Primary 设置 `IndicatorWidth="NaN"` 并水平拉伸：
+
+```xml
+<m3:TabRow.Indicator>
+  <ControlTemplate>
+    <m3:PrimaryTabIndicator IndicatorWidth="NaN" IndicatorHeight="6" HorizontalAlignment="Stretch">
+      <m3:PrimaryTabIndicator.Shape><m3:CutCornerShape TopStart="4" TopEnd="4" /></m3:PrimaryTabIndicator.Shape>
+    </m3:PrimaryTabIndicator>
+  </ControlTemplate>
+</m3:TabRow.Indicator>
+```
+
+此模板同样可用于原生 `TabRowAppearance.Indicator`。这两个绘制控件自身没有选择状态或动画；
+默认位置动画由栏管理，独立边缘动画使用前述 `TabIndicatorLayout`。
+Catalog 的 **Standalone indicators** 展示独立绘制和切角行指示器。
+
 ## 使用边界
 
 原生主题仅实现顶部水平栏，不支持其他 TabStripPlacement。原生 TabItem 在指针按下和方向焦点时选择，
@@ -148,7 +200,8 @@ Catalog 示例见 [TabRowDemo.axaml](../../../Material3Expressive.Catalog/TabRow
 
 `TabRow.IndicatorMatchContentSize` 或原生 `TabRowAppearance.IndicatorMatchContentSize` 对应
 上游 `tabIndicatorOffset(matchContentSize)`：true 跟随内容宽度，false 跟随整项宽度，null 恢复 Variant 的默认值。
-该设置适用于 Primary/Secondary 的默认和自定义 Indicator 模板，不改变标签测量、选择或颜色。
+该设置适用于 Primary/Secondary 的默认和普通自定义 Indicator 模板，不改变标签测量、选择或颜色；
+`TabIndicatorLayout` 模板自己决定宽度与运动，不使用此设置。
 运行时切换使用原有宽度弹簧，动画中反转保留当前位置和速度。
 
 ```xml
