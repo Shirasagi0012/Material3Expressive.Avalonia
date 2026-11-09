@@ -19,6 +19,9 @@ public readonly record struct TabPosition(double Left, double Width, double Cont
 public static class TabRowAppearance
 {
     public static readonly AttachedProperty<TabRowVariant> VariantProperty = AvaloniaProperty.RegisterAttached<Control, TabRowVariant>("Variant", typeof(TabRowAppearance));
+    public static readonly AttachedProperty<bool?> IndicatorMatchContentSizeProperty = AvaloniaProperty.RegisterAttached<Control, bool?>("IndicatorMatchContentSize", typeof(TabRowAppearance));
+    public static bool? GetIndicatorMatchContentSize(Control owner) => owner.GetValue(IndicatorMatchContentSizeProperty);
+    public static void SetIndicatorMatchContentSize(Control owner, bool? value) => owner.SetValue(IndicatorMatchContentSizeProperty, value);
     public static readonly AttachedProperty<bool> IsScrollableProperty = AvaloniaProperty.RegisterAttached<Control, bool>("IsScrollable", typeof(TabRowAppearance));
     public static readonly AttachedProperty<double> EdgePaddingProperty = AvaloniaProperty.RegisterAttached<Control, double>("EdgePadding", typeof(TabRowAppearance));
     public static readonly AttachedProperty<double> MinTabWidthProperty = AvaloniaProperty.RegisterAttached<Control, double>("MinTabWidth", typeof(TabRowAppearance));

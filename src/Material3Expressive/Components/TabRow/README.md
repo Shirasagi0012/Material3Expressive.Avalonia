@@ -73,7 +73,7 @@ Catalog 的 Tooltip 示例提供受控 Tab 接入。
 </TabControl>
 ```
 
-Primary 指示器随标签内容宽度，Secondary 覆盖整个 Tab。滚动栏默认 EdgePadding=52、MinTabWidth=90 DIP。
+默认 Primary 指示器随标签内容宽度，Secondary 覆盖整个 Tab。滚动栏默认 EdgePadding=52、MinTabWidth=90 DIP。
 初次布局和选择变化会自动居中；同一选择下调整窗口/内容宽度不会主动重新居中。
 用户滚轮/滚动手势会取消正在进行的自动居中。
 
@@ -128,3 +128,19 @@ Row 把 Indicator 放在动画后的目标矩形内，其 DataContext 是只读 
 
 Catalog 示例见 [TabRowDemo.axaml](../../../Material3Expressive.Catalog/TabRowDemo.axaml)；
 测量与动画约束、确认依据和测试入口见 [INTERNALS.md](INTERNALS.md)。
+
+### 独立设置指示器宽度策略
+
+`TabRow.IndicatorMatchContentSize` 或原生 `TabRowAppearance.IndicatorMatchContentSize` 对应
+上游 `tabIndicatorOffset(matchContentSize)`：true 跟随内容宽度，false 跟随整项宽度，null 恢复 Variant 的默认值。
+该设置同时适用于默认和自定义 Indicator 模板，不改变标签测量、选择或颜色。
+运行时切换使用原有宽度弹簧，动画中反转保留当前位置和速度。
+
+```xml
+<m3:TabRow Variant="Secondary" IndicatorMatchContentSize="True" SelectedIndex="0">
+  <m3:Tab Content="Inbox" IsSelected="True" />
+  <m3:Tab Content="Saved messages" />
+</m3:TabRow>
+```
+
+Catalog 的 Indicator width 示例让两个入口共享复选框，可在选择动画中切换宽度策略。

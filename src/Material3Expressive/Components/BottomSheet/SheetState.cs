@@ -79,6 +79,7 @@ public sealed class SheetState : AvaloniaObject
     }
 
     internal bool Confirm(SheetValue value) => _confirm(value);
+    internal int AnchorCount => _anchors.Length;
     internal bool HiddenEnabled => _enabled.Contains(SheetValue.Hidden);
     internal float OffsetPx => _offset;
     internal float MinimumAnchor => _anchors.Length == 0 ? float.NaN : _anchors.Min(a => a.Position);

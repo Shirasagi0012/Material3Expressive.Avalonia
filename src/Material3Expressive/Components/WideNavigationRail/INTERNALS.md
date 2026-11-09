@@ -217,3 +217,26 @@ Modal 增加 HideOnCollapse、scrim、Escape、隐藏拖动/快速释放；参�
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/WideNavigationRail/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+## 2026-11-09：补齐容器 Shape 参数
+
+保留上文 2026-10-03 的原始决定与理由：当时以 CornerRadius 适配默认圆角，避免新增形状框架。
+本轮维护者明确授权缺失 API 与历史决定修订；固定 AndroidX/Core 的 WideNavigationRail `shape`、
+Modal `collapsedShape` / `expandedShape` 都是任意 Shape，当前共享 MaterialSurface 已支持逻辑切角、
+百分比圆角和可变 outline，因此扩展这些入口无需新框架。默认 null 保留原圆角 API，无调用方迁移。
+两层 Modal Surface 绑定同一 ExpandedShape，保证绘制与裁剪一致；不插值两个形状，固定上游也是
+各容器独立使用其 shape。现有纵向连续化与鼠标速度决定不在本次修订范围。
+
+新增 WideRailShapeTests 验证替换、RTL、反转、恢复默认和 reopen；双端独立 families
+`wide-navigation-rail-shapes` / `modal-wide-navigation-rail-shapes` 覆盖静态端点、反向展开和形状替换。
+
+### 本轮双端验证记录
+
+`wide-navigation-rail-shapes` 12 例：10 equal / 2 different；`modal-wide-navigation-rail-shapes` 24 例：
+20 equal / 4 different。全部无执行错误且重复稳定；24 个静态端点及 6 个运行时形状替换均逐项/逐像素相同。
+已检查 RTL 切角容器实际双端图。6 个 reverse 仍 different，包含既有纵向连续化、标签混色以及横向尺寸/动画时序读数，
+不能把全部差异归入已接受的纵向连续化决定；这些轨迹没有在本轮修改，也没有放宽门限。
+产物位于 `artifacts/visual-parity/runs/<运行名>/summary.md`。
+
+额外运行无显式形状的 `wide-reverse-control` 与 `modal-wide-reverse-control`：两者仍 different，
+与对应新形状用例的全部测量点分别 10/10、12/12 样本完全相同，确认这些读数差异并非 Shape 接入引入。

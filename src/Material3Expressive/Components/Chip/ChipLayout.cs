@@ -53,22 +53,25 @@ internal sealed class ChipLayout : Decorator
 // fill=false for SelectableChip, while non-selectable Chip uses IntrinsicSize.Max.
 internal sealed class ChipContentLayout : Panel
 {
+    static ChipContentLayout() => AffectsArrange<ChipContentLayout>(FlowDirectionProperty);
     private ChipSpacing _spacing = new();
     public ChipSpacing Spacing { get => _spacing; set { _spacing = value; InvalidateMeasure(); } }
-    private ChipHorizontalArrangement? _horizontalArrangement;
-    public ChipHorizontalArrangement? HorizontalArrangement
+    private MaterialHorizontalArrangement? _horizontalArrangement;
+    public MaterialHorizontalArrangement? HorizontalArrangement
     { get => _horizontalArrangement; set { if (_horizontalArrangement == value) return; _horizontalArrangement = value; InvalidateMeasure(); } }
     private double _leading, _trailing, _label;
     protected override Size MeasureOverride(Size availableSize)
     {
         if (Children.Count != 3) return default;
         var scale = LayoutHelper.GetLayoutScale(this);
-        var spacing = HorizontalArrangement is null ? MathUtils.DipToPx((Spacing.Leading + Spacing.Trailing) / 2, scale) / scale : 0;
+        var spacing = MathUtils.DipToPx(HorizontalArrangement?.Spacing ?? (Spacing.Leading + Spacing.Trailing) / 2, scale) / scale;
         Children[0].Measure(availableSize);
         Children[2].Measure(availableSize.WithWidth(Math.Max(0, availableSize.Width - Children[0].DesiredSize.Width
             - spacing)));
         _leading = Children[0].DesiredSize.Width; _trailing = Children[2].DesiredSize.Width;
-        var rowGap = 2 * spacing;
+        var rowGap = HorizontalArrangement is null ? 2 * spacing
+            : Math.Min(spacing, Math.Max(0, availableSize.Width - _leading))
+              + Math.Min(spacing, Math.Max(0, availableSize.Width - _leading - spacing - _trailing));
         // RowMeasurePolicy reserves the arrangement's average spacing before measuring weight.
         Children[1].Measure(new Size(Math.Max(0, availableSize.Width - _leading - _trailing - rowGap), availableSize.Height));
         _label = Children[1].DesiredSize.Width;
@@ -87,36 +90,16 @@ internal sealed class ChipContentLayout : Panel
             // ChipContent's label Row has weight(fill=true); AnimatingChipContent
             // (Filter/Input) uses fill=false. Arrangement sees the slot, not its label.
             if (TemplatedParent is Chip and not SelectableChip)
-                sizes[1] = Math.Max(0, finalSize.Width - _leading - _trailing);
+                sizes[1] = Math.Max(0, finalSize.Width - _leading - _trailing - 2 * MathUtils.DipToPx(arrangement.Spacing, scale) / scale);
             // Arrangement.kt operates on Int pixel sizes but accumulates gaps in Float.
             // Compute physical positions first, then undo the native RTL subtree mirror.
             var pixels = sizes.Select(size => MathUtils.DipToPx(size, scale)).ToArray();
             var total = MathUtils.DipToPx(finalSize.Width, scale);
-            var free = total - pixels.Sum();
-            var rtl = FlowDirection == FlowDirection.RightToLeft;
-            var step = arrangement switch
-            {
-                ChipHorizontalArrangement.SpaceBetween => free / 2f,
-                ChipHorizontalArrangement.SpaceAround => free / 3f,
-                ChipHorizontalArrangement.SpaceEvenly => free / 4f,
-                _ => 0f
-            };
-            var current = arrangement switch
-            {
-                ChipHorizontalArrangement.Start => rtl ? free : 0f,
-                ChipHorizontalArrangement.End => rtl ? 0f : free,
-                ChipHorizontalArrangement.Center => free / 2f,
-                ChipHorizontalArrangement.SpaceAround => step / 2f,
-                ChipHorizontalArrangement.SpaceEvenly => step,
-                _ => 0f
-            };
-            for (var slot = 0; slot < 3; slot++)
-            {
-                var index = rtl ? 2 - slot : slot;
-                var physical = MathUtils.RoundToInt(current);
-                positions[index] = (rtl ? total - physical - pixels[index] : physical) / scale;
-                current += pixels[index] + step;
-            }
+            var physical = new int[3];
+            arrangement.Arrange(scale, total, pixels, FlowDirection, physical);
+            for (var i = 0; i < 3; i++)
+                positions[i] = (FlowDirection == FlowDirection.RightToLeft
+                    ? total - physical[i] - pixels[i] : physical[i]) / scale;
         }
         for (var i = 0; i < 3; i++)
         {

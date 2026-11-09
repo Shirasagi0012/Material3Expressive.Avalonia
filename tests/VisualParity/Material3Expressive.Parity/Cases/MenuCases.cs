@@ -127,6 +127,14 @@ public sealed class MenuCases
             var native = new MenuItem { Header = marker, IsChecked = config.Selected, Icon = config.Icon ? icon : null,
                 ToggleType = config.NativeCheck ? MenuItemToggleType.CheckBox : MenuItemToggleType.None,
                 Theme = (ControlTheme)host.Window.FindResource(config.Variant == "baseline" ? "MaterialBaselineMenuItemTheme" : "MaterialVerticalMenuItemTheme")! };
+            if (config.Path != "none")
+            {
+                MenuAppearance.SetShape(native, new CutCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute),
+                    BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) });
+                if (config.Path == "rounded") MenuAppearance.SetShape(native, new RoundedCornerShape { TopStart = new(20, RelativeUnit.Absolute), TopEnd = new(4, RelativeUnit.Absolute), BottomEnd = new(12, RelativeUnit.Absolute), BottomStart = new(2, RelativeUnit.Absolute) });
+                MenuAppearance.SetSelectedShape(native, config.Path is "rounded" or "round-cut" ? new RoundedCornerShape(new RelativeScalar(.35, RelativeUnit.Relative)) : config.Path == "cut" ? new CutCornerShape(new RelativeScalar(.35, RelativeUnit.Relative))
+                    : config.Path == "generic" ? new MenuNotchedShape() : null);
+            }
             native.Click += (_, _) => clicks++;
             selected = () => native.IsChecked; select = value => native.IsChecked = value;
             item = native;

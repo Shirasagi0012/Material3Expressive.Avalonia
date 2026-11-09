@@ -15,11 +15,17 @@ using Avalonia.VisualTree;
 using ComposeAnimation;
 using Material3Expressive.Foundation.Input;
 
+using Material3Expressive.Foundation.Rendering;
+
 namespace Material3Expressive.Components;
 
 /// <summary>A bottom sheet in the current visual tree. Place it in a finite-height overlay host.</summary>
 public class BottomSheet : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<BottomSheet>();
+    /// <summary>Explicit outline; null uses the themed CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<SheetState> StateProperty = AvaloniaProperty.Register<BottomSheet, SheetState>(nameof(State));
     public static readonly StyledProperty<double> SheetMaxWidthProperty = AvaloniaProperty.Register<BottomSheet, double>(nameof(SheetMaxWidth));
     public static readonly StyledProperty<bool> GesturesEnabledProperty = AvaloniaProperty.Register<BottomSheet, bool>(nameof(GesturesEnabled), true);
@@ -110,6 +116,8 @@ public class BottomSheet : ContentControl
         }
         if (change.Property == DragHandleProperty || change.Property == DragHandleTemplateProperty) UpdateHandle();
         if (change.Property == StateProperty) { CancelPointer(); AttachState(); }
+        if (change.Property == StateProperty || change.Property == GesturesEnabledProperty || change.Property == IsEffectivelyEnabledProperty || change.Property == DragHandleProperty)
+            (_handle as BottomSheetHandle)?.RefreshAutomation();
         if (change.Property == GesturesEnabledProperty && _pointer is { } pointer && _effects is { } scope)
             _ = scope.Launch(async ct => { if (!await scope.WaitForNextFrameAsync(ct)) return; if (_pointer == pointer && !GesturesEnabled) CancelPointer(); }, "Sheet gesture configuration");
         if (change.Property == IsEffectivelyEnabledProperty) CancelPointer();
@@ -126,6 +134,8 @@ public class BottomSheet : ContentControl
     }
     private void StateChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == SheetState.CurrentValueProperty || e.Property == SheetState.HasExpandedStateProperty || e.Property == SheetState.HasPartiallyExpandedStateProperty)
+            (_handle as BottomSheetHandle)?.RefreshAutomation();
         if (e.Property == SheetState.CurrentOffsetProperty || StandardPeekHeight is not null &&
             (e.Property == SheetState.CurrentValueProperty || e.Property == SheetState.IsAnimationRunningProperty))
             _layout?.InvalidateArrange();

@@ -442,3 +442,25 @@
 - **IconButton 自定义内容（2026-11-08 本轮授权修订）**：原默认模板只消费 Symbol，原因是以仓内字体图标便利入口承接图标按钮，README 曾明确 Content 被忽略。时间默认模式按钮的固定 Filled 矢量不能用近似字体替换，因此本轮补齐上游 content lambda。非空 Content 或 ContentTemplate 优先，清除后恢复 Symbol；内容使用原生 presenter、自然尺寸居中，无新公共属性。行为迁移：依赖旧忽略行为的调用方须清除 Content/ContentTemplate；仓内图标捕获夹具保留新内容层，Catalog 增加组合图标。点击、命令、automation 与状态 owner 不变。
 
 - **四类 Dialog 容器形状（同轮授权）**：固定 AlertDialog、DatePickerDialog、TimePickerDialog、VibrantTimePickerDialog 均提供 shape。四个类分别 AddOwner 同一 Surface.Shape，模板只转发；BasicAlertDialog 不自带表面，保持组合职责。退出冻结和再次打开复用现有 presentation 生命周期，日期布局仍按固定 Core 分支，无公开迁移。
+
+
+## 36. 组件横向排列能力
+
+- **原范围与原因**：Chip 使用六值枚举，Menu 使用专用 Leading/TrailingSpacing；各组件先保留自己的测量与动画，避免为假设需求建立通用布局框架。
+- **本轮授权与依据（2026-11-09）**：维护者明确授权缺失 API、共享能力与破坏性迁移。固定 AndroidX/Core 的 Foundation `Arrangement.kt` 一致；Chip.kt 和 Menu.kt 均公开 Horizontal。新增共享排列对象是为这两个实际消费方补齐 SpacedBy、Absolute 与应用自定义算法。
+- **决定**：`MaterialHorizontalArrangement` 是不可变 record，Spacing 为 DIP，Arrange 接收密度、整数物理总宽/子项宽及 FlowDirection，写入物理左坐标。内置六种分布与 Absolute 保留上游 Int/Float、反向遍历、单项和越界规则；SpacedHorizontalArrangement 保留正负间距、逐项截断与组对齐。组件自己负责测量及抵消原生镜像，不引入公共 Row/Column 布局器。
+- **范围与迁移**：Chip.HorizontalArrangement 从枚举改为该类型，C# 常量迁移到 Foundation.MaterialHorizontalArrangement；XAML 原六种字符串保持可用。菜单新增同名可选入口，仅 Expressive/Checkable/Selectable 消费。null 保留各自专用间距，其他组件的既有 Arrangement API 没有自动迁移。
+- **验证与边界**：组件双端用例覆盖真实槽、约束、RTL、动态排列及图标动画；自定义算法的正确性由应用负责。当前不声明完整 Foundation Row、Column、intrinsic/weight 公共 API 已移植。
+
+### ButtonGroup Arrangement 迁移（2026-11-09）
+
+继 Chip/Menu 接入后，ButtonGroup 的固定上游同样接受 Arrangement.Horizontal。
+此前枚举加独立 Spacing/SpacingAlignment 便于 XAML 表达常用排列，但无法保留任意排列与其 spacing 的一体语义。
+依据本轮用户明确授权，HorizontalArrangement 改共享 MaterialHorizontalArrangement；删除旧枚举、两个分离属性及 Spacing Token，
+默认 SpacedBy(12) 通过 HorizontalArrangement Token 提供。该迁移减少重复算法并新增绝对方向/自定义布局能力，
+未改变菜单、权重和按压状态的职责。迁移示例见 ButtonGroup README；ConnectedButtonGroup.Spacing 保留。
+
+
+原生 Expressive MenuItem 同轮通过 MenuAppearance.HorizontalArrangement 接入该能力，NativeMenuRow 的
+默认首尾布局继续由 null 保留。主内容行消费排列，尾部组合槽内部的快捷键/chevron 排列不被替换；
+Baseline/MenuBar 不采用此附加属性。不改变上文关于权重、intrinsic 公共 API 的范围。

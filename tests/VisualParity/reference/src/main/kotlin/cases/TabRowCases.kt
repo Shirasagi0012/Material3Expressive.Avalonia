@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 data class TabRowConfig(val variant:String="primary",val scrollable:Boolean=false,val content:String="label",val native:Boolean=false,
     val rtl:Boolean=false,val dark:Boolean=false,val enabled:Boolean=true,val customColors:Boolean=false,val customSlots:Boolean=false,
     val noSlots:Boolean=false,val count:Int=3,val selected:Int=0,val width:Double=352.0,val height:Double?=null,
-    val edgePadding:Double=52.0,val minTabWidth:Double=90.0,val labelHeight:Double=16.0,val iconSize:Double=24.0,val action:String="none")
+    val edgePadding:Double=52.0,val minTabWidth:Double=90.0,val labelHeight:Double=16.0,val iconSize:Double=24.0,val action:String="none",val matchContentSize:Boolean?=null)
 
 @ParitySuite("tab-row")
 class TabRowCases {
@@ -55,6 +55,11 @@ class TabRowCases {
             fun input(time:Long,action:String,position:Offset) { advance(time); host.input(action,position); host.draw(); host.frame(time) }
             sample("initial")
             when(config.action) {
+                "indicator-width" -> {
+                    mutate(1000,"match-content") { scene.matchContentSize=true }; times(16000,32000,64000)
+                    mutate(65000,"full-tab") { scene.matchContentSize=false }; times(80000,96000,128000)
+                    mutate(129000,"variant-default") { scene.matchContentSize=null }; times(160000,400000,1000000)
+                }
                 "select", "reverse" -> {
                     mutate(1000,"select-last") { scene.selected=config.count-1 }; times(16000,64000)
                     if(config.action=="reverse") mutate(65000,"select-first") { scene.selected=0 }
@@ -113,6 +118,7 @@ class TabRowCases {
     internal class TabScene(val config:TabRowConfig) {
         var interactions by mutableStateOf<MutableInteractionSource?>(null)
         var selected by mutableStateOf(config.selected)
+        var matchContentSize by mutableStateOf(config.matchContentSize)
         var width by mutableStateOf(config.width)
         var dark by mutableStateOf(config.dark)
         var enabled by mutableStateOf(config.enabled)
@@ -141,7 +147,7 @@ class TabRowCases {
             val indicatorContent:@Composable TabIndicatorScope.()->Unit = {
                 scope=this
                 if(!config.noSlots && config.count>0) {
-                    val offset=Modifier.tabIndicatorOffset(selected,matchContentSize=primary).then(indicator.modifier())
+                    val offset=Modifier.tabIndicatorOffset(selected,matchContentSize=matchContentSize ?: primary).then(indicator.modifier())
                     if(config.customSlots) Box(offset.fillMaxWidth().height(5.dp).background(Color.Cyan))
                     else if(primary) TabRowDefaults.PrimaryIndicator(offset,width=Dp.Unspecified)
                     else TabRowDefaults.SecondaryIndicator(offset)

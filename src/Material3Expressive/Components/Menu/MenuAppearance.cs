@@ -10,6 +10,20 @@ public enum MenuColorStyle { Standard, Vibrant }
 /// <summary>Appearance and interaction options for native menus using Material themes.</summary>
 public static class MenuAppearance
 {
+    public static readonly AttachedProperty<Foundation.MaterialHorizontalArrangement?> HorizontalArrangementProperty =
+        AvaloniaProperty.RegisterAttached<MenuItem, Foundation.MaterialHorizontalArrangement?>("HorizontalArrangement", typeof(MenuAppearance));
+    public static Foundation.MaterialHorizontalArrangement? GetHorizontalArrangement(MenuItem owner) => owner.GetValue(HorizontalArrangementProperty);
+    public static void SetHorizontalArrangement(MenuItem owner, Foundation.MaterialHorizontalArrangement? value) => owner.SetValue(HorizontalArrangementProperty, value);
+
+    public static readonly AttachedProperty<Foundation.Rendering.MaterialShape?> ShapeProperty =
+        AvaloniaProperty.RegisterAttached<MenuItem, Foundation.Rendering.MaterialShape?>("Shape", typeof(MenuAppearance));
+    public static Foundation.Rendering.MaterialShape? GetShape(MenuItem owner) => owner.GetValue(ShapeProperty);
+    public static void SetShape(MenuItem owner, Foundation.Rendering.MaterialShape? value) => owner.SetValue(ShapeProperty, value);
+    public static readonly AttachedProperty<Foundation.Rendering.MaterialShape?> SelectedShapeProperty =
+        AvaloniaProperty.RegisterAttached<MenuItem, Foundation.Rendering.MaterialShape?>("SelectedShape", typeof(MenuAppearance));
+    public static Foundation.Rendering.MaterialShape? GetSelectedShape(MenuItem owner) => owner.GetValue(SelectedShapeProperty);
+    public static void SetSelectedShape(MenuItem owner, Foundation.Rendering.MaterialShape? value) => owner.SetValue(SelectedShapeProperty, value);
+
     /// <summary>Observes and emits interactions for a native Material menu item; null uses an internal source.</summary>
     public static readonly AttachedProperty<MaterialInteractionSource?> InteractionSourceProperty =
         AvaloniaProperty.RegisterAttached<MenuItem, MaterialInteractionSource?>("InteractionSource", typeof(MenuAppearance));

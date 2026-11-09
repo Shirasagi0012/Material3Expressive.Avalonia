@@ -118,3 +118,20 @@ Catalog 的 Tooltip 示例包含此接入。
 Catalog 示例见 [NavigationDrawerDemo.axaml](../../../Material3Expressive.Catalog/NavigationDrawerDemo.axaml)；
 Dismissible 页包含可独立拖动的 Slider，与页面背景拖动进行对照。
 状态确认顺序、已接受数值差异与验证入口见 [INTERNALS.md](INTERNALS.md)。
+
+### Sheet 与项目形状
+
+三种 `DrawerSheet` 和 `NavigationDrawerItem` 均支持 `Shape`，可独立设置。非空形状覆盖 `CornerRadius`；
+设回 null 恢复主题。形状参与表面、内容和项目波纹裁剪；选择状态仍由应用控制。
+
+```xml
+<m3:ModalDrawerSheet>
+  <m3:ModalDrawerSheet.Shape><m3:CutCornerShape TopEnd="36" BottomEnd="16" /></m3:ModalDrawerSheet.Shape>
+  <m3:NavigationDrawerItem Content="Inbox" IsSelected="True">
+    <m3:NavigationDrawerItem.Shape><m3:RoundedCornerShape TopStart="25%" BottomEnd="25%" /></m3:NavigationDrawerItem.Shape>
+  </m3:NavigationDrawerItem>
+</m3:ModalDrawerSheet>
+```
+
+逻辑角随 RTL 翻转；打开过冲时仍由容器缩放表面并反向缩放内容。
+Catalog 的 Modal 页同时展示 Sheet 和项目切角，保留方向切换、拖动与选择操作。

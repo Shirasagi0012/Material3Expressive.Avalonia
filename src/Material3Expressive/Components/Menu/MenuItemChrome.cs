@@ -36,6 +36,11 @@ internal sealed class MenuItemChrome : Decorator
     private Animatable<Color>? _color;
     private AnimationChildScope? _attachScope;
     private bool _pending;
+    public static readonly StyledProperty<MaterialSpring?> ShapeAnimationProperty = AvaloniaProperty.Register<MenuItemChrome, MaterialSpring?>(nameof(ShapeAnimation));
+    public MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
+    public static readonly StyledProperty<CornerRadius> SelectedCornerRadiusProperty = AvaloniaProperty.Register<MenuItemChrome, CornerRadius>(nameof(SelectedCornerRadius));
+    public CornerRadius SelectedCornerRadius { get => GetValue(SelectedCornerRadiusProperty); set => SetValue(SelectedCornerRadiusProperty, value); }
+    private MenuItemShapeMotion? _shapeMotion;
     private MenuItem? _keyboardOwner;
     private readonly MaterialInteractionSource _localSource = new();
 
@@ -75,6 +80,7 @@ internal sealed class MenuItemChrome : Decorator
         }
         var motion = _attachScope = AnimationScope.Get(this).CreateChild("Menu item chrome");
         AnimationScope.AddScopeChangedHandler(this, ScopeRebuilt);
+        RefreshShape();
         PaintedBrush = TargetBrush;
         if (TargetBrush is ISolidColorBrush { Opacity: 1 } brush)
         {
@@ -85,6 +91,7 @@ internal sealed class MenuItemChrome : Decorator
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _shapeMotion?.Dispose(); _shapeMotion = null;
         AnimationScope.RemoveScopeChangedHandler(this, ScopeRebuilt);
         if (_keyboardOwner is { } owner)
         {
@@ -102,10 +109,12 @@ internal sealed class MenuItemChrome : Decorator
     private void ScopeRebuilt(object? sender, AnimationScopeChangedEventArgs e)
     {
         if (e.NewScope is not { } scope || !this.IsAttachedToVisualTree()) return;
+        _shapeMotion?.Dispose(); _shapeMotion = null;
         _attachScope?.Dispose();
         var motion = _attachScope = scope.CreateChild("Menu item chrome");
         _pending = false;
         if (_color is { } color) motion.SubscribeValue(color, value => PaintedBrush = new SolidColorBrush(value));
+        RefreshShape();
         ScheduleColor();
     }
 
@@ -119,6 +128,8 @@ internal sealed class MenuItemChrome : Decorator
 
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property == MenuAppearance.ShapeProperty || e.Property == MenuAppearance.SelectedShapeProperty
+            || e.Property == MenuItem.IsCheckedProperty || e.Property == MenuItem.CornerRadiusProperty) RefreshShape();
         if (e.Property != MenuAppearance.InteractionSourceProperty || _keyboardOwner is not { } owner) return;
         var controller = MaterialInteraction.GetOrCreate(owner);
         controller.ConnectSource(MenuAppearance.GetInteractionSource(owner) ?? _localSource);
@@ -133,8 +144,15 @@ internal sealed class MenuItemChrome : Decorator
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == ShapeAnimationProperty || change.Property == SelectedCornerRadiusProperty) RefreshShape();
         if (change.Property != TargetBrushProperty && change.Property != ColorAnimationProperty) return;
         ScheduleColor();
+    }
+
+    private void RefreshShape()
+    {
+        if (_keyboardOwner is not { } owner || ShapeAnimation is null || !this.IsAttachedToVisualTree() || Child is not MaterialSurface surface) return;
+        if (_shapeMotion is null) _shapeMotion = new(owner, surface, this); else _shapeMotion.Refresh();
     }
 
     private void ScheduleColor()

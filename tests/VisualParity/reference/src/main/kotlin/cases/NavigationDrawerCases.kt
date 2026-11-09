@@ -30,7 +30,7 @@ import kotlinx.serialization.Serializable
 data class NavigationDrawerConfig(val kind:String="modal",val open:Boolean=true,val statefulSheet:Boolean=true,
     val selected:Boolean=true,val icon:Boolean=true,val badge:Boolean=true,val rtl:Boolean=false,val dark:Boolean=false,
     val insets:Boolean=false,val empty:Boolean=false,val custom:Boolean=false,val width:Double?=null,
-    val hostWidth:Int=520,val gestures:Boolean=true,val veto:Boolean=false,val action:String="none")
+    val hostWidth:Int=520,val gestures:Boolean=true,val veto:Boolean=false,val action:String="none",val shape:String="default")
 
 @ParitySuite("navigation-drawer")
 class NavigationDrawerCases {
@@ -59,6 +59,10 @@ class NavigationDrawerCases {
             fun input(t:Long,action:String,p:Offset) { advance(t); host.input(action,p); host.draw() }
             sample("initial")
             when(c.action) {
+                "shape-change" -> {
+                    mutate(1000,"shape-round",false) { scene.shapeName="round-percent" }; times(16000)
+                    mutate(17000,"shape-default",false) { scene.shapeName="default" }; times(32000)
+                }
                 "open","close","reverse","reopen","veto-open","veto-close" -> {
                     mutate(1000,"state-change") { scene.scope.launch { if(scene.state.targetValue==DrawerValue.Closed) scene.state.open() else scene.state.close() } }
                     times(16000,32000,64000,96000)
@@ -119,6 +123,7 @@ class NavigationDrawerCases {
         var clicks=0; var focused=false
         val page=Probe(); val sheet=Probe(); val item=Probe(); val icon=Probe(); val label=Probe(); val badge=Probe()
         val painted=mutableMapOf<String,Color>()
+        var shapeName by mutableStateOf(c.shape)
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                 CompositionLocalProvider(LocalLayoutDirection provides if(rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
@@ -150,14 +155,14 @@ class NavigationDrawerCases {
         @Composable fun Sheet() {
             val modifier=sheet.modifier().then(if(width!=null) Modifier.width(width!!.toFloat().dp) else Modifier)
             val insets=if(c.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else DrawerDefaults.windowInsets
-            val shape=if(c.custom) RoundedCornerShape(12.dp) else if(c.kind=="modal") DrawerDefaults.shape else androidx.compose.ui.graphics.RectangleShape
+            val shape=resolveSheetShape(shapeName) ?: if(c.custom) RoundedCornerShape(12.dp) else if(c.kind=="modal") DrawerDefaults.shape else androidx.compose.ui.graphics.RectangleShape
             val background=if(c.custom) Color(0xFFD6E8F6) else if(c.kind=="modal") DrawerDefaults.modalContainerColor else DrawerDefaults.standardContainerColor
             val foreground=if(c.custom) Color(0xFF246893) else contentColorFor(background)
             val elevation=if(c.custom) 6.dp else 0.dp
             val content:@Composable ColumnScope.()->Unit={
                 if(!c.empty) Column(Modifier.padding(horizontal=12.dp,vertical=16.dp)) {
                     Marker(null,48.0,32.0,null)
-                    NavigationDrawerItem(label={Marker(label,48.0,16.0,"label")},selected=selected,onClick={clicks++},interactionSource=interactions,modifier=item.modifier().onFocusChanged { focused=it.isFocused },
+                    NavigationDrawerItem(shape=resolveSheetShape(shapeName) ?: androidx.compose.foundation.shape.CircleShape,label={Marker(label,48.0,16.0,"label")},selected=selected,onClick={clicks++},interactionSource=interactions,modifier=item.modifier().onFocusChanged { focused=it.isFocused },
                         icon=if(c.icon) ({Marker(icon,24.0,24.0,"icon")}) else null,
                         badge=if(c.badge) ({Marker(badge,20.0,12.0,"badge")}) else null,
                         colors=if(c.custom) NavigationDrawerItemDefaults.colors(selectedContainerColor=Color(0xFFE0F0E8),

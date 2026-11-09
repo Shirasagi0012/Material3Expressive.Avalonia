@@ -53,6 +53,7 @@ internal sealed class TabRowChrome : Panel
     internal double EdgePadding => Owner is { } owner ? TabRowAppearance.GetEdgePadding(owner) : 0;
     internal double MinTabWidth => Owner is { } owner ? TabRowAppearance.GetMinTabWidth(owner) : 0;
     internal bool Primary => Owner is not { } owner || TabRowAppearance.GetVariant(owner) == TabRowVariant.Primary;
+    internal bool MatchContentSize => Owner is { } owner ? TabRowAppearance.GetIndicatorMatchContentSize(owner) ?? Primary : Primary;
     internal int SelectedIndex => Owner switch { TabRow row => row.SelectedIndex, TabControl native => native.SelectedIndex, _ => 0 };
     internal ScrollViewer Scroller => (ScrollViewer)Children[1];
     internal TabRowContent Content => (TabRowContent)Scroller.Content!;
@@ -76,7 +77,7 @@ internal sealed class TabRowChrome : Panel
     private void OwnerChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == TabRow.SelectedIndexProperty || e.Property == SelectingItemsControl.SelectedIndexProperty ||
-            e.Property == TabRowAppearance.VariantProperty || e.Property == TabRowAppearance.IsScrollableProperty ||
+            e.Property == TabRowAppearance.IndicatorMatchContentSizeProperty || e.Property == TabRowAppearance.VariantProperty || e.Property == TabRowAppearance.IsScrollableProperty ||
             e.Property == TabRowAppearance.EdgePaddingProperty || e.Property == TabRowAppearance.MinTabWidthProperty)
         {
             Content.InvalidateMeasure();
@@ -255,7 +256,7 @@ internal sealed class TabRowContent : Panel
         }
         chrome.Indicator.IsVisible = true;
         var position = positions[chrome.SelectedIndex];
-        var targetWidth = (float)(chrome.Primary ? position.ContentWidth : position.Width);
+        var targetWidth = (float)(chrome.MatchContentSize ? position.ContentWidth : position.Width);
         if (this.IsAttachedToVisualTree() && _attachScope is { } motion && !motion.Lifetime.IsCancellationRequested)
         {
             if (_offset is null)

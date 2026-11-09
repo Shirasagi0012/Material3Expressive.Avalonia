@@ -169,3 +169,24 @@ Catalog 绑定与开关的旧 headless 集成不替代真实系统输入。
 当前验证限于上文实际运行的 suite 与字段，不代表所有组件、字体和平台均已验收。旧测试数量不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/NavigationDrawer/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+### 2026-11-09 显式形状入口
+
+固定 AndroidX 的 三种 DrawerSheet 重载的 drawerShape 与 NavigationDrawerItem 的 shape 均直接交给 Surface；Core common 的对应入口采用同一语义。
+此前仅暴露 CornerRadius，足以表达默认 Token，但不能表达切角、相对角和任意路径。
+本轮用户授权补齐 API，复用已确认的 MaterialSurface.Shape；没有新增形状框架或改变状态职责。
+Shape 非空优先，null 回退原有 CornerRadius；逻辑方向、可变形状订阅、阴影和裁剪由 Surface 负责。
+动画仍在原有 Surface 层缩放，保留内容反缩放和锚点协议。无破坏性迁移。
+
+`SheetShapeTests` 验证形状突变、运行时替换/清空、锚点不变、模态重开、抽屉方向与项目点击/选择职责。
+原双端族新增静态切角/百分比圆角及动态展开、拖动、切换/恢复；抽屉还覆盖开关反向与项目按压。
+
+### 本轮双端验证记录
+
+`navigation-drawer-shapes` 142 例为 37 equal / 89 withinTolerance / 16 different，执行错误 0、重复稳定。
+新增 32 例原始结果 5 equal / 17 withinTolerance / 10 different；所有 12 静态形状场景通过。
+其中 RTL press 的夹具原先对镜像局部坐标求点，未落在 Core 的同一物理位置，改用 item 物理 AABB 后，
+`drawer-shape-press-modal`、`drawer-shape-press-dismissible` 两例均 withinTolerance、重复稳定，原报告保留。
+剩余新增差异包括 open 的 Float 位移读数以及 shape-change 在 32ms 的 focus 状态
+（Core=false / Avalonia=true；帧图相同），尚未消除，不把稳定捕获称为一致。
+已检查 RTL 模态切角实际双端图；报告路径为 `artifacts/visual-parity/runs/<运行名>/summary.md`。

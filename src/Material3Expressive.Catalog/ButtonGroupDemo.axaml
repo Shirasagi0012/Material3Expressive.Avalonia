@@ -11,6 +11,16 @@
   <ScrollViewer>
     <StackPanel Margin="24" Spacing="28">
       <StackPanel Spacing="8">
+        <TextBlock Text="Absolute arrangement in RTL" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+        <m3:ButtonGroup MinWidth="360" FlowDirection="RightToLeft">
+          <m3:ButtonGroup.HorizontalArrangement><m3:SpacedHorizontalArrangement Space="8" Alignment="Center" Mirror="False" /></m3:ButtonGroup.HorizontalArrangement>
+          <m3:ButtonGroupAction Label="Edit" />
+          <m3:ButtonGroupAction Label="Share" />
+          <m3:ButtonGroupAction Label="Archive" />
+        </m3:ButtonGroup>
+        <TextBlock Text="Physical item order stays fixed; press expansion and overflow still apply." TextWrapping="Wrap" />
+      </StackPanel>
+      <StackPanel Spacing="8">
         <TextBlock Text="ButtonGroup" m3:MaterialText.Style="{m3:Typography HeadlineSmall}" />
         <TextBlock TextWrapping="Wrap"
                    Text="Use the slider to change the available width of the three button groups. Resize this window to wrap the connected rows. The single-line example shows how explicit line breaks differ between buttons and their overflow menu." />

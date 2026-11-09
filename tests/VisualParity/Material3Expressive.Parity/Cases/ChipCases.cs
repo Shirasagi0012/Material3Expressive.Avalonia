@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using Avalonia;
 using Avalonia.Styling;
 using Avalonia.Controls;
@@ -22,6 +23,27 @@ public sealed record ChipConfig(string Kind = "assist", bool Morph = false, bool
 [ParitySuite("chip")]
 public sealed class ChipCases
 {
+    internal static MaterialHorizontalArrangement ResolveArrangement(string value) => value switch
+    {
+        "spaced-start" => MaterialHorizontalArrangement.SpacedBy(7.25),
+        "spaced-center" => MaterialHorizontalArrangement.SpacedBy(7.25, HorizontalAlignment.Center),
+        "spaced-end" => MaterialHorizontalArrangement.SpacedBy(7.25, HorizontalAlignment.Right),
+        "overlap" => MaterialHorizontalArrangement.SpacedBy(-5.25, HorizontalAlignment.Center),
+        "absolute-spaced" => MaterialHorizontalArrangement.Absolute.SpacedBy(7.25, HorizontalAlignment.Right),
+        "custom" => new EdgeInsetArrangement(),
+        _ => MaterialHorizontalArrangement.Parse(value)
+    };
+    // An application-provided arrangement: fixed 3.25 DIP gaps, center the group in 5 DIP insets.
+    private sealed record EdgeInsetArrangement : MaterialHorizontalArrangement
+    {
+        public override double Spacing => 3.25;
+        public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, FlowDirection direction, Span<int> positions)
+        {
+            var inset = MathUtils.DipToPx(5, density);
+            SpacedBy(Spacing, HorizontalAlignment.Center).Arrange(density, totalSize - 2 * inset, sizes, direction, positions);
+            for (var i = 0; i < sizes.Length; i++) positions[i] += inset;
+        }
+    }
     static readonly string[] Kinds = ["assist", "elevated-assist", "suggestion", "elevated-suggestion", "filter", "elevated-filter", "input"];
     static bool Selectable(string kind) => kind is "filter" or "elevated-filter" or "input";
     static IEnumerable<ChipConfig> Variants() => Kinds.SelectMany(kind => Selectable(kind)
@@ -180,8 +202,8 @@ public sealed class ChipCases
                 if (config.Action == "reverse-selection") Mutate(65000, "unselected", () => ((SelectableChip)chip).IsSelected = false);
                 Times(80000, 160000, 400000, 800000); break;
             case "arrangement":
-                Mutate(1000, "end", () => chip.HorizontalArrangement = ChipHorizontalArrangement.End); Times(16000, 64000);
-                Mutate(65000, "space-around", () => chip.HorizontalArrangement = ChipHorizontalArrangement.SpaceAround); Times(80000, 160000);
+                Mutate(1000, "end", () => chip.HorizontalArrangement = MaterialHorizontalArrangement.End); Times(16000, 64000);
+                Mutate(65000, "space-around", () => chip.HorizontalArrangement = MaterialHorizontalArrangement.SpaceAround); Times(80000, 160000);
                 Mutate(161000, "default", () => chip.HorizontalArrangement = null); Times(176000, 400000); break;
             case "theme":
                 Mutate(1000, "dark", () => CaseDefaults.SetThemeColors(host, true)); Times(16000, 80000, 400000); break;
@@ -240,7 +262,7 @@ public sealed class ChipCases
                 Chip.Resources[Comp.Chip.IconAlphaExitAnimation] = new TokenRef(Sys.Motion.Spring.EffectsDefault);
             }
             if (config.ShapeSet != "none" && Chip is SelectableChip shaped) shaped.Shapes = ChipShapeCases.Shapes(config.ShapeSet);
-            if (config.Arrangement != "default") Chip.HorizontalArrangement = Enum.Parse<ChipHorizontalArrangement>(config.Arrangement, true);
+            if (config.Arrangement != "default") Chip.HorizontalArrangement = ResolveArrangement(config.Arrangement);
             Chip.IsEnabled = config.Enabled;
             Chip.Content = label = new Marker(new Size(config.ContentWidth, config.ContentHeight));
             if (config.Width is { } width) Chip.Width = width;

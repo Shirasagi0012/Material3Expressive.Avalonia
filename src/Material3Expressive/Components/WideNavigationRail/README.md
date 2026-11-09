@@ -127,3 +127,23 @@ UseLayoutRounding，会重新量化运动。真实文字、触屏拖动、屏幕
 
 Catalog 的 [MainWindow](../../../Material3Expressive.Catalog/MainWindow.axaml) 展示 Wide 与两种 Modal 模式；
 状态生命周期、适配依据及复现入口见 [INTERNALS.md](INTERNALS.md)。
+
+## 自定义逻辑形状
+
+普通 Rail 的 `Shape`、Modal 的 `CollapsedShape` / `ExpandedShape` 接受共享 `MaterialShape`。
+设置为 null 时分别继续使用 CornerRadius、CollapsedCornerRadius / ExpandedCornerRadius 的默认值或用户覆盖。
+Modal 两个形态独立，继承的普通 Shape 不参与 Modal 模板。
+
+```xml
+<m3:ModalWideNavigationRail>
+  <m3:ModalWideNavigationRail.CollapsedShape>
+    <m3:CutCornerShape TopEnd="16" />
+  </m3:ModalWideNavigationRail.CollapsedShape>
+  <m3:ModalWideNavigationRail.ExpandedShape>
+    <m3:RoundedCornerShape TopStart="20%" TopEnd="8%" BottomEnd="16" />
+  </m3:ModalWideNavigationRail.ExpandedShape>
+</m3:ModalWideNavigationRail>
+```
+
+逻辑 start/end 遵循 FlowDirection，百分比跟随当前容器尺寸；对象属性变更即时更新 outline，
+不重置状态、目的地选择或展开动画。Catalog 普通 Rail 和隐藏式 Modal 提供切角示例。

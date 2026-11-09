@@ -3,9 +3,6 @@ using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Components;
 
-/// <summary>Standard logical Row arrangements for all three chip slots, including empty icon slots.</summary>
-public enum ChipHorizontalArrangement { Start, End, Center, SpaceBetween, SpaceAround, SpaceEvenly }
-
 /// <summary>Shadow heights in DIP. Selection does not change this policy upstream.</summary>
 public sealed record ChipElevation(double Default = 0, double Pressed = 0, double Focused = 0,
     double Hovered = 0, double Dragged = 0, double Disabled = 0)

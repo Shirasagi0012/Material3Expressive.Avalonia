@@ -46,6 +46,16 @@
           </m3:BadgedBox>
         </m3:Tab.Icon>
       </m3:Tab>
+      <TextBlock Text="Indicator width independent of variant" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
+      <CheckBox x:Name="MatchIndicator" Content="Match content width" IsChecked="True" />
+      <m3:TabRow Variant="Secondary" IndicatorMatchContentSize="{Binding IsChecked, ElementName=MatchIndicator}" SelectedIndex="0">
+        <m3:Tab Content="Inbox" IsSelected="True" Click="OnTabClick" />
+        <m3:Tab Content="Saved messages" Click="OnTabClick" />
+      </m3:TabRow>
+      <TabControl Height="100" m3:TabRowAppearance.IndicatorMatchContentSize="{Binding IsChecked, ElementName=MatchIndicator}">
+        <TabItem Header="Inbox"><TextBlock Text="Change width while the indicator is moving." Margin="16" /></TabItem>
+        <TabItem Header="Saved messages" />
+      </TabControl>
       <TextBlock Text="Scrollable tabs" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
       <m3:TabRow IsScrollable="True" SelectedIndex="0">
         <m3:Tab Content="All albums" IsSelected="True" Click="OnTabClick" />

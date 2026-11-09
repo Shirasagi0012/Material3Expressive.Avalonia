@@ -2,12 +2,14 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 package parity
 
+import androidx.compose.foundation.shape.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,7 +27,7 @@ import kotlinx.serialization.Serializable
 data class BottomSheetConfig(val initial:String="Expanded",val contentHeight:Double=320.0,val handle:Boolean=true,
     val partial:Boolean=true,val dark:Boolean=false,val rtl:Boolean=false,val insets:Boolean=false,val gestures:Boolean=true,
     val veto:Boolean=false,val maxWidth:Double=640.0,val action:String="none",val scaffold:Boolean=false,val peek:Double=56.0,
-    val modal:Boolean=false,val outside:Boolean=true,val scrim:Boolean=true)
+    val modal:Boolean=false,val outside:Boolean=true,val scrim:Boolean=true,val shape:String="default")
 
 @ParitySuite("bottom-sheet")
 class BottomSheetCases {
@@ -54,7 +56,22 @@ class BottomSheetCases {
             fun mutate(t:Long,id:String,sampleNow:Boolean=true,action:()->Unit) { advance(t); action(); writer.record(t,"mutation",id); host.scheduler.runCurrent(); host.draw(); if(sampleNow) sample(id) }
             fun input(t:Long,action:String,p:Offset) { advance(t); host.input(action,p); host.draw() }
             sample("initial")
-            if(c.action=="auto-show") times(16000,64000,96000,192000,416000,800000)
+            if(c.action.startsWith("semantics-")) {
+                mutate(1000,"semantic-action",false) {
+                    fun semantics(node:Any):List<SemanticsConfiguration> {
+                        val own=field(node,"_semanticsConfiguration") as SemanticsConfiguration?
+                        val children=node.javaClass.methods.single { it.name.startsWith("getChildren$") && it.parameterCount==0 }.invoke(node) as List<*>
+                        return listOfNotNull(own)+children.flatMap { semantics(checkNotNull(it)) }
+                    }
+                    val coordinates=if(c.scaffold) checkNotNull(scene.content.coordinates).parentLayoutCoordinates!!.parentLayoutCoordinates!! else checkNotNull(scene.sheet.coordinates)
+                    val configs=semantics(checkNotNull(field(coordinates,"layoutNode")))
+                    val key=if(c.action.contains("expand"))SemanticsActions.Expand else if(c.action.contains("collapse"))SemanticsActions.Collapse else SemanticsActions.Dismiss
+                    configs.firstOrNull { it.contains(key) }?.get(key)?.action?.invoke()
+                }; times(16000,64000,192000,416000,800000)
+            } else if(c.action=="shape-change") {
+                mutate(1000,"shape-round",false) { scene.shape="round-percent" }; times(16000)
+                mutate(17000,"shape-default",false) { scene.shape="default" }; times(32000)
+            } else if(c.action=="auto-show") times(16000,64000,96000,192000,416000,800000)
             else if(c.action.startsWith("outside")) {
                 input(1000,"move",Offset(10f,10f)); input(2000,"down",Offset(10f,10f))
                 input(18000,"up",Offset(10f,10f)); times(32000,96000,192000,416000,800000)
@@ -105,6 +122,7 @@ class BottomSheetCases {
         var height by mutableStateOf(c.contentHeight); var gestures by mutableStateOf(c.gestures); var dismissals=0
         val sheet=Probe(); val content=Probe(); val body=Probe(); val top=Probe(); val snackbar=Probe()
         var peek by mutableStateOf(c.peek)
+        var shape by mutableStateOf(c.shape)
         @Composable fun Content() {
             MaterialTheme(colorScheme=if(c.dark) darkColorScheme() else lightColorScheme(),motionScheme=MotionScheme.expressive()) {
                 CompositionLocalProvider(LocalLayoutDirection provides if(c.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
@@ -124,12 +142,14 @@ class BottomSheetCases {
                         val handle: @Composable (()->Unit)? = if(c.handle) { { BottomSheetDefaults.DragHandle() } } else null
                         if(c.modal) {
                             ModalBottomSheet(onDismissRequest={dismissals++},modifier=sheet.modifier(),sheetState=state,
+                                shape=resolveSheetShape(shape) ?: BottomSheetDefaults.ExpandedShape,
                                 sheetMaxWidth=c.maxWidth.toFloat().dp,sheetGesturesEnabled=gestures,dragHandle=handle,
                                 properties=ModalBottomSheetProperties(shouldDismissOnBackPress=c.action!="escape-disabled",shouldDismissOnClickOutside=c.outside),
                                 scrimColor=if(c.scrim)BottomSheetDefaults.ScrimColor else Color.Unspecified,
                                 contentWindowInsets={if(c.insets)WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp)else WindowInsets(0)},content=sheetContent)
                         } else if(c.scaffold) {
                             BottomSheetScaffold(scaffoldState=rememberBottomSheetScaffoldState(bottomSheetState=state),
+                                sheetShape=resolveSheetShape(shape) ?: BottomSheetDefaults.ExpandedShape,
                                 sheetContent=sheetContent,sheetPeekHeight=peek.toFloat().dp,sheetMaxWidth=c.maxWidth.toFloat().dp,
                                 sheetSwipeEnabled=gestures,sheetDragHandle=handle,
                                 topBar={ Box(top.modifier().fillMaxWidth().height(56.dp).background(Color(0xFFE8DEF8))) },
@@ -137,6 +157,7 @@ class BottomSheetCases {
                                 Box(body.modifier().fillMaxSize().background(Color(0xFFF3EDF7)))
                             }
                         } else BottomSheet(modifier=sheet.modifier(),state=state,onDismissRequest={dismissals++},maxWidth=c.maxWidth.toFloat().dp,
+                            shape=resolveSheetShape(shape) ?: BottomSheetDefaults.ExpandedShape,
                             gesturesEnabled=gestures,backHandlerEnabled=c.action!="escape-disabled",dragHandle=handle,
                             contentWindowInsets={ if(c.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else WindowInsets(0) },content=sheetContent)
                     }
@@ -179,4 +200,10 @@ class BottomSheetCases {
             }
         }
     }
+}
+
+internal fun resolveSheetShape(name:String): androidx.compose.ui.graphics.Shape? = when(name) {
+    "cut" -> CutCornerShape(topStart=36.dp,topEnd=12.dp,bottomEnd=24.dp,bottomStart=0.dp)
+    "round-percent" -> RoundedCornerShape(topStartPercent=25,topEndPercent=8,bottomEndPercent=15,bottomStartPercent=0)
+    else -> null
 }

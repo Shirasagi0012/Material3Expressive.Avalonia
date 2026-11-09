@@ -13,8 +13,6 @@
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="ItemVerticalAlignment" Value="Top" />
-      <Setter Property="SpacingAlignment" Value="Left" />
-      <Setter Property="Spacing" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.Spacing}}" />
       <Setter Property="ExpandedRatio" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.ExpandedRatio}}" />
       <Setter Property="HorizontalArrangement" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.HorizontalArrangement}}" />
       <Setter Property="WidthAnimation" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+ButtonGroup.WidthAnimation}}" />

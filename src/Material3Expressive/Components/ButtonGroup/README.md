@@ -61,9 +61,23 @@ private void OnFavoriteRequested(object? sender, IconCheckedChangeEventArgs e)
 
 ## 布局与自定义项目
 
-`ExpandedRatio` 默认 0.15，0 关闭扩宽。`Spacing` 默认 12 DIP。
-`HorizontalArrangement` 支持 Start、Center、End、SpaceBetween、SpaceAround、SpaceEvenly、SpacedBy。
-SpacedBy 消费 `Spacing`；`SpacingAlignment` 用 Left / Center / Right 表示逻辑起点、居中、终点，RTL 随组镜像。
+`ExpandedRatio` 默认 0.15，0 关闭扩宽。`HorizontalArrangement` 接受共享 `MaterialHorizontalArrangement`，
+默认 `SpacedBy(12)`。支持 Start / Center / End、三种均分、Absolute 物理方向、负间距和自定义 Arrange。
+排列对象的 Spacing 也参与权重分配和溢出判断；按压扩宽后使用同一对象重新排列可见前缀。
+
+```xml
+<m3:ButtonGroup>
+  <m3:ButtonGroup.HorizontalArrangement>
+    <m3:SpacedHorizontalArrangement Space="8" Alignment="Center" Mirror="False" />
+  </m3:ButtonGroup.HorizontalArrangement>
+  <m3:ButtonGroupAction Label="编辑" />
+  <m3:ButtonGroupAction Label="分享" />
+</m3:ButtonGroup>
+```
+
+Alignment 的 Left/Right 表示逻辑起点/终点；Mirror=False 保留物理子项顺序，组对齐仍遵循 RTL。
+对象不可变，修改配置时替换整个值；C# 也可使用 `MaterialHorizontalArrangement.Absolute.SpacedBy(8)`。
+
 组内默认顶对齐，可设 `ItemVerticalAlignment`；项目的 `Alignment` 单独覆盖它。
 
 `MinWidth` 可在运行中绑定或修改，排列和权重分配随之重算；例如
@@ -128,9 +142,19 @@ connected 使用原生 ToggleButton，首、中、尾主题只配置圆角；选
 它们也可放在 ButtonGroupCustomItem 中。换行、纵向布局和单选策略由上层容器/状态提供。
 
 默认配置统一来自 `ButtonGroupTokenSource`，没有 `ButtonGroupDefaults`。
-例如在 `ButtonGroup.Resources` 中覆盖 `Comp.ButtonGroup.Spacing`，或直接设置 `Spacing`；
+例如在 `ButtonGroup.Resources` 中覆盖 `Comp.ButtonGroup.HorizontalArrangement`，或直接设置 `HorizontalArrangement`；
 普通 Style、局部值、绑定及 ClearValue 保留 Avalonia 的优先级。
 
 完整可交互示例见 [Catalog ButtonGroupDemo](../../../Material3Expressive.Catalog/ButtonGroupDemo.axaml)。
 该页面包含固定版本 `ButtonGroupSamples.kt` 的五个 catalog 示例和显式换行示例；顶部宽度约束三个 `ButtonGroup`，connected 行随窗口换行。
 当前双端用例使用非文字内容，不证明文字栅格、屏幕阅读器或真实桌面体验一致；其他边界见维护说明。
+
+### Arrangement API 迁移
+
+本轮将 `ButtonGroupArrangement` 枚举替换为 `Foundation.MaterialHorizontalArrangement`。
+原 C# `ButtonGroupArrangement.End` 改为 `MaterialHorizontalArrangement.End`；XAML 的 `"End"` 等标准名称不变。
+旧 `HorizontalArrangement="SpacedBy"`、`Spacing` 和 `SpacingAlignment` 合并为上面的对象语法，
+或 `MaterialHorizontalArrangement.SpacedBy(spacing, alignment)`。
+`Comp.ButtonGroup.Spacing` Token 已合并入 `Comp.ButtonGroup.HorizontalArrangement`，覆盖时提供完整排列对象，
+例如 `group.Resources[MaterialTokens.Comp.ButtonGroup.HorizontalArrangement] = MaterialHorizontalArrangement.SpacedBy(20)`。
+ConnectedButtonGroup.Spacing 不属于此迁移。

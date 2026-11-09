@@ -9,11 +9,17 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 
+using Material3Expressive.Foundation.Rendering;
+
 namespace Material3Expressive.Components;
 
 /// <summary>Surface and content environment corresponding to DrawerSheet in NavigationDrawer.kt.</summary>
 public abstract class DrawerSheet : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<DrawerSheet>();
+    /// <summary>Explicit outline; null uses the themed CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     internal static readonly StyledProperty<double> ContainerWidthProperty = AvaloniaProperty.Register<DrawerSheet, double>(nameof(ContainerWidth));
     internal double ContainerWidth { get => GetValue(ContainerWidthProperty); set => SetValue(ContainerWidthProperty, value); }
     public static readonly StyledProperty<Thickness> WindowInsetsProperty = AvaloniaProperty.Register<DrawerSheet, Thickness>(nameof(WindowInsets));

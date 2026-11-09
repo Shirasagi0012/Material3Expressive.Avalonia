@@ -179,6 +179,18 @@ class ChipCases {
                             "spacebetween"->Arrangement.SpaceBetween
                             "spacearound"->Arrangement.SpaceAround
                             "spaceevenly"->Arrangement.SpaceEvenly
+                            "spaced-start"->Arrangement.spacedBy(7.25.dp)
+                            "spaced-center"->Arrangement.spacedBy(7.25.dp, Alignment.CenterHorizontally)
+                            "spaced-end"->Arrangement.spacedBy(7.25.dp, Alignment.End)
+                            "overlap"->Arrangement.spacedBy((-5.25).dp, Alignment.CenterHorizontally)
+                            "absolute.left"->Arrangement.Absolute.Left
+                            "absolute.right"->Arrangement.Absolute.Right
+                            "absolute.center"->Arrangement.Absolute.Center
+                            "absolute.spacebetween"->Arrangement.Absolute.SpaceBetween
+                            "absolute.spacearound"->Arrangement.Absolute.SpaceAround
+                            "absolute.spaceevenly"->Arrangement.Absolute.SpaceEvenly
+                            "absolute-spaced"->Arrangement.Absolute.spacedBy(7.25.dp, Alignment.End)
+                            "custom"->ChipInsetArrangement
                             else->null
                         } ?: if(config.custom=="spacing") AssistChipDefaults.horizontalArrangement(6.dp)
                             else if(config.morph) FilterChipDefaults.horizontalArrangement(leading!=null || avatar!=null,trailing!=null)
@@ -260,5 +272,17 @@ class ChipCases {
                     if(config.action=="source-disable") listOf(number("cornerRadius",checkNotNull(corner),"dip",category="motion",definition="chip.top-left-outline-radius",source="cached Surface GraphicsLayerOwnerLayer.outline / density")) else emptyList()),
                 ProbePoint("label","content","chip",labelProbe.geometry().filter { it.name=="box" || it.name=="size" }))
         }
+    }
+}
+
+internal object ChipInsetArrangement : Arrangement.Horizontal {
+    override val spacing = 3.25.dp
+    override fun androidx.compose.ui.unit.Density.arrange(totalSize:Int, sizes:IntArray,
+        layoutDirection:androidx.compose.ui.unit.LayoutDirection, outPositions:IntArray) {
+        val inset=5.dp.roundToPx()
+        with(Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)) {
+            arrange(totalSize-2*inset, sizes, layoutDirection, outPositions)
+        }
+        for(i in outPositions.indices) outPositions[i]+=inset
     }
 }

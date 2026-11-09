@@ -26,6 +26,10 @@ public class ModalWideNavigationRail : WideNavigationRail
     internal Foundation.Motion.SpringSpec EffectsAnimation { get => GetValue(EffectsAnimationProperty); set => SetValue(EffectsAnimationProperty, value); }
     internal static readonly StyledProperty<Foundation.Motion.SpringSpec> OffsetAnimationProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Motion.SpringSpec>(nameof(OffsetAnimation));
     internal Foundation.Motion.SpringSpec OffsetAnimation { get => GetValue(OffsetAnimationProperty); set => SetValue(OffsetAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Rendering.MaterialShape?> CollapsedShapeProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Rendering.MaterialShape?>(nameof(CollapsedShape));
+    public static readonly StyledProperty<Foundation.Rendering.MaterialShape?> ExpandedShapeProperty = AvaloniaProperty.Register<ModalWideNavigationRail, Foundation.Rendering.MaterialShape?>(nameof(ExpandedShape));
+    public Foundation.Rendering.MaterialShape? CollapsedShape { get => GetValue(CollapsedShapeProperty); set => SetValue(CollapsedShapeProperty, value); }
+    public Foundation.Rendering.MaterialShape? ExpandedShape { get => GetValue(ExpandedShapeProperty); set => SetValue(ExpandedShapeProperty, value); }
     public static readonly StyledProperty<bool> HideOnCollapseProperty = AvaloniaProperty.Register<ModalWideNavigationRail, bool>(nameof(HideOnCollapse));
     public static readonly StyledProperty<object?> ExpandedHeaderProperty = AvaloniaProperty.Register<ModalWideNavigationRail, object?>(nameof(ExpandedHeader));
     public static readonly StyledProperty<IDataTemplate?> ExpandedHeaderTemplateProperty = AvaloniaProperty.Register<ModalWideNavigationRail, IDataTemplate?>(nameof(ExpandedHeaderTemplate));

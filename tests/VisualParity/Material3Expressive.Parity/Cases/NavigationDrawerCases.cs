@@ -16,13 +16,18 @@ namespace Material3Expressive.Parity;
 public sealed record NavigationDrawerConfig(string Kind = "modal", bool Open = true, bool StatefulSheet = true,
     bool Selected = true, bool Icon = true, bool Badge = true, bool Rtl = false, bool Dark = false,
     bool Insets = false, bool Empty = false, bool Custom = false, double? Width = null,
-    int HostWidth = 520, bool Gestures = true, bool Veto = false, string Action = "none");
+    int HostWidth = 520, bool Gestures = true, bool Veto = false, string Action = "none", string Shape = "default");
 
 [ParitySuite("navigation-drawer")]
 public sealed class NavigationDrawerCases
 {
     public static IEnumerable<CaseData<NavigationDrawerConfig>> StaticConfigurations()
     {
+        foreach (var kind in new[] { "modal", "dismissible", "permanent" })
+        foreach (var shape in new[] { "cut", "round-percent" })
+        foreach (var rtl in new[] { false, true })
+            yield return Data($"static.shape.{kind}.{shape}.{(rtl ? "rtl" : "ltr")}", new(kind, Shape: shape, Rtl: rtl));
+
         foreach (var kind in new[] { "modal", "dismissible", "permanent" })
         {
             // Item slots and selection change row geometry and the three independent color providers.
@@ -45,6 +50,11 @@ public sealed class NavigationDrawerCases
     }
     public static IEnumerable<CaseData<NavigationDrawerConfig>> DynamicConfigurations()
     {
+        foreach (var kind in new[] { "modal", "dismissible" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "open", "reverse", "drag-close", "press", "shape-change" })
+            yield return Data($"dynamic.shape.{kind}.{action}.{(rtl ? "rtl" : "ltr")}", new(kind, Open: action is not ("open" or "reverse"), Shape: "cut", Rtl: rtl, Action: action));
+
         foreach (var kind in new[] { "modal", "dismissible" })
         {
             foreach (var action in new[] { "open", "close", "reverse", "reopen", "snap", "escape", "drag-close", "drag-return", "drag-open", "drag-disabled", "drag-fast", "theme", "resize", "selection", "press", "cancel", "hover", "keyboard", "veto-open", "veto-close" })
@@ -85,6 +95,9 @@ public sealed class NavigationDrawerCases
         Sample("initial");
         switch (config.Action)
         {
+            case "shape-change":
+                Mutate(1000, "shape-round", () => scene.SetShape("round-percent"), false); Times(16000);
+                Mutate(17000, "shape-default", () => scene.SetShape("default"), false); Times(32000); break;
             case "open": case "close": case "reverse": case "reopen": case "veto-open": case "veto-close":
                 Mutate(1000, "state-change", () => { _ = scene.State.TargetValue == DrawerValue.Closed ? scene.State.OpenAsync() : scene.State.CloseAsync(); });
                 Times(16000, 32000, 64000, 96000);
@@ -113,7 +126,8 @@ public sealed class NavigationDrawerCases
                 Input(1000, "move", outside); Input(2000, "down", outside); Sample("scrim-down");
                 Input(5000, "up", outside); Sample("scrim-up"); Times(16000, 64000, 160000, 400000, 800000); break;
             case "press": case "cancel": case "hover":
-                var point = scene.Item.TranslatePoint(new Point(80, 28), host.Window)!.Value;
+                var box = new Rect(scene.Item.Bounds.Size).TransformToAABB(scene.Item.TransformToVisual(host.Window)!.Value);
+                var point = box.TopLeft + new Vector(80, 28);
                 Input(1000, "move", point); Sample("hover");
                 if (config.Action != "hover") { Input(2000, "down", point); Sample("down"); Times(16000, 64000, 160000);
                     if (config.Action == "cancel") Input(161000, "move", new Point(500, 310));
@@ -162,6 +176,7 @@ public sealed class NavigationDrawerCases
             Sheet = c.Kind switch { "modal" => new ModalDrawerSheet { State = c.StatefulSheet ? State : null },
                 "dismissible" => new DismissibleDrawerSheet { State = c.StatefulSheet ? State : null }, _ => new PermanentDrawerSheet() };
             Item = new NavigationDrawerItem { Content = _label, Icon = c.Icon ? _icon : null, Badge = c.Badge ? _badge : null, IsSelected = c.Selected };
+            SetShape(c.Shape);
             Item.Click += (_, _) => _clicks++;
             if (c.Width is { } width) Sheet.Width = width;
             if (c.Insets) Sheet.WindowInsets = new Thickness(13, 7, 5, 11);
@@ -185,6 +200,8 @@ public sealed class NavigationDrawerCases
             };
             Root = new Border { Padding = new Thickness(16), Background = Brushes.White, Child = Drawer, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
         }
+        public void SetShape(string name)
+        { Sheet.Shape = BottomSheetCases.ResolveShape(name); Item.Shape = BottomSheetCases.ResolveShape(name); }
         public void Input(string action, Point p) => _host.Input(action, p);
         public void SetTheme(bool dark)
         {

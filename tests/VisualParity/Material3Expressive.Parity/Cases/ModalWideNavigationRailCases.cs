@@ -18,7 +18,7 @@ namespace Material3Expressive.Parity;
 public sealed record ModalWideNavigationRailConfig(bool Hide = false, bool Expanded = false, bool Header = false,
     string Arrangement = "top", bool Rtl = false, bool Dark = false, bool Insets = false, bool Empty = false,
     bool CustomColors = false, bool CustomPadding = false, double HeaderTopPadding = 0, double LabelWidth = 32,
-    double? Width = null, string Action = "none");
+    double? Width = null, string Action = "none", string Shape = "default");
 
 [ParitySuite("modal-wide-navigation-rail")]
 public sealed class ModalWideNavigationRailCases
@@ -91,6 +91,9 @@ public sealed class ModalWideNavigationRailCases
         Sample("initial");
         switch (config.Action)
         {
+            case "shape-change":
+                Mutate(1000, "rounded-shape", () => scene.Rail.CollapsedShape = scene.Rail.ExpandedShape = BottomSheetCases.ResolveShape("round-percent")); Times(16000);
+                Mutate(17000, "default-shape", () => scene.Rail.CollapsedShape = scene.Rail.ExpandedShape = null); Times(32000); break;
             case "reopen":
                 Mutate(1000, "first-open", () => { _ = scene.Rail.State.ExpandAsync(); });
                 Times(16000, 32000, 64000, 400000, 1200000);
@@ -156,7 +159,7 @@ public sealed class ModalWideNavigationRailCases
             _label = new Marker { PreferredWidth = config.LabelWidth, PreferredHeight = 16 };
             Item = new WideNavigationRailItem { Icon = _icon, Label = _label, IsSelected = true };
             Item.Click += (_, _) => _clicks++;
-            Rail = new ModalWideNavigationRail { HideOnCollapse = config.Hide, State = new(config.Expanded ? WideNavigationRailValue.Expanded : WideNavigationRailValue.Collapsed),
+            Rail = new ModalWideNavigationRail { CollapsedShape = BottomSheetCases.ResolveShape(config.Shape), ExpandedShape = BottomSheetCases.ResolveShape(config.Shape), HideOnCollapse = config.Hide, State = new(config.Expanded ? WideNavigationRailValue.Expanded : WideNavigationRailValue.Collapsed),
                 Arrangement = WideNavigationRailCases.Arrange(config.Arrangement), ExpandedHeaderTopPadding = config.HeaderTopPadding,
                 ShouldDismissOnBackPress = config.Action != "escape-no-back", WindowInsets = config.Insets ? new Thickness(13, 7, 5, 11) : default };
             if (config.Header)

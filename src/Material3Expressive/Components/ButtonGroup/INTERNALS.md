@@ -24,7 +24,7 @@ Material3 路径前缀为 `compose/material3/material3/src/commonMain/kotlin/and
 菜单消费后缀的独立内容，不自动把自定义菜单动作解释为关闭请求。
 
 配置路径只有 `TokenSource → XAML 主题绑定 → Avalonia 属性 → 布局/动画/绘制`。
-例如间距 12 DIP 经 Comp.ButtonGroup.Spacing 绑定到 ButtonGroup.Spacing，再由布局按物理像素取整。
+例如默认 SpacedBy(12) 经 Comp.ButtonGroup.HorizontalArrangement 绑定到同名属性，布局将其 Spacing 按物理像素取整。
 运行中的扩宽进度是 Float Animatable 状态，不回写 ExpandedRatio、CompressionLimit 或 Width。
 1 秒等待上限是上游算法常量，不作为主题默认值另建配置入口。
 
@@ -148,3 +148,34 @@ ButtonGroup 相关测试 **32/32** 通过。Catalog 新增 Minimum width。
 无需再次逐项确认；当前缺口仍是任意自定义内容的最小约束传递，尚未实施，没有把失败用例删除或改为成功。
 同一次 106 例运行也复核原有 80 例；原有反复按压两方向的 Core 额外截图不稳定仍保留，
 不能把新增静态场景稳定推广到整个组件。
+
+### 2026-11-09 任意水平 Arrangement
+
+固定 ButtonGroupMeasurePolicy 使用 Arrangement.Horizontal.spacing 分配权重/溢出，再把按压调整后的可见宽度
+交给同一 Arrangement.arrange；Core common 同义。旧枚举与 Spacing/SpacingAlignment 拆分只表达了常用排列，
+不能提供绝对方向或用户定义算法。本轮按用户明确授权改用共享 MaterialHorizontalArrangement，删除局部重复算法。
+保留权重、溢出、邻项压缩和指示器 placeRelative(shownItemSpace) 的独立位置：不把指示器塞入 Arrangement 数组。
+共享排列输出物理坐标，在 Avalonia RTL 子树镜像前转回局部坐标。默认仍为主题提供的 SpacedBy(12)。
+
+破坏性迁移：枚举常量改同名共享静态值；Spacing/SpacingAlignment 改 SpacedBy 参数；Spacing Token 合并进
+HorizontalArrangement Token。仓内 Token 优先级测试、Catalog 和双端用例均已迁移，完整调用方式见 README。
+保留既有最小高度传播缺口，不以本次排列接入宣称解决。
+
+### 本轮双端验证记录
+
+`button-group-arrangements` 原始完整运行保留：8 equal / 10 withinTolerance / 23 different / 115 error。
+第一处异常为新增 `static.arrangement.absolute-spaced.false.100.none`，固定 Core 的 ButtonGroup.kt:712
+在固定宽度发生 overflow 时以 minWidth=400、maxWidth=211 构造 Constraints 并抛错；参考进程退出使后续捕获失败。
+这不是 Avalonia 对齐结果，后续 114 error 也不是独立组件缺陷。原用例和失败产物没有删除。
+
+另外增加 `button-group-arrangement-sizing`，采用自然宽度但相同最大宽度、排列、权重、LTR/RTL 的 40 例，
+全部 equal、执行错误 0、重复稳定，实际重叠 RTL 帧图已检查。新的六个按压组合有既有原生按钮内容居中差异，
+例如 absolute-spaced LTR 的 32ms content-2 为 Core x=292 / Avalonia x=291.75 DIP；组/项目分配几何一致。
+不能由此宣称固定宽度溢出、任意内容最小约束或所有旧动态场景已通过。
+产物路径为 `artifacts/visual-parity/runs/<运行名>/summary.md`。
+
+
+为恢复原参考进程异常后未执行的静态回归，`button-group-layout-verified` 另行完整运行原有 76 例和新增自然宽度 40 例，
+合计 116 例：108 equal / 0 withinTolerance / 8 different，执行错误 0、重复稳定。
+其中 8 个 different 为上文保留的 Height/MinHeight=64 最小约束传播缺口；新增排列 40 例全部 equal。
+固定宽度溢出引发 Core 异常的原始用例仍在 button-group family 中，未替换或删除。

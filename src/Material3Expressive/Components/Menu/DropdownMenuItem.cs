@@ -12,6 +12,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Material3Expressive.Foundation;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Rendering;
 using MaterialSpring = Material3Expressive.Foundation.Motion.SpringSpec;
@@ -64,6 +65,10 @@ public class DropdownMenuItem : Button
     internal MaterialSpring? ShapeAnimation { get => GetValue(ShapeAnimationProperty); set => SetValue(ShapeAnimationProperty, value); }
     public static readonly StyledProperty<IBrush?> LeadingIconColorProperty = AvaloniaProperty.Register<DropdownMenuItem, IBrush?>(nameof(LeadingIconColor));
     public static readonly StyledProperty<IBrush?> TrailingContentColorProperty = AvaloniaProperty.Register<DropdownMenuItem, IBrush?>(nameof(TrailingContentColor));
+    public static readonly StyledProperty<MaterialHorizontalArrangement?> HorizontalArrangementProperty =
+        AvaloniaProperty.Register<DropdownMenuItem, MaterialHorizontalArrangement?>(nameof(HorizontalArrangement));
+    /// <summary>Expressive content arrangement. Null retains the menu-specific leading/trailing spacing.</summary>
+    public MaterialHorizontalArrangement? HorizontalArrangement { get => GetValue(HorizontalArrangementProperty); set => SetValue(HorizontalArrangementProperty, value); }
     public static readonly StyledProperty<double> LeadingSpacingProperty = AvaloniaProperty.Register<DropdownMenuItem, double>(nameof(LeadingSpacing));
     public static readonly StyledProperty<double> TrailingSpacingProperty = AvaloniaProperty.Register<DropdownMenuItem, double>(nameof(TrailingSpacing));
     internal static readonly StyledProperty<bool> IsExpressiveProperty = AvaloniaProperty.Register<DropdownMenuItem, bool>(nameof(IsExpressive));
@@ -146,7 +151,8 @@ public class DropdownMenuItem : Button
             || change.Property == TrailingContentProperty || change.Property == TrailingContentTemplateProperty
             || change.Property == SupportingTextProperty || change.Property == SupportingTextTemplateProperty
             || change.Property == SelectedProperty || change.Property == IsExpressiveProperty
-            || change.Property == LeadingSpacingProperty || change.Property == TrailingSpacingProperty) Refresh();
+            || change.Property == LeadingSpacingProperty || change.Property == TrailingSpacingProperty
+            || change.Property == HorizontalArrangementProperty) Refresh();
     }
     internal void RefreshSelection(bool selected) => Selected = selected;
     private void Refresh()

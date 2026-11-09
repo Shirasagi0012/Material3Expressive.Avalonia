@@ -1,6 +1,7 @@
 // Menu.kt shapeByInteraction(MenuItemShapes, selected, animationSpec), fixed AndroidX baseline.
 // Copyright The Android Open Source Project; Apache-2.0.
 using Avalonia;
+using Avalonia.Controls;
 using ComposeAnimation;
 using Material3Expressive.Foundation.Interaction;
 using Material3Expressive.Foundation.Rendering;
@@ -11,7 +12,10 @@ namespace Material3Expressive.Components;
 
 internal sealed class MenuItemShapeMotion : IDisposable
 {
-    private readonly DropdownMenuItem _owner;
+    private readonly Control _owner;
+    private readonly MenuItemChrome? _nativeChrome;
+    private MaterialShape? NormalPath => _owner is DropdownMenuItem item ? item.Shape : MenuAppearance.GetShape((MenuItem)_owner);
+    private MaterialShape? SelectedPath => _owner is DropdownMenuItem item ? item.SelectedShape : MenuAppearance.GetSelectedShape((MenuItem)_owner);
     private readonly MaterialSurface _surface;
     private readonly AnimationChildScope _scope;
     private readonly CutCornerShape _cutOutline = new();
@@ -29,9 +33,9 @@ internal sealed class MenuItemShapeMotion : IDisposable
     private Task? _run;
     private bool _pending;
 
-    internal MenuItemShapeMotion(DropdownMenuItem owner, MaterialSurface surface)
+    internal MenuItemShapeMotion(Control owner, MaterialSurface surface, MenuItemChrome? nativeChrome = null)
     {
-        _owner = owner; _surface = surface;
+        _owner = owner; _surface = surface; _nativeChrome = nativeChrome;
         _scope = AnimationScope.Get(owner).CreateChild("Menu item shape");
         surface.PropertyChanged += SurfaceChanged;
         Observe(); Update();
@@ -50,14 +54,17 @@ internal sealed class MenuItemShapeMotion : IDisposable
     }
     private void Update()
     {
-        if (_owner.ShapeAnimation is not { } spec) return;
+        var item = _owner as DropdownMenuItem;
+        if ((item?.ShapeAnimation ?? _nativeChrome?.ShapeAnimation) is not { } spec) return;
+        var expressive = item?.IsExpressive ?? true;
+        var isSelected = item?.Selected ?? ((MenuItem)_owner).IsChecked;
         Entry Resolve(MaterialShape? path, CornerRadius corners) => new(path,
             path is null ? new CornerShape.Defined(corners) : CornerShape.FromMaterialShape(path));
-        var normal = Resolve(_owner.Shape, _owner.CornerRadius);
-        var selected = Resolve(_owner.SelectedShape, _owner.SelectedCornerRadius);
+        var normal = Resolve(NormalPath, item?.CornerRadius ?? ((MenuItem)_owner).CornerRadius);
+        var selected = Resolve(SelectedPath, item?.SelectedCornerRadius ?? _nativeChrome!.SelectedCornerRadius);
         var configuration = (normal, selected, spec);
-        var target = _owner.IsExpressive && _owner.Selected ? selected : normal;
-        if (!_owner.IsExpressive || normal.Corners is null || selected.Corners is null)
+        var target = expressive && isSelected ? selected : normal;
+        if (!expressive || normal.Corners is null || selected.Corners is null)
         {
             if (_shape is not null || _staticShape is not null && _staticShape != target) ResetIndication();
             _effect?.Cancel(); _shape?.Dispose(); _shape = null;
@@ -101,7 +108,7 @@ internal sealed class MenuItemShapeMotion : IDisposable
     { if (e.Property == Visual.BoundsProperty) Paint(); }
     private void Observe()
     {
-        MaterialShape?[] paths = [_owner.Shape, _owner.SelectedShape];
+        MaterialShape?[] paths = [NormalPath, SelectedPath];
         var shapes = paths.OfType<MaterialShape>().Distinct().ToArray();
         if (_observed.SequenceEqual(shapes)) return;
         foreach (var shape in _observed) shape.PropertyChanged -= ShapeChanged;

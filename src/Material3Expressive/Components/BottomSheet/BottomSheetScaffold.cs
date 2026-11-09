@@ -7,6 +7,8 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 
+using Material3Expressive.Foundation.Rendering;
+
 namespace Material3Expressive.Components;
 
 public sealed class BottomSheetScaffoldState
@@ -21,6 +23,9 @@ public sealed class BottomSheetScaffoldState
 /// <summary>A persistent bottom sheet, body, top bar and snackbar host in one finite-height layout.</summary>
 public class BottomSheetScaffold : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> SheetShapeProperty = AvaloniaProperty.Register<BottomSheetScaffold, MaterialShape?>(nameof(SheetShape));
+    /// <summary>Explicit sheet outline; null uses SheetCornerRadius.</summary>
+    public MaterialShape? SheetShape { get => GetValue(SheetShapeProperty); set => SetValue(SheetShapeProperty, value); }
     public static readonly StyledProperty<BottomSheetScaffoldState> StateProperty = AvaloniaProperty.Register<BottomSheetScaffold, BottomSheetScaffoldState>(nameof(State));
     public static readonly StyledProperty<object?> SheetContentProperty = AvaloniaProperty.Register<BottomSheetScaffold, object?>(nameof(SheetContent));
     public static readonly StyledProperty<IDataTemplate?> SheetContentTemplateProperty = AvaloniaProperty.Register<BottomSheetScaffold, IDataTemplate?>(nameof(SheetContentTemplate));

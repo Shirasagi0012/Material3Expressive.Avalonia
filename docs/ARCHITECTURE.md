@@ -40,6 +40,13 @@ Token 系统采用对象引用作为唯一身份标识，支持动态解析与�
 
 ---
 
+## 横向内容排列
+
+`MaterialHorizontalArrangement` 提供固定 Foundation Horizontal 的物理像素排列，当前由 Chip、ButtonGroup、独立及原生 Expressive 菜单项消费。
+内置六种分布、Absolute、带正负间距与逻辑对齐的 SpacedBy，以及不可变派生实现；Spacing 在测量时解析为像素，
+Arrange 输出各子项物理左坐标。组件仍负责自己的槽存在规则、权重/最小尺寸和 RTL 原生镜像转换，不是公共通用 Row。
+配置、迁移和范围见 [决定 §36](DECISIONS.md#36-组件横向排列能力)。
+
 ## 排版系统
 
 排版层通过角色聚合与就近合并提供统一的文字规格：

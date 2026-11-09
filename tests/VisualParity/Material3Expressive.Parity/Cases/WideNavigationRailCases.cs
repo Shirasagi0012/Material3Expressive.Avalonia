@@ -18,7 +18,7 @@ public sealed record WideNavigationRailConfig(bool Expanded = false, string Arra
     double IconWidth = 24, double IconHeight = 24, double LabelWidth = 32, double LabelHeight = 16,
     double HeaderWidth = 48, double HeaderHeight = 40, bool Empty = false, bool CustomPadding = false,
     bool CustomColors = false, string IconPosition = "auto", string Action = "none", bool StandardMotion = false,
-    string IndicatorPadding = "default", double SecondLabelWidth = 48, bool SingleItem = false);
+    string IndicatorPadding = "default", double SecondLabelWidth = 48, bool SingleItem = false, string Shape = "default");
 
 [ParitySuite("wide-navigation-rail")]
 public sealed class WideNavigationRailCases
@@ -129,6 +129,9 @@ public sealed class WideNavigationRailCases
         Sample("initial");
         switch (config.Action)
         {
+            case "shape-change":
+                Mutate(1000, "rounded-shape", () => scene.Rail!.Shape = BottomSheetCases.ResolveShape("round-percent")); Times(16000);
+                Mutate(17000, "default-shape", () => scene.Rail!.Shape = null); Times(32000); break;
             case "expand": case "collapse": case "reverse": case "snap":
                 Mutate(1000, "expansion-change", () => { _ = config.Action == "snap" ? scene.State.SnapToAsync(WideNavigationRailValue.Expanded) : scene.State.ToggleAsync(); });
                 Times(16000, 64000, 96000);
@@ -211,7 +214,7 @@ public sealed class WideNavigationRailCases
             Control content = Item;
             if (!config.Standalone)
             {
-                Rail = new WideNavigationRail { State = State, Arrangement = Arrange(config.Arrangement),
+                Rail = new WideNavigationRail { Shape = BottomSheetCases.ResolveShape(config.Shape), State = State, Arrangement = Arrange(config.Arrangement),
                     Header = config.Header ? new Marker { PreferredWidth = config.HeaderWidth, PreferredHeight = config.HeaderHeight } : null,
                     WindowInsets = config.Insets ? new Thickness(13, 7, 5, 11) : default };
                 if (config.CustomPadding) Rail.ContentPadding = new Thickness(7, 13, 11, 5);

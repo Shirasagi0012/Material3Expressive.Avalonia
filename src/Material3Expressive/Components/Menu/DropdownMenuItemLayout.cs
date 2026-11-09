@@ -46,6 +46,7 @@ internal sealed class DropdownMenuSlotPresenter : ContentPresenter
 
 internal sealed class DropdownMenuItemLayout : Panel
 {
+    static DropdownMenuItemLayout() => AffectsArrange<DropdownMenuItemLayout>(FlowDirectionProperty);
     private DropdownMenuItem? _owner;
     internal void SetOwner(DropdownMenuItem? owner) { _owner = owner; Refresh(); }
     internal void Refresh()
@@ -55,9 +56,33 @@ internal sealed class DropdownMenuItemLayout : Panel
         Children[2].IsVisible = _owner?.HasTrailing == true;
         InvalidateMeasure();
     }
+    private Control[] ArrangedChildren => Children.Where((_, i) => i == 1
+        || i == 0 && (_owner!.HasLeading || _owner.HasSelectedLeading)
+        || i == 2 && _owner!.HasTrailing).ToArray();
     protected override Size MeasureOverride(Size availableSize)
     {
         if (_owner is not { } owner || Children.Count != 3) return default;
+        if (owner.IsExpressive && owner.HorizontalArrangement is { } arrangement)
+        {
+            var density = LayoutHelper.GetLayoutScale(this);
+            var spacing = MathUtils.DipToPx(arrangement.Spacing, density) / density;
+            var occupied = 0d;
+            var lastSpace = 0d;
+            var height = 0d;
+            var children = ArrangedChildren;
+            foreach (var child in children)
+            {
+                var childAvailable = availableSize.Width - occupied;
+                child.Measure(new Size(Math.Max(0, childAvailable), availableSize.Height));
+                lastSpace = Math.Min(spacing, Math.Max(0, childAvailable - child.DesiredSize.Width));
+                occupied += child.DesiredSize.Width + lastSpace;
+                height = Math.Max(height, child.DesiredSize.Height);
+            }
+            occupied -= lastSpace;
+            if (children[0] is DropdownMenuLeadingIcon animatedIcon && this.FindAncestorOfType<DropdownMenuPresenter>() is not null)
+                occupied += animatedIcon.IntrinsicWidth - animatedIcon.DesiredSize.Width;
+            return new Size(Math.Max(0, occupied), height);
+        }
         var leading = Children[0]; var text = Children[1]; var trailing = Children[2];
         var leadingSpace = owner.HasLeading || owner.HasSelectedLeading ? owner.LeadingSpacing : 0;
         var trailingSpace = owner.HasTrailing ? owner.TrailingSpacing : 0;
@@ -85,6 +110,23 @@ internal sealed class DropdownMenuItemLayout : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (_owner is not { } owner || Children.Count != 3) return finalSize;
+        if (owner.IsExpressive && owner.HorizontalArrangement is { } arrangement)
+        {
+            var density = LayoutHelper.GetLayoutScale(this);
+            var children = ArrangedChildren;
+            var sizes = children.Select(child => MathUtils.DipToPx(child.DesiredSize.Width, density)).ToArray();
+            var total = MathUtils.DipToPx(finalSize.Width, density);
+            var positions = new int[children.Length];
+            arrangement.Arrange(density, total, sizes, FlowDirection, positions);
+            for (var i = 0; i < children.Length; i++)
+            {
+                var child = children[i];
+                var x = FlowDirection == FlowDirection.RightToLeft ? total - positions[i] - sizes[i] : positions[i];
+                child.Arrange(new Rect(x / density, MathUtils.RoundToInt((finalSize.Height - child.DesiredSize.Height) * density / 2) / density,
+                    sizes[i] / density, child.DesiredSize.Height));
+            }
+            return finalSize;
+        }
         var leading = Children[0]; var text = Children[1]; var trailing = Children[2];
         var leadingSpace = owner.HasLeading || owner.HasSelectedLeading ? owner.LeadingSpacing : 0;
         var trailingSpace = owner.HasTrailing ? owner.TrailingSpacing : 0;

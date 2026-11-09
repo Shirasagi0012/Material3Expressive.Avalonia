@@ -27,7 +27,7 @@
       </Setter>
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MaterialSurface Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+          <m3:MaterialSurface Background="{TemplateBinding Background}" Shape="{TemplateBinding Shape}" CornerRadius="{TemplateBinding CornerRadius}"
                               TextElement.Foreground="{TemplateBinding Foreground}">
             <Border>
               <Border.Padding>

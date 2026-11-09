@@ -229,6 +229,11 @@
                     <m3:InputChip Width="180" Content="Space between" HorizontalArrangement="SpaceBetween" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
                     <m3:InputChip Width="180" Content="Space around" HorizontalArrangement="SpaceAround" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
                     <m3:InputChip Width="180" Content="Space evenly" HorizontalArrangement="SpaceEvenly" Click="OnChipClick" LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Margin="0,0,12,0" />
+                    <m3:FilterChip Width="220" Content="Spaced at end" LeadingIcon="{m3:Symbol Check}" TrailingIcon="{m3:Symbol Close}" Click="OnChipClick" Margin="0,0,12,0">
+                        <m3:FilterChip.HorizontalArrangement><m3:SpacedHorizontalArrangement Space="12" Alignment="Right" /></m3:FilterChip.HorizontalArrangement>
+                    </m3:FilterChip>
+                    <m3:InputChip Width="220" Content="Physical order in RTL" FlowDirection="RightToLeft" HorizontalArrangement="Absolute.SpaceEvenly"
+                                  LeadingIcon="{m3:Symbol Person}" TrailingIcon="{m3:Symbol Close}" Click="OnChipClick" />
                 </WrapPanel>
                 <TextBlock Text="Icon button widths" m3:MaterialText.Style="{m3:Typography TitleMedium}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
@@ -530,6 +535,7 @@
                 </StackPanel>
                 <Grid ColumnDefinitions="Auto,*" Height="360">
                     <m3:WideNavigationRail x:Name="DemoWideNavigationRail">
+                        <m3:WideNavigationRail.Shape><m3:CutCornerShape TopStart="24" BottomEnd="12" /></m3:WideNavigationRail.Shape>
                         <m3:WideNavigationRail.Header>
                             <m3:IconButton Symbol="Menu" Click="OnToggleWideRail" />
                         </m3:WideNavigationRail.Header>
@@ -552,6 +558,7 @@
                                 Theme="{StaticResource MaterialTonalButtonTheme}" />
                     </StackPanel>
                     <m3:ModalWideNavigationRail x:Name="DemoHiddenModalRail" HideOnCollapse="True">
+                        <m3:ModalWideNavigationRail.ExpandedShape><m3:CutCornerShape TopEnd="32" BottomEnd="16" /></m3:ModalWideNavigationRail.ExpandedShape>
                         <m3:ModalWideNavigationRail.ExpandedHeader>
                             <m3:IconButton Symbol="MenuOpen" Tag="hidden" Click="OnToggleModalRail" />
                         </m3:ModalWideNavigationRail.ExpandedHeader>

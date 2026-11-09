@@ -113,7 +113,7 @@ Menu.ItemContainerTheme 只应用于顶层，后代样式按父 ItemsControl 的
 - 原生主菜单及子菜单的自绘阴影和平台阴影提示均关闭。这项已确认适配针对平台矩形阴影与圆角不匹配，独立 DropdownMenu 继续采用窗口内 Material 阴影。
 - 独立菜单及交互源入口的授权和验证依据保存在引入历史中，source 扩展见 `b806d7f3`。共享弹层、输入、轮廓和动画契约见 [DECISIONS.md](../../../../docs/DECISIONS.md)。
 - 菜单栏的公开 `MaterialMenuBarItemTheme` 名称仍待维护者确认，可选容器式菜单栏也处于未实现提议阶段。
-- 独立容器、分组、专用菜单项已接入任意 Shape / CutCornerShape（见下文），原生 MenuItem 主题尚未接入。任意 Arrangement、系统平台 inset 与预测返回仍未实现。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
+- 独立容器、分组、专用菜单项已接入任意 Shape / CutCornerShape（见下文），原生 MenuItem 的 Expressive 主题现已接入（见下文）。横向 Arrangement 已接入独立 Expressive 项（见下文）；系统平台 inset 与预测返回仍未实现。原生主题路径还缺少开闭及子菜单动效、独立分组与组形变。
 - `menu-source` 的部分 Core 重复及额外截图存在最大单通道 1 的不稳定像素，稳定性门禁保留失败。原生无阴影外观与上游仍有已接受差异，历史暗色圆角边缘结果不能作为当前 Surface 裁剪的隔离证据。
 - 真实桌面后端、DPI 切换、文字栅格、全部原生定位边界、打开中的整套主题替换及 Baseline 完整弹层双端一致性未经验证。Headless 原生 Popup 回退测试仅覆盖 overlay 路径。
 
@@ -193,7 +193,7 @@ shapeByInteraction 并将结果交给 Surface；为支持两个任意 Shape，�
 普通/选中 Shape 独立回退到原圆角；两端角形使用同一 AnimatedCornerRadius 的进度、反向速度与第三目标
 语义，任一端为任意路径时直接切换。配置 key 比较不可变角值，替换为数值相同的 CutCornerShape 不重启动画；
 真正改配置时重建 shape 和 indication，不重放旧 Press。Baseline 的 Shape 是本地便利入口，固定 Baseline
-DropdownMenuItem 不公开该参数；已由本轮自主 API 授权采纳，Baseline 仍无选中形变。原生 MenuItem 模板未迁移。
+DropdownMenuItem 不公开该参数；已由本轮自主 API 授权采纳，Baseline 仍无选中形变。该阶段未迁移原生 MenuItem；本轮后续迁移见下文。
 
 `menu-item-paths` 的 90 例双端 self-test 全部通过（86 equal、4 withinTolerance），执行错误 0、
 重复稳定；包含原有 Baseline/Standard/Vibrant 场景以及新增切角、混合角形、任意路径、RTL、按压、
@@ -203,3 +203,55 @@ hover、选中与快速反向。已查看菜单分组反向与真实凹路径容
 复用既有状态 owner、配置重置与 CornerShape 混合族中点切换，不以 Generic path 近似圆角。
 验证见 `rounded-shape-final`：菜单圆角与圆/切角状态组合的 12 例中 9 例通过原门禁，3 例仍保留状态切换差异。
 固定来源与共享入口决定见 Surface INTERNALS / DECISIONS §35，不代表所有交互完全一致。
+
+
+**横向内容排列（2026-11-09 本轮授权）**：独立 Expressive、Checkable、Selectable 的 HorizontalArrangement
+映射固定 Menu.kt 的同名参数，复用 [共享排列决定 §36](../../../../docs/DECISIONS.md#36-组件横向排列能力)。
+null 保留 MenuArrangement 的专用 Leading/TrailingSpacing；非 null 时按 RowColumnMeasurePolicy 顺序测量
+真实存在的 leading、text、trailing 槽，保留每步间距截断与缺槽规则，不把它们补成 Chip 的固定三个槽。
+选中图标存在但当前零宽时仍算一个槽；排列变更不重建图标动画。布局方向变化单独触发重新排列。
+原模板图标 MinWidth 会在窄约束中强制溢出，与固定 WrappedLeadingIcon / trailing Box.defaultMinSize 不同；
+本轮改用已有 PreferredMinWidth 来保留首选尺寸且服从实际父约束，普通尺寸和内容居中不变。
+
+新 `menu-arrangement` 用例使用真正三种上游入口。透明 ordinary Surface 的环境内容色在两端显式指定为主题 OnSurface，
+避免 Compose 默认黑色与 Avalonia 窗口环境色成为不同输入；非文字 marker 注册 Foreground 绘制失效，
+不会用旧显示列表误判选中颜色。首次报告保留在 `menu-arrangement-first`，没有调整颜色算法或像素容差。
+行为测试 MenuArrangementTests 覆盖缺槽、图标零宽、换排列/恢复默认、运行时 RTL、激活所有权与 Baseline 边界。
+
+`menu-arrangement-verified` 121 例中 113 equal、8 withinTolerance，执行错误为零，重复和额外截图稳定；包含三种入口、
+LTR/RTL、正负/小数间距、绝对/自定义排列、窄约束和缺槽、动态图标反向及真实点击。
+已查看实际选中途中、普通按压与受限布局原图。相关行为测试 74 项通过，Catalog 构建通过。
+
+### 2026-11-09 原生 MenuItem 的状态形状
+
+固定 Menu.kt shapeByInteraction 对两端角形使用 rememberAnimatedShape；任一端为路径时直接切换。
+原生主题此前使用 ButtonSurfaceState 的圆角适配，无法表达相同选中切角、百分比与路径行为。
+本轮授权下新增 MenuAppearance.Shape / SelectedShape，并由独立项和原生项共用 MenuItemShapeMotion；
+只有 owner 配置读取不同，动画、配置 key、可变形状订阅、indication 重置及清理仍是同一实现。
+移除原生 Expressive Surface 上重复的 ButtonSurfaceState 选中圆角驱动，避免两套动画写同一 outline。
+MenuItemChrome 负责挂载、配置变化和卸载连接，不接管原生勾选或命令。无破坏性调用迁移。
+
+NativeMenuShapeTests 覆盖 LTR/RTL、反转、可变配置、默认回退、重挂载与订阅清理；
+`native-menu-shapes` 双端矩阵包含三种形状族、两方向、静态选中/未选中和选中/反向/按压。
+
+
+新增原生形状 `native-menu-shapes` 30 例为 21 equal / 9 withinTolerance，执行错误 0、重复稳定。
+已查看混合切角/圆角选中动画的双端实际帧。CommandBar 比较测试改为读取原生项实际选中后的有效 outline，
+保留布局/反馈/命令断言，不再依赖已移除的内部 ButtonSurfaceState 配置槽；相关 198 项测试通过。
+
+原生水平排列同轮补齐：MenuAppearance.HorizontalArrangement 只绑定主 NativeMenuRow，测量读取排列 spacing、
+安排读取物理像素位置，RTL 先抵消 Avalonia 镜像。真实缺槽由原生模板可见性决定，尾部组合不拆分。
+null 保留原逻辑，独立项与原生项不互相套模板；不新增通用 Row 抽象。MenuArrangementTests 加入运行时
+方向/排列切换与恢复，`native-menu-arrangement` 复用真实 Core SelectableDropdownMenuItem 作为参考。
+
+`native-menu-arrangement` 63 例全部通过原门限（59 equal / 4 withinTolerance），执行错误 0、重复稳定。
+包括正负/小数间距、Absolute、用户算法、80 DIP 窄约束、全部缺槽组合、动态换排列/槽、选中反转与真实按压。
+原生形状接入后的原 menu family 98 例也已完整重采，48 equal / 50 withinTolerance、执行错误 0、重复稳定，报告为 `native-menu-shape-regression`。
+
+
+本轮最终解决方案/Catalog 构建成功，VisualParity 自身 134 项测试通过。整库早期 2678 项通过；
+新增原生项能力后最终 2682 项运行中 2681 通过、1 项 NavigationRail 键盘测试在 Headless
+EnsureIsolatedApplication 初始化阶段遇到 Dispatcher 线程访问异常，复核该键盘测试通过。
+同批复核的另一个既有 outgoing-label 用例遇到相同初始化异常，单独运行两种参数均通过。
+这保留为测试环境不稳定记录，不能把多次运行拼成一次完整全绿；新菜单行为测试实际通过。
+原始 TRX 保留在 tests/Material3Expressive.Tests/TestResults/porting-20261109-*.trx。

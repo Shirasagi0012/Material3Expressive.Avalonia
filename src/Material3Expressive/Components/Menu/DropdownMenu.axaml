@@ -259,7 +259,7 @@
               ShadowElevation="0" TonalElevation="0" ResetIndicationOnShapeChange="False">
             <m3:DropdownMenuItemLayout x:Name="PART_Layout">
               <m3:DropdownMenuLeadingIcon x:Name="PART_Leading" ClipToBounds="True" SizeAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ShapeAnimation}}" AlphaAnimation="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.ColorAnimation}}">
-                <m3:DropdownMenuSlotPresenter x:Name="PART_LeadingPresenter" HorizontalContentAlignment="Left" MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding LeadingIconColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+                <m3:DropdownMenuSlotPresenter x:Name="PART_LeadingPresenter" HorizontalContentAlignment="Left" PreferredMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding LeadingIconColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
               </m3:DropdownMenuLeadingIcon>
               <StackPanel>
                 <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -268,7 +268,7 @@
                     Foreground="{TemplateBinding Foreground}" IsVisible="False" m3:MaterialText.Style="{m3:Typography BodyMedium}" />
               </StackPanel>
               <m3:DropdownMenuSlotPresenter x:Name="PART_Trailing" HorizontalContentAlignment="Center" Content="{TemplateBinding TrailingContent}" ContentTemplate="{TemplateBinding TrailingContentTemplate}"
-                  MinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
+                  PreferredMinWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" Foreground="{TemplateBinding TrailingContentColor}" m3:MaterialSymbol.DefaultSize="{m3:Token {x:Static m3:MaterialTokens+Comp+Menu.LeadingIconSize}}" />
             </m3:DropdownMenuItemLayout>
           </m3:MaterialSurface>
         </m3:MenuItemChrome>

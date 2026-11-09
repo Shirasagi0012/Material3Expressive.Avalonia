@@ -18,10 +18,12 @@
       <Slider x:Name="ScrimAlpha" Minimum="0" Maximum="1" Value="1" />
     </StackPanel>
     <m3:ModalBottomSheet x:Name="Sheet" DismissRequested="OnDismissed">
+      <m3:ModalBottomSheet.Shape><m3:RoundedCornerShape TopStart="12%" TopEnd="5%" /></m3:ModalBottomSheet.Shape>
       <Border Height="400" Padding="24,8,24,24">
         <StackPanel Spacing="16">
           <TextBlock Text="Save a destination" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
           <TextBox PlaceholderText="Destination name" />
+          <TextBlock Text="Screen readers can expand, collapse or dismiss from the drag handle’s named actions." TextWrapping="Wrap" />
           <TextBlock Text="The sheet opens at half height. Expand it to see all content; the page stays behind the scrim." TextWrapping="Wrap" />
           <WrapPanel>
             <Button Content="Expand" Click="OnExpand" Margin="0,0,8,8" />

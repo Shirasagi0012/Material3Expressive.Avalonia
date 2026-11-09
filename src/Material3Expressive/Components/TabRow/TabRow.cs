@@ -17,6 +17,9 @@ public class TabRow : ItemsControl
     public static readonly AttachedProperty<double> MinTabWidthProperty = TabRowAppearance.MinTabWidthProperty;
     public static readonly AttachedProperty<IControlTemplate?> IndicatorProperty = TabRowAppearance.IndicatorProperty;
     public static readonly AttachedProperty<IControlTemplate?> DividerProperty = TabRowAppearance.DividerProperty;
+    public static readonly AttachedProperty<bool?> IndicatorMatchContentSizeProperty = TabRowAppearance.IndicatorMatchContentSizeProperty;
+    /// <summary>True follows content width; false follows the full tab. Null uses the variant default.</summary>
+    public bool? IndicatorMatchContentSize { get => GetValue(IndicatorMatchContentSizeProperty); set => SetValue(IndicatorMatchContentSizeProperty, value); }
     public int SelectedIndex { get => GetValue(SelectedIndexProperty); set => SetValue(SelectedIndexProperty, value); }
     public TabRowVariant Variant { get => GetValue(VariantProperty); set => SetValue(VariantProperty, value); }
     public bool IsScrollable { get => GetValue(IsScrollableProperty); set => SetValue(IsScrollableProperty, value); }

@@ -49,8 +49,11 @@
                         <MenuItem Header="Copy" Icon="{m3:Symbol ContentCopy}" InputGesture="Ctrl+C"
                                   m3:MenuAppearance.SupportingText="Copy the current selection" Click="OnAction" />
                         <MenuItem Header="Unavailable" Icon="{m3:Symbol Delete}" IsEnabled="False" />
-                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True"
-                                  m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" Click="OnToggle" />
+                        <MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True" m3:MenuAppearance.HorizontalArrangement="SpaceBetween"
+                                  m3:MenuAppearance.TrailingContent="{m3:Symbol Lock}" Click="OnToggle">
+                            <m3:MenuAppearance.Shape><m3:CutCornerShape TopStart="16" BottomEnd="8" /></m3:MenuAppearance.Shape>
+                            <m3:MenuAppearance.SelectedShape><m3:CutCornerShape TopStart="35%" TopEnd="35%" BottomStart="35%" BottomEnd="35%" /></m3:MenuAppearance.SelectedShape>
+                        </MenuItem>
                         <Separator />
                         <MenuItem Header="Sort by">
                             <MenuItem Header="Name" ToggleType="Radio" GroupName="StandardSort" IsChecked="True"
@@ -181,6 +184,16 @@
             <m3:DropdownMenuGroup.InactiveShape><m3:CutCornerShape TopStart="8%" TopEnd="8%" BottomEnd="8%" BottomStart="8%" /></m3:DropdownMenuGroup.InactiveShape>
             <TextBlock Text="Hover, then leave: cut-corner group" Margin="16" TextWrapping="Wrap" />
         </m3:DropdownMenuGroup>
+        <TextBlock Text="Content arrangements" m3:MaterialText.Style="{m3:Typography TitleLarge}" />
+        <m3:SelectableDropdownMenuItem Content="Spaced selection" Width="280" HorizontalAlignment="Left"
+            SelectedLeadingIcon="{m3:Symbol Check}" TrailingContent="{m3:Symbol ArrowForward}" Click="OnArrangementSelection">
+            <m3:SelectableDropdownMenuItem.HorizontalArrangement>
+                <m3:SpacedHorizontalArrangement Space="12" Alignment="Center" />
+            </m3:SelectableDropdownMenuItem.HorizontalArrangement>
+        </m3:SelectableDropdownMenuItem>
+        <m3:DropdownMenuItem Content="Physical order in RTL" Width="280" HorizontalAlignment="Left" FlowDirection="RightToLeft"
+            Theme="{StaticResource MaterialExpressiveDropdownMenuItemTheme}" HorizontalArrangement="Absolute.SpaceBetween"
+            LeadingIcon="{m3:Symbol Folder}" TrailingContent="{m3:Symbol ArrowForward}" />
         <TextBlock Text="Select the item, then switch its regular icon while the selection animates." TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="12">
             <Button Content="Light / dark" Click="OnTheme" />

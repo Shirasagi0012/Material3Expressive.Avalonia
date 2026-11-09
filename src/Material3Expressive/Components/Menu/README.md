@@ -119,7 +119,25 @@ source.Emit(new MaterialInteractionEvent.HoverExit(hover));
 支持打开时切换、局部关闭及显式 `Padding` / `LeadingSpacing` / `TrailingSpacing` 覆盖。
 默认值可用 `Comp.Menu.PrecisionItemPadding` 和 `PrecisionContentSpacing` Token 配置。
 Catalog 的 grouped / selectable 示例提供开关。当前 Baseline 与原生 MenuItem 不消费此尺寸环境，
-专用尾部标签辅助 API 尚未移植；不要把环境开关理解为所有菜单尺寸已完成接入。
+不要把环境开关理解为所有菜单尺寸已完成接入。
+
+独立 Expressive、Checkable 和 Selectable 项支持 `HorizontalArrangement`，可选择六种标准分布、
+`Absolute.Left/Right/Center/SpaceBetween/SpaceAround/SpaceEvenly`、固定正负间距或自定义排列对象：
+
+```xml
+<m3:SelectableDropdownMenuItem Content="收藏" SelectedLeadingIcon="{m3:Symbol Check}">
+  <m3:SelectableDropdownMenuItem.HorizontalArrangement>
+    <m3:SpacedHorizontalArrangement Space="8" Alignment="Center" />
+  </m3:SelectableDropdownMenuItem.HorizontalArrangement>
+</m3:SelectableDropdownMenuItem>
+```
+
+非 null 排列替代 LeadingSpacing / TrailingSpacing；清除后恢复最新默认或显式间距。
+只排列存在的槽；仅有选中图标时，其零宽退场槽仍参与排列，直到移除该图标入口。
+`Space` 允许负值，Left/Right 对齐表示逻辑起点/终点；Mirror=false 固定子项物理顺序。
+C# 使用 `Material3Expressive.Foundation.MaterialHorizontalArrangement.SpacedBy(...)`，自定义算法派生同一类型。
+对象不可变，运行时替换属性即可重排，不取消正在进行的图标动画。
+Baseline 和原生 MenuItem 不消费此入口。Catalog 的 Content arrangements 可直接切换选中并观察居中展开。
 
 独立项目支持 Content、LeadingIcon、SelectedLeadingIcon、TrailingContent、SupportingText 及对应模板。
 仅选中图标存在时使用展开和淡入效果。MenuDefaults.ItemShape / GroupShape 按调用方提供的 index、count 生成首尾形状，组间距由容器设置，默认参考 MenuDefaults.GroupSpacing。
@@ -189,3 +207,24 @@ DropdownMenu.ScrollOffset 可双向绑定，MaxHeight 限制视口。
 形状配置也接受 `RoundedCornerShape`：逻辑四角可独立设置 DIP 或百分比（如 `TopStart="50%"`）。
 它可与 `CutCornerShape` 组合为不同状态；同族连续插值，圆/切角混合时按上游在动画中点切换。
 清除相应 Shape 属性后恢复原圆角配置。完整形状用法见 [Surface](../Surface/README.md)。
+
+## 原生菜单项的选中形状
+
+使用 MaterialVerticalMenuItemTheme 的原生 MenuItem，可通过附加属性设置普通/选中形状：
+
+```xml
+<MenuItem Header="Read only" ToggleType="CheckBox" StaysOpenOnClick="True">
+  <m3:MenuAppearance.Shape><m3:CutCornerShape TopStart="16" BottomEnd="8" /></m3:MenuAppearance.Shape>
+  <m3:MenuAppearance.SelectedShape><m3:RoundedCornerShape TopStart="35%" TopEnd="35%" BottomStart="35%" BottomEnd="35%" /></m3:MenuAppearance.SelectedShape>
+</MenuItem>
+```
+
+两端均为角形时按固定上游弹簧形变，任意路径直接切换；支持逻辑 RTL 和可变形状对象。
+普通 Shape 的 null 使用 MenuItem.CornerRadius，SelectedShape 的 null 使用选中形状 Token。
+原生 IsChecked、ToggleType、GroupName、Click 和菜单关闭行为不变。Baseline/MenuBar 主题不使用这两个属性。
+Catalog Standard 的 Read only 项展示切角选中动画。
+
+
+原生 Expressive 项还支持 `m3:MenuAppearance.HorizontalArrangement="SpaceBetween"`，
+或与独立项相同的 SpacedHorizontalArrangement 对象。它排列真实存在的 leading、正文和尾部组合槽，
+不拆分尾部快捷键与子菜单箭头。null 恢复默认首尾布局，Baseline/MenuBar 忽略此属性。

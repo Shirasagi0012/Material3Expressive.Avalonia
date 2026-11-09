@@ -27,7 +27,7 @@ data class WideNavigationRailConfig(val expanded:Boolean=false, val arrangement:
     val iconWidth:Double=24.0, val iconHeight:Double=24.0, val labelWidth:Double=32.0, val labelHeight:Double=16.0,
     val headerWidth:Double=48.0, val headerHeight:Double=40.0, val empty:Boolean=false, val customPadding:Boolean=false,
     val customColors:Boolean=false, val iconPosition:String="auto", val action:String="none", val standardMotion:Boolean=false,
-    val indicatorPadding:String="default", val secondLabelWidth:Double=48.0, val singleItem:Boolean=false)
+    val indicatorPadding:String="default", val secondLabelWidth:Double=48.0, val singleItem:Boolean=false,val shape:String="default")
 
 @ParitySuite("wide-navigation-rail")
 class WideNavigationRailCases {
@@ -61,6 +61,10 @@ class WideNavigationRailCases {
             fun event(time:Long,action:String,position:Offset) { advance(time); host.input(action,position); host.draw(); host.frame(time) }
             sample("initial")
             when(config.action) {
+                "shape-change" -> {
+                    mutate(1000,"rounded-shape") { scene.shape="round-percent" }; times(16000)
+                    mutate(17000,"default-shape") { scene.shape="default" }; times(32000)
+                }
                 "expand","collapse","reverse","snap" -> {
                     mutate(1000,"expansion-change") { scene.scope.launch {
                         if(config.action=="snap") scene.state.snapTo(WideNavigationRailValue.Expanded) else scene.state.toggle()
@@ -116,6 +120,7 @@ class WideNavigationRailCases {
         var selected by mutableStateOf(config.selected)
         var enabled by mutableStateOf(config.enabled)
         var dark by mutableStateOf(config.dark)
+        var shape by mutableStateOf(config.shape)
         var clicks=0
         lateinit var state:WideNavigationRailState
         lateinit var scope:CoroutineScope
@@ -133,7 +138,7 @@ class WideNavigationRailCases {
                             var modifier=rail.modifier()
                             if(config.width!=null) modifier=modifier.width(config.width.toFloat().dp)
                             if(config.height!=null) modifier=modifier.height(config.height.toFloat().dp)
-                            WideNavigationRail(modifier=modifier,state=state,
+                            WideNavigationRail(modifier=modifier,state=state,shape=resolveSheetShape(shape) ?: WideNavigationRailDefaults.shape,
                                 header=if(config.header) ({ Marker(null,config.headerWidth,config.headerHeight,false,null) }) else null,
                                 arrangement=arrange(config.arrangement),
                                 windowInsets=if(config.insets) WindowInsets(left=13.dp,top=7.dp,right=5.dp,bottom=11.dp) else WideNavigationRailDefaults.windowInsets,

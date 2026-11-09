@@ -142,6 +142,7 @@
       </Setter>
     </ControlTheme>
     <ControlTheme x:Key="MaterialTabControlTheme" TargetType="TabControl">
+      <Setter Property="AutoScrollToSelectedItem" Value="False" />
       <Setter Property="Background" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.ContainerColor}}" />
       <Setter Property="Foreground" Value="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.OnSurface}}" />
       <Setter Property="m3:TabRowThemeDefaults.ContentColor" Value="{m3:Token {x:Static m3:MaterialTokens+Comp+TabRow.PrimaryContentColor}}" />

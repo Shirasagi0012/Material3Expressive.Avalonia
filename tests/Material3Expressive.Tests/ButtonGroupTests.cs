@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation;
 using Xunit;
 using static Material3Expressive.Tokens.MaterialTokens;
 
@@ -46,7 +47,7 @@ public class ButtonGroupTests
     {
         using var clock = new MotionTestClockScope();
         var group = Blocks(400);
-        group.HorizontalArrangement = ButtonGroupArrangement.End;
+        group.HorizontalArrangement = MaterialHorizontalArrangement.End;
         if (weighted)
         {
             group.MaxWidth = double.PositiveInfinity;
@@ -346,27 +347,27 @@ public class ButtonGroupTests
         var group = Blocks(400);
         var window = DialogTests.Show(group);
         Flush(window);
-        Assert.Equal(12, group.Spacing);
+        Assert.Equal(12, group.HorizontalArrangement.Spacing);
         Assert.Equal(.15, group.ExpandedRatio);
 
-        group.Resources[Comp.ButtonGroup.Spacing] = 20d;
+        group.Resources[Comp.ButtonGroup.HorizontalArrangement] = MaterialHorizontalArrangement.SpacedBy(20);
         Flush(window);
-        Assert.Equal(20, group.Spacing);
+        Assert.Equal(20, group.HorizontalArrangement.Spacing);
         group.Styles.Add(new Style(selector => selector.OfType<ButtonGroup>())
         {
-            Setters = { new Setter(ButtonGroup.SpacingProperty, 6d) }
+            Setters = { new Setter(ButtonGroup.HorizontalArrangementProperty, MaterialHorizontalArrangement.SpacedBy(6)) }
         });
         Flush(window);
-        Assert.Equal(6, group.Spacing);
-        group.Spacing = 3;
+        Assert.Equal(6, group.HorizontalArrangement.Spacing);
+        group.HorizontalArrangement = MaterialHorizontalArrangement.SpacedBy(3);
         Flush(window);
-        Assert.Equal(3, group.Spacing);
-        group.ClearValue(ButtonGroup.SpacingProperty);
+        Assert.Equal(3, group.HorizontalArrangement.Spacing);
+        group.ClearValue(ButtonGroup.HorizontalArrangementProperty);
         Flush(window);
-        Assert.Equal(6, group.Spacing);
+        Assert.Equal(6, group.HorizontalArrangement.Spacing);
         group.Styles.Clear();
         Flush(window);
-        Assert.Equal(20, group.Spacing);
+        Assert.Equal(20, group.HorizontalArrangement.Spacing);
         window.Close();
     }
 
@@ -481,6 +482,43 @@ public class ButtonGroupTests
         Assert.Equal("edit", MaterialButton.GetIcon(action.ActionButton!));
         Assert.Throws<ArgumentException>(() => action.Icon = new Marker(20, 20));
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void ArrangementSpacingControlsOverflowAndPhysicalOrderInRtl()
+    {
+        using var clock = new MotionTestClockScope();
+        var group = Blocks(140);
+        group.HorizontalArrangement = MaterialHorizontalArrangement.SpacedBy(-6);
+        var window = DialogTests.Show(new Canvas { Children = { group } });
+        try
+        {
+            Flush(window); Assert.Equal(3, group.Layout!.VisibleCount); Assert.Equal(116, group.Layout.Row.Bounds.Width);
+            group.HorizontalArrangement = MaterialHorizontalArrangement.SpacedBy(12); Flush(window);
+            Assert.Equal(2, group.Layout.VisibleCount); Assert.Single(group.Layout.Menu.Items);
+            group.MaxWidth = 400; group.MinWidth = 240; group.FlowDirection = FlowDirection.RightToLeft;
+            group.HorizontalArrangement = MaterialHorizontalArrangement.Absolute.Left; Flush(window);
+            var first = (ButtonGroupItem)group.Items[0]!;
+            var physicalFirst = first.TranslatePoint(new Point(first.Bounds.Width, 0), window)!.Value.X;
+            var rowRight = group.Layout.Row.TranslatePoint(new Point(group.Layout.Row.Bounds.Width, 0), window)!.Value.X;
+            Assert.Equal(rowRight, physicalFirst);
+            group.HorizontalArrangement = MaterialHorizontalArrangement.Start; Flush(window);
+            Assert.True(first.TranslatePoint(new Point(first.Bounds.Width, 0), window)!.Value.X > physicalFirst);
+            group.HorizontalArrangement = new InsetArrangement(); Flush(window);
+            Assert.Equal(3, group.Layout.VisibleCount); Assert.Equal(240, group.Layout.Row.Bounds.Width);
+        }
+        finally { window.Close(); }
+    }
+
+    private sealed record InsetArrangement : MaterialHorizontalArrangement
+    {
+        public override double Spacing => 7;
+        public override void Arrange(double density, int totalSize, ReadOnlySpan<int> sizes, FlowDirection direction, Span<int> positions)
+        {
+            var inset = (int)Math.Round(10 * density);
+            SpacedBy(Spacing).Arrange(density, totalSize - inset * 2, sizes, direction, positions);
+            for (var i = 0; i < positions.Length; i++) positions[i] += inset;
+        }
     }
 
     private static ButtonGroup Blocks(double maxWidth)

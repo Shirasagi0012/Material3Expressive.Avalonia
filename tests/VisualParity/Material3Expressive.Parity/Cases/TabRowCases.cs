@@ -16,13 +16,20 @@ namespace Material3Expressive.Parity;
 public sealed record TabRowConfig(string Variant = "primary", bool Scrollable = false, string Content = "label", bool Native = false,
     bool Rtl = false, bool Dark = false, bool Enabled = true, bool CustomColors = false, bool CustomSlots = false,
     bool NoSlots = false, int Count = 3, int Selected = 0, double Width = 352, double? Height = null,
-    double EdgePadding = 52, double MinTabWidth = 90, double LabelHeight = 16, double IconSize = 24, string Action = "none");
+    double EdgePadding = 52, double MinTabWidth = 90, double LabelHeight = 16, double IconSize = 24, string Action = "none", bool? MatchContentSize = null);
 
 [ParitySuite("tab-row")]
 public sealed class TabRowCases
 {
     public static IEnumerable<CaseData<TabRowConfig>> StaticConfigurations()
     {
+        foreach (var variant in new[] { "primary", "secondary" })
+        foreach (var scrollable in new[] { false, true })
+        foreach (var native in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var match in new[] { false, true })
+            yield return Data($"static.indicator-width.{variant}.{scrollable.ToString().ToLowerInvariant()}.{native.ToString().ToLowerInvariant()}.{rtl.ToString().ToLowerInvariant()}.{match.ToString().ToLowerInvariant()}", new(variant, scrollable, Native: native, Rtl: rtl, MatchContentSize: match));
+
         foreach (var variant in new[] { "primary", "secondary" })
         foreach (var scrollable in new[] { false, true })
         {
@@ -53,6 +60,13 @@ public sealed class TabRowCases
     }
     public static IEnumerable<CaseData<TabRowConfig>> DynamicConfigurations()
     {
+        foreach (var variant in new[] { "primary", "secondary" })
+        foreach (var scrollable in new[] { false, true })
+        foreach (var native in new[] { false, true })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "reverse", "indicator-width" })
+            yield return Data($"dynamic.indicator-width.{variant}.{scrollable.ToString().ToLowerInvariant()}.{native.ToString().ToLowerInvariant()}.{rtl.ToString().ToLowerInvariant()}.{action}", new(variant, scrollable, Native: native, Rtl: rtl, Count: 5, MatchContentSize: variant != "primary", Action: action));
+
         foreach (var variant in new[] { "primary", "secondary" })
         foreach (var scrollable in new[] { false, true })
         foreach (var action in new[] { "select", "reverse", "resize" })
@@ -107,6 +121,10 @@ public sealed class TabRowCases
         Sample("initial");
         switch (config.Action)
         {
+            case "indicator-width":
+                Mutate(1000, "match-content", () => TabRowAppearance.SetIndicatorMatchContentSize(scene.Row, true)); Times(16000, 32000, 64000);
+                Mutate(65000, "full-tab", () => TabRowAppearance.SetIndicatorMatchContentSize(scene.Row, false)); Times(80000, 96000, 128000);
+                Mutate(129000, "variant-default", () => TabRowAppearance.SetIndicatorMatchContentSize(scene.Row, null)); Times(160000, 400000, 1000000); break;
             case "select": case "reverse":
                 Mutate(1000, "select-last", () => scene.Select(config.Count - 1)); Times(16000, 64000);
                 if (config.Action == "reverse") Mutate(65000, "select-first", () => scene.Select(0));
@@ -167,6 +185,7 @@ public sealed class TabRowCases
             Row.Width = config.Width; if (config.Height is { } height) Row.Height = height;
             Row.HorizontalAlignment = HorizontalAlignment.Left; Row.VerticalAlignment = VerticalAlignment.Top;
             TabRowAppearance.SetVariant(Row, config.Variant == "primary" ? TabRowVariant.Primary : TabRowVariant.Secondary);
+            TabRowAppearance.SetIndicatorMatchContentSize(Row, config.MatchContentSize);
             TabRowAppearance.SetIsScrollable(Row, config.Scrollable); TabRowAppearance.SetEdgePadding(Row, config.EdgePadding); TabRowAppearance.SetMinTabWidth(Row, config.MinTabWidth);
             if (config.NoSlots) { TabRowAppearance.SetIndicator(Row, null); TabRowAppearance.SetDivider(Row, null); }
             if (config.CustomSlots)

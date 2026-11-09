@@ -18,7 +18,7 @@
               <m3:BottomSheet x:Name="PART_Sheet" State="{TemplateBinding State}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                   SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding GesturesEnabled}" BackHandlerEnabled="False"
                   DragHandle="{TemplateBinding DragHandle}" DragHandleTemplate="{TemplateBinding DragHandleTemplate}" WindowInsets="{TemplateBinding WindowInsets}"
-                  Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}"
+                  Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                   TonalElevation="{TemplateBinding TonalElevation}" />
             </m3:ModalBottomSheetPresenter>
           </Grid>
@@ -44,7 +44,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:BottomSheetLayout x:Name="PART_Layout">
-            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                 TonalElevation="{TemplateBinding TonalElevation}" ShadowElevation="{TemplateBinding ShadowElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>
                 <StackPanel>
@@ -90,7 +90,7 @@
                 StandardPeekHeight="{TemplateBinding SheetPeekHeight}" Content="{TemplateBinding SheetContent}" ContentTemplate="{TemplateBinding SheetContentTemplate}"
                 SheetMaxWidth="{TemplateBinding SheetMaxWidth}" GesturesEnabled="{TemplateBinding SheetSwipeEnabled}" BackHandlerEnabled="False"
                 DragHandle="{TemplateBinding SheetDragHandle}" DragHandleTemplate="{TemplateBinding SheetDragHandleTemplate}"
-                Background="{TemplateBinding SheetBackground}" Foreground="{TemplateBinding SheetForeground}" CornerRadius="{TemplateBinding SheetCornerRadius}"
+                Background="{TemplateBinding SheetBackground}" Foreground="{TemplateBinding SheetForeground}" CornerRadius="{TemplateBinding SheetCornerRadius}" Shape="{TemplateBinding SheetShape}"
                 TonalElevation="{TemplateBinding SheetTonalElevation}" ShadowElevation="{TemplateBinding SheetShadowElevation}" />
             <ContentPresenter x:Name="PART_SnackbarHost" Content="{TemplateBinding SnackbarHost}" ContentTemplate="{TemplateBinding SnackbarHostTemplate}"
                               HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" />

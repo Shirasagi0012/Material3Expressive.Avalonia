@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Media;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
@@ -284,6 +285,74 @@ public class TabRowTests
             Assert.Equal(7, Part<Avalonia.Controls.Primitives.TemplatedControl>(row, "PART_Indicator").Bounds.Height);
         }
         finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false, false)] [InlineData(false, true)] [InlineData(true, false)] [InlineData(true, true)]
+    public void IndicatorWidthPolicyIsIndependentAndInterruptible(bool native, bool scrollable)
+    {
+        using var clock = new MotionTestClockScope();
+        ItemsControl row = native ? new TabControl() : new TabRow();
+        row.Width = 300;
+        TabRowAppearance.SetVariant(row, TabRowVariant.Secondary);
+        TabRowAppearance.SetIsScrollable(row, scrollable);
+        TabRowAppearance.SetIndicatorMatchContentSize(row, true);
+        foreach (var width in new[] { 32d, 64d })
+        {
+            var label = new Border { Width = width, Height = 16 };
+            row.Items.Add(native ? new TabItem { Header = label } : new Tab { Content = label });
+        }
+        var window = Show(row);
+        void Frames(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); } }
+        try
+        {
+            var content = row.GetVisualDescendants().OfType<TabRowContent>().Single();
+            Frames(50); Assert.Equal(32, content.IndicatorWidth);
+            TabRowAppearance.SetIndicatorMatchContentSize(row, false); window.UpdateLayout(); Frames(5);
+            var moving = content.IndicatorWidth; Assert.True(moving > 32);
+            TabRowAppearance.SetIndicatorMatchContentSize(row, true); window.UpdateLayout();
+            Assert.Equal(moving, content.IndicatorWidth); Frames(60); Assert.Equal(32, content.IndicatorWidth);
+            TabRowAppearance.SetIndicatorMatchContentSize(row, null); window.UpdateLayout(); Frames(60);
+            Assert.Equal(TabRowAppearance.GetTabPositions(row)[0].Width, content.IndicatorWidth);
+            TabRowAppearance.SetVariant(row, TabRowVariant.Primary); window.UpdateLayout(); Frames(60);
+            Assert.Equal(32, content.IndicatorWidth);
+            // An explicit false survives changes to the visual variant, and label changes do not
+            // change its target when the tab's allocated width is unchanged.
+            TabRowAppearance.SetIndicatorMatchContentSize(row, false); window.UpdateLayout(); Frames(60);
+            Assert.Equal(TabRowAppearance.GetTabPositions(row)[0].Width, content.IndicatorWidth);
+            if (row is TabControl tabs) Assert.Equal(0, tabs.SelectedIndex);
+            else Assert.Equal(0, ((TabRow)row).SelectedIndex);
+            var root = window.Content;
+            window.Content = null; window.UpdateLayout(); Assert.Equal(0, clock.PendingFrameCount);
+            window.Content = root; window.UpdateLayout(); Frames(60);
+            Assert.Equal(TabRowAppearance.GetTabPositions(row)[0].Width, row.GetVisualDescendants().OfType<TabRowContent>().Single().IndicatorWidth);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)] [InlineData(true)]
+    public void NativeSelectionUsesMaterialCenteringWithoutAnImmediateScrollJump(bool rtl)
+    {
+        using var clock = new MotionTestClockScope();
+        var row = new TabControl { Width = 240, FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        TabRowAppearance.SetIsScrollable(row, true);
+        TabRowAppearance.SetIndicatorMatchContentSize(row, true);
+        for (var i = 0; i < 5; i++) row.Items.Add(new TabItem { Header = new Border { Width = 64, Height = 16 } });
+        var window = Show(row);
+        void Frames(int count) { for (var i = 0; i < count; i++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); } }
+        try
+        {
+            Frames(50); var scroller = row.GetVisualDescendants().OfType<ScrollViewer>().Single();
+            Assert.False(row.AutoScrollToSelectedItem); Assert.Equal(0, scroller.Offset.X);
+            row.SelectedIndex = 4; window.UpdateLayout();
+            Assert.Equal(0, scroller.Offset.X); Frames(5); Assert.True(scroller.Offset.X > 0);
+            var moving = scroller.Offset.X;
+            row.SelectedIndex = 0; window.UpdateLayout(); Assert.Equal(moving, scroller.Offset.X);
+            Frames(70); Assert.Equal(0, scroller.Offset.X);
+        }
+        finally { window.Close(); }
+        Assert.Equal(0, clock.PendingFrameCount);
     }
 
     static MotionTestWindow Show(Control content)

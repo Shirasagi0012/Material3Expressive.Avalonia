@@ -157,7 +157,7 @@ internal sealed class ButtonGroupItemsPanel : Panel
         var maxWidth = Px(availableSize.Width);
         var minWidth = Math.Min(maxWidth, Px(double.IsNaN(group.Width) ? group.MinWidth : Math.Max(group.Width, group.MinWidth)));
         var minHeight = Math.Min(Px(availableSize.Height), Px(double.IsNaN(group.Height) ? group.MinHeight : Math.Max(group.Height, group.MinHeight)));
-        var spacing = group.HorizontalArrangement == ButtonGroupArrangement.SpacedBy ? Px(group.Spacing) : 0;
+        var spacing = Px(group.HorizontalArrangement.Spacing);
         var slots = Children.Cast<ButtonGroupSlot>().ToArray();
         var items = slots.Select(slot =>
         {
@@ -281,9 +281,11 @@ internal sealed class ButtonGroupItemsPanel : Panel
         }
 
         var layoutWidth = Math.Max(Math.Max(0, rowWidth), minWidth);
-        _positions = ArrangeHorizontally(layoutWidth, widths[..visibleCount], spacing, group.HorizontalArrangement,
-                group.SpacingAlignment, group.FlowDirection == Avalonia.Media.FlowDirection.RightToLeft)
-            .Select(position => position / scale).ToArray();
+        var positions = new int[visibleCount];
+        group.HorizontalArrangement.Arrange(scale, layoutWidth, widths.AsSpan(0, visibleCount), group.FlowDirection, positions);
+        // Arrangement writes physical coordinates; Avalonia mirrors the child tree in RTL.
+        _positions = positions.Select((position, index) =>
+            (group.FlowDirection == Avalonia.Media.FlowDirection.RightToLeft ? layoutWidth - position - widths[index] : position) / scale).ToArray();
         MeasuredSize = new Size(Dip(layoutWidth), Dip(height));
         return MeasuredSize;
     }
@@ -304,81 +306,4 @@ internal sealed class ButtonGroupItemsPanel : Panel
         return finalSize;
     }
 
-    private static int[] ArrangeHorizontally(int totalWidth, int[] widths, int spacing,
-        ButtonGroupArrangement arrangement, HorizontalAlignment spacingAlignment, bool rtl)
-    {
-        var positions = new int[widths.Length];
-        if (widths.Length == 0)
-            return positions;
-
-        if (arrangement == ButtonGroupArrangement.SpacedBy)
-        {
-            var occupiedWidth = 0;
-            var lastSpacing = 0;
-            var remainingWidth = totalWidth;
-            for (var index = 0; index < widths.Length; index++)
-            {
-                if (rtl)
-                {
-                    positions[index] = Math.Max(0, remainingWidth - widths[index]);
-                    lastSpacing = Math.Min(spacing, positions[index]);
-                    remainingWidth = positions[index] - lastSpacing;
-                }
-                else
-                {
-                    positions[index] = Math.Min(occupiedWidth, totalWidth - widths[index]);
-                    lastSpacing = Math.Min(spacing, totalWidth - positions[index] - widths[index]);
-                    occupiedWidth = positions[index] + widths[index] + lastSpacing;
-                }
-            }
-
-            occupiedWidth -= lastSpacing;
-            var freeWidth = rtl ? remainingWidth + lastSpacing : totalWidth - occupiedWidth;
-            if (freeWidth > 0)
-            {
-                var groupPosition = spacingAlignment switch
-                {
-                    HorizontalAlignment.Center => MathUtils.RoundToInt(freeWidth / 2f),
-                    HorizontalAlignment.Right => rtl ? 0 : freeWidth,
-                    _ => rtl ? freeWidth : 0
-                };
-                var offset = rtl ? groupPosition - freeWidth : groupPosition;
-                for (var index = 0; index < positions.Length; index++)
-                    positions[index] += offset;
-            }
-
-            if (rtl)
-                for (var index = 0; index < positions.Length; index++)
-                    positions[index] = totalWidth - positions[index] - widths[index];
-            return positions;
-        }
-
-        var freeSpace = totalWidth - widths.Sum();
-        var gap = arrangement switch
-        {
-            ButtonGroupArrangement.SpaceBetween => freeSpace / (float)Math.Max(widths.Length - 1, 1),
-            ButtonGroupArrangement.SpaceAround => freeSpace / (float)widths.Length,
-            ButtonGroupArrangement.SpaceEvenly => freeSpace / (float)(widths.Length + 1),
-            _ => 0f
-        };
-        var current = arrangement switch
-        {
-            ButtonGroupArrangement.Center => freeSpace / 2f,
-            ButtonGroupArrangement.Start => rtl ? (float)freeSpace : 0,
-            ButtonGroupArrangement.End => rtl ? 0 : (float)freeSpace,
-            ButtonGroupArrangement.SpaceBetween when rtl && widths.Length == 1 => gap,
-            ButtonGroupArrangement.SpaceAround => gap / 2,
-            ButtonGroupArrangement.SpaceEvenly => gap,
-            _ => 0f
-        };
-        for (var offset = 0; offset < widths.Length; offset++)
-        {
-            var index = rtl ? widths.Length - 1 - offset : offset;
-            var physicalPosition = MathUtils.RoundToInt(current);
-            positions[index] = rtl ? totalWidth - physicalPosition - widths[index] : physicalPosition;
-            current += widths[index] + gap;
-        }
-
-        return positions;
-    }
 }

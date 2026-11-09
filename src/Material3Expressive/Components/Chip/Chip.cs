@@ -1,3 +1,4 @@
+using Material3Expressive.Foundation;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -40,10 +41,10 @@ public abstract partial class Chip : Button
     public MaterialInteractionSource? InteractionSource { get => GetValue(InteractionSourceProperty); set => SetValue(InteractionSourceProperty, value); }
     public static readonly StyledProperty<ChipSpacing> SpacingProperty = AvaloniaProperty.Register<Chip, ChipSpacing>(nameof(Spacing), new ChipSpacing(), validate: value => value is not null);
     public ChipSpacing Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
-    public static readonly StyledProperty<ChipHorizontalArrangement?> HorizontalArrangementProperty =
-        AvaloniaProperty.Register<Chip, ChipHorizontalArrangement?>(nameof(HorizontalArrangement));
-    /// <summary>Standard slot arrangement. Null uses the dedicated leading/trailing Spacing policy.</summary>
-    public ChipHorizontalArrangement? HorizontalArrangement { get => GetValue(HorizontalArrangementProperty); set => SetValue(HorizontalArrangementProperty, value); }
+    public static readonly StyledProperty<MaterialHorizontalArrangement?> HorizontalArrangementProperty =
+        AvaloniaProperty.Register<Chip, MaterialHorizontalArrangement?>(nameof(HorizontalArrangement));
+    /// <summary>Row slot arrangement. Null uses the dedicated leading/trailing Spacing policy.</summary>
+    public MaterialHorizontalArrangement? HorizontalArrangement { get => GetValue(HorizontalArrangementProperty); set => SetValue(HorizontalArrangementProperty, value); }
 
     public static readonly StyledProperty<IBrush?> LeadingIconColorProperty = AvaloniaProperty.Register<Chip, IBrush?>(nameof(LeadingIconColor));
     public IBrush? LeadingIconColor { get => GetValue(LeadingIconColorProperty); set => SetValue(LeadingIconColorProperty, value); }

@@ -134,7 +134,7 @@ Elevation 只消费完整有效值，全零配置关闭所有交互阴影；清�
 
 四类 Chip 已接入固定 `Shape`，共享 Surface 的路径、边框、阴影、波纹和焦点环。
 显式 Shape 抑制 `ChipShapes` 圆角播放器，清除后按当前选中/按压状态重新初始化；不改写公开 Shapes
-值，也不改变已确认的颜色/间距/图标 motion 独立策略。通用 Arrangement 尚未实现。
+值，也不改变已确认的颜色/间距/图标 motion 独立策略。完整横向 Arrangement 接入见下文。
 文字栅格和真实辅助技术未经验证。
 
 2026-11-08 依据本轮对缺失 API、职责调整及历史决定修订的授权，将历史仅圆角的 Shapes 扩为
@@ -224,7 +224,7 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 
 2026-11-08 进一步补齐六种标准 Arrangement：新增 nullable `HorizontalArrangement`，null 保留专用
 ChipSpacing；其余六种分别映射固定 Foundation `Arrangement.kt` 的 Start/End/Center/SpaceBetween/
-SpaceAround/SpaceEvenly。原“通用 Arrangement 未实现”的限制仍适用于自定义回调、SpacedBy 和绝对方向。
+SpaceAround/SpaceEvenly。这些六种入口已迁移到下述共享排列对象。
 依据本轮授权采用组件内枚举，当前无跨组件使用需求，不引入共享布局协议。三个槽含零宽图标槽始终
 参与排列；标准排列 spacing=0，测量不再预留专用平均间距。Assist/Suggestion 的 label Row 按上游
 weight(fill=true) 占满剩余槽宽，因此其标准排列通常没有剩余间隙；Filter/Input 保留 fill=false。排列先以 Int 像素
@@ -234,3 +234,18 @@ weight(fill=true) 占满剩余槽宽，因此其标准排列通常没有剩余�
 `chip-arrangement-20261108-final` 108 例全部重复稳定、执行错误为零，66 equal、42 withinTolerance，
 无超差；包含四族/Elevated、六种排列、LTR/RTL、零宽槽、窄约束、图标反向与运行时切换/恢复默认。
 10 项行为测试覆盖实际模板的 fill 区别、配置恢复与 RTL 的半像素舍入；Catalog 展示全部六种排列。
+
+
+**完整横向排列（2026-11-09 本轮授权）**：原先使用六值枚举，是为了先覆盖现有槽布局且不引入未使用的通用布局框架。
+本轮同时补齐 Chip 和 Expressive Menu 的真实公开参数，因此以 `MaterialHorizontalArrangement` 替代枚举，
+映射固定 Foundation `Arrangement.kt` 的 Horizontal、SpacedAligned 和 Absolute（两端文件一致）。
+保留整数像素输入、Float 分配、固定间距逐子项截断和负间距；任意派生排列消费三个槽（包括空槽）。
+非选择 Chip 的 label 槽填充剩余空间，Selectable 保留 fill=false；布局层抵消 Avalonia RTL 镜像，
+算法本身输出物理坐标。null 仍选择 ChipSpacing，原图标/间距/颜色动画的独立策略不变。
+C# 从 `ChipHorizontalArrangement.X` 迁移到 Foundation 命名空间的 `MaterialHorizontalArrangement.X`；
+XAML 六种字符串兼容。固定间距使用 SpacedBy 或 SpacedHorizontalArrangement 对象元素；自定义配置需替换不可变对象。
+
+`chip-arrangement-expanded` 的 316 个双端用例：194 equal、122 withinTolerance，零 different / 执行错误，
+全部重复及额外截图稳定。包括七种外观、LTR/RTL、全部内置排列、正负/小数间距、绝对方向、
+自定义实现、自然与受限宽度、缺少图标、图标反向动画和运行时恢复默认。已检查实际负间距 RTL 图像。
+不把这些结果外推到文字栅格或任意第三方算法。行为测试见 ChipArrangementTests / HorizontalArrangementTests。

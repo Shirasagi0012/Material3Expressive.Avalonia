@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 data class ModalWideNavigationRailConfig(val hide:Boolean=false,val expanded:Boolean=false,val header:Boolean=false,
     val arrangement:String="top",val rtl:Boolean=false,val dark:Boolean=false,val insets:Boolean=false,val empty:Boolean=false,
     val customColors:Boolean=false,val customPadding:Boolean=false,val headerTopPadding:Double=0.0,val labelWidth:Double=32.0,
-    val width:Double?=null,val action:String="none")
+    val width:Double?=null,val action:String="none",val shape:String="default")
 
 @ParitySuite("modal-wide-navigation-rail")
 class ModalWideNavigationRailCases {
@@ -57,6 +57,10 @@ class ModalWideNavigationRailCases {
             }
             sample("initial")
             when(config.action) {
+                "shape-change" -> {
+                    mutate(1000,"rounded-shape") { scene.shape="round-percent" }; times(16000)
+                    mutate(17000,"default-shape") { scene.shape="default" }; times(32000)
+                }
                 "reopen" -> {
                     mutate(1000,"first-open") { scene.scope.launch { scene.state.expand() } }
                     times(16000,32000,64000,400000,1200000)
@@ -99,6 +103,7 @@ class ModalWideNavigationRailCases {
     }
     private class Scene(val config:ModalWideNavigationRailConfig,val host:ComposeHost) {
         var dark by mutableStateOf(config.dark)
+        var shape by mutableStateOf(config.shape)
         lateinit var state:WideNavigationRailState
         lateinit var scope:CoroutineScope
         val page=Probe(); val item=Probe(); val icon=Probe(); val label=Probe()
@@ -121,8 +126,8 @@ class ModalWideNavigationRailCases {
                             expandedProperties=ModalWideNavigationRailProperties(shouldDismissOnBackPress=config.action!="escape-no-back"),
                             colors=if(config.customColors) WideNavigationRailDefaults.colors(containerColor=Color(0xFFE0F0E8),contentColor=Color(0xFF126E60),
                                 modalContainerColor=Color(0xFFD6E8F6),modalContentColor=Color(0xFF246893),modalScrimColor=Color(0x66365A80)) else WideNavigationRailDefaults.colors(),
-                            collapsedShape=if(config.customColors) RoundedCornerShape(8.dp) else WideNavigationRailDefaults.modalCollapsedShape,
-                            expandedShape=if(config.customColors) RoundedCornerShape(28.dp) else WideNavigationRailDefaults.modalExpandedShape) {
+                            collapsedShape=resolveSheetShape(shape) ?: if(config.customColors) RoundedCornerShape(8.dp) else WideNavigationRailDefaults.modalCollapsedShape,
+                            expandedShape=resolveSheetShape(shape) ?: if(config.customColors) RoundedCornerShape(28.dp) else WideNavigationRailDefaults.modalExpandedShape) {
                             if(!config.empty) {
                                 WideNavigationRailItem(true,{clicks++},icon={Marker(icon,24.0,24.0,true,"icon")},
                                     label={Marker(label,config.labelWidth,16.0,false,"label")},railExpanded=state.targetValue==WideNavigationRailValue.Expanded,modifier=item.modifier())

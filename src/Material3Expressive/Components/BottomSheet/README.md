@@ -124,3 +124,32 @@ await Sheet.State.HideAsync();
 Catalog 用 `--bottom-sheet`、`--bottom-sheet-scaffold` 或 `--modal-bottom-sheet` 启动。
 
 内部机制与验证范围见 [INTERNALS.md](INTERNALS.md)。
+
+### 显式形状
+
+`BottomSheet.Shape`、`ModalBottomSheet.Shape` 和 `BottomSheetScaffold.SheetShape` 接受共享 `MaterialShape`。
+可以使用逻辑切角、百分比圆角或自定义路径；Shape 非空时覆盖 CornerRadius，清空后恢复圆角与主题 Token。
+形状只控制表面、阴影与内容裁剪，不修改面板锚点、手势和展开状态。
+
+```xml
+<m3:ModalBottomSheet IsOpen="{Binding IsSheetOpen}">
+  <m3:ModalBottomSheet.Shape>
+    <m3:CutCornerShape TopStart="36" TopEnd="12" />
+  </m3:ModalBottomSheet.Shape>
+  <Border Height="400" Padding="24"><TextBlock Text="Sheet content" /></Border>
+</m3:ModalBottomSheet>
+```
+
+常驻面板将同一对象设置到 `SheetShape`。逻辑角随 FlowDirection 镜像；百分比以表面较短边计算，随尺寸变化重新求值。
+Catalog 的模态面板演示百分比圆角，Scaffold 演示非对称切角，可继续展开、收起和拖动。
+
+### 辅助技术动作
+
+拖动手柄除原有点击和 ExpandCollapse 操作外，还向自动化树暴露带本地化名称的展开、收起和关闭按钮。
+展开仅在 PartiallyExpanded 状态提供；其他状态有部分展开锚点时提供收起。关闭直接请求 Hidden，
+不先循环到 Expanded；动画完成后模态/树内面板沿用 DismissRequested，仍由应用移除声明。
+Scaffold 只有多个锚点且允许手势时提供这些动作，未启用 Hidden 时不提供关闭。
+关闭手势后命名动作消失，但手柄原有点击仍按上游保留。ConfirmValueChange 继续决定状态请求是否执行。
+
+这些是手柄下的虚拟自动化节点，不增加可见按钮、键盘 Tab 停靠点或布局空间；
+屏幕阅读器的实际平台呈现仍需真实设备验证。

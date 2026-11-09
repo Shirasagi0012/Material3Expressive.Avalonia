@@ -177,3 +177,25 @@ ScrollableRow_UserInputInterruptsCenteringAndDetachCancelsFrames 与真实多行
 上述命令与覆盖说明不代表当前修订已执行全量验证。旧测试数量与未跟踪 artifacts 不作为当前验证结果；
 详细历史结果见[固定修订的原记录](https://github.com/Shirasagi0012/Material3Expressive.Avalonia/blob/cbbd37e1f85ea992287108235a707b8d87bf30eb/src/Material3Expressive/Components/TabRow/README.md)，复核以跟踪测试和新生成报告为准。
 `run` 执行完成、`self-test` 重复稳定与两端相等是不同结论，必须分别报告。
+
+### 2026-11-09 指示器宽度策略
+
+固定 AndroidX/Core TabRow.kt 的 TabIndicatorScope.tabIndicatorOffset 允许独立设置 matchContentSize；
+旧实现将该参数固定为 Variant == Primary，保留了四种默认栏，却限制了自定义 Indicator。
+本轮按用户授权增加 nullable IndicatorMatchContentSize（独立普通属性、原生同名附加属性）；
+null 保留旧默认，显式 true/false 只切换 ContentWidth/Width 目标，沿用原来的 Animatable、取整与滚动定位。
+无需破坏性迁移。未引入新的指示器布局框架；任意 tabIndicatorLayout 仍未移植。
+
+行为测试覆盖两入口×固定/滚动、运行时切换/中断/恢复默认、Variant 改变和重挂。
+双端新增 indicator-width 配置覆盖两入口、两 Variant、固定/滚动、LTR/RTL、切换反转与选择反转。
+
+新增宽度策略矩阵发现原生 TabControl 的 AutoScrollToSelectedItem 会在 Material spring 前立即滚动，
+产生 216 DIP 跳变。2026-11-09 在本轮授权范围内将 MaterialTabControlTheme 的该属性设为 false，
+选择滚动统一由已有 UpdateScroll 执行；用户显式覆盖 true 仍可选择 Avalonia 原生滚入行为。
+焦点滚入此前已禁用，本次不修改手势、惯性和方向键选择职责。
+
+
+本轮验证：修改前完整 `tab-indicator-width`（tab-row family）207 例为 201 equal / 6 different，
+其中四个新增原生滚动反转触发上述立即滚动；另两项原有 press.native / direction.native 保留报告。
+修复后独立 `tab-indicator-width-verified` 的新增 64 例全部 equal、执行错误 0、重复稳定，
+包含 32 个静态组合和 32 个宽度切换/反转组合；原始失败报告未覆盖或删除。

@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Material3Expressive.Foundation.Motion;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Components;
 
@@ -14,17 +15,11 @@ public class ButtonGroup : ItemsControl
     public static readonly StyledProperty<double> ExpandedRatioProperty =
         AvaloniaProperty.Register<ButtonGroup, double>(nameof(ExpandedRatio));
 
-    public static readonly StyledProperty<double> SpacingProperty =
-        AvaloniaProperty.Register<ButtonGroup, double>(nameof(Spacing));
-
-    public static readonly StyledProperty<ButtonGroupArrangement> HorizontalArrangementProperty =
-        AvaloniaProperty.Register<ButtonGroup, ButtonGroupArrangement>(nameof(HorizontalArrangement));
+    public static readonly StyledProperty<MaterialHorizontalArrangement> HorizontalArrangementProperty =
+        AvaloniaProperty.Register<ButtonGroup, MaterialHorizontalArrangement>(nameof(HorizontalArrangement), MaterialHorizontalArrangement.Start, validate: value => value is not null);
 
     public static readonly StyledProperty<VerticalAlignment> ItemVerticalAlignmentProperty =
         AvaloniaProperty.Register<ButtonGroup, VerticalAlignment>(nameof(ItemVerticalAlignment));
-
-    public static readonly StyledProperty<HorizontalAlignment> SpacingAlignmentProperty =
-        AvaloniaProperty.Register<ButtonGroup, HorizontalAlignment>(nameof(SpacingAlignment));
 
     public static readonly StyledProperty<IDataTemplate?> OverflowIndicatorTemplateProperty =
         AvaloniaProperty.Register<ButtonGroup, IDataTemplate?>(nameof(OverflowIndicatorTemplate));
@@ -38,13 +33,7 @@ public class ButtonGroup : ItemsControl
         set => SetValue(ExpandedRatioProperty, value);
     }
 
-    public double Spacing
-    {
-        get => GetValue(SpacingProperty);
-        set => SetValue(SpacingProperty, value);
-    }
-
-    public ButtonGroupArrangement HorizontalArrangement
+    public MaterialHorizontalArrangement HorizontalArrangement
     {
         get => GetValue(HorizontalArrangementProperty);
         set => SetValue(HorizontalArrangementProperty, value);
@@ -54,13 +43,6 @@ public class ButtonGroup : ItemsControl
     {
         get => GetValue(ItemVerticalAlignmentProperty);
         set => SetValue(ItemVerticalAlignmentProperty, value);
-    }
-
-    /// <summary>Logical group alignment within SpacedBy's remaining width.</summary>
-    public HorizontalAlignment SpacingAlignment
-    {
-        get => GetValue(SpacingAlignmentProperty);
-        set => SetValue(SpacingAlignmentProperty, value);
     }
 
     public IDataTemplate? OverflowIndicatorTemplate
@@ -100,24 +82,12 @@ public class ButtonGroup : ItemsControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ExpandedRatioProperty || change.Property == SpacingProperty ||
+        if (change.Property == ExpandedRatioProperty ||
             change.Property == HorizontalArrangementProperty || change.Property == ItemVerticalAlignmentProperty ||
-            change.Property == SpacingAlignmentProperty || change.Property == FlowDirectionProperty ||
+            change.Property == FlowDirectionProperty ||
             change.Property == MinWidthProperty || change.Property == MinHeightProperty)
             Layout?.InvalidateItemsMeasure();
     }
-}
-
-/// <summary>Compose horizontal arrangements. SpacedBy uses the group's Spacing property.</summary>
-public enum ButtonGroupArrangement
-{
-    Start,
-    Center,
-    End,
-    SpaceBetween,
-    SpaceAround,
-    SpaceEvenly,
-    SpacedBy
 }
 
 public sealed class ButtonGroupMenuState : AvaloniaObject

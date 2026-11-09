@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation;
 
 namespace Material3Expressive.Parity;
 
@@ -21,12 +22,18 @@ public sealed class ButtonGroupCases
     public static IEnumerable<CaseData<ButtonGroupConfig>> StaticConfigurations()
     {
         foreach (var rtl in new[] { false, true })
+        foreach (var arrangement in new[] { "overlap", "absolute.left", "absolute.spaceevenly", "absolute-spaced", "custom" })
+        foreach (var width in new[] { 100, 240 })
+        foreach (var weights in new[] { "none", "mixed" })
+            yield return new($"static.arrangement.{arrangement}.{rtl.ToString().ToLowerInvariant()}.{width}.{weights}", "Custom physical arrangement, spacing, weight and overflow", new(rtl, width, true, arrangement, Weights: weights));
+
+        foreach (var rtl in new[] { false, true })
         {
             var direction = rtl ? "rtl" : "ltr";
             foreach (var width in new[] { 400, 152, 151, 140, 108, 100, 60, 32, 20, 0 })
                 yield return new($"static.{direction}.width-{width}", "Intrinsic sizing and overflow boundaries", new(rtl, width));
 
-            foreach (var arrangement in Enum.GetNames<ButtonGroupArrangement>())
+            foreach (var arrangement in new[] { "Start", "Center", "End", "SpaceBetween", "SpaceAround", "SpaceEvenly", "SpacedBy" })
                 yield return new($"static.{direction}.arrange-{arrangement.ToLowerInvariant()}", "Horizontal arrangement with remaining space",
                     new(rtl, 240, true, arrangement));
 
@@ -59,6 +66,10 @@ public sealed class ButtonGroupCases
 
     public static IEnumerable<CaseData<ButtonGroupConfig>> DynamicConfigurations()
     {
+        foreach (var rtl in new[] { false, true })
+        foreach (var arrangement in new[] { "overlap", "absolute-spaced", "custom" })
+            yield return new($"dynamic.arrangement.{arrangement}.{rtl.ToString().ToLowerInvariant()}", "Press enlargement with arbitrary arrangement", new(rtl, 300, true, arrangement, Content: "buttons", Action: "press", Ratio: .5));
+
         foreach (var rtl in new[] { false, true })
         {
             var direction = rtl ? "rtl" : "ltr";
@@ -103,9 +114,10 @@ public sealed class ButtonGroupCases
             MinHeight = config.MinimumHeight,
             MaxHeight = config.MaximumHeight >= 0 ? config.MaximumHeight : double.PositiveInfinity,
             FlowDirection = config.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
-            HorizontalArrangement = Enum.Parse<ButtonGroupArrangement>(config.Arrangement),
+            HorizontalArrangement = config.Arrangement == "SpacedBy"
+                ? MaterialHorizontalArrangement.SpacedBy(12, Enum.Parse<HorizontalAlignment>(config.SpacingAlignment))
+                : ChipCases.ResolveArrangement(config.Arrangement.ToLowerInvariant())!,
             ItemVerticalAlignment = Enum.Parse<VerticalAlignment>(config.Alignment),
-            SpacingAlignment = Enum.Parse<HorizontalAlignment>(config.SpacingAlignment),
             ExpandedRatio = config.Ratio
         };
         Button? indicator = null;

@@ -13,6 +13,8 @@ public class WideNavigationRail : ItemsControl
 {
     internal static readonly StyledProperty<Foundation.Motion.SpringSpec> StateAnimationProperty = AvaloniaProperty.Register<WideNavigationRail, Foundation.Motion.SpringSpec>(nameof(StateAnimation));
     internal Foundation.Motion.SpringSpec StateAnimation { get => GetValue(StateAnimationProperty); set => SetValue(StateAnimationProperty, value); }
+    public static readonly StyledProperty<Foundation.Rendering.MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<WideNavigationRail>();
+    public Foundation.Rendering.MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
     public static readonly StyledProperty<object?> HeaderProperty = AvaloniaProperty.Register<WideNavigationRail, object?>(nameof(Header));
     public static readonly StyledProperty<IDataTemplate?> HeaderTemplateProperty = AvaloniaProperty.Register<WideNavigationRail, IDataTemplate?>(nameof(HeaderTemplate));
     public static readonly StyledProperty<Thickness> WindowInsetsProperty = AvaloniaProperty.Register<WideNavigationRail, Thickness>(nameof(WindowInsets));

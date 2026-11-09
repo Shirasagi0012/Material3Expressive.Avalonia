@@ -11,11 +11,17 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Foundation.Interaction;
 
+using Material3Expressive.Foundation.Rendering;
+
 namespace Material3Expressive.Components;
 
 /// <summary>A drawer destination. Content is the label; Click/Command never changes IsSelected.</summary>
 public class NavigationDrawerItem : Button
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<NavigationDrawerItem>();
+    /// <summary>Explicit outline; null uses the themed CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<MaterialInteractionSource?> InteractionSourceProperty =
         AvaloniaProperty.Register<NavigationDrawerItem, MaterialInteractionSource?>(nameof(InteractionSource));
     /// <summary>Optional shared input/feedback stream. External events do not select or activate the item.</summary>

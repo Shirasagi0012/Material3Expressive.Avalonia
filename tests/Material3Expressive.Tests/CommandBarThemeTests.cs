@@ -79,7 +79,9 @@ public class CommandBarThemeTests
             Assert.Equal(referenceSurface.Bounds.Height, ripple.Bounds.Height);
             Assert.Equal(44, ripple.Bounds.Height);
             Assert.Equal(48, layout.Bounds.Height);
-            Assert.Equal(referenceSurface.GetValue(ButtonSurfaceState.CheckedCornerRadiusProperty), indicator.CornerRadius);
+            reference.IsChecked = true;
+            for (var frame = 0; frame < 60; frame++) { clock.AdvanceBy(TimeSpan.FromMilliseconds(16)); window.UpdateLayout(); }
+            Assert.Equal(referenceSurface.EffectiveCornerRadius, indicator.CornerRadius);
             Assert.True(indicator.CornerRadius.TopLeft < ripple.Bounds.Height / 2);
             Assert.Equal(layout.MenuSelectedItemShape, ripple.CornerRadius);
             Assert.Equal(Part<Border>(primary, "PART_Indicator").Background, indicator.Background);

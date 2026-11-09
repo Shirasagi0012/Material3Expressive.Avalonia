@@ -21,8 +21,8 @@
 | `ToggleButton` | 原生切换按钮四种主题、精确指针尺寸及选中/按压切角形变 | [README](../src/Material3Expressive/Components/ToggleButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/ToggleButton/INTERNALS.md) | |
 | `SegmentedButton` | 单选与多选分段按钮、首尾圆角及显式切角/路径形状 | [README](../src/Material3Expressive/Components/SegmentedButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SegmentedButton/INTERNALS.md) | |
 | `SplitButton` | 双操作按钮组合、主副独立路径及按压/选中圆角、切角与混合形变 | [README](../src/Material3Expressive/Components/SplitButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/SplitButton/INTERNALS.md) | |
-| `ButtonGroup` | 按压扩宽、相邻项压缩与自动溢出收纳 | [README](../src/Material3Expressive/Components/ButtonGroup/README.md) | [INTERNALS](../src/Material3Expressive/Components/ButtonGroup/INTERNALS.md) | |
-| `Chip` | 辅助、建议、过滤与输入标签，含 Elevated、路径状态切换、切角/混合形变及六种标准排列 | [README](../src/Material3Expressive/Components/Chip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Chip/INTERNALS.md) | |
+| `ButtonGroup` | 任意水平排列、按压扩宽、相邻项压缩与自动溢出收纳 | [README](../src/Material3Expressive/Components/ButtonGroup/README.md) | [INTERNALS](../src/Material3Expressive/Components/ButtonGroup/INTERNALS.md) | |
+| `Chip` | 辅助、建议、过滤与输入标签，含 Elevated、路径状态切换、切角/混合形变及逻辑/绝对/自定义水平排列 | [README](../src/Material3Expressive/Components/Chip/README.md) | [INTERNALS](../src/Material3Expressive/Components/Chip/INTERNALS.md) | |
 | `FloatingActionButton` | 浮动操作按钮、可定制路径的扩展按钮、切换按钮与菜单 | [README](../src/Material3Expressive/Components/FloatingActionButton/README.md) | [INTERNALS](../src/Material3Expressive/Components/FloatingActionButton/INTERNALS.md) | |
 | `CommandBar` | 原生命令栏的三套紧凑操作主题 | [README](../src/Material3Expressive/Components/CommandBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/CommandBar/INTERNALS.md) | |
 | `FloatingToolbar` | 横向与纵向浮动工具栏、独立容器/FAB 形状及两轴留白平衡 | [README](../src/Material3Expressive/Components/FloatingToolbar/README.md) | [INTERNALS](../src/Material3Expressive/Components/FloatingToolbar/INTERNALS.md) | |
@@ -58,9 +58,9 @@
 | `NavigationBar` | 标准底部导航栏与指示胶囊动画 | [README](../src/Material3Expressive/Components/NavigationBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationBar/INTERNALS.md) | |
 | `ShortNavigationBar` | 紧凑型底部导航栏，适合小屏视口 | [README](../src/Material3Expressive/Components/ShortNavigationBar/README.md) | [INTERNALS](../src/Material3Expressive/Components/ShortNavigationBar/INTERNALS.md) | |
 | `NavigationRail` | 侧边导航轨与指示器动效 | [README](../src/Material3Expressive/Components/NavigationRail/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationRail/INTERNALS.md) | |
-| `WideNavigationRail` | 宽导航轨与模态展开导航 | [README](../src/Material3Expressive/Components/WideNavigationRail/README.md) | [INTERNALS](../src/Material3Expressive/Components/WideNavigationRail/INTERNALS.md) | |
-| `NavigationDrawer` | 固定式、关闭式与模态抽屉导航 | [README](../src/Material3Expressive/Components/NavigationDrawer/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationDrawer/INTERNALS.md) | |
-| `TabRow` | 独立标签栏容器及原生选项卡主题 | [README](../src/Material3Expressive/Components/TabRow/README.md) | [INTERNALS](../src/Material3Expressive/Components/TabRow/INTERNALS.md) | |
+| `WideNavigationRail` | 宽导航轨、模态展开导航及独立收起/展开容器形状 | [README](../src/Material3Expressive/Components/WideNavigationRail/README.md) | [INTERNALS](../src/Material3Expressive/Components/WideNavigationRail/INTERNALS.md) | |
+| `NavigationDrawer` | 固定式、关闭式与模态抽屉导航及 Sheet/项目路径形状 | [README](../src/Material3Expressive/Components/NavigationDrawer/README.md) | [INTERNALS](../src/Material3Expressive/Components/NavigationDrawer/INTERNALS.md) | |
+| `TabRow` | 独立标签栏容器、原生选项卡主题及独立指示器宽度策略 | [README](../src/Material3Expressive/Components/TabRow/README.md) | [INTERNALS](../src/Material3Expressive/Components/TabRow/INTERNALS.md) | |
 
 ---
 
@@ -84,9 +84,9 @@
 
 | 组件 | 功能说明 | 使用指南 | 内部契约 | 状态说明 |
 | --- | --- | --- | --- | --- |
-| `Menu` | 独立下拉菜单及容器/分组/选中项路径形状、尾随标签、精确指针项布局、级联子菜单与原生弹层主题 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
+| `Menu` | 独立/原生菜单项的任意排列与选中路径形变、容器/分组形状、尾随标签、精确指针项布局及级联子菜单 | [README](../src/Material3Expressive/Components/Menu/README.md) | [INTERNALS](../src/Material3Expressive/Components/Menu/INTERNALS.md) | |
 | `AlertDialog` | 标准确认对话框、显式形状、精确指针尺寸与自定义内容弹窗 | [README](../src/Material3Expressive/Components/AlertDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/AlertDialog/INTERNALS.md) | |
-| `BottomSheet` | 树内三态面板、常驻脚手架与模态面板 | [README](../src/Material3Expressive/Components/BottomSheet/README.md) | [INTERNALS](../src/Material3Expressive/Components/BottomSheet/INTERNALS.md) | |
+| `BottomSheet` | 树内三态面板、常驻脚手架、模态面板、显式路径形状及命名无障碍动作 | [README](../src/Material3Expressive/Components/BottomSheet/README.md) | [INTERNALS](../src/Material3Expressive/Components/BottomSheet/INTERNALS.md) | |
 | `Scrim` | 可点击或装饰性遮罩 | [README](../src/Material3Expressive/Components/Scrim/README.md) | [INTERNALS](../src/Material3Expressive/Components/Scrim/INTERNALS.md) | |
 | `DatePickerDialog` | 日期选择器专用对话框容器与显式形状 | [README](../src/Material3Expressive/Components/DatePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/DatePickerDialog/INTERNALS.md) | |
 | `TimePickerDialog` | 普通与 Vibrant 时间对话框、显式形状、默认标题及两种模式提示按钮 | [README](../src/Material3Expressive/Components/TimePickerDialog/README.md) | [INTERNALS](../src/Material3Expressive/Components/TimePickerDialog/INTERNALS.md) | |

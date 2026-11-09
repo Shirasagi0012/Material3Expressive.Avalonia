@@ -1,4 +1,6 @@
 using System.Globalization;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -8,19 +10,27 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Material3Expressive.Components;
+using Material3Expressive.Foundation.Rendering;
 
 namespace Material3Expressive.Parity;
 
 public sealed record BottomSheetConfig(string Initial = "Expanded", double ContentHeight = 320, bool Handle = true,
     bool Partial = true, bool Dark = false, bool Rtl = false, bool Insets = false, bool Gestures = true, bool Veto = false,
     double MaxWidth = 640, string Action = "none", bool Scaffold = false, double Peek = 56,
-    bool Modal = false, bool Outside = true, bool Scrim = true);
+    bool Modal = false, bool Outside = true, bool Scrim = true, string Shape = "default");
 
 [ParitySuite("bottom-sheet")]
 public sealed class BottomSheetCases
 {
     public static IEnumerable<CaseData<BottomSheetConfig>> StaticConfigurations()
     {
+        foreach (var kind in new[] { "plain", "modal", "scaffold" })
+        foreach (var shape in new[] { "cut", "round-percent" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var partial in new[] { false, true })
+            yield return Data($"static.shape.{kind}.{shape}.{(rtl ? "rtl" : "ltr")}.{(partial ? "partial" : "expanded")}",
+                new(Initial: partial ? "PartiallyExpanded" : "Expanded", Modal: kind == "modal", Scaffold: kind == "scaffold", Shape: shape, Rtl: rtl));
+
         foreach (var initial in new[] { "Expanded", "PartiallyExpanded" })
         foreach (var height in new[] { 80d, 320d })
         foreach (var handle in new[] { false, true })
@@ -49,6 +59,12 @@ public sealed class BottomSheetCases
     }
     public static IEnumerable<CaseData<BottomSheetConfig>> DynamicConfigurations()
     {
+        foreach (var kind in new[] { "plain", "modal", "scaffold" })
+        foreach (var rtl in new[] { false, true })
+        foreach (var action in new[] { "expand", "drag-up", "shape-change" })
+            yield return Data($"dynamic.shape.{kind}.{action}.{(rtl ? "rtl" : "ltr")}",
+                new(Initial: "PartiallyExpanded", Modal: kind == "modal", Scaffold: kind == "scaffold", Shape: "cut", Rtl: rtl, Action: action));
+
         foreach (var action in new[] { "auto-show", "expand", "hide", "reverse", "outside", "outside-veto", "outside-disabled", "escape-expanded", "escape-partial", "escape-veto", "escape-disabled", "drag-dismiss" })
             yield return Data($"dynamic.modal.{action}", new(Initial: action is "auto-show" or "reverse" ? "Hidden" : action == "escape-expanded" ? "Expanded" : "PartiallyExpanded",
                 Veto: action.EndsWith("veto"), Outside: action != "outside-disabled", Modal: true, Action: action));
@@ -90,7 +106,23 @@ public sealed class BottomSheetCases
         void Mutate(long t, string id, Action action, bool sample = true) { Advance(t); action(); writer.Record(t, "mutation", id); host.Draw(); if (sample) Sample(id); }
         void Input(long t, string action, Point p) { Advance(t); scene.Input(action, p); host.Draw(); }
         Sample("initial");
-        if (c.Action == "auto-show") Times(16000, 64000, 96000, 192000, 416000, 800000);
+        if (c.Action.StartsWith("semantics-"))
+        {
+            Mutate(1000, "semantic-action", () =>
+            {
+                var handle = scene.Sheet.GetVisualDescendants().OfType<BottomSheetHandle>().Single();
+                var value = c.Action.Contains("expand") ? SheetValue.Expanded : c.Action.Contains("collapse") ? SheetValue.PartiallyExpanded : SheetValue.Hidden;
+                var action = ControlAutomationPeer.CreatePeerForElement(handle).GetChildren().SingleOrDefault(p => p.GetAutomationId() == "BottomSheet." + value);
+                if (action is IInvokeProvider invoke) invoke.Invoke();
+            }, false);
+            Times(16000, 64000, 192000, 416000, 800000);
+        }
+        else if (c.Action == "shape-change")
+        {
+            Mutate(1000, "shape-round", () => scene.SetShape("round-percent"), false); Times(16000);
+            Mutate(17000, "shape-default", () => scene.SetShape("default"), false); Times(32000);
+        }
+        else if (c.Action == "auto-show") Times(16000, 64000, 96000, 192000, 416000, 800000);
         else if (c.Action.StartsWith("outside"))
         {
             Input(1000, "move", new Point(10, 10)); Input(2000, "down", new Point(10, 10));
@@ -140,6 +172,12 @@ public sealed class BottomSheetCases
             Times(192000, 320000, 416000, 800000);
         }
     }
+    internal static MaterialShape? ResolveShape(string name) => name switch
+    {
+        "cut" => new CutCornerShape { TopStart = new(36, RelativeUnit.Absolute), TopEnd = new(12, RelativeUnit.Absolute), BottomEnd = new(24, RelativeUnit.Absolute), BottomStart = new(0, RelativeUnit.Absolute) },
+        "round-percent" => new RoundedCornerShape { TopStart = new(.25, RelativeUnit.Relative), TopEnd = new(.08, RelativeUnit.Relative), BottomEnd = new(.15, RelativeUnit.Relative) },
+        _ => null
+    };
     private sealed class Scene
     {
         private readonly AvaloniaHost _host; private int _dismissals;
@@ -183,7 +221,15 @@ public sealed class BottomSheetCases
                 if (c.Insets) Sheet.WindowInsets = new Thickness(13, 7, 5, 11);
                 Sheet.DismissRequested += (_, _) => _dismissals++;
             }
+            SetShape(c.Shape);
             Root = new Border { Background = Brushes.White, Child = (Control?)Modal ?? (Control?)Scaffold ?? Sheet, FlowDirection = c.Rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+        }
+        public void SetShape(string name)
+        {
+            var shape = ResolveShape(name);
+            if (Modal is not null) Modal.Shape = shape;
+            else if (Scaffold is not null) Scaffold.SheetShape = shape;
+            else Sheet.Shape = shape;
         }
         public void Input(string action, Point p) => _host.Input(action, p);
         public ProbePoint[] Measure()

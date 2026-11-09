@@ -64,5 +64,9 @@ public partial class MenuDemo : Window
         RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
     private void OnDirection(object? sender, RoutedEventArgs e) =>
         FlowDirection = FlowDirection == FlowDirection.LeftToRight ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+    private void OnArrangementSelection(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is SelectableDropdownMenuItem item) item.IsSelected = !item.IsSelected;
+    }
 }
 

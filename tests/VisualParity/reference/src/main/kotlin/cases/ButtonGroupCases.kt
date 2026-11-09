@@ -51,6 +51,11 @@ class ButtonGroupCases {
                     CompositionLocalProvider(LocalLayoutDirection provides if (config.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                         Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = AbsoluteAlignment.TopLeft) {
                             val arrangement = when (config.arrangement) {
+                                "overlap" -> Arrangement.spacedBy((-5.25).dp, Alignment.CenterHorizontally)
+                                "absolute.left" -> Arrangement.Absolute.Left
+                                "absolute.spaceevenly" -> Arrangement.Absolute.SpaceEvenly
+                                "absolute-spaced" -> Arrangement.Absolute.spacedBy(7.25.dp, Alignment.End)
+                                "custom" -> ChipInsetArrangement
                                 "Start" -> Arrangement.Start
                                 "Center" -> Arrangement.Center
                                 "End" -> Arrangement.End

@@ -2,6 +2,7 @@
         xmlns:m3="https://github.com/Shirasagi0012/Material3Expressive.Avalonia"
         x:Class="Material3Expressive.Catalog.BottomSheetScaffoldDemo" Title="Persistent bottom sheet" Width="840" Height="720">
   <m3:BottomSheetScaffold x:Name="Scaffold" ClipToBounds="True">
+    <m3:BottomSheetScaffold.SheetShape><m3:CutCornerShape TopStart="36" TopEnd="12" /></m3:BottomSheetScaffold.SheetShape>
     <m3:BottomSheetScaffold.TopBar>
       <Border Padding="24,16" Background="{m3:Token {x:Static m3:MaterialTokens+Sys+Color.SurfaceContainer}}">
         <TextBlock Text="Persistent bottom sheet" m3:MaterialText.Style="{m3:Typography TitleLarge}" />

@@ -24,6 +24,10 @@ namespace Material3Expressive.Components;
 /// <remarks>DismissRequested asks the application to set IsOpen to false after the hide animation.</remarks>
 public class ModalBottomSheet : ContentControl
 {
+    public static readonly StyledProperty<MaterialShape?> ShapeProperty = MaterialSurface.ShapeProperty.AddOwner<ModalBottomSheet>();
+    /// <summary>Explicit outline; null uses the themed CornerRadius.</summary>
+    public MaterialShape? Shape { get => GetValue(ShapeProperty); set => SetValue(ShapeProperty, value); }
+
     public static readonly StyledProperty<bool> IsOpenProperty = AvaloniaProperty.Register<ModalBottomSheet, bool>(nameof(IsOpen), defaultBindingMode: BindingMode.TwoWay);
     public static readonly DirectProperty<ModalBottomSheet, bool> IsPresentedProperty = AvaloniaProperty.RegisterDirect<ModalBottomSheet, bool>(nameof(IsPresented), s => s.IsPresented);
     public static readonly StyledProperty<SheetState> StateProperty = BottomSheet.StateProperty.AddOwner<ModalBottomSheet>();

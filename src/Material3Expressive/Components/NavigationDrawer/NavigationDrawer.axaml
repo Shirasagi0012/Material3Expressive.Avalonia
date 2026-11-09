@@ -39,7 +39,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <m3:DrawerSheetLayout MaximumWidth="{TemplateBinding ContainerWidth}" MinimumWidth="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.MinimumContainerWidth}}">
-            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"
+            <m3:MaterialSurface x:Name="PART_Surface" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}"
                 TonalElevation="{TemplateBinding TonalElevation}" TextElement.Foreground="{TemplateBinding Foreground}">
               <Border>
                 <Border.Padding>
@@ -79,7 +79,7 @@
       <Setter Property="UnselectedBadgeColor" Value="{Binding UnselectedTextColor, RelativeSource={RelativeSource Self}}" />
       <Setter Property="Template">
         <ControlTemplate>
-          <m3:MaterialSurface x:Name="PART_Surface" CornerRadius="{TemplateBinding CornerRadius}" TextElement.Foreground="{TemplateBinding Foreground}"
+          <m3:MaterialSurface x:Name="PART_Surface" CornerRadius="{TemplateBinding CornerRadius}" Shape="{TemplateBinding Shape}" TextElement.Foreground="{TemplateBinding Foreground}"
               StateLayerBrush="{m3:ContentColorFor AmbientContentColor={Binding Parent.(TextElement.Foreground), RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type m3:NavigationDrawerItem}}}}">
             <m3:NavigationDrawerItemLayout
                 ItemHorizontalPadding="{m3:Token {x:Static m3:MaterialTokens+Comp+NavigationDrawer.ItemHorizontalPadding}}"

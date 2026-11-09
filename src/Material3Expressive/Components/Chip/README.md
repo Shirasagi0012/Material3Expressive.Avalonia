@@ -155,7 +155,27 @@ Filter/Input 的图标槽在 `Shapes=null` 时也保留进入/退出动画。
 排列位置，与上游三个始终存在的子项一致；因此 SpaceAround/SpaceEvenly 可能在空槽旁留下空隙。
 方向为逻辑 Start/End，RTL 使用上游物理像素舍入顺序。图标进入/退出时按当前动画尺寸重新布局。
 Assist/Suggestion 的标签槽填满剩余宽度，通常没有可供这些排列分配的空隙；Filter/Input 的标签槽按内容宽度布局。
-当前入口只提供这六种标准排列，不提供 SpacedBy、绝对方向或调用方自定义 Arrangement 回调。
+排列还支持固定间距、绝对方向和自定义算法：
+
+```xml
+<m3:FilterChip Width="200" Content="固定间距">
+  <m3:FilterChip.HorizontalArrangement>
+    <m3:SpacedHorizontalArrangement Space="8" Alignment="Right" />
+  </m3:FilterChip.HorizontalArrangement>
+</m3:FilterChip>
+<m3:InputChip Width="200" Content="保持物理顺序" HorizontalArrangement="Absolute.SpaceEvenly" />
+```
+
+`Space` 允许负值（内容重叠）；`Alignment` 的 Left / Center / Right 表示逻辑起点 / 居中 / 终点。
+`Mirror="False"` 只固定子项物理顺序，组对齐仍按 RTL 解析，和 `Absolute.SpacedBy` 一致。
+`Absolute.Left/Right/Center/SpaceBetween/SpaceAround/SpaceEvenly` 同时固定顺序与位置规则。
+Chip 始终保留三个槽，空图标槽也参与间距。自定义排列通过派生不可变的 `MaterialHorizontalArrangement`
+实现 `Spacing` 和 `Arrange`，后者接收整数物理像素与密度，输出各槽相对物理左侧的位置。
+
+C# 原 `ChipHorizontalArrangement.Center` 改为 `MaterialHorizontalArrangement.Center`，命名空间为
+`Material3Expressive.Foundation`；原六种 XAML 字符串继续有效。固定间距可使用
+`MaterialHorizontalArrangement.SpacedBy(8, HorizontalAlignment.Right)`。属性现接受排列对象，
+变更配置应替换对象；null 恢复原专用 `ChipSpacing` 及其选中动画。
 
 `Spacing` 是完整的 `ChipSpacing` 值，逻辑前/后间距默认均为 8 DIP，独立定制例如：
 

@@ -62,9 +62,9 @@ Core `a9e47e8aa04c95cfe572ab4297c770f3cbfb234e`。两端 commonMain `BottomSheet
 - 自动嵌套滚动桥接尚未实现。推荐由现有滚动基础能力统一提供 pre/post scroll 和 fling 分发，再接组件已有入口；
   例如父层先调用 `sheet.OnPreScroll(deltaY)`，子层消费余量后交 `sheet.OnPostScroll(remainingY)`。
   这需要新的公共共享协议，影响 ScrollViewer、AppBar、PullToRefresh 等，待维护者决定；未在组件内复制框架。
-- 无障碍使用 Avalonia Invoke / ExpandCollapse；Avalonia 现有 provider 没有 Compose 命名的多个自定义动作槽。独立 dismiss 动作仍缺失。
-  推荐评估手柄 peer 的虚拟动作子节点，例如 `GetChildrenCore() → DismissPeer`、`DismissPeer.Invoke() → BottomSheet.Dismiss()`；
-  这会增加屏幕阅读器遍历节点，而不是原位置的自定义动作，需要维护者确认语义取舍，未实现或记为已批准。
+- 原实现使用 Invoke / ExpandCollapse，因 Avalonia provider 缺少多个命名动作槽而延期独立 dismiss；
+  当时提出虚拟动作子节点但尚无授权。本轮按用户明确授权采用此方案，见下文；
+  原理由保留：增加辅助技术遍历节点属于平台语义适配，并非原位置的 Compose 多动作槽。
 - 未经验证：真实触屏、多指、DPI 切换、非 Windows 桌面、屏幕阅读器及多面板返回仲裁。
 
 - 复用 TooltipBox 已确认的动画目标提交时序差异，确认范围见 [Tooltip INTERNALS](../Tooltip/INTERNALS.md#3-已确认决定与已知差异)。不将此结论扩展到其他视觉差异。
@@ -98,3 +98,39 @@ dotnet test tests/Material3Expressive.Tests/Material3Expressive.Tests.csproj --f
 ./tests/VisualParity/parity.ps1 prepare-reference --family bottom-sheet
 ./tests/VisualParity/parity.ps1 run --family bottom-sheet
 ```
+
+### 2026-11-09 显式形状入口
+
+固定 AndroidX 的 BottomSheet / ModalBottomSheet 的 shape 与 BottomSheetScaffold 的 sheetShape 均直接交给 Surface；Core common 的对应入口采用同一语义。
+此前仅暴露 CornerRadius，足以表达默认 Token，但不能表达切角、相对角和任意路径。
+本轮用户授权补齐 API，复用已确认的 MaterialSurface.Shape；没有新增形状框架或改变状态职责。
+Shape 非空优先，null 回退原有 CornerRadius；逻辑方向、可变形状订阅、阴影和裁剪由 Surface 负责。
+动画仍在原有 Surface 层缩放，保留内容反缩放和锚点协议。无破坏性迁移。
+
+`SheetShapeTests` 验证形状突变、运行时替换/清空、锚点不变、模态重开、抽屉方向与项目点击/选择职责。
+原双端族新增静态切角/百分比圆角及动态展开、拖动、切换/恢复；抽屉还覆盖开关反向与项目按压。
+
+### 2026-11-09 手柄命名无障碍动作
+
+固定 BottomSheet.kt 的 DragHandleWithTooltip 提供 dismiss 与按当前状态选择的 expand/collapse；
+BottomSheetScaffold.kt 额外要求 anchors.size > 1，并仅在 !skipHiddenState 时提供 dismiss。
+本轮按用户授权修订上面的历史待定事项：HandlePeer 缓存三个虚拟 ActionPeer，按这些条件投影可用动作，
+保留父节点 Invoke / ExpandCollapse。动作只调用原状态协议；失效后的旧 peer 引用再次调用也重新检查可用性。
+不新增可视子控件或键盘停靠点。名称复用既有固定上游本地化表，禁用/换 State/锚点/当前状态变化使树失效。
+
+保留上游确认顺序：标准 Scaffold collapse/dismiss 先查询 confirm，再无条件启动会二次确认的状态操作；
+普通面板 dismiss 通过原 Dismiss 流程，完成后发请求。无 API 迁移，辅助技术树增加命名子节点。
+`SheetAutomationTests` 验证动作变化、失效 peer、禁用、veto、父关系、Scaffold 隐藏策略与 dismiss 回调。
+`bottom-sheet-semantics` 使用两端真实自动化/semantics 动作启动状态动画，并比较实际输出；不以直接赋状态代替调用。
+
+### 本轮双端验证记录
+
+`bottom-sheet-shapes` 全部 125 例：68 equal、43 withinTolerance、14 different，执行错误 0、重复稳定。
+其中新增形状 42 例为 27 equal / 9 withinTolerance / 6 different；24 个静态端点无 different，
+拖动和形状替换无 different。6 个展开差异均保留实际几何比较：例如 416ms content 高度
+Core=320、Avalonia=319.99999131744516 DIP，sheet 高度相差约 0.000004 DIP；该帧全图逐像素相同。
+没有放宽数值门限。原有 8 个不同场景仍在报告中，不归于新形状的验收范围。
+
+`bottom-sheet-semantics` 15 例为 8 equal / 4 withinTolerance / 3 different，执行错误 0、重复稳定。
+三类 expand 的 different 同属展开变换的浮点读数，实际调用状态与帧图已检查；真实系统屏幕阅读器仍未经验证。
+产物位于 `artifacts/visual-parity/runs/<运行名>/summary.md`；用例与行为测试跟踪在仓内，未改变容差或参考。
